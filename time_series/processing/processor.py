@@ -22,7 +22,7 @@ import pandas as pd
 
 
 class DictProcessor:
-    def __init__(self, required_signals: List[str], func, **kwargs):
+    def __init__(self, required_signals: List[str], func, name=None, **kwargs):
         """
         :param required_signals: The signals required to perform the operations
         :param func: The feature calculation func, takes a dict with keys the signal names and the corresponding
@@ -31,6 +31,11 @@ class DictProcessor:
         """
         self.required_signals = required_signals
         self.func = func
+        if name:
+            self.name = name
+        else:
+            self.name = self.func.__name__
+        
         self.kwargs = kwargs
 
     def __call__(self, series_dict: Dict[str, Union[pd.DataFrame, pd.Series]]) -> Dict[str, Union[pd.DataFrame, pd.Series]]:
@@ -44,12 +49,12 @@ class DictProcessor:
                 requested_dict[sig] = series_dict[sig]
         except KeyError as key:
             # Re raise error as we can't continue
-            raise KeyError("Key %s is not present in the input dict" % (key))
+            raise KeyError("Key %s is not present in the input dict and needed for processor %s" % (key, self.name))
 
         return self.func(requested_dict, **self.kwargs) if self.kwargs is not None else self.func(series_dict)
 
     def __repr__(self):
-        return self.func.__name__ + (' ' + str(self.kwargs)) if self.kwargs is not None else ''
+        return self.name + (' ' + str(self.kwargs)) if self.kwargs is not None else ''
 
     def __str__(self):
         return self.__repr__()
