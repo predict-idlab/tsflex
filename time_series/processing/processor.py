@@ -37,8 +37,16 @@ class DictProcessor:
         """Cal(l)culates the processed signal
         :param series_dict: The multimodal DataFrame dict
         """
-        assert all(sig in series_dict.keys() for sig in self.required_signals)
-        return self.func(series_dict, **self.kwargs) if self.kwargs is not None else self.func(series_dict)
+        # Only selecting the signals that are needed for this processing step
+        requested_dict = {}
+        try:
+            for sig in self.required_signals:
+                requested_dict[sig] = series_dict[sig]
+        except KeyError as key:
+            # Re raise error as we can't continue
+            raise KeyError("Key %s is not present in the input dict" % (key))
+
+        return self.func(requested_dict, **self.kwargs) if self.kwargs is not None else self.func(series_dict)
 
     def __repr__(self):
         return self.func.__name__ + (' ' + str(self.kwargs)) if self.kwargs is not None else ''
