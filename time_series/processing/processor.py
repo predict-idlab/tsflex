@@ -16,7 +16,7 @@ __author__ = 'Jonas Van Der Donckt'
 
 
 from itertools import chain
-from typing import Dict, List
+from typing import Dict, List, Union
 
 import pandas as pd
 
@@ -33,12 +33,12 @@ class DictProcessor:
         self.func = func
         self.kwargs = kwargs
 
-    def __call__(self, df_dict: Dict[str, pd.DataFrame]) -> Dict[str, pd.DataFrame]:
+    def __call__(self, series_dict: Dict[str, Union[pd.DataFrame, pd.Series]]) -> Dict[str, Union[pd.DataFrame, pd.Series]]:
         """Cal(l)culates the processed signal
-        :param df_dict: The multimodal DataFrame dict
+        :param series_dict: The multimodal DataFrame dict
         """
-        assert all(sig in df_dict.keys() for sig in self.required_signals)
-        return self.func(df_dict, **self.kwargs) if self.kwargs is not None else self.func(df_dict)
+        assert all(sig in series_dict.keys() for sig in self.required_signals)
+        return self.func(series_dict, **self.kwargs) if self.kwargs is not None else self.func(series_dict)
 
     def __repr__(self):
         return self.func.__name__ + (' ' + str(self.kwargs)) if self.kwargs is not None else ''
