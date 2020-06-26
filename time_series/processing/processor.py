@@ -48,27 +48,29 @@ class DictProcessor:
 
 
 class DictProcessorWrapper:
-    """Processes the the the data_dict signals in a  sequential manner, determined by the processing code"""
+    """Processes the data_dict signals in a sequential manner, determined by the processing code"""
 
     def __init__(self, processors: List[DictProcessor] = None):
         processors = [] if processors is None else processors
         self.processing_registry: List[DictProcessor] = processors
 
     def get_all_required_signals(self) -> List[str]:
+        """Returns a  list of all required signal keys for this DictProcessorWrapper"""
         return list(set(chain.from_iterable([pr.required_signals for pr in self.processing_registry])))
 
     def append(self, processor: DictProcessor) -> None:
         """Append a processor to the registry"""
         self.processing_registry.append(processor)
 
-    def process(self, df_dict: Dict[str, pd.DataFrame]) -> Dict[str, pd.DataFrame]:
-        df_dict = df_dict.copy()
+    def process(self, series_dict: Dict[str, Union[pd.DataFrame, pd.Series]]) -> Dict[str, pd.DataFrame]:
+        """Applies all the processing steps on the series_dict and returns the resulting dict."""
+        series_dict = series_dict.copy()
         for processor in self.processing_registry:
-            df_dict.update(processor(df_dict))
-        return df_dict
+            series_dict.update(processor(series_dict))
+        return series_dict
 
-    def __call__(self, df_dict: Dict[str, pd.DataFrame]) -> Dict[str, pd.DataFrame]:
-        return self.process(df_dict)
+    def __call__(self, series_dict: Dict[str, Union[pd.DataFrame, pd.Series]]) -> Dict[str, Union[pd.DataFrame, pd.Series]]:
+        return self.process(series_dict)
 
     def __repr__(self):
         return "[\n" + ''.join([f'\t{str(pr)}\n' for pr in self.processing_registry]) + "]"
