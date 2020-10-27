@@ -2,4 +2,4 @@
 
 __author__ = 'Jonas Van Der Donckt'
 
-from features.feature import NumpyFeatureCalculation
+from .feature import NumpyFeatureCalculation

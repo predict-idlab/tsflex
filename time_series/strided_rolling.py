@@ -14,8 +14,8 @@ from typing import List, Callable, Union, Dict
 import numpy as np
 import pandas as pd
 
-from features import NumpyFeatureCalculation
-from function import NumpyFuncWrapper
+from .features import NumpyFeatureCalculation
+from .function import NumpyFuncWrapper
 
 
 class StridedRolling:

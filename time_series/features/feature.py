@@ -12,7 +12,7 @@ from typing import List, Tuple, Callable
 
 import numpy as np
 
-from function import NumpyFuncWrapper
+from ..function import NumpyFuncWrapper
 
 
 class NumpyFeatureCalculation:

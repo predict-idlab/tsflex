@@ -12,8 +12,8 @@ from typing import List, Dict, Tuple
 
 import pandas as pd
 
-from features.feature import NumpyFeatureCalculation
-from strided_rolling import StridedRolling
+from .feature import NumpyFeatureCalculation
+from ..strided_rolling import StridedRolling
 
 
 class NumpyFeatureCalculationRegistry:
