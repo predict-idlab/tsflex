@@ -2,5 +2,4 @@
 
 __author__ = 'Jonas Van Der Donckt'
 
-from .feature import NumpyFeatureCalculation
-from .feature_extraction import NumpyFeatureCalculationRegistry, NumpyFeatureCalculationPipeline
+from features.feature import NumpyFeatureCalculation
