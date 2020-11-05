@@ -9,6 +9,7 @@
 
 __author__ = 'Vic Degraeve, Jonas Van Der Donckt, Jeroen Van Der Donckt'
 
+import multiprocessing
 from typing import List, Callable, Union, Dict
 
 import numpy as np
@@ -16,6 +17,9 @@ import pandas as pd
 
 from .features import NumpyFeatureCalculation
 from .function import NumpyFuncWrapper
+
+import dill as pickle
+pickle.settings['recurse']=True
 
 
 class StridedRolling:
@@ -28,7 +32,7 @@ class StridedRolling:
         :param stride: Step/stride length in samples
         """
         # construct the (expanded) sliding window-stride array
-        self.time_indexes = df.index[window - 1::stride]
+        self.time_indexes = df.index[:-window+1][::stride]
         self.strided_vals = {}
         for col in df.columns:
             self.strided_vals[col] = sliding_window(df[col], window=window, stride=stride)
@@ -52,7 +56,7 @@ class StridedRolling:
         }
         return pd.DataFrame(index=self.time_indexes, data=feat_out) if return_df else feat_out
 
-    def apply_funcs(self, funcs: List[Union[NumpyFeatureCalculation, NumpyFuncWrapper]]) -> pd.DataFrame:
+    def apply_funcs(self, funcs: List[Union[NumpyFeatureCalculation, NumpyFuncWrapper]], parallel=True) -> pd.DataFrame:
         """Applies a Feature-calculation function to every window
 
         .. note::
@@ -62,7 +66,12 @@ class StridedRolling:
         :return: The merged DataFrame
         """
         # TODO: maybe this can be sped up -> also look into memory expansion
-        feat_out = {k: v for func in funcs for k, v in self.apply_func(func, return_df=False).items()}
+        if parallel:
+            with multiprocessing.Pool() as pool:
+                out = pool.starmap(self.apply_func, [(func, False) for func in funcs])
+            feat_out = {k: v for func_dict in out for k, v in func_dict.items()}
+        else:
+            feat_out = {k: v for func in funcs for k, v in self.apply_func(func, return_df=False).items()}
         return pd.DataFrame(index=self.time_indexes, data=feat_out)
 
     def apply_func(self, np_func: Union[NumpyFuncWrapper, NumpyFeatureCalculation], return_df=True) \

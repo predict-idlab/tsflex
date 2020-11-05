@@ -8,6 +8,7 @@
 """
 __author__ = 'Jonas Van Der Donckt'
 
+import multiprocessing
 from typing import List, Dict, Tuple
 
 import pandas as pd
@@ -37,7 +38,7 @@ class NumpyFeatureCalculationRegistry:
                 win_stride_dict[w_s] = [feat]
         return win_stride_dict
 
-    def calculate_features(self, time_series_df: pd.DataFrame) -> Dict[Tuple[int, int], pd.DataFrame]:
+    def calculate_features(self, time_series_df: pd.DataFrame, parallel: bool = True) -> Dict[Tuple[int, int], pd.DataFrame]:
         """Calculates the features for a time_series indexed DataFrame
 
         :param time_series_df: The time indexed series / DataFrame (containing one column)
@@ -48,7 +49,7 @@ class NumpyFeatureCalculationRegistry:
         win_stride_dict = self._create_win_stride_dict()
         feat_dict = {}
         for (win_size, stride), features in win_stride_dict.items():
-            df_feat = StridedRolling(time_series_df, window=win_size, stride=stride).apply_funcs(features)
+            df_feat = StridedRolling(time_series_df, window=win_size, stride=stride).apply_funcs(features, parallel)
             feat_dict[(win_size, stride)] = df_feat
         return feat_dict
 
@@ -76,13 +77,27 @@ class NumpyFeatureCalculationPipeline:
     def append(self, sig_str: str, df_featurewrapper: NumpyFeatureCalculationRegistry) -> None:
         self.sig_feature_registry.append((sig_str, df_featurewrapper))
 
-    def __call__(self, df_dict: Dict[str, pd.DataFrame]) -> pd.DataFrame:
+    @staticmethod
+    def _feature_wrapper_call(df_feature_wrapper, df_signals, parallel):
+        return df_feature_wrapper.calculate_features(df_signals, parallel)
+
+    def __call__(self, df_dict: Dict[str, pd.DataFrame], parallel=False) -> pd.DataFrame:
         """Cal(l)culates the features"""
         dfs, win_strides = [], []
-        for sig_str, df_feature_wrapper in self.sig_feature_registry:
-            win_stride_df_feat_dict = df_feature_wrapper.calculate_features(df_dict[sig_str])
-            win_strides += list(win_stride_df_feat_dict.keys())
-            dfs += list(win_stride_df_feat_dict.values())
+
+        if parallel:
+            with multiprocessing.Pool() as pool:
+                params = [(df_feature_wrapper, df_dict[sig_str], False) for sig_str, df_feature_wrapper in
+                          self.sig_feature_registry]
+                out = pool.starmap(self._feature_wrapper_call, params)
+            for win_stride_df_feat_dict in out:
+                win_strides += list(win_stride_df_feat_dict.keys())
+                dfs += list(win_stride_df_feat_dict.values())
+        else:
+            for sig_str, df_feature_wrapper in self.sig_feature_registry:
+                win_stride_df_feat_dict = df_feature_wrapper.calculate_features(df_dict[sig_str])
+                win_strides += list(win_stride_df_feat_dict.keys())
+                dfs += list(win_stride_df_feat_dict.values())
 
         # sort them on descending size & merge into participant DataFrame
         dfs.sort(key=lambda x: x.shape[0], reverse=True)
