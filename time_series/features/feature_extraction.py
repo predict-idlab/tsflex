@@ -110,7 +110,7 @@ class NumpyFeatureCalculationPipeline:
                 dfs = [df_dict[sig_str] for sig_str, _ in self.sig_feature_registry]
                 df_feature_wrappers = [df_feat_wrapper for _, df_feat_wrapper in self.sig_feature_registry]
                 # https://pathos.readthedocs.io/en/latest/pathos.html#usage
-                out = pool.map(self._feature_wrapper_call, df_feature_wrappers, dfs, [Fspoalse] * len(dfs))
+                out = pool.map(self._feature_wrapper_call, df_feature_wrappers, dfs, [False] * len(dfs))
             for win_stride_df_feat_dict in out:
                 win_strides += list(win_stride_df_feat_dict.keys())
                 dfs += list(win_stride_df_feat_dict.values())
