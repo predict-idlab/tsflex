@@ -31,8 +31,7 @@ class StridedRolling:
         :param window: Sliding window length in samples
         :param stride: Step/stride length in samples
         """
-        # construct the (expanded) sliding window-stride array
-        self.time_indexes = df.index[:-window + 1][::stride]
+        self.time_indexes = df.index[:-window + 1][::stride]  # Index indicates the start of the windows
         self.strided_vals = {}
         for col in df.columns:
             self.strided_vals[col] = sliding_window(df[col], window=window, stride=stride)

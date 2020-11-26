@@ -105,6 +105,10 @@ class NumpyFeatureCalculationPipeline:
         """Cal(l)culates the features"""
         dfs, win_strides = [], []
 
+        # Convert the index of each df to pd.DateTime (as sanity check)
+        for sig_str, _ in self.sig_feature_registry:  # Ensuring correct type now avoid problems when merging dfs
+            df_dict[sig_str].index = pd.to_datetime(df_dict[sig_str].index)
+
         if self.parallelize_registry:
             with ProcessPool() as pool:
                 signal_dfs = [df_dict[sig_str] for sig_str, _ in self.sig_feature_registry]
