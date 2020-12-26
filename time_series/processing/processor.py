@@ -28,6 +28,7 @@ class DictProcessor:
         :param required_signals: The signals required to perform the operations
         :param func: The feature calculation func, takes a dict with keys the signal names and the corresponding
                 (time indexed) DataFrame as input, & outputs a DataFrame dict
+        :param name: The name of the function, if none `func.__name__`, will be used
         :param kwargs: Additional kwargs for the func
         """
         self.required_signals = required_signals
@@ -36,10 +37,11 @@ class DictProcessor:
             self.name = name
         else:
             self.name = self.func.__name__
-        
+
         self.kwargs = kwargs
 
-    def __call__(self, series_dict: Dict[str, Union[pd.DataFrame, pd.Series]]) -> Dict[str, Union[pd.DataFrame, pd.Series]]:
+    def __call__(self, series_dict: Dict[str, Union[pd.DataFrame, pd.Series]]) -> \
+            Dict[str, Union[pd.DataFrame, pd.Series]]:
         """Cal(l)culates the processed signal
         :param series_dict: The multimodal DataFrame dict
         """
@@ -89,7 +91,8 @@ class DictProcessorWrapper:
                 series_dict.update(processor(series_dict))
         return series_dict
 
-    def __call__(self, series_dict: Dict[str, Union[pd.DataFrame, pd.Series]]) -> Dict[str, Union[pd.DataFrame, pd.Series]]:
+    def __call__(self, series_dict: Dict[str, Union[pd.DataFrame, pd.Series]]) -> Dict[
+        str, Union[pd.DataFrame, pd.Series]]:
         return self.process(series_dict)
 
     def __repr__(self):
