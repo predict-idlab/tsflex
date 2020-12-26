@@ -9,13 +9,14 @@
 __author__ = 'Jonas Van Der Donckt'
 
 # Rubber ducking with myself:
-#   mhm we hebben iets van logica nodig om bij te houden welke signalen (dict keys) we nodig hebben voor
+#   mhm we hebben iets van logica nodig om bij te houden welke signalen (dict k0eys) we nodig hebben voor
 #   een signaal te processen en welke signaal (output) dict we processen
 #   --> ik zou dan voorstellen om alle processing shizzles als methodes te schrijven en deze dan te injecteren
 # TODO: this code can be written cleaner (more pipeline alike, maybe even a wrapper around func ...
 
 
 from itertools import chain
+from pathos.multiprocessing import ProcessPool
 from typing import Dict, List, Union
 
 import pandas as pd
@@ -75,11 +76,17 @@ class DictProcessorWrapper:
         """Append a processor to the registry"""
         self.processing_registry.append(processor)
 
-    def process(self, series_dict: Dict[str, Union[pd.DataFrame, pd.Series]]) -> Dict[str, pd.DataFrame]:
+    def process(self, series_dict: Dict[str, Union[pd.DataFrame, pd.Series]], parallel=True) -> Dict[str, pd.DataFrame]:
         """Applies all the processing steps on the series_dict and returns the resulting dict."""
         series_dict = series_dict.copy()
-        for processor in self.processing_registry:
-            series_dict.update(processor(series_dict))
+        if parallel:
+            with ProcessPool() as pool:
+                out = pool.map(lambda processor: processor(series_dict), self.processing_registry)
+            for item in out.items():
+                series_dict.update(item)
+        else:
+            for processor in self.processing_registry:
+                series_dict.update(processor(series_dict))
         return series_dict
 
     def __call__(self, series_dict: Dict[str, Union[pd.DataFrame, pd.Series]]) -> Dict[str, Union[pd.DataFrame, pd.Series]]:
