@@ -31,7 +31,9 @@ class StridedRolling:
         :param window: Sliding window length in samples
         :param stride: Step/stride length in samples
         """
-        self.time_indexes = df.index[:-window + 1][::stride]  # Index indicates the start of the windows
+        # construct the (expanded) sliding window-stride array
+        # Old code: self.time_indexes = df.index[:-window + 1][::stride]  # Index indicates the start of the windows
+        self.time_indexes = df.index[window - 1:][::stride]  # Index indicates the end of the windows
         self.strided_vals = {}
         for col in df.columns:
             self.strided_vals[col] = sliding_window(df[col], window=window, stride=stride)
@@ -55,13 +57,15 @@ class StridedRolling:
         }
         return pd.DataFrame(index=self.time_indexes, data=feat_out) if return_df else feat_out
 
-    def apply_funcs(self, funcs: List[Union[NumpyFeatureCalculation, NumpyFuncWrapper]], parallel=True) -> pd.DataFrame:
+    def apply_funcs(self, funcs: List[Union[NumpyFeatureCalculation, NumpyFuncWrapper]],
+                    parallel: bool = True) -> pd.DataFrame:
         """Applies a Feature-calculation function to every window
 
         .. note::
             Every item in the funcs list will thus need to have the same window/stride properties as this instance
 
         :param funcs: The list of functions which will be applied
+        :param parallel: Boolean indicating whether the funcs should be applied in parallel
         :return: The merged DataFrame
         """
         # TODO: maybe this can be sped up -> also look into memory expansion

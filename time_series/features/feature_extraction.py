@@ -48,7 +48,9 @@ class NumpyFeatureCalculationRegistry:
 
         :param time_series_df: The time indexed series / DataFrame (containing one column)
             for which the features are calculated
-        :return: A dict with key a tuple of (window_size, stride) respectively and the feature Dat
+        :param parallel: Boolean indicating whether the features should be calculated in parallel (over the functions)
+        :return: A dict with key a tuple of (window_size, stride) respectively and the DataFrame of calculated features
+            as value
         """
         # Order the features by win_stride and iterate over the various win_stride
         win_stride_dict = self._create_win_stride_dict()
@@ -89,7 +91,7 @@ class NumpyFeatureCalculationPipeline:
                 * the feature calculations array of the the NumpyFeatureCalculationRegistry objects
                 * fhe featureRegistries themselves
                 if True -> parallelization is performed over the latter,
-                Note that this will only be usefule when there are multiple featureCalculation registries available
+                Note that this will only be useful when there are multiple featureCalculation registries available
         """
         self.sig_feature_registry = df_feature_wrappers if df_feature_wrappers is not None else []
         self.parallelize_registry = parallelize_registry
