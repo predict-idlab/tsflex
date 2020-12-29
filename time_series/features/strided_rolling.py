@@ -15,8 +15,8 @@ from typing import List, Callable, Union, Dict
 import numpy as np
 import pandas as pd
 
-from .features import NumpyFeatureCalculation
-from .function import NumpyFuncWrapper
+from .feature_extraction import NumpyFeatureCalculation
+from ..function import NumpyFuncWrapper
 
 import dill as pickle
 pickle.settings['recurse'] = True

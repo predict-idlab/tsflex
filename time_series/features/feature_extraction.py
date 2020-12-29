@@ -14,7 +14,7 @@ from typing import List, Dict, Tuple
 import pandas as pd
 
 from .feature import NumpyFeatureCalculation
-from ..strided_rolling import StridedRolling
+from .strided_rolling import StridedRolling
 
 import dill as pickle
 
