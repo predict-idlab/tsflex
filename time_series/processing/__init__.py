@@ -8,4 +8,4 @@
 """
 __author__ = 'Jonas Van Der Donckt'
 
-from processing.processor import DictProcessor, DictProcessorWrapper
+from .processor import DictProcessor, DictProcessorWrapper

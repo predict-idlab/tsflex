@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Jonas Van Der Donckt, Jeroen Van Der Donckt'
 
-from sklearn.base import BaseEstimator, TransformerMixin
+from typing import List, Dict
+
 import numpy as np
 import pandas as pd
-
-from typing import List, Dict
+from sklearn.base import BaseEstimator, TransformerMixin
 
 
 class Clipper(BaseEstimator, TransformerMixin):
@@ -41,7 +41,8 @@ class Clipper(BaseEstimator, TransformerMixin):
         assert isinstance(X, pd.DataFrame)
         result_df = X.copy()
         selected_cols = X.columns.values if self.selected_cols is None else self.selected_cols
-        result_df[selected_cols] = result_df[selected_cols].clip(lower=self.lower_quantiles, upper=self.upper_quantiles, axis=1)
+        result_df[selected_cols] = result_df[selected_cols].clip(lower=self.lower_quantiles, upper=self.upper_quantiles,
+                                                                 axis=1)
         return result_df
 
 
@@ -70,6 +71,7 @@ class ColumnSelector(BaseEstimator, TransformerMixin):
         except KeyError:
             cols_error = list(set(self.columns) - set(X.columns))
             raise KeyError("The DataFrame does not include the columns: %s" % cols_error)
+
 
 class ColumnRenamer(BaseEstimator, TransformerMixin):
     """
@@ -124,12 +126,13 @@ class DataFrameOperator(BaseEstimator, TransformerMixin):
         assert isinstance(X, pd.DataFrame)
         operator_cols = X.columns.values if self.operator_cols is None else self.operator_cols
         try:
-            result_df = pd.DataFrame(index=X.index, data=self.wrapped_operator.transform(X[operator_cols]), columns=operator_cols)
+            result_df = pd.DataFrame(index=X.index, data=self.wrapped_operator.transform(X[operator_cols]),
+                                     columns=operator_cols)
             # Add the unused columns back to the resulting dataframe
             unused_columns = list(set(X.columns).difference(operator_cols))
             result_df[unused_columns] = X[unused_columns]
             return result_df
-        except:
+        except ...:
             cols_error = list(set(operator_cols).difference(X.columns.values))
             raise KeyError("The DataFrame does not include the columns: %s" % cols_error)
 

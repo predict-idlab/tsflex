@@ -9,23 +9,23 @@
 
 __author__ = 'Vic Degraeve, Jonas Van Der Donckt, Jeroen Van Der Donckt'
 
-from pathos.multiprocessing import ProcessPool
 from typing import List, Callable, Union, Dict
 
+import dill as pickle
 import numpy as np
 import pandas as pd
+from pathos.multiprocessing import ProcessPool
 
-from .feature_extraction import NumpyFeatureCalculation
+from .feature import NumpyFeatureCalculation
 from ..function import NumpyFuncWrapper
 
-import dill as pickle
 pickle.settings['recurse'] = True
 
 
 class StridedRolling:
     """Custom sliding window with stride for pandas DataFrames"""
 
-    def __init__(self, df: pd.DataFrame, window: int, stride: int):
+    def __init__(self, df: Union[pd.Series, pd.DataFrame], window: int, stride: int):
         """
         :param df: DataFrame to slide over, the index must be a (time-zone-aware) date_time object
         :param window: Sliding window length in samples
@@ -33,21 +33,24 @@ class StridedRolling:
         """
         # construct the (expanded) sliding window-stride array
         # Old code: self.time_indexes = df.index[:-window + 1][::stride]  # Index indicates the start of the windows
+        df = df.to_frame() if isinstance(df, pd.Series) else df
         self.time_indexes = df.index[window - 1:][::stride]  # Index indicates the end of the windows
         self.strided_vals = {}
         for col in df.columns:
             self.strided_vals[col] = sliding_window(df[col], window=window, stride=stride)
 
-    def apply(self, np_func: Callable, return_df: bool = True) -> Union[Dict[str, list], pd.DataFrame]:
+    def apply(self, np_func: Callable, return_df: bool = True) -> Union[Dict[str, np.ndarray], pd.DataFrame]:
         """Applies a function to every strided window and returns the merged outputs in either a new DataFrame
         or a dict
 
         .. note::
-            * As np_funx
-            * This only works for a one-to-one mapping!
+            As np_func is only a callable argument, with no additional logic, this will only
+            work for a one-to-one mapping!
+            * fyi: If the passed dataframe has multiple columns, it will call the feature for each column
+            * fyi: If you want to calculate one-to-many -> use the `apply_func` method, which takes a
+                NumpyFuncWrapper of NumpyFeatureCalculation instance as argument
 
-        :param np_func: Function taking a numpy array as first argument and returning a new numpy array,
-            np_func must thus not be a
+        :param np_func: Function taking a numpy array as first argument and returning a new numpy array
         :param return_df: If true, a DataFrame will be returned, otherwise a dict will be returned
         :return: Either The merged output of the function applied to every column in a new DataFrame or a dict
         """
@@ -71,7 +74,7 @@ class StridedRolling:
         # TODO: maybe this can be sped up -> also look into memory expansion
         if parallel:
             with ProcessPool() as pool:
-                out = pool.map(self.apply_func, funcs, [False]*len(funcs))
+                out = pool.map(self.apply_func, funcs, [False] * len(funcs))
             feat_out = {k: v for func_dict in out for k, v in func_dict.items()}
         else:
             feat_out = {k: v for func in funcs for k, v in self.apply_func(func, return_df=False).items()}
@@ -82,7 +85,7 @@ class StridedRolling:
         """Applies a Numpy-function to the
 
         .. note::
-            this works for one-to-many mapping (as both NumpyFuncWrapper and NumpyFeatureCalculation have the
+            This works for one-to-many mapping (as both NumpyFuncWrapper and NumpyFeatureCalculation have the
             col_names property)
 
         :param np_func: The Callable (wrapped) function which will be applied

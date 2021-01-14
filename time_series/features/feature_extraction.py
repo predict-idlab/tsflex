@@ -8,15 +8,14 @@
 """
 __author__ = 'Jonas Van Der Donckt'
 
-from pathos.multiprocessing import ProcessPool
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Union
 
+import dill as pickle
 import pandas as pd
+from pathos.multiprocessing import ProcessPool
 
 from .feature import NumpyFeatureCalculation
 from .strided_rolling import StridedRolling
-
-import dill as pickle
 
 pickle.settings['recurse'] = True
 
@@ -42,7 +41,7 @@ class NumpyFeatureCalculationRegistry:
                 win_stride_dict[w_s] = [feat]
         return win_stride_dict
 
-    def calculate_features(self, time_series_df: pd.DataFrame, parallel: bool = True) \
+    def calculate_features(self, time_series_df: Union[pd.Series, pd.DataFrame], parallel: bool = True) \
             -> Dict[Tuple[int, int], pd.DataFrame]:
         """Calculates the features for a time_series indexed DataFrame
 
@@ -103,7 +102,7 @@ class NumpyFeatureCalculationPipeline:
     def _feature_wrapper_call(df_feature_wrapper, df_signals, parallel):
         return df_feature_wrapper.calculate_features(df_signals, parallel)
 
-    def __call__(self, df_dict: Dict[str, pd.DataFrame]) -> pd.DataFrame:
+    def __call__(self, df_dict: Dict[str, Union[pd.Series, pd.DataFrame]]) -> pd.DataFrame:
         """Cal(l)culates the features"""
         dfs, win_strides = [], []
 
