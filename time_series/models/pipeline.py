@@ -132,7 +132,7 @@ class DataFrameOperator(BaseEstimator, TransformerMixin):
             unused_columns = list(set(X.columns).difference(operator_cols))
             result_df[unused_columns] = X[unused_columns]
             return result_df
-        except ...:
+        except:
             cols_error = list(set(operator_cols).difference(X.columns.values))
             raise KeyError("The DataFrame does not include the columns: %s" % cols_error)
 
