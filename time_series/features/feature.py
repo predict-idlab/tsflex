@@ -27,15 +27,16 @@ class NumpyFeatureCalculation:
         self.win_size = win_size
         self.stride = stride
         self.func = func
-        self.col_names = func.get_col_names() if isinstance(func, NumpyFuncWrapper) else [func.__name__]
+        self._out_col_names = func.out_col_names if isinstance(func, NumpyFuncWrapper) else [func.__name__]
 
     def get_win_stride(self) -> Tuple[int, int]:
         """Return the (absolute) window_size and stride in (#of samples)"""
         return self.win_size, self.stride
 
-    def get_col_names(self) -> List[str]:
+    @property
+    def out_col_names(self) -> List[str]:
         """Return the column names of the feature"""
-        return self.col_names
+        return self._out_col_names
 
     def __call__(self, arr: np.ndarray) -> np.ndarray:
         """Cal(l)culates the feature(s)

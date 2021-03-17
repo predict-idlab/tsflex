@@ -93,7 +93,7 @@ class StridedRolling:
         :return: Either The merged output of the function applied to every column in a new DataFrame or a dict
         """
         feat_out = {}
-        feat_names = np_func.get_col_names()
+        feat_names = np_func.out_col_names
         for col in self.strided_vals.keys():
             out = np.apply_along_axis(np_func, axis=-1, arr=self.strided_vals[col])
             if out.ndim == 1 or (out.ndim == 2 and out.shape[1] == 1):
