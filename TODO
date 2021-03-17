@@ -1,7 +1,7 @@
 Features:
     ☐ Create ci-cd pipeline
     ☐ Add README
-    ☐ Add LICENSE 
+    ✔ Add LICENSE 
         Which license?
     ☐ Make a sub-module of it
     ☐ Continue to clean up the code 
