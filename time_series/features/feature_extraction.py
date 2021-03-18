@@ -23,12 +23,12 @@ from ..function import NumpyFuncWrapper
 class Feature:
     """A Feature object, containing all feature information."""
 
-    def __init__(self, function: NumpyFuncWrapper, key: str, window: int, stride: int):
+    def __init__(self, function: Union[NumpyFuncWrapper, Callable], key: str, window: int, stride: int):
         """Create a Feature object.
 
         Parameters
         ----------
-        function : NumpyFuncWrapper
+        function : Union[NumpyFuncWrapper, Callable]
             The `function` that calculates this feature
         key : str
             The key (name) of the signal where this feature needs to be calculated on.
@@ -49,8 +49,12 @@ class Feature:
         self.key = key
         self.window = window
         self.stride = stride
+
+        # Order of if statements is important!
         if isinstance(function, NumpyFuncWrapper):
             self.function = function
+        elif isinstance(function, Callable):
+            self.function = NumpyFuncWrapper(function)
         else:
             raise TypeError(
                 "Expected feature function to be a `NumpyFuncWrapper` but is a"
@@ -90,7 +94,7 @@ class MultipleFeatures:
     def __init__(
         self,
         signal_keys: List[str],
-        functions: Union[List[NumpyFuncWrapper], List[Callable]],
+        functions: List[Union[NumpyFuncWrapper, Callable]],
         windows: List[int],
         strides: List[int],
     ):
