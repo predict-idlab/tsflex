@@ -36,7 +36,9 @@ class StridedRolling:
             Sliding window length in samples
         stride : int
             Step/stride length in samples
-        """description]+ 1][::stride]
+        """
+        # construct the (expanded) sliding window-stride array
+        # Old code: self.time_indexes = df.index[:-window + 1][::stride]
         # Index indicates the start of the windows
         df = df.to_frame() if isinstance(df, pd.Series) else df
         self.window = window
