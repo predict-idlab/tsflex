@@ -6,143 +6,256 @@
 
 
 """
-__author__ = 'Jonas Van Der Donckt'
+__author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
-from typing import List, Dict, Tuple, Union
+from typing import List, Union, Callable, Dict
 
 import dill as pickle
 import pandas as pd
-from pathos.multiprocessing import ProcessPool
 
-from .feature import NumpyFeatureCalculation
 from .strided_rolling import StridedRolling
+from ..function import FuncWrapper
 
-pickle.settings['recurse'] = True
+# TODO: Why is this?
+pickle.settings["recurse"] = True
+
+# Food for thought:
+#  - Create a subclass of pd.Series which enforces that the index is a DateTime?
+#  - Use time based slicing instead of number (of samples) based.
 
 
-class NumpyFeatureCalculationRegistry:
-    """Returns a DataFrame for each different win_size_s, stride_combination"""
+class Feature:
+    """A Feature object, containing all feature information."""
 
-    def __init__(self, features: List[NumpyFeatureCalculation] = None):
-        self.feature_registry = features if features is not None else []
+    def __init__(self, function: FuncWrapper, key: str, window: int, stride: int):
+        """Create a Feature object.
 
-    def append(self, feature: NumpyFeatureCalculation):
-        """Adds a feature to the registry"""
-        self.feature_registry.append(feature)
+        Parameters
+        ----------
+        function : FuncWrapper
+            The `function` that calculates this feature
+        key : str
+            The key (name) of the signal where this feature needs to be calculated on.
+        window : int
+            The window size on which this feature will be applied, expressed in the
+            number of sample from the input signal.
+        stride : int
+            The stride of the window rolling process, also as a number of samples of the
+            input signal.
 
-    def _create_win_stride_dict(self) -> Dict[Tuple[int, int], List[NumpyFeatureCalculation]]:
-        """Constructs a dict in which features with the same window and stride are clustered together """
-        win_stride_dict = {}
-        for feat in self.feature_registry:
-            w_s = feat.get_win_stride()
-            if w_s in win_stride_dict.keys():
-                win_stride_dict[w_s].append(feat)
-            else:
-                win_stride_dict[w_s] = [feat]
-        return win_stride_dict
 
-    def calculate_features(self, time_series_df: Union[pd.Series, pd.DataFrame], parallel: bool = True) \
-            -> Dict[Tuple[int, int], pd.DataFrame]:
-        """Calculates the features for a time_series indexed DataFrame
-
-        :param time_series_df: The time indexed series / DataFrame (containing one column)
-            for which the features are calculated
-        :param parallel: Boolean indicating whether the features should be calculated in parallel (over the functions)
-        :return: A dict with key a tuple of (window_size, stride) respectively and the DataFrame of calculated features
-            as value
+        Raises
+        ------
+        TypeError
+            Raise a TypeError when the `function` is not an instance of
+            FuncWrapper.
         """
-        # Order the features by win_stride and iterate over the various win_stride
-        win_stride_dict = self._create_win_stride_dict()
-        feat_dict = {}
-        for (win_size, stride), features in win_stride_dict.items():
-            df_feat = StridedRolling(time_series_df, window=win_size, stride=stride).apply_funcs(features, parallel)
-            feat_dict[(win_size, stride)] = df_feat
-        return feat_dict
+        self.key = key
+        self.window = window
+        self.stride = stride
+        if isinstance(function, FuncWrapper):
+            self.function = function
+        else:
+            raise TypeError(
+                "Expected feature function to be a `FuncWrapper` but is a {}.".format(
+                    type(function)
+                )
+            )
+        # The output of the feature (actual feature data)
+        self._output = None
+
+    @property
+    def output(self) -> pd.DataFrame:
+        """Get the output data for this feature.
+
+        Returns
+        -------
+        Dict[str, pd.Series]
+            The output data of this feature, the dict key are the expected outputs for
+            the feature and the items the actual Series.
+        """
+        return self._output
+
+    @output.setter
+    def output(self, output: pd.DataFrame):
+        # TODO check if the DataFrame columns match the expected FunctWrapper outputs.
+        self._output = output
 
     def __repr__(self) -> str:
-        repr_str = ""
-        for (win_size, stride), features in self._create_win_stride_dict().items():
-            repr_str += f"\twin: {win_size}, stride: {stride}: ["
-            repr_str += ''.join(['\n\t\t' + str(f) + ',  ' for f in features])
-            repr_str += '\n\t]\n'
-        return repr_str
+        """Representation of Feature."""
+        f_name = (
+            self.function
+            if isinstance(self.function, FuncWrapper)
+            else self.function.__name__
+        )
+        return (
+            f"{self.__class__.__name__}:"
+            f" ({self.key},{self.window},{self.stride},{str(f_name)})"
+        )
 
-    def __str__(self):
+    def __str__(self) -> str:
+        """Str of Feature."""
         return self.__repr__()
 
 
-class NumpyFeatureCalculationPipeline:
-    """Wrapper around the NumpyFeatureCalculationRegistry class
+class MultipleFeatures:
+    """Expands given feature parameter lists to multiple Feature objects."""
 
-    Supports functionality to calculate features for multiple signals
+    def __init__(
+        self,
+        signal_keys: List[str],
+        functions: Union[List[FuncWrapper], List[Callable]],
+        windows: List[int],
+        strides: List[int],
+    ):
+        """Create a MultipleFeatures object.
 
-    .. note::
-        This code will add a `__w=<win_size>_s=<stride>` suffix to the DataFrame if there are multiple unique
-        (win_size, stride) combinations
-    """
+        A list of features will be created with a combination of all the the given
+        parameter lists.
+        Parameters
+        ----------
+        signal_keys : List[str]
+            Signal keys
+        functions : Union[List[FuncWrapper], List[Callable]]
+            The functions
+        windows : List[int]
+            All the window sizes
+        strides : List[int]
+            The strides
 
-    def __init__(self, df_feature_wrappers: List[Tuple[str, NumpyFeatureCalculationRegistry]] = None,
-                 parallelize_registry=False):
         """
-        :param df_feature_wrappers: A list of feature calculation objects which implements the 'calculate_feature'
-            method and
-        :param parallelize_registry: As we can only apply parallelization on either
-                * the feature calculations array of the the NumpyFeatureCalculationRegistry objects
-                * fhe featureRegistries themselves
-                if True -> parallelization is performed over the latter,
-                Note that this will only be useful when there are multiple featureCalculation registries available
+        self.features = []
+        for function in functions:
+            for key in signal_keys:
+                for window in windows:
+                    for stride in strides:
+                        self.features.append(Feature(function, key, window, stride))
+
+
+class FeatureCollection:
+    """Collection of features to be calculated."""
+
+    # TODO Add support for numpy functions without NumpyFuncWrapper
+
+    def __init__(
+        self, features_list: Union[List[Feature], List[MultipleFeatures]] = None
+    ):
+        """Create a FeatureCollection.
+
+        Parameters
+        ----------
+        features_list : Union[List[Feature], List[MultipleFeatures]], optional
+            Initial list of Features to add to collection, by default None
         """
-        self.sig_feature_registry = df_feature_wrappers if df_feature_wrappers is not None else []
-        self.parallelize_registry = parallelize_registry
+        # The feature collection is a dict where the key is a tuple(str, int, int), the
+        # tuple values correspond to (signal_key, window, stride)
+        self._features_dict: Dict(tuple(str, int, int), List[Feature]) = {}
+        # A list of all the features, holds the same references as the dict above but
+        # is simply stored in another way
+        self._features_list: List[Feature] = []
+        if features_list:
+            self.add(features_list)
 
-    def append(self, sig_str: str, df_featurewrapper: NumpyFeatureCalculationRegistry) -> None:
-        self.sig_feature_registry.append((sig_str, df_featurewrapper))
+    def _get_collection_key(self, feature: Feature):
+        return (feature.key, feature.window, feature.stride)
 
-    @staticmethod
-    def _feature_wrapper_call(df_feature_wrapper, df_signals, parallel):
-        return df_feature_wrapper.calculate_features(df_signals, parallel)
+    def _add_feature(self, feature: Feature):
+        self._features_list.append(feature)
 
-    def __call__(self, df_dict: Dict[str, Union[pd.Series, pd.DataFrame]]) -> pd.DataFrame:
-        """Cal(l)culates the features"""
-        dfs, win_strides = [], []
-
-        # Convert the index of each df to pd.DateTime (as sanity check)
-        for sig_str, _ in self.sig_feature_registry:  # Ensuring correct type now avoid problems when merging dfs
-            df_dict[sig_str].index = pd.to_datetime(df_dict[sig_str].index)
-
-        if self.parallelize_registry:
-            with ProcessPool() as pool:
-                signal_dfs = [df_dict[sig_str] for sig_str, _ in self.sig_feature_registry]
-                df_feature_wrappers = [df_feat_wrapper for _, df_feat_wrapper in self.sig_feature_registry]
-                # https://pathos.readthedocs.io/en/latest/pathos.html#usage
-                out = pool.map(self._feature_wrapper_call, df_feature_wrappers, signal_dfs, [False] * len(signal_dfs))
-            for win_stride_df_feat_dict in out:
-                win_strides += list(win_stride_df_feat_dict.keys())
-                dfs += list(win_stride_df_feat_dict.values())
+        key = self._get_collection_key(feature)
+        if key in self._features_dict.keys():
+            self._features_dict[key].append(feature)
         else:
-            for sig_str, df_feature_wrapper in self.sig_feature_registry:
-                win_stride_df_feat_dict = df_feature_wrapper.calculate_features(df_dict[sig_str])
-                win_strides += list(win_stride_df_feat_dict.keys())
-                dfs += list(win_stride_df_feat_dict.values())
+            self._features_dict[key] = [feature]
 
-        # sort them on descending size & merge into participant DataFrame
-        dfs.sort(key=lambda x: x.shape[0], reverse=True)
-        df_tot = None
-        df: pd.DataFrame
-        nbr_win_strides = len(set(win_strides))
-        # print(f"win_strides {win_strides}\tnbr diverse: {nbr_win_strides}")
-        for df, (win, stride) in zip(dfs, win_strides):
-            if nbr_win_strides > 1:
-                df = df.add_suffix(suffix=f'__w={win}_s={stride}')
-            df_tot = df if df_tot is None else pd.merge_asof(left=df_tot, right=df, left_index=True, right_index=True,
-                                                             direction='nearest')
-        return df_tot
+    def add(self, features_list: Union[List[Feature], List[MultipleFeatures]]):
+        """Add a list of features to the FeatureCollection.
+
+        Parameters
+        ----------
+        features_list : Union[List[Feature], List[MultipleFeatures]]
+            List of features to add.
+        """
+        for feature in features_list:
+            if isinstance(feature, MultipleFeatures):
+                self.add(feature.features)
+            elif isinstance(feature, Feature):
+                self._add_feature(feature)
+
+    def calculate(self, signals: Union[List[pd.Series], pd.DataFrame]):
+        """Calculate features on the passed singals.
+
+        Parameters
+        ----------
+        signals : Union[List[pd.Series], pd.DataFrame]
+            Dataframe or Series list with all the required signals for the feature
+            calculation.
+
+        Raises
+        ------
+        KeyError
+            Raised when a needed key is not found in `signals`.
+        """
+        series_dict = dict()
+
+        if isinstance(signals, pd.DataFrame):
+            series_list = [signals[s] for s in signals.columns]
+        else:
+            series_list = signals
+
+        for s in series_list:
+            assert isinstance(s, pd.Series), "Error non pd.Series object passed"
+            series_dict[s.name] = s.copy()
+
+        # TODO add MultiProcessing
+        # For all the operation on the same stridedRolling object
+        for key in self._features_dict.keys():
+            try:
+                stroll = StridedRolling(series_dict[key[0]], key[1], key[2])
+            except KeyError:
+                raise KeyError("Key {} not found in series dict.".format(key[0]))
+
+            for feature in self._features_dict[key]:
+                if feature.output is None:
+                    print(f"Feature calculation: {feature}")
+                    df = stroll.apply_func(feature.function)
+                    feature.output = df
+
+    def get_results(self, merge_dfs=False) -> Union[List[pd.DataFrame], pd.DataFrame]:
+        """Return the feature outputs.
+
+        Parameters
+        ----------
+        merge_dfs : bool, optional
+            Whether the results should be merged to a DataFrame wiht an outer merge
+            , by default False
+
+        Returns
+        -------
+        Union[List[pd.DataFrame], pd.DataFrame]
+            A DataFrame or List of DataFrames with the features in it.
+        """
+        # TODO maybe support merge asof as before?
+        if merge_dfs:
+            merged_df = pd.DataFrame()
+            for feature in self._features_list:
+                out_df = feature.output
+                merged_df = pd.merge(
+                    left=merged_df,
+                    right=out_df,
+                    how="outer",
+                    left_index=True,
+                    right_index=True,
+                )
+            return merged_df
+        else:
+            results = list(map(lambda feature: feature.output, self._features_list))
+            return results
 
     def __repr__(self):
-        repr_str = ""
-        for sig, feat_registry in self.sig_feature_registry:
-            repr_str += f"{sig}: (\n" + str(feat_registry) + '\n)\n'
-        return repr_str
+        """Representation of FeatureCollection."""
+        return str(self._features_collection)
 
     def __str__(self):
+        """Str of the FeatureCollection."""
         return self.__repr__()

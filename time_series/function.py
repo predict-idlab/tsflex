@@ -17,6 +17,7 @@ from typing import List, Union, Callable
 import numpy as np
 
 
+# TODO: Naming is not good here
 class FuncWrapper(ABC):
     """Abstract class which extends a Callable function with additional logic (output col names, kwargs)"""
 
@@ -32,7 +33,8 @@ class FuncWrapper(ABC):
         col_names = func.__name__ if col_names is None else col_names
         self.col_names = [col_names] if isinstance(col_names, str) else col_names
 
-    def get_col_names(self) -> List[str]:
+    @property
+    def out_col_names(self) -> List[str]:
         return list(self.col_names)
 
     def __str__(self) -> str:
@@ -46,9 +48,12 @@ class FuncWrapper(ABC):
         """Executes the function, sub-classes must have implemented this method"""
         raise NotImplementedError
 
-
+# -> Something that works on a numpy array and returns a numpy array
+# Other useful concrete class?
+# -> Numeric func wrapper -> Always use Numpy
+# -> Categorical data (DNA sequence and you want to extract the most common one) -> CategoricalFuncWrapper -> Will currently not work with strided rolling. 
 class NumpyFuncWrapper(FuncWrapper):
-    """Function wrapper which takes a numpy array as input"""
+    """Function wrapper which takes a numpy array as input and returns a fixed number of columns."""
 
     def __call__(self, data: np.ndarray) -> np.ndarray:
         return self.func(data) if self.kwargs is None else self.func(data, **self.kwargs)
