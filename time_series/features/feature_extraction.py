@@ -14,7 +14,7 @@ import dill as pickle
 import pandas as pd
 
 from .strided_rolling import StridedRolling
-from ..function import FuncWrapper
+from ..function import NumpyFuncWrapper
 
 # TODO: Why is this?
 pickle.settings["recurse"] = True
@@ -27,12 +27,12 @@ pickle.settings["recurse"] = True
 class Feature:
     """A Feature object, containing all feature information."""
 
-    def __init__(self, function: FuncWrapper, key: str, window: int, stride: int):
+    def __init__(self, function: NumpyFuncWrapper, key: str, window: int, stride: int):
         """Create a Feature object.
 
         Parameters
         ----------
-        function : FuncWrapper
+        function : NumpyFuncWrapper
             The `function` that calculates this feature
         key : str
             The key (name) of the signal where this feature needs to be calculated on.
@@ -48,16 +48,16 @@ class Feature:
         ------
         TypeError
             Raise a TypeError when the `function` is not an instance of
-            FuncWrapper.
+            NumpyFuncWrapper.
         """
         self.key = key
         self.window = window
         self.stride = stride
-        if isinstance(function, FuncWrapper):
+        if isinstance(function, NumpyFuncWrapper):
             self.function = function
         else:
             raise TypeError(
-                "Expected feature function to be a `FuncWrapper` but is a {}.".format(
+                "Expected feature function to be a `NumpyFuncWrapper` but is a {}.".format(
                     type(function)
                 )
             )
@@ -85,7 +85,7 @@ class Feature:
         """Representation of Feature."""
         f_name = (
             self.function
-            if isinstance(self.function, FuncWrapper)
+            if isinstance(self.function, NumpyFuncWrapper)
             else self.function.__name__
         )
         return (
@@ -104,7 +104,7 @@ class MultipleFeatures:
     def __init__(
         self,
         signal_keys: List[str],
-        functions: Union[List[FuncWrapper], List[Callable]],
+        functions: Union[List[NumpyFuncWrapper], List[Callable]],
         windows: List[int],
         strides: List[int],
     ):
@@ -116,7 +116,7 @@ class MultipleFeatures:
         ----------
         signal_keys : List[str]
             Signal keys
-        functions : Union[List[FuncWrapper], List[Callable]]
+        functions : Union[List[NumpyFuncWrapper], List[Callable]]
             The functions
         windows : List[int]
             All the window sizes

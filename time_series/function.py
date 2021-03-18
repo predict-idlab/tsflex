@@ -1,59 +1,48 @@
-# -*- coding: utf-8 -*-
-"""
-    ************
-    function.py
-    ************
-    
-    Created at 14/06/20
+"""Object-oriented representation of a function."""
 
-    Object-oriented representation of a function
-"""
-
-__author__ = 'Jonas Van Der Donckt, Jeroen Van Der Donckt'
-
-from abc import ABC, abstractmethod
-from typing import List, Union, Callable
+__author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
 
 import numpy as np
 
+from typing import List, Union, Callable
 
-# TODO: Naming is not good here
-class FuncWrapper(ABC):
-    """Abstract class which extends a Callable function with additional logic (output col names, kwargs)"""
 
-    def __init__(self, func: Callable, col_names: Union[List[str], str] = None, **kwargs):
-        """Wraps a function and save the additional metadata
+class NumpyFuncWrapper:
+    """Numpy function wrapper.
 
-        :param func: The function which is wrapped
-        :param col_names: The output column names of the function
-        :param kwargs: The additional keyword arguments for the function
-        """
+    A Numpy function wrapper which takes a numpy array as input and returns a numpy
+    array. It also defines the names of the function outputs.
+    Parameters
+    ----------
+    func : Callable
+        The wrapped function.
+    output_names : Union[List[str], str], optional
+        The name of the outputs of the function, by default None
+    """
+
+    def __init__(
+        self, func: Callable, output_names: Union[List[str], str] = None, **kwargs
+    ):
+        """Create NumpyFuncWrapper instance."""
         self.func = func
         self.kwargs: dict = kwargs
-        col_names = func.__name__ if col_names is None else col_names
-        self.col_names = [col_names] if isinstance(col_names, str) else col_names
 
-    @property
-    def out_col_names(self) -> List[str]:
-        return list(self.col_names)
-
-    def __str__(self) -> str:
-        return f'{self.func.__name__} - kwargs: {self.kwargs} - col_names: {self.col_names}'
+        if isinstance(output_names, List):
+            self.output_names = output_names
+        elif isinstance(output_names, str):
+            self.output_names = [output_names]
+        elif not output_names:
+            self.output_names = [self.func.__name__]
+        else:
+            raise TypeError(f"`output_names` is unexpected type {type(output_names)}")
 
     def __repr__(self) -> str:
-        return self.__str__()
-
-    @abstractmethod
-    def __call__(self, data) -> any:
-        """Executes the function, sub-classes must have implemented this method"""
-        raise NotImplementedError
-
-# -> Something that works on a numpy array and returns a numpy array
-# Other useful concrete class?
-# -> Numeric func wrapper -> Always use Numpy
-# -> Categorical data (DNA sequence and you want to extract the most common one) -> CategoricalFuncWrapper -> Will currently not work with strided rolling. 
-class NumpyFuncWrapper(FuncWrapper):
-    """Function wrapper which takes a numpy array as input and returns a fixed number of columns."""
+        """Return repr string."""
+        return (
+            f"{self.__class__.__name__}({self.func.__name__}, {self.output_names},"
+            f" {self.kwargs})"
+        )
 
     def __call__(self, data: np.ndarray) -> np.ndarray:
-        return self.func(data) if self.kwargs is None else self.func(data, **self.kwargs)
+        """Call wrapped function with passed data."""
+        return self.func(data, **self.kwargs)
