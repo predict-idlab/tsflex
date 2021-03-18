@@ -10,14 +10,10 @@ __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
 from typing import List, Union, Callable, Dict
 
-import dill as pickle
 import pandas as pd
 
 from .strided_rolling import StridedRolling
 from ..function import NumpyFuncWrapper
-
-# TODO: Why is this?
-pickle.settings["recurse"] = True
 
 # Food for thought:
 #  - Create a subclass of pd.Series which enforces that the index is a DateTime?

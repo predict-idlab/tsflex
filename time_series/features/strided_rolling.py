@@ -11,13 +11,10 @@ __author__ = "Vic Degraeve, Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel D
 
 from typing import Union, Dict
 
-import dill as pickle
 import numpy as np
 import pandas as pd
 
 from ..function import NumpyFuncWrapper
-
-pickle.settings["recurse"] = True
 
 
 class StridedRolling:
