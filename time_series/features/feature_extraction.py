@@ -57,9 +57,8 @@ class Feature:
             self.function = function
         else:
             raise TypeError(
-                "Expected feature function to be a `NumpyFuncWrapper` but is a {}.".format(
-                    type(function)
-                )
+                "Expected feature function to be a `NumpyFuncWrapper` but is a"
+                f" {type(function)}."
             )
         # The output of the feature (actual feature data)
         self._output = None
@@ -82,20 +81,11 @@ class Feature:
         self._output = output
 
     def __repr__(self) -> str:
-        """Representation of Feature."""
-        f_name = (
-            self.function
-            if isinstance(self.function, NumpyFuncWrapper)
-            else self.function.__name__
-        )
+        """Representation string of Feature."""
         return (
-            f"{self.__class__.__name__}:"
-            f" ({self.key},{self.window},{self.stride},{str(f_name)})"
+            f"{self.__class__.__name__}({self.key}, {self.window}, {self.stride},"
+            f" {self.function}, {self.output})"
         )
-
-    def __str__(self) -> str:
-        """Str of Feature."""
-        return self.__repr__()
 
 
 class MultipleFeatures:
@@ -253,9 +243,8 @@ class FeatureCollection:
             return results
 
     def __repr__(self):
-        """Representation of FeatureCollection."""
-        return str(self._features_collection)
-
-    def __str__(self):
-        """Str of the FeatureCollection."""
-        return self.__repr__()
+        """Representation string of FeatureCollection."""
+        repr_string = f"{self.__class__.__name__}(\n"
+        for feature in self._features_list:
+            repr_string += f"\t{repr(feature)} \n"
+        return repr_string + ')'
