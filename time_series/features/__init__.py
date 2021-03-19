@@ -2,7 +2,8 @@
 
 __author__ = 'Jonas Van Der Donckt, Emiel Deprost'
 
-from .feature_extraction import Feature, FeatureCollection, MultipleFeatures
+from .feature import Feature, MultipleFeatures
+from .feature_collection import FeatureCollection
 from .function_wrapper import NumpyFuncWrapper
 
 __all__ = [Feature, FeatureCollection, MultipleFeatures, NumpyFuncWrapper]
