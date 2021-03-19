@@ -3,6 +3,6 @@
 __author__ = 'Jonas Van Der Donckt, Emiel Deprost'
 
 from .feature_extraction import Feature, FeatureCollection, MultipleFeatures
-from .strided_rolling import StridedRolling
+from .function_wrapper import NumpyFuncWrapper
 
-__all__ = [Feature, FeatureCollection, MultipleFeatures, StridedRolling]
+__all__ = [Feature, FeatureCollection, MultipleFeatures, NumpyFuncWrapper]

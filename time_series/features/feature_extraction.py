@@ -13,7 +13,7 @@ from typing import List, Union, Callable, Dict
 import pandas as pd
 
 from .strided_rolling import StridedRolling
-from ..function import NumpyFuncWrapper
+from .function_wrapper import NumpyFuncWrapper
 
 # Food for thought:
 #  - Create a subclass of pd.Series which enforces that the index is a DateTime?

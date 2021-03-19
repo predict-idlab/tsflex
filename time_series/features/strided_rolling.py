@@ -14,7 +14,7 @@ from typing import Union, Dict
 import numpy as np
 import pandas as pd
 
-from ..function import NumpyFuncWrapper
+from .function_wrapper import NumpyFuncWrapper
 
 
 class StridedRolling:
