@@ -25,8 +25,3 @@ def dataframe_to_series_dict(df: pd.DataFrame) -> Dict[str, pd.Series]:
 def series_to_series_dict(series: pd.Series) -> Dict[str, pd.Series]:
     assert series.name is not None, "Series must have a name in order to get a key!"
     return {series.name: series}
-
-
-# def check_eq_na(s1: pd.Series, s2: pd.Series) -> bool:
-#     """Checks whether given series are equal while being robust against NANs."""
-#     return all((s1 ==  s1) | (s1.isna() &  s2.isna()))
