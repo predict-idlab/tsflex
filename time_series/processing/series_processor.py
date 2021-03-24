@@ -134,7 +134,7 @@ class SeriesProcessor:
         return (
             self.func(requested_dict, **self.kwargs)
             if self.kwargs is not None
-            else self.func(series_dict)
+            else self.func(requested_dict)
         )
 
     def __repr__(self):
