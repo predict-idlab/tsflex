@@ -106,7 +106,7 @@ class SeriesProcessor:
         Parameters
         ----------
         series_dict : Dict[str, pd.Series]
-            A dict of pandas signals containing the signals that need to be processed.
+            A dict of pandas signals containing the signals that neet to be processed.
 
         Returns
         -------
@@ -190,10 +190,7 @@ class SeriesProcessorPipeline:
         self.processing_registry.append(processor)
 
     def __call__(
-        self,
-        signals: Union[List[pd.Series], pd.DataFrame],
-        return_all_signals=True,
-        return_df=True,
+        self, signals: Union[List[pd.Series], pd.DataFrame], return_df=True
     ) -> Union[Dict[str, pd.Series], pd.DataFrame]:
         """Execute all `SeriesProcessor` obects in pipeline sequentially.
 
@@ -204,11 +201,6 @@ class SeriesProcessorPipeline:
         signals : Union[List[pd.Series], pd.DataFrame]
             The signals on which the preprocessing steps will be executed. The signals
             need a datetime index.
-        return_all_signals : bool, default: True
-            Whether the output needs to return all the signals. If `True` the output
-            will contain all signals that were passed to this method. If `False` the
-            output will contain just the required signals (see 
-            `get_all_required_signals`).
         return_df : bool, default: True
             Wether the output needs to be a series dict or a DataFrame. If `True` the
             output series will be combined to a DataFrame with an outer merge,
@@ -228,19 +220,13 @@ class SeriesProcessorPipeline:
         series_dict = dict()
 
         if type(signals) == pd.DataFrame:
-            series_list = [signals[c] for c in signals.columns]
+            series_list = [signals[s] for s in self.get_all_required_signals()]
         else:
             series_list = signals
 
         for s in series_list:
             assert type(s) == pd.Series, "Error non pd.Series object passed"
-            if not return_all_signals:
-                # If just the required signals have to be returned
-                if s.name in self.get_all_required_signals():
-                    series_dict[s.name] = s.copy()
-            else:
-                # If all the signals have to be returned
-                series_dict[s.name] = s.copy()
+            series_dict[s.name] = s.copy()
 
         for processor in self.processing_registry:
             try:
