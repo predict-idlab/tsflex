@@ -58,25 +58,25 @@ def test_dataframe_func_decorator(dummy_data):
         return df.dropna()
 
     # Insert some NANs into the dummy_data
-    assert np.all(~pd.isna(dummy_data))
+    assert not np.any(pd.isna(dummy_data))  # Check that there are no NANs present
     dummy_data.iloc[:10] = pd.NA
 
     # Undecorated datframe function
     dataframe_f = drop_nans
-    assert not np.all(~pd.isna(dummy_data))
+    assert np.any(pd.isna(dummy_data))  # Check if there are some NANs present
     res = dataframe_f(dummy_data)
     assert isinstance(res, pd.DataFrame)
     assert res.shape == (dummy_data.shape[0] - 10,) + dummy_data.shape[1:]
-    assert np.all(~pd.isna(res))
+    assert not np.any(pd.isna(res))  # Check that there are no NANs present
 
     # Decorated datframe function
     decorated_dataframe_f = drop_nans_decorated
-    assert not np.all(~pd.isna(dummy_data))
+    assert np.any(pd.isna(dummy_data))  # Check if there are some NANs present
     series_dict = dataframe_to_series_dict(dummy_data)
     res = decorated_dataframe_f(series_dict)
     assert isinstance(res, pd.DataFrame)  # TODO: WHY NOT RETURN A SERIES DICT?
     assert res.shape == (dummy_data.shape[0] - 10,) + dummy_data.shape[1:]
-    assert np.all(~pd.isna(res))
+    assert not np.any(pd.isna(res))  # Check that there are no NANs present
 
 
 ## SeriesProcessor
@@ -87,7 +87,8 @@ def test_single_signal_series_processor(dummy_data):
     def to_binary(series, thresh_value):
         return series.map(lambda eda: eda > thresh_value)
 
-    series_processor = SeriesProcessor(["EDA"], func=to_binary, thresh_value=0.6)
+    thresh = 0.6
+    series_processor = SeriesProcessor(["EDA"], func=to_binary, thresh_value=thresh)
     series_dict = dataframe_to_series_dict(dummy_data)
     res = series_processor(series_dict)
 
@@ -96,8 +97,8 @@ def test_single_signal_series_processor(dummy_data):
     assert isinstance(res["EDA"], pd.Series)
     assert res["EDA"].shape == dummy_data["EDA"].shape
 
-    assert all(res["EDA"][dummy_data["EDA"] <= 0.6] == False)
-    assert all(res["EDA"][dummy_data["EDA"] > 0.6] == True)
+    assert all(res["EDA"][dummy_data["EDA"] <= thresh] == False)
+    assert all(res["EDA"][dummy_data["EDA"] > thresh] == True)
 
 
 def test_multi_signal_series_processor(dummy_data):
@@ -108,7 +109,11 @@ def test_multi_signal_series_processor(dummy_data):
         h_thresh = np.percentile(series, h_perc * 100)
         return series.clip(l_thresh, h_thresh)
 
-    series_processor = SeriesProcessor(["EDA", "TMP"], func=percentile_clip)
+    lower = 0.02
+    upper = 0.99  # The default value => do not pass
+    series_processor = SeriesProcessor(
+        ["EDA", "TMP"], func=percentile_clip, l_perc=lower
+    )
     series_dict = dataframe_to_series_dict(dummy_data)
     res = series_processor(series_dict)
 
@@ -119,10 +124,10 @@ def test_multi_signal_series_processor(dummy_data):
     assert res["EDA"].shape == dummy_data["EDA"].shape
     assert res["TMP"].shape == dummy_data["TMP"].shape
 
-    assert min(res["EDA"]) == dummy_data["EDA"].quantile(0.01)
-    assert max(res["EDA"]) == dummy_data["EDA"].quantile(0.99)
-    assert min(res["TMP"]) == dummy_data["TMP"].quantile(0.01)
-    assert max(res["TMP"]) == dummy_data["TMP"].quantile(0.99)
+    assert min(res["EDA"]) == dummy_data["EDA"].quantile(lower)
+    assert max(res["EDA"]) == dummy_data["EDA"].quantile(upper)
+    assert min(res["TMP"]) == dummy_data["TMP"].quantile(lower)
+    assert max(res["TMP"]) == dummy_data["TMP"].quantile(upper)
 
 
 ## SeriesProcessorPipeline
@@ -139,7 +144,7 @@ def test_single_signal_series_processor_pipeline(dummy_data):
 
     inp = dummy_data.copy()
     inp.loc[inp["TMP"] > 31.5, "TMP"] = pd.NA
-    assert any(inp["TMP"].isna())
+    assert any(inp["TMP"].isna())  # Check that there are some NANs present
     processing_pipeline = SeriesProcessorPipeline(
         [
             SeriesProcessor(["TMP"], func=interpolate),
@@ -158,13 +163,17 @@ def test_single_signal_series_processor_pipeline(dummy_data):
     assert res_dict_req.keys() == set(["TMP"])
     assert res_df_req.columns == ["TMP"]
 
-    assert len(res_dict_all["TMP"]) < len(dummy_data)
-    assert len(res_dict_req["TMP"]) < len(dummy_data)
-    assert (len(res_df_all) == len(dummy_data)) & (len(res_df_req) < len(dummy_data))
-
-    assert all(~res_df_req["TMP"].isna())
-    assert all(~res_dict_all["TMP"].isna()) & all(~res_dict_req["TMP"].isna())
-    # NaNs get introduced when merging to df
+    # Check if length is smaller because NANs were removed
+    assert len(res_df_req) < len(dummy_data) # Because only required signals returned
+    assert len(res_dict_all["TMP"]) < len(dummy_data) # Because no df
+    assert len(res_dict_req["TMP"]) < len(dummy_data) # Because no df
+    # When merging all signals to df, the length should be the original length
+    assert len(res_df_all) == len(dummy_data)
+    
+    # Check that there are no NANs present
+    assert not any(res_df_req["TMP"].isna())
+    assert (~any(res_dict_all["TMP"].isna())) & (~any(res_dict_req["TMP"].isna()))
+    # NaNs get introduced when merging all signalsto df
     assert any(res_df_all["TMP"].isna())
 
     assert all(res_df_all["TMP"].dropna().values == res_dict_all["TMP"])
@@ -190,10 +199,12 @@ def test_multi_signal_series_processor_pipeline(dummy_data):
     inp.loc[inp["TMP"] > 31.5, "TMP"] = pd.NA
     assert any(inp["TMP"].isna())
     assert all(~inp["EDA"].isna())
+    lower = 0.02
+    upper = 0.99  # The default value => do not pass
     processing_pipeline = SeriesProcessorPipeline(
         [
-            SeriesProcessor(["TMP"], func=drop_nans),  # TODO -> on 1 sig fails
-            SeriesProcessor(["TMP", "EDA"], func=percentile_clip),
+            SeriesProcessor(["TMP"], func=drop_nans),
+            SeriesProcessor(["TMP", "EDA"], func=percentile_clip, l_perc=lower),
         ]
     )
     res_dict_all = processing_pipeline(inp, return_all_signals=True, return_df=False)
@@ -208,22 +219,28 @@ def test_multi_signal_series_processor_pipeline(dummy_data):
     assert res_dict_req.keys() == set(["TMP", "EDA"])
     assert set(res_df_req.columns) == set(["TMP", "EDA"])
 
-    assert len(res_dict_all["TMP"]) < len(dummy_data)
-    assert len(res_dict_req["TMP"]) < len(dummy_data)
+    # Check if length is smaller because NANs were removed 
+    assert len(res_dict_all["TMP"]) < len(dummy_data) # Because no df
+    assert len(res_dict_req["TMP"]) < len(dummy_data) # Because no df
+    # When merging to df, the length should be the original length
     assert (len(res_df_all) == len(dummy_data)) & (len(res_df_req) == len(dummy_data))
 
-    assert all(~res_dict_all["TMP"].isna()) & all(~res_dict_req["TMP"].isna())
+    # Check if there are no NANs present (only valid if return_df=False)
+    assert (~any(res_dict_all["TMP"].isna())) & (~any(res_dict_req["TMP"].isna()))
     # NaNs get introduced when merging to df
     assert any(res_df_all["TMP"].isna()) & any(res_df_req["TMP"].isna())
 
-    assert all(res_dict_req["TMP"] == res_dict_all["TMP"])
+    assert all(res_dict_req["TMP"] == res_dict_all["TMP"]) # Check dict_req == dict_all
+    # Check the rest against all dict_all
+    # Drop NANs for df because they got introduced when merging to df
     assert all(res_df_all["TMP"].dropna().values == res_dict_all["TMP"])
     assert all(res_df_req["TMP"].dropna().values == res_dict_all["TMP"])
-    assert all(res_dict_req["EDA"] == res_dict_all["EDA"])
+    assert all(res_dict_req["EDA"] == res_dict_all["EDA"]) # Check dict_req == dict_all
+    # Check the rest against all dict_all
     assert all(res_df_all["EDA"] == res_dict_all["EDA"])
     assert all(res_df_req["EDA"] == res_dict_all["EDA"])
 
-    assert min(res_dict_all["EDA"]) == dummy_data["EDA"].quantile(0.01)
-    assert max(res_dict_all["EDA"]) == dummy_data["EDA"].quantile(0.99)
-    assert min(res_dict_all["TMP"]) == inp["TMP"].quantile(0.01)
-    assert max(res_dict_all["TMP"]) == inp["TMP"].quantile(0.99)
+    assert min(res_dict_all["EDA"]) == dummy_data["EDA"].quantile(lower)
+    assert max(res_dict_all["EDA"]) == dummy_data["EDA"].quantile(upper)
+    assert min(res_dict_all["TMP"]) == inp["TMP"].quantile(lower)
+    assert max(res_dict_all["TMP"]) == inp["TMP"].quantile(upper)

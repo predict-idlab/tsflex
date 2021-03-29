@@ -16,10 +16,7 @@ def dummy_data() -> pd.DataFrame:
 
 
 def dataframe_to_series_dict(df: pd.DataFrame) -> Dict[str, pd.Series]:
-    output_dict = dict()
-    for col in df.columns:
-        output_dict[col] = df[col]
-    return output_dict
+    return {col: df[col] for col in df.columns}
 
 
 def series_to_series_dict(series: pd.Series) -> Dict[str, pd.Series]:
