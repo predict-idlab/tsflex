@@ -2,9 +2,9 @@
 
 __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
 
-import numpy as np
-
 from typing import List, Union, Callable
+
+import numpy as np
 
 
 class NumpyFuncWrapper:
@@ -12,22 +12,24 @@ class NumpyFuncWrapper:
 
     A Numpy function wrapper which takes a numpy array as input and returns a numpy
     array. It also defines the names of the function outputs.
+
     Parameters
     ----------
     func : Callable
         The wrapped function.
     output_names : Union[List[str], str], optional
         The name of the outputs of the function, by default None
+
     """
 
     def __init__(
-        self, func: Callable, output_names: Union[List[str], str] = None, **kwargs
+            self, func: Callable, output_names: Union[List[str], str] = None, **kwargs
     ):
         """Create NumpyFuncWrapper instance."""
         self.func = func
         self.kwargs: dict = kwargs
 
-        if isinstance(output_names, List):
+        if isinstance(output_names, list):
             self.output_names = output_names
         elif isinstance(output_names, str):
             self.output_names = [output_names]

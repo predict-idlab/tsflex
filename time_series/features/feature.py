@@ -1,8 +1,9 @@
 """Contains Feature and MultipleFeature class."""
 
-import pandas as pd
+import itertools
+from typing import Callable, List, Union
 
-from typing import List, Union, Callable
+import pandas as pd
 
 from .function_wrapper import NumpyFuncWrapper
 
@@ -11,23 +12,23 @@ class Feature:
     """A Feature object, containing all feature information."""
 
     def __init__(
-        self,
-        function: Union[NumpyFuncWrapper, Callable],
-        key: str,
-        window: int,
-        stride: int,
+            self,
+            function: Union[NumpyFuncWrapper, Callable],
+            key: str,
+            window: int,
+            stride: int,
     ):
         """Create a Feature object.
 
         Parameters
         ----------
         function : Union[NumpyFuncWrapper, Callable]
-            The `function` that calculates this feature
+            The `function` that calculates this feature.
         key : str
             The key (name) of the signal where this feature needs to be calculated on.
         window : int
             The window size on which this feature will be applied, expressed in the
-            number of sample from the input signal.
+            number of samples from the input signal.
         stride : int
             The stride of the window rolling process, also as a number of samples of the
             input signal.
@@ -38,6 +39,7 @@ class Feature:
         TypeError
             Raise a TypeError when the `function` is not an instance of
             NumpyFuncWrapper.
+
         """
         self.key = key
         self.window = window
@@ -53,6 +55,7 @@ class Feature:
                 "Expected feature function to be a `NumpyFuncWrapper` but is a"
                 f" {type(function)}."
             )
+
         # The output of the feature (actual feature data)
         self._output = None
 
@@ -60,17 +63,25 @@ class Feature:
     def output(self) -> pd.DataFrame:
         """Get the output data for this feature.
 
+        Todo
+        ----
+        Look into trade-off of storing output data in a Dict[str, pd.DataFrame].
+        This will most likely imply that the `apply_func` method of the StridedRolling
+        class needs also to be changed.
+
         Returns
         -------
-        Dict[str, pd.Series]
-            The output data of this feature, the dict key are the expected outputs for
-            the feature and the items the actual Series.
+        pd.DataFrame
+            The output data of this Feature, stored in a DataFrame.
+            The DataFrame's column-names have the format:
+                `<signal_col_name>_<feature_name>__w=<window>_s=<stride>`.
+
         """
         return self._output
 
     @output.setter
     def output(self, output: pd.DataFrame):
-        # TODO check if the DataFrame columns match the expected FunctWrapper outputs.
+        # TODO check if the DataFrame columns match the expected FuncWrapper outputs.
         self._output = output
 
     def __repr__(self) -> str:
@@ -82,35 +93,35 @@ class Feature:
 
 
 class MultipleFeatures:
-    """Create multiple Feature objects ."""
+    """Create multiple Feature objects."""
 
     def __init__(
-        self,
-        signal_keys: List[str],
-        functions: List[Union[NumpyFuncWrapper, Callable]],
-        windows: List[int],
-        strides: List[int],
+            self,
+            signal_keys: List[str],
+            functions: List[Union[NumpyFuncWrapper, Callable]],
+            windows: List[int],
+            strides: List[int],
     ):
         """Create a MultipleFeatures object.
 
-        Create a list of feature from the combination of all the the given parameter
+        Create a list of features from **all** combinations of the given parameter
         lists. Total number of created Features will be:
         len(keys)*len(functions)*len(windows)*len(strides).
+
         Parameters
         ----------
         signal_keys : List[str]
-            Signal keys
-        functions : Union[List[NumpyFuncWrapper], List[Callable]]
-            The functions
+            All the signal keys.
+        functions : List[Union[NumpyFuncWrapper, Callable]]
+            The functions, can be either of both types (even in a single array).
         windows : List[int]
-            All the window sizes
+            All the window sizes.
         strides : List[int]
-            The strides
+            All the strides.
 
         """
         self.features = []
-        for function in functions:
-            for key in signal_keys:
-                for window in windows:
-                    for stride in strides:
-                        self.features.append(Feature(function, key, window, stride))
+        # iterate over all combinations
+        combinations = [functions, signal_keys, windows, strides]
+        for function, key, window, stride in itertools.product(*combinations):
+            self.features.append(Feature(function, key, window, stride))

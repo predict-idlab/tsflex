@@ -4,7 +4,7 @@ __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
 import pandas as pd
 
-from typing import List, Union, Dict
+from typing import List, Union, Dict, Tuple
 
 from .strided_rolling import StridedRolling
 from .feature import Feature, MultipleFeatures
@@ -14,7 +14,7 @@ class FeatureCollection:
     """Collection of features to be calculated."""
 
     def __init__(
-        self, features_list: Union[List[Feature], List[MultipleFeatures]] = None
+            self, features_list: Union[List[Feature], List[MultipleFeatures]] = None
     ):
         """Create a FeatureCollection.
 
@@ -22,18 +22,20 @@ class FeatureCollection:
         ----------
         features_list : Union[List[Feature], List[MultipleFeatures]], optional
             Initial list of Features to add to collection, by default None
+
         """
         # The feature collection is a dict where the key is a tuple(str, int, int), the
         # tuple values correspond to (signal_key, window, stride)
-        self._features_dict: Dict(tuple(str, int, int), List[Feature]) = {}
+        self._features_dict: Dict[Tuple[str, int, int], List[Feature]] = {}
         # A list of all the features, holds the same references as the dict above but
         # is simply stored in another way
         self._features_list: List[Feature] = []
         if features_list:
             self.add(features_list)
 
-    def _get_collection_key(self, feature: Feature):
-        return (feature.key, feature.window, feature.stride)
+    @staticmethod
+    def _get_collection_key(feature: Feature):
+        return feature.key, feature.window, feature.stride
 
     def _add_feature(self, feature: Feature):
         self._features_list.append(feature)
@@ -51,6 +53,7 @@ class FeatureCollection:
         ----------
         features_list : Union[List[Feature], List[MultipleFeatures]]
             List of features to add.
+
         """
         for feature in features_list:
             if isinstance(feature, MultipleFeatures):
@@ -59,7 +62,7 @@ class FeatureCollection:
                 self._add_feature(feature)
 
     def calculate(self, signals: Union[List[pd.Series], pd.DataFrame]):
-        """Calculate features on the passed singals.
+        """Calculate features on the passed signals.
 
         Parameters
         ----------
@@ -71,6 +74,7 @@ class FeatureCollection:
         ------
         KeyError
             Raised when a needed key is not found in `signals`.
+
         """
         series_dict = dict()
 
@@ -84,14 +88,16 @@ class FeatureCollection:
             series_dict[s.name] = s.copy()
 
         # TODO add MultiProcessing
-        # For all the operation on the same stridedRolling object
-        for key in self._features_dict.keys():
+        #   Won't be that easy as we save the output ...
+        # For all operations on the same stridedRolling object
+        for signal_key, win, stride in self._features_dict.keys():
             try:
-                stroll = StridedRolling(series_dict[key[0]], key[1], key[2])
+                stroll = StridedRolling(series_dict[signal_key], win, stride)
             except KeyError:
-                raise KeyError("Key {} not found in series dict.".format(key[0]))
+                raise KeyError(f"Key {signal_key} not found in series dict.")
 
-            for feature in self._features_dict[key]:
+            for feature in self._features_dict[(signal_key, win, stride)]:
+                # TODO -> this needs to be fixed!!
                 if feature.output is None:
                     print(f"Feature calculation: {feature}")
                     df = stroll.apply_func(feature.function)
@@ -103,8 +109,8 @@ class FeatureCollection:
         Parameters
         ----------
         merge_dfs : bool, optional
-            Whether the results should be merged to a DataFrame wiht an outer merge
-            , by default False
+            Whether the results should be merged to a DataFrame with an outer merge,
+            by default False
 
         Returns
         -------
@@ -125,7 +131,7 @@ class FeatureCollection:
                 )
             return merged_df
         else:
-            results = list(map(lambda feature: feature.output, self._features_list))
+            results = list(map(lambda ft: ft.output, self._features_list))
             return results
 
     def __repr__(self):
@@ -133,4 +139,4 @@ class FeatureCollection:
         repr_string = f"{self.__class__.__name__}(\n"
         for feature in self._features_list:
             repr_string += f"\t{repr(feature)} \n"
-        return repr_string + ')'
+        return repr_string + ")"

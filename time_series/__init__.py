@@ -13,12 +13,12 @@ from .processing import (
 )
 
 __all__ = [
-    Feature,
-    MultipleFeatures,
-    FeatureCollection,
-    NumpyFuncWrapper,
-    SeriesProcessor,
-    SeriesProcessorPipeline,
-    dataframe_func,
-    single_series_func,
+    "Feature",
+    "MultipleFeatures",
+    "FeatureCollection",
+    "NumpyFuncWrapper",
+    "SeriesProcessor",
+    "SeriesProcessorPipeline",
+    "dataframe_func",
+    "single_series_func",
 ]
