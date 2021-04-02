@@ -3,22 +3,20 @@
 import itertools
 from typing import Callable, List, Union
 
-import pandas as pd
-
 from .function_wrapper import NumpyFuncWrapper
 
 
-class Feature:
-    """A Feature object, containing all feature information."""
+class FeatureDescription:
+    """A FeatureDescription object, containing all feature information."""
 
     def __init__(
-            self,
-            function: Union[NumpyFuncWrapper, Callable],
-            key: str,
-            window: int,
-            stride: int,
+        self,
+        function: Union[NumpyFuncWrapper, Callable],
+        key: str,
+        window: int,
+        stride: int,
     ):
-        """Create a Feature object.
+        """Create a FeatureDescription object.
 
         Parameters
         ----------
@@ -56,53 +54,24 @@ class Feature:
                 f" {type(function)}."
             )
 
-        # The output of the feature (actual feature data)
-        self._output = None
-
-    @property
-    def output(self) -> pd.DataFrame:
-        """Get the output data for this feature.
-
-        Todo
-        ----
-        Look into trade-off of storing output data in a Dict[str, pd.DataFrame].
-        This will most likely imply that the `apply_func` method of the StridedRolling
-        class needs also to be changed.
-
-        Returns
-        -------
-        pd.DataFrame
-            The output data of this Feature, stored in a DataFrame.
-            The DataFrame's column-names have the format:
-                `<signal_col_name>_<feature_name>__w=<window>_s=<stride>`.
-
-        """
-        return self._output
-
-    @output.setter
-    def output(self, output: pd.DataFrame):
-        # TODO check if the DataFrame columns match the expected FuncWrapper outputs.
-        self._output = output
-
     def __repr__(self) -> str:
         """Representation string of Feature."""
         return (
-            f"{self.__class__.__name__}({self.key}, {self.window}, {self.stride},"
-            f" {self.function}, {self.output})"
+            f"{self.__class__.__name__}({self.key}, {self.window}, {self.stride})"
         )
 
 
-class MultipleFeatures:
+class MultipleFeatureDescriptions:
     """Create multiple Feature objects."""
 
     def __init__(
-            self,
-            signal_keys: List[str],
-            functions: List[Union[NumpyFuncWrapper, Callable]],
-            windows: List[int],
-            strides: List[int],
+        self,
+        signal_keys: List[str],
+        functions: List[Union[NumpyFuncWrapper, Callable]],
+        windows: List[int],
+        strides: List[int],
     ):
-        """Create a MultipleFeatures object.
+        """Create a MultipleFeatureDescriptions object.
 
         Create a list of features from **all** combinations of the given parameter
         lists. Total number of created Features will be:
@@ -120,8 +89,10 @@ class MultipleFeatures:
             All the strides.
 
         """
-        self.features = []
+        self.feature_descriptions = []
         # iterate over all combinations
         combinations = [functions, signal_keys, windows, strides]
         for function, key, window, stride in itertools.product(*combinations):
-            self.features.append(Feature(function, key, window, stride))
+            self.feature_descriptions.append(
+                FeatureDescription(function, key, window, stride)
+            )

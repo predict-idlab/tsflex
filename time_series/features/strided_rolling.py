@@ -52,7 +52,7 @@ class StridedRolling:
         Returns:
         -------
         Dict[str, np.ndarray]
-            A `dict` with the column-name as key, and the corresponding expanded 
+            A `dict` with the column-name as key, and the corresponding expanded
             series as value.
         """
         return self._strided_vals
@@ -60,7 +60,7 @@ class StridedRolling:
     # Make this the __call__ method
     def apply_func(
             self, np_func: NumpyFuncWrapper, return_df=True
-    ) -> Union[Dict[str, list], pd.DataFrame]:
+    ) -> pd.DataFrame:
         """Apply a function to the expanded time-series.
 
         Parameters
@@ -73,8 +73,8 @@ class StridedRolling:
 
         Returns
         -------
-        Union[Dict[str, list], pd.DataFrame]
-            Either the merged output of the function applied to every column in a
+        pd.DataFrame
+            The merged output of the function applied to every column in a
             new DataFrame or a dict. The DataFrame's column-names have the format:
                 `<signal_col_name>_<feature_name>__w=<window>_s=<stride>`.
 
@@ -94,10 +94,7 @@ class StridedRolling:
                     feat_out[
                         f"{col}_{feat_names[col_idx]}__w={self.window}_s={self.stride}"
                     ] = out[:, col_idx]
-        if return_df:
-            return pd.DataFrame(index=self.time_indexes, data=feat_out)
-        else:
-            return feat_out
+        return pd.DataFrame(index=self.time_indexes, data=feat_out)
 
 
 def sliding_window(series: pd.Series, window: int, stride=1, axis=-1) -> np.ndarray:
