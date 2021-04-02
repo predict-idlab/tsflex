@@ -1,4 +1,4 @@
-"""Time Series lib, tool for processing and feature extractio in time series."""
+"""Time Series lib, tool for processing and feature extraction in time series."""
 __author__ = "Jonas Van Der Donckt"
 
 from .features.feature import Feature, MultipleFeatures
