@@ -4,8 +4,10 @@ __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
 import pandas as pd
 
-from typing import List, Union, Dict, Tuple
+from typing import List, Union, Dict, Tuple, Iterator
+from multiprocessing import Pool
 
+from ..features.function_wrapper import NumpyFuncWrapper
 from .strided_rolling import StridedRolling
 from .feature import FeatureDescription, MultipleFeatureDescriptions
 
@@ -71,8 +73,30 @@ class FeatureCollection:
             elif isinstance(feature, FeatureDescription):
                 self._add_feature(feature)
 
+    @staticmethod
+    def _executor(stroll: StridedRolling, function: NumpyFuncWrapper):
+        return stroll.apply_func(function)
+
+    def _stroll_feature_generator(
+        self, series_dict: Dict[str, pd.Series]
+    ) -> Iterator[Tuple[StridedRolling, NumpyFuncWrapper]]:
+        # We could also make the StridedRolling creation multithreaded
+        # Another possible option to speed up this creations by making this lazy
+        # and only creating it upon calling.
+        for signal_key, win, stride in self._feature_desc_dict.keys():
+            try:
+                stroll = StridedRolling(series_dict[signal_key], win, stride)
+            except KeyError:
+                raise KeyError(f"Key {signal_key} not found in series dict.")
+
+            for feature in self._feature_desc_dict[(signal_key, win, stride)]:
+                yield (stroll, feature.function)
+
     def calculate(
-        self, signals: Union[List[pd.Series], pd.DataFrame], merge_dfs=False
+        self,
+        signals: Union[List[pd.Series], pd.DataFrame],
+        merge_dfs=False,
+        njobs=None,
     ) -> Union[List[pd.DataFrame], pd.DataFrame]:
         """Calculate features on the passed signals.
 
@@ -84,6 +108,9 @@ class FeatureCollection:
         merge_dfs : bool, optional
             Whether the results should be merged to a DataFrame with an outer merge,
             by default False
+        njobs : int, optional
+            The number of processes used for the feature calculation. If `None`, then
+            the nubmer returned by `os.cpu_count()` is used, by default None.
 
         Returns
         -------
@@ -105,22 +132,16 @@ class FeatureCollection:
 
         for s in series_list:
             assert isinstance(s, pd.Series), "Error non pd.Series object passed"
-            series_dict[s.name] = s.copy()
+            series_dict[s.name] = s
 
-        # TODO add MultiProcessing
-        #   Won't be that easy as we save the output ...
-        # For all operations on the same stridedRolling object
         calculated_feature_list: List[pd.DataFrame] = []
-        for signal_key, win, stride in self._feature_desc_dict.keys():
-            try:
-                stroll = StridedRolling(series_dict[signal_key], win, stride)
-            except KeyError:
-                raise KeyError(f"Key {signal_key} not found in series dict.")
 
-            for feature in self._feature_desc_dict[(signal_key, win, stride)]:
-                print(f"Feature calculation: {feature}")
-                df = stroll.apply_func(feature.function)
-                calculated_feature_list.append(df)
+        with Pool(processes=njobs) as pool:
+            calculated_feature_list.extend(
+                pool.starmap(
+                    self._executor, self._stroll_feature_generator(series_dict)
+                )
+            )
 
         if merge_dfs:
             df_merged = pd.DataFrame()
