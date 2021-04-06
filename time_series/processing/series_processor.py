@@ -60,6 +60,7 @@ def _series_dict_to_df(series_dict: Dict[str, pd.Series]) -> pd.DataFrame:
     -------
     pd.DataFrame
         The merged pandas DataFrame
+
     """
     df = pd.DataFrame()
     for _, s in series_dict.items():
@@ -90,6 +91,7 @@ class SeriesProcessor:
         name : str, optional
             The name of the processor, by default None and the `func.__name__`
             will be used.
+
         """
         self.required_series = required_series
         self.func = func
@@ -118,6 +120,7 @@ class SeriesProcessor:
         KeyError
             Raised when a key is not present in the `series_dict` but required for the
             processing.
+
         """
         # Only selecting the signals that are needed for this processing step
         requested_dict = {}
@@ -158,18 +161,21 @@ class SeriesProcessorPipeline:
             List of `SeriesProcessor` objects that will be applied sequentially to the
             signals dict. The processing steps will be executed in the same order as
             passed with this list, by default []
+
         """
         self.processing_registry: List[SeriesProcessor] = processors
 
     def get_all_required_signals(self) -> List[str]:
         """Return required signal for this pipeline.
 
-        Return a list of signal keys that are required in order to exectue all the
+        Return a list of signal keys that are required in order to execute all the
         `SeriesProcessor` objects that currently are in the pipeline.
+
         Returns
         -------
         List[str]
-            List of all the required singal keys.
+            List of all the required signal keys.
+
         """
         return list(
             set(
@@ -186,6 +192,7 @@ class SeriesProcessorPipeline:
         ----------
         processor : SeriesProcessor
             The `SeriesProcessor` that will be added to the end of the pipeline
+
         """
         self.processing_registry.append(processor)
 
@@ -195,7 +202,7 @@ class SeriesProcessorPipeline:
         return_all_signals=True,
         return_df=True,
     ) -> Union[Dict[str, pd.Series], pd.DataFrame]:
-        """Execute all `SeriesProcessor` obects in pipeline sequentially.
+        """Execute all `SeriesProcessor` objects in pipeline sequentially.
 
         Apply all the processing steps on passed Series list or DataFrame and return the
         preprocessed Series list or DataFrame.
@@ -210,7 +217,7 @@ class SeriesProcessorPipeline:
             output will contain just the required signals (see 
             `get_all_required_signals`).
         return_df : bool, default: True
-            Wether the output needs to be a series dict or a DataFrame. If `True` the
+            Whether the output needs to be a series dict or a DataFrame. If `True` the
             output series will be combined to a DataFrame with an outer merge,
             by default True.
 
@@ -223,6 +230,7 @@ class SeriesProcessorPipeline:
         ------
         _ProcessingError
             Error raised when a processing step fails.
+
         """
         # Converting the signals list into a dict
         series_dict = dict()

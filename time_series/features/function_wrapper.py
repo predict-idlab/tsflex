@@ -2,7 +2,8 @@
 
 __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
 
-from typing import List, Union, Callable
+
+from typing import Callable, List, Union
 
 import numpy as np
 
@@ -28,7 +29,7 @@ class NumpyFuncWrapper:
     """
 
     def __init__(
-            self, func: Callable, output_names: Union[List[str], str] = None, **kwargs
+        self, func: Callable, output_names: Union[List[str], str] = None, **kwargs
     ):
         """Create NumpyFuncWrapper instance."""
         self.func = func
