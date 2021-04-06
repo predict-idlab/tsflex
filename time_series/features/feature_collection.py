@@ -9,7 +9,7 @@ from multiprocessing import Pool
 
 from ..features.function_wrapper import NumpyFuncWrapper
 from .strided_rolling import StridedRolling
-from .feature import FeatureDescription, MultipleFeatureDescriptions
+from .feature import FeatureDescriptor, MultipleFeatureDescriptors
 
 
 class FeatureCollection:
@@ -18,7 +18,7 @@ class FeatureCollection:
     def __init__(
         self,
         feature_desc_list: Union[
-            List[FeatureDescription], List[MultipleFeatureDescriptions]
+            List[FeatureDescriptor], List[MultipleFeatureDescriptors]
         ] = None,
     ):
         """Create a FeatureCollection.
@@ -32,19 +32,19 @@ class FeatureCollection:
         # The feature collection is a dict where the key is a tuple(str, int, int), the
         # tuple values correspond to (signal_key, window, stride)
         self._feature_desc_dict: Dict[
-            Tuple[str, int, int], List[FeatureDescription]
+            Tuple[str, int, int], List[FeatureDescriptor]
         ] = {}
         # A list of all the features, holds the same references as the dict above but
         # is simply stored in another way
-        self._feature_desc_list: List[FeatureDescription] = []
+        self._feature_desc_list: List[FeatureDescriptor] = []
         if feature_desc_list:
             self.add(feature_desc_list)
 
     @staticmethod
-    def _get_collection_key(feature: FeatureDescription):
+    def _get_collection_key(feature: FeatureDescriptor):
         return feature.key, feature.window, feature.stride
 
-    def _add_feature(self, feature: FeatureDescription):
+    def _add_feature(self, feature: FeatureDescriptor):
         self._feature_desc_list.append(feature)
 
         key = self._get_collection_key(feature)
@@ -56,7 +56,7 @@ class FeatureCollection:
     def add(
         self,
         features_list: Union[
-            List[FeatureDescription], List[MultipleFeatureDescriptions]
+            List[FeatureDescriptor], List[MultipleFeatureDescriptors]
         ],
     ):
         """Add a list of FetaureDescription to the FeatureCollection.
@@ -68,9 +68,9 @@ class FeatureCollection:
 
         """
         for feature in features_list:
-            if isinstance(feature, MultipleFeatureDescriptions):
+            if isinstance(feature, MultipleFeatureDescriptors):
                 self.add(feature.feature_descriptions)
-            elif isinstance(feature, FeatureDescription):
+            elif isinstance(feature, FeatureDescriptor):
                 self._add_feature(feature)
 
     @staticmethod

@@ -6,8 +6,8 @@ from typing import Callable, List, Union
 from .function_wrapper import NumpyFuncWrapper
 
 
-class FeatureDescription:
-    """A FeatureDescription object, containing all feature information."""
+class FeatureDescriptor:
+    """A FeatureDescriptor object, containing all feature information."""
 
     def __init__(
         self,
@@ -16,7 +16,7 @@ class FeatureDescription:
         window: int,
         stride: int,
     ):
-        """Create a FeatureDescription object.
+        """Create a FeatureDescriptor object.
 
         Parameters
         ----------
@@ -60,8 +60,8 @@ class FeatureDescription:
         )
 
 
-class MultipleFeatureDescriptions:
-    """Create multiple Feature objects."""
+class MultipleFeatureDescriptors:
+    """Create multiple FeatureDescriptor objects."""
 
     def __init__(
         self,
@@ -70,7 +70,7 @@ class MultipleFeatureDescriptions:
         windows: List[int],
         strides: List[int],
     ):
-        """Create a MultipleFeatureDescriptions object.
+        """Create a MultipleFeatureDescriptors object.
 
         Create a list of features from **all** combinations of the given parameter
         lists. Total number of created Features will be:
@@ -93,5 +93,5 @@ class MultipleFeatureDescriptions:
         combinations = [functions, signal_keys, windows, strides]
         for function, key, window, stride in itertools.product(*combinations):
             self.feature_descriptions.append(
-                FeatureDescription(function, key, window, stride)
+                FeatureDescriptor(function, key, window, stride)
             )
