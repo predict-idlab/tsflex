@@ -135,6 +135,7 @@ def sliding_window(series: pd.Series, window: int, stride=1, axis=-1) -> np.ndar
     shape[axis] = np.floor(data.shape[axis] / stride - window / stride + 1).astype(int)
     shape.append(window)
 
+    # https://numpy.org/doc/stable/reference/generated/numpy.ndarray.strides.html
     strides = list(data.strides)
     strides[axis] *= stride
     strides.append(data.strides[axis])
