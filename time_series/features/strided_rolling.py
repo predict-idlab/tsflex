@@ -58,24 +58,19 @@ class StridedRolling:
         return self._strided_vals
 
     # Make this the __call__ method
-    def apply_func(
-            self, np_func: NumpyFuncWrapper, return_df=True
-    ) -> pd.DataFrame:
+    def apply_func(self, np_func: NumpyFuncWrapper) -> pd.DataFrame:
         """Apply a function to the expanded time-series.
 
         Parameters
         ----------
         np_func : NumpyFuncWrapper
             The Callable (wrapped) function which will be applied.
-        return_df : bool, optional
-            If true, a DataFrame will be returned, otherwise a dict will be returned,
-            by default True
 
         Returns
         -------
         pd.DataFrame
             The merged output of the function applied to every column in a
-            new DataFrame or a dict. The DataFrame's column-names have the format:
+            new DataFrame. The DataFrame's column-names have the format:
                 `<signal_col_name>_<feature_name>__w=<window>_s=<stride>`.
 
         """
