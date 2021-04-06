@@ -110,7 +110,7 @@ class FeatureCollection:
             by default False
         njobs : int, optional
             The number of processes used for the feature calculation. If `None`, then
-            the nubmer returned by `os.cpu_count()` is used, by default None.
+            the number returned by `os.cpu_count()` is used, by default None.
 
         Returns
         -------
@@ -120,7 +120,7 @@ class FeatureCollection:
         Raises
         ------
         KeyError
-            Raised when a needed key is not found in `signals`.
+            Raised when a required key is not found in `signals`.
 
         """
         series_dict = dict()
