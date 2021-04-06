@@ -112,7 +112,7 @@ class FeatureCollection:
 
         Parameters
         ----------
-        signals : Union[List[pd.Series], pd.DataFrame, List[pd.DataFrame]]
+        signals : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]
             Dataframe or Series list with all the required signals for the feature
             calculation.
         merge_dfs : bool, optional
@@ -143,9 +143,10 @@ class FeatureCollection:
                 series_list += [s[c] for c in s.columns]
             elif isinstance(s, pd.Series):
                 series_list += s
+            else:
+                raise ValueError("Non pd.Series or pd.DataFrame object passed.")
 
         for s in series_list:
-            assert isinstance(s, pd.Series), "Error non pd.Series object passed"
             series_dict[s.name] = s
 
         calculated_feature_list: List[pd.DataFrame] = []
