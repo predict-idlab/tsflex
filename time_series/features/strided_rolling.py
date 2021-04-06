@@ -1,118 +1,126 @@
 # -*- coding: utf-8 -*-
-"""
-    *******************
-    strided_rolling.py
-    *******************
+"""Contains a (rather) fast implementation of a strided rolling window."""
 
-    This module contains a (rather) fast implementation of a strided rolling window
-"""
+__author__ = "Vic Degraeve, Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
 
-__author__ = 'Vic Degraeve, Jonas Van Der Donckt, Jeroen Van Der Donckt'
+from typing import Union, Dict
 
-from typing import List, Callable, Union, Dict
-
-import dill as pickle
 import numpy as np
 import pandas as pd
-from pathos.multiprocessing import ProcessPool
 
-from .feature import NumpyFeatureCalculation
-from ..function import NumpyFuncWrapper
-
-pickle.settings['recurse'] = True
+from .function_wrapper import NumpyFuncWrapper
 
 
 class StridedRolling:
-    """Custom sliding window with stride for pandas DataFrames"""
+    """Custom sliding window with stride for pandas DataFrames."""
 
+    # Only keep pd.Series and not Union
     def __init__(self, df: Union[pd.Series, pd.DataFrame], window: int, stride: int):
-        """
-        :param df: DataFrame to slide over, the index must be a (time-zone-aware) date_time object
-        :param window: Sliding window length in samples
-        :param stride: Step/stride length in samples
+        """Create StridedRolling object.
+
+        Parameters
+        ----------
+        df : Union[pd.Series, pd.DataFrame]
+            :class:`pd.Series` or :class:`pd.DataFrame` to slide over, the index must
+            be a (time-zone-aware) :class:`pd.DatetimeIndex`.
+        window : int
+            Sliding window length in samples.
+        stride : int
+            Step/stride length in samples.
+
         """
         # construct the (expanded) sliding window-stride array
-        # Old code: self.time_indexes = df.index[:-window + 1][::stride]  # Index indicates the start of the windows
+        # Old code: self.time_indexes = df.index[:-window + 1][::stride]
+        # Index indicates the start of the windows
         df = df.to_frame() if isinstance(df, pd.Series) else df
-        self.time_indexes = df.index[window - 1:][::stride]  # Index indicates the end of the windows
-        self.strided_vals = {}
+        self.window = window
+        self.stride = stride
+        self.time_indexes = df.index[window - 1:][
+                            ::stride
+                            ]  # Index indicates the end of the windows
+        # TODO: Make this here lazy by only doing on first call of apply func
+        self._strided_vals = {}
         for col in df.columns:
-            self.strided_vals[col] = sliding_window(df[col], window=window, stride=stride)
+            self._strided_vals[col] = sliding_window(
+                df[col], window=window, stride=stride
+            )
 
-    def apply(self, np_func: Callable, return_df: bool = True) -> Union[Dict[str, np.ndarray], pd.DataFrame]:
-        """Applies a function to every strided window and returns the merged outputs in either a new DataFrame
-        or a dict
+    @property
+    def strided_vals(self) -> Dict[str, np.ndarray]:
+        """Get the expanded series of each column.
 
-        .. note::
-            As np_func is only a callable argument, with no additional logic, this will only
-            work for a one-to-one mapping!
-            * fyi: If the passed dataframe has multiple columns, it will call the feature for each column
-            * fyi: If you want to calculate one-to-many -> use the `apply_func` method, which takes a
-                NumpyFuncWrapper of NumpyFeatureCalculation instance as argument
-
-        :param np_func: Function taking a numpy array as first argument and returning a new numpy array
-        :param return_df: If true, a DataFrame will be returned, otherwise a dict will be returned
-        :return: Either The merged output of the function applied to every column in a new DataFrame or a dict
+        Returns:
+        -------
+        Dict[str, np.ndarray]
+            A `dict` with the column-name as key, and the corresponding expanded
+            series as value.
         """
-        feat_out = {
-            col + '_' + np_func.__name__: np.apply_along_axis(np_func, axis=-1, arr=self.strided_vals[col])
-            for col in self.strided_vals.keys()
-        }
-        return pd.DataFrame(index=self.time_indexes, data=feat_out) if return_df else feat_out
+        return self._strided_vals
 
-    def apply_funcs(self, funcs: List[Union[NumpyFeatureCalculation, NumpyFuncWrapper]],
-                    parallel: bool = True) -> pd.DataFrame:
-        """Applies a Feature-calculation function to every window
+    # Make this the __call__ method
+    def apply_func(self, np_func: NumpyFuncWrapper) -> pd.DataFrame:
+        """Apply a function to the expanded time-series.
 
-        .. note::
-            Every item in the funcs list will thus need to have the same window/stride properties as this instance
+        Parameters
+        ----------
+        np_func : NumpyFuncWrapper
+            The Callable (wrapped) function which will be applied.
 
-        :param funcs: The list of functions which will be applied
-        :param parallel: Boolean indicating whether the funcs should be applied in parallel
-        :return: The merged DataFrame
-        """
-        # TODO: maybe this can be sped up -> also look into memory expansion
-        if parallel:
-            with ProcessPool() as pool:
-                out = pool.map(self.apply_func, funcs, [False] * len(funcs))
-            feat_out = {k: v for func_dict in out for k, v in func_dict.items()}
-        else:
-            feat_out = {k: v for func in funcs for k, v in self.apply_func(func, return_df=False).items()}
-        return pd.DataFrame(index=self.time_indexes, data=feat_out)
+        Returns
+        -------
+        pd.DataFrame
+            The merged output of the function applied to every column in a
+            new DataFrame. The DataFrame's column-names have the format:
+                `<signal_col_name>_<feature_name>__w=<window>_s=<stride>`.
 
-    def apply_func(self, np_func: Union[NumpyFuncWrapper, NumpyFeatureCalculation], return_df=True) \
-            -> Union[Dict[str, list], pd.DataFrame]:
-        """Applies a Numpy-function to the
-
-        .. note::
-            This works for one-to-many mapping (as both NumpyFuncWrapper and NumpyFeatureCalculation have the
-            col_names property)
-
-        :param np_func: The Callable (wrapped) function which will be applied
-        :param return_df: If true, a DataFrame will be returned, otherwise a dict will be returned
-        :return: Either The merged output of the function applied to every column in a new DataFrame or a dict
         """
         feat_out = {}
-        feat_names = np_func.get_col_names()
+        feat_names = np_func.output_names
         for col in self.strided_vals.keys():
             out = np.apply_along_axis(np_func, axis=-1, arr=self.strided_vals[col])
             if out.ndim == 1 or (out.ndim == 2 and out.shape[1] == 1):
                 assert len(feat_names) == 1
-                feat_out[col + '_' + feat_names[0]] = out.flatten()
+                feat_out[
+                    f"{col}_{feat_names[0]}__w={self.window}_s={self.stride}"
+                ] = out.flatten()
             if out.ndim == 2 and out.shape[1] > 1:
                 assert len(feat_names) == out.shape[1]
                 for col_idx in range(out.shape[1]):
-                    feat_out[col + '_' + feat_names[col_idx]] = out[:, col_idx]
-        return pd.DataFrame(index=self.time_indexes, data=feat_out) if return_df else feat_out
+                    feat_out[
+                        f"{col}_{feat_names[col_idx]}__w={self.window}_s={self.stride}"
+                    ] = out[:, col_idx]
+        return pd.DataFrame(index=self.time_indexes, data=feat_out)
 
 
 def sliding_window(series: pd.Series, window: int, stride=1, axis=-1) -> np.ndarray:
     """Calculate a strided sliding window over a series.
 
-    :param series: Pandas series to slide over
-    :param window: Sliding window length in samples
-    :param stride: Step/stride length in samples. Defaults to 1.
-    :param axis: The axis to slide over. Defaults to the last axis.
+    Parameters
+    ----------
+    series : pd.Series
+        :class:`pd.Series` to slide over.
+    window : int
+        Sliding window length in samples.
+    stride : int, optional
+        Step/stride length in samples, by default 1.
+    axis : int, optional
+        The axis to slide over, by default -1.
+
+    Returns
+    -------
+    np.ndarray
+        The expanded series, a 2D array of shape:
+        (len(`series`)//`stride`, `window`).
+
+    Raises
+    ------
+    ValueError
+        If the axis is greater than or equal to the number of data dimensions.
+    ValueError
+        If the stride is negative.
+    ValueError
+        If the window is greater than the size of the selected axis
+
     """
     # TODO: het werkt op DataFrame als je axis = 0 -> wrapper code errond
     data = series.values
@@ -127,6 +135,7 @@ def sliding_window(series: pd.Series, window: int, stride=1, axis=-1) -> np.ndar
     shape[axis] = np.floor(data.shape[axis] / stride - window / stride + 1).astype(int)
     shape.append(window)
 
+    # https://numpy.org/doc/stable/reference/generated/numpy.ndarray.strides.html
     strides = list(data.strides)
     strides[axis] *= stride
     strides.append(data.strides[axis])

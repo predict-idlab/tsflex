@@ -1,53 +1,97 @@
-# -*- coding: utf-8 -*-
-"""
-    ***********
-    feature.py
-    ***********
+"""Contains Feature and MultipleFeature class."""
 
-    Withholds code for to represent manners of calculating features
-"""
-__author__ = 'Jonas Van Der Donckt'
+import itertools
+from typing import Callable, List, Union
 
-from typing import List, Tuple, Callable
-
-import numpy as np
-
-from ..function import NumpyFuncWrapper
+from .function_wrapper import NumpyFuncWrapper
 
 
-class NumpyFeatureCalculation:
-    """Wrapper class around a feature calculation function"""
+class FeatureDescriptor:
+    """A FeatureDescriptor object, containing all feature information."""
 
-    def __init__(self, win_size: int, stride: int, func: Callable):
+    def __init__(
+        self,
+        function: Union[NumpyFuncWrapper, Callable],
+        key: str,
+        window: int,
+        stride: int,
+    ):
+        """Create a FeatureDescriptor object.
+
+        Parameters
+        ----------
+        function : Union[NumpyFuncWrapper, Callable]
+            The `function` that calculates this feature.
+        key : str
+            The key (name) of the signal where this feature needs to be calculated on.
+        window : int
+            The window size on which this feature will be applied, expressed in the
+            number of samples from the input signal.
+        stride : int
+            The stride of the window rolling process, also as a number of samples of the
+            input signal.
+
+        Raises
+        ------
+        TypeError
+            Raised when the `function` is not an instance of Callable or 
+            NumpyFuncWrapper.
+
         """
-        :param int win_size: The number of sensor observations that each window contain
-        :param int stride: Stride size in # of observations
-        :param func: The feature calculation func, takes a np array as input and outputs a np array
-        """
-        self.win_size = win_size
+        self.key = key
+        self.window = window
         self.stride = stride
-        self.func = func
-        self.col_names = func.get_col_names() if isinstance(func, NumpyFuncWrapper) else [func.__name__]
 
-    def get_win_stride(self) -> Tuple[int, int]:
-        """Return the (absolute) window_size and stride in (#of samples)"""
-        return self.win_size, self.stride
-
-    def get_col_names(self) -> List[str]:
-        """Return the column names of the feature"""
-        return self.col_names
-
-    def __call__(self, arr: np.ndarray) -> np.ndarray:
-        """Cal(l)culates the feature(s)
-
-        :param arr: Array of correct win_size
-        :return: The calculated feature(s)
-        """
-        return self.func(arr)
+        # Order of if statements is important!
+        if isinstance(function, NumpyFuncWrapper):
+            self.function = function
+        elif isinstance(function, Callable):
+            self.function = NumpyFuncWrapper(function)
+        else:
+            raise TypeError(
+                "Expected feature function to be a `NumpyFuncWrapper` but is a"
+                f" {type(function)}."
+            )
 
     def __repr__(self) -> str:
-        f_name = self.func if isinstance(self.func, NumpyFuncWrapper) else self.func.__name__
-        return f'{self.__class__.__name__} - func: {str(f_name)}'
+        """Representation string of Feature."""
+        return (
+            f"{self.__class__.__name__}({self.key}, {self.window}, {self.stride})"
+        )
 
-    def __str__(self) -> str:
-        return self.__repr__()
+
+class MultipleFeatureDescriptors:
+    """Create multiple FeatureDescriptor objects."""
+
+    def __init__(
+        self,
+        signal_keys: List[str],
+        functions: List[Union[NumpyFuncWrapper, Callable]],
+        windows: List[int],
+        strides: List[int],
+    ):
+        """Create a MultipleFeatureDescriptors object.
+
+        Create a list of features from **all** combinations of the given parameter
+        lists. Total number of created Features will be:
+        len(keys)*len(functions)*len(windows)*len(strides).
+
+        Parameters
+        ----------
+        signal_keys : List[str]
+            All the signal keys.
+        functions : List[Union[NumpyFuncWrapper, Callable]]
+            The functions, can be either of both types (even in a single array).
+        windows : List[int]
+            All the window sizes.
+        strides : List[int]
+            All the strides.
+
+        """
+        self.feature_descriptions = []
+        # iterate over all combinations
+        combinations = [functions, signal_keys, windows, strides]
+        for function, key, window, stride in itertools.product(*combinations):
+            self.feature_descriptions.append(
+                FeatureDescriptor(function, key, window, stride)
+            )

@@ -1,7 +1,14 @@
-# -*- encoding: utf-8 -*-
+"""init.py for features module."""
 
-__author__ = 'Jonas Van Der Donckt'
+__author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
 
-from .feature import NumpyFeatureCalculation
-from .feature_extraction import NumpyFeatureCalculationPipeline, NumpyFeatureCalculationRegistry
-from .strided_rolling import StridedRolling
+from .feature import FeatureDescriptor, MultipleFeatureDescriptors
+from .feature_collection import FeatureCollection
+from .function_wrapper import NumpyFuncWrapper
+
+__all__ = [
+    "FeatureDescriptor",
+    "MultipleFeatureDescriptors",
+    "FeatureCollection",
+    "NumpyFuncWrapper",
+]
