@@ -18,7 +18,12 @@ class NumpyFuncWrapper:
     func : Callable
         The wrapped function.
     output_names : Union[List[str], str], optional
-        The name of the outputs of the function, by default None
+        The name of the outputs of the function, by default None.
+
+    Raises
+    ------
+    TypeError
+        Raised when the `output_names` cannot be set.
 
     """
 
