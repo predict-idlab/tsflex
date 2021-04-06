@@ -36,7 +36,7 @@ class FeatureDescription:
         ------
         TypeError
             Raise a TypeError when the `function` is not an instance of
-            NumpyFuncWrapper.
+            Callable or NumpyFuncWrapper.
 
         """
         self.key = key
