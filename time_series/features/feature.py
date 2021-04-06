@@ -31,12 +31,11 @@ class FeatureDescription:
             The stride of the window rolling process, also as a number of samples of the
             input signal.
 
-
         Raises
         ------
         TypeError
-            Raise a TypeError when the `function` is not an instance of
-            Callable or NumpyFuncWrapper.
+            Raised when the `function` is not an instance of Callable or 
+            NumpyFuncWrapper.
 
         """
         self.key = key
