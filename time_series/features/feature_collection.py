@@ -4,24 +4,25 @@ from __future__ import annotations
 
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
+import types
 from multiprocessing import Pool
 from typing import Dict, Iterator, List, Tuple, Union
 
 import pandas as pd
 
+from ..features.function_wrapper import NumpyFuncWrapper
 from .feature import FeatureDescriptor, MultipleFeatureDescriptors
 from .strided_rolling import StridedRolling
-from ..features.function_wrapper import NumpyFuncWrapper
 
 
 class FeatureCollection:
     """Collection of features to be calculated."""
 
     def __init__(
-            self,
-            feature_desc_list: Union[
-                List[FeatureDescriptor], List[MultipleFeatureDescriptors]
-            ] = None,
+        self,
+        feature_desc_list: Union[
+            List[FeatureDescriptor], List[MultipleFeatureDescriptors]
+        ] = None,
     ):
         """Create a FeatureCollection.
 
@@ -47,6 +48,29 @@ class FeatureCollection:
         return feature.key, feature.window, feature.stride
 
     def _add_feature(self, feature: FeatureDescriptor):
+        """Add a `FeatureDescriptor` instance to the collection.
+
+        Parameters
+        ----------
+        feature : FeatureDescriptor
+            The featuredescriptor that will be added.
+
+        Raises
+        ------
+        TypeError
+            Raised when the `FeatureDescriptor`'s function is a lambda.
+
+        """
+        if (
+            isinstance(feature.function.func, types.LambdaType)
+            and feature.function.func.__name__ == "<lambda>"
+        ):
+            raise TypeError(
+                f"\nFunction: {feature.function.output_names} is a lambda, thus not "
+                "pickle-able. \n\tThis will give problems with the mulitprocessing "
+                "based`calculate` function."
+            )
+
         self._feature_desc_list.append(feature)
 
         key = self._get_collection_key(feature)
@@ -56,19 +80,31 @@ class FeatureCollection:
             self._feature_desc_dict[key] = [feature]
 
     def add(
-            self,
-            features_list: Union[
-                List[FeatureDescriptor],
-                List[MultipleFeatureDescriptors],
-                List[FeatureCollection],
-            ],
+        self,
+        features_list: Union[
+            List[FeatureDescriptor],
+            List[MultipleFeatureDescriptors],
+            List[FeatureCollection],
+        ],
     ):
         """Add a list of FeatureDescription to the FeatureCollection.
 
+        Todo
+        ----
+        Type hint of `feature_list` is not totally correct.
+
         Parameters
         ----------
-        features_list : Union[List[Feature], List[MultipleFeatures]]
-            List of features to add.
+        features_list : Union[List[FeatureDescriptor], List[MultipleFeatureDescriptors], List[FeatureCollection]],
+            List of feature(containers) which features will be added.
+
+        Raises
+        ------
+        TypeError
+            Raised when an item within `features_list` is not an instance of
+            [`MultipleFeatureDescriptors`, `FeatureDescriptors`, `FeatureCollection`].
+        TypeError
+            Raised when the `FeatureDescriptor`'s function is a lambda.
 
         """
         for feature in features_list:
@@ -78,13 +114,15 @@ class FeatureCollection:
                 self._add_feature(feature)
             elif isinstance(feature, FeatureCollection):
                 self.add(feature._feature_desc_list)
+            else:
+                raise TypeError(f"type: {type(feature)} is not supported")
 
     @staticmethod
     def _executor(stroll: StridedRolling, function: NumpyFuncWrapper):
         return stroll.apply_func(function)
 
     def _stroll_feature_generator(
-            self, series_dict: Dict[str, pd.Series]
+        self, series_dict: Dict[str, pd.Series]
     ) -> Iterator[Tuple[StridedRolling, NumpyFuncWrapper]]:
         # We could also make the StridedRolling creation multithreaded
         # Another possible option to speed up this creations by making this lazy
@@ -99,14 +137,10 @@ class FeatureCollection:
                 yield stroll, feature.function
 
     def calculate(
-            self,
-            signals: Union[
-                pd.Series,
-                pd.DataFrame,
-                List[Union[pd.Series, pd.DataFrame]]
-            ],
-            merge_dfs=False,
-            njobs=None,
+        self,
+        signals: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
+        merge_dfs=False,
+        njobs=None,
     ) -> Union[List[pd.DataFrame], pd.DataFrame]:
         """Calculate features on the passed signals.
 
@@ -144,7 +178,7 @@ class FeatureCollection:
             elif isinstance(s, pd.Series):
                 series_list += s
             else:
-                raise ValueError("Non pd.Series or pd.DataFrame object passed.")
+                raise TypeError("Non pd.Series or pd.DataFrame object passed.")
 
         for s in series_list:
             series_dict[s.name] = s

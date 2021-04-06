@@ -2,8 +2,7 @@
 
 __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
 
-import types
-import warnings
+
 from typing import Callable, List, Union
 
 import numpy as np
@@ -33,12 +32,6 @@ class NumpyFuncWrapper:
         self, func: Callable, output_names: Union[List[str], str] = None, **kwargs
     ):
         """Create NumpyFuncWrapper instance."""
-        if isinstance(func, types.LambdaType) and func.__name__ == "<lambda>":
-            warnings.warn(
-                f"\nFunction: {output_names} is a lambda, thus not pickle-able.\n"
-                "This might give problems with multiprocessing."
-            )
-
         self.func = func
         self.kwargs: dict = kwargs
 
