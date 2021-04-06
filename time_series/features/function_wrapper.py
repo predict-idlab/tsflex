@@ -2,9 +2,9 @@
 
 __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
 
-from typing import List, Union, Callable
 import types
 import warnings
+from typing import Callable, List, Union
 
 import numpy as np
 

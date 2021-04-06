@@ -1,31 +1,33 @@
 """FeatureCollection class for collection and calculation of features."""
 
+from __future__ import annotations
+
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
+
+from multiprocessing import Pool
+from typing import Dict, Iterator, List, Tuple, Union
 
 import pandas as pd
 
-from typing import List, Union, Dict, Tuple, Iterator
-from multiprocessing import Pool
-
-from ..features.function_wrapper import NumpyFuncWrapper
-from .strided_rolling import StridedRolling
 from .feature import FeatureDescriptor, MultipleFeatureDescriptors
+from .strided_rolling import StridedRolling
+from ..features.function_wrapper import NumpyFuncWrapper
 
 
 class FeatureCollection:
     """Collection of features to be calculated."""
 
     def __init__(
-        self,
-        feature_desc_list: Union[
-            List[FeatureDescriptor], List[MultipleFeatureDescriptors]
-        ] = None,
+            self,
+            feature_desc_list: Union[
+                List[FeatureDescriptor], List[MultipleFeatureDescriptors]
+            ] = None,
     ):
         """Create a FeatureCollection.
 
         Parameters
         ----------
-        features_list : Union[List[Feature], List[MultipleFeatures]], optional
+        feature_desc_list : Union[List[Feature], List[MultipleFeatures]], optional
             Initial list of Features to add to collection, by default None
 
         """
@@ -54,12 +56,14 @@ class FeatureCollection:
             self._feature_desc_dict[key] = [feature]
 
     def add(
-        self,
-        features_list: Union[
-            List[FeatureDescriptor], List[MultipleFeatureDescriptors]
-        ],
+            self,
+            features_list: Union[
+                List[FeatureDescriptor],
+                List[MultipleFeatureDescriptors],
+                List[FeatureCollection],
+            ],
     ):
-        """Add a list of FetaureDescription to the FeatureCollection.
+        """Add a list of FeatureDescription to the FeatureCollection.
 
         Parameters
         ----------
@@ -72,13 +76,15 @@ class FeatureCollection:
                 self.add(feature.feature_descriptions)
             elif isinstance(feature, FeatureDescriptor):
                 self._add_feature(feature)
+            elif isinstance(feature, FeatureCollection):
+                self.add(feature._feature_desc_list)
 
     @staticmethod
     def _executor(stroll: StridedRolling, function: NumpyFuncWrapper):
         return stroll.apply_func(function)
 
     def _stroll_feature_generator(
-        self, series_dict: Dict[str, pd.Series]
+            self, series_dict: Dict[str, pd.Series]
     ) -> Iterator[Tuple[StridedRolling, NumpyFuncWrapper]]:
         # We could also make the StridedRolling creation multithreaded
         # Another possible option to speed up this creations by making this lazy
@@ -90,19 +96,23 @@ class FeatureCollection:
                 raise KeyError(f"Key {signal_key} not found in series dict.")
 
             for feature in self._feature_desc_dict[(signal_key, win, stride)]:
-                yield (stroll, feature.function)
+                yield stroll, feature.function
 
     def calculate(
-        self,
-        signals: Union[List[pd.Series], pd.DataFrame],
-        merge_dfs=False,
-        njobs=None,
+            self,
+            signals: Union[
+                pd.Series,
+                pd.DataFrame,
+                List[Union[pd.Series, pd.DataFrame]]
+            ],
+            merge_dfs=False,
+            njobs=None,
     ) -> Union[List[pd.DataFrame], pd.DataFrame]:
         """Calculate features on the passed signals.
 
         Parameters
         ----------
-        signals : Union[List[pd.Series], pd.DataFrame]
+        signals : Union[List[pd.Series], pd.DataFrame, List[pd.DataFrame]]
             Dataframe or Series list with all the required signals for the feature
             calculation.
         merge_dfs : bool, optional
@@ -124,11 +134,15 @@ class FeatureCollection:
 
         """
         series_dict = dict()
+        series_list = []
 
-        if isinstance(signals, pd.DataFrame):
-            series_list = [signals[s] for s in signals.columns]
-        else:
-            series_list = signals
+        if not isinstance(signals, list):
+            signals = [signals]
+        for s in signals:
+            if isinstance(s, pd.DataFrame):
+                series_list += [s[c] for c in s.columns]
+            elif isinstance(s, pd.Series):
+                series_list += s
 
         for s in series_list:
             assert isinstance(s, pd.Series), "Error non pd.Series object passed"
