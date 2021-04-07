@@ -1,14 +1,21 @@
-"""FeatureCollection class for collection and calculation of features."""
+"""FeatureCollection class for collection and calculation of features.
+
+See Also
+--------
+Example notebooks and model serialization documentation.
+
+"""
 
 from __future__ import annotations
 
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
-import types
-from multiprocessing import Pool
+from pathlib import Path
 from typing import Dict, Iterator, List, Tuple, Union
 
+import dill
 import pandas as pd
+from pathos.multiprocessing import ProcessPool
 
 from ..features.function_wrapper import NumpyFuncWrapper
 from .feature import FeatureDescriptor, MultipleFeatureDescriptors
@@ -55,22 +62,7 @@ class FeatureCollection:
         feature : FeatureDescriptor
             The featuredescriptor that will be added.
 
-        Raises
-        ------
-        TypeError
-            Raised when the `FeatureDescriptor`'s function is a lambda.
-
         """
-        if (
-            isinstance(feature.function.func, types.LambdaType)
-            and feature.function.func.__name__ == "<lambda>"
-        ):
-            raise TypeError(
-                f"\nFunction: {feature.function.output_names} is a lambda, thus not "
-                "pickle-able. \n\tThis will give problems with the mulitprocessing "
-                "based`calculate` function."
-            )
-
         self._feature_desc_list.append(feature)
 
         key = self._get_collection_key(feature)
@@ -103,8 +95,6 @@ class FeatureCollection:
         TypeError
             Raised when an item within `features_list` is not an instance of
             [`MultipleFeatureDescriptors`, `FeatureDescriptors`, `FeatureCollection`].
-        TypeError
-            Raised when the `FeatureDescriptor`'s function is a lambda.
 
         """
         for feature in features_list:
@@ -121,20 +111,20 @@ class FeatureCollection:
     def _executor(stroll: StridedRolling, function: NumpyFuncWrapper):
         return stroll.apply_func(function)
 
-    def _stroll_feature_generator(
+    def _stroll_generator(
         self, series_dict: Dict[str, pd.Series]
-    ) -> Iterator[Tuple[StridedRolling, NumpyFuncWrapper]]:
+    ) -> Iterator[StridedRolling]:
         # We could also make the StridedRolling creation multithreaded
         # Another possible option to speed up this creations by making this lazy
         # and only creating it upon calling.
-        for signal_key, win, stride in self._feature_desc_dict.keys():
+        for feature in self._feature_desc_list:
             try:
-                stroll = StridedRolling(series_dict[signal_key], win, stride)
+                stroll = StridedRolling(
+                    series_dict[feature.key], feature.window, feature.stride
+                )
             except KeyError:
-                raise KeyError(f"Key {signal_key} not found in series dict.")
-
-            for feature in self._feature_desc_dict[(signal_key, win, stride)]:
-                yield stroll, feature.function
+                raise KeyError(f"Key {feature.key} not found in series dict.")
+            yield stroll
 
     def calculate(
         self,
@@ -185,10 +175,15 @@ class FeatureCollection:
 
         calculated_feature_list: List[pd.DataFrame] = []
 
-        with Pool(processes=njobs) as pool:
+        # https://pathos.readthedocs.io/en/latest/pathos.html#usage
+        # nodes = number (and potentially description) of workers
+        # ncpus - number of worker processors servers
+        with ProcessPool(nodes=njobs) as pool:
             calculated_feature_list.extend(
-                pool.starmap(
-                    self._executor, self._stroll_feature_generator(series_dict)
+                pool.map(
+                    self._executor,
+                    self._stroll_generator(series_dict),
+                    (x.function for x in self._feature_desc_list),
                 )
             )
 
@@ -205,6 +200,27 @@ class FeatureCollection:
             return df_merged
         else:
             return calculated_feature_list
+
+    def serialize(self, file_path: Union[str, Path]):
+        """Serialize this `FeatureCollection` instance.
+
+        Note
+        ----
+        As we use `dill` to serialize the files, we can also serialize functions which
+        are defined in the local scope, like lambdas.
+
+        Parameters
+        ----------
+        file_path : Union[str, Path]
+            The path where the `FeatureCollection` will be serialized.
+
+        See Also
+        --------
+        https://github.com/uqfoundation/dill
+
+        """
+        with open(file_path, "wb") as f:
+            dill.dump(self, f, recurse=True)
 
     def __repr__(self):
         """Representation string of FeatureCollection."""

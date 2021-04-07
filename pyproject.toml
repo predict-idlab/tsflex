@@ -16,6 +16,8 @@ black = "^20.8b1"
 flake8 = "^3.9.0"
 pydocstyle = "^5.1.1"
 Sphinx = "^3.5.2"
+jupyterlab = "^3.0.12"
+memory-profiler = "^0.58.0"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
