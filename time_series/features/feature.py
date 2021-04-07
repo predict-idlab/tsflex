@@ -24,6 +24,7 @@ class FeatureDescriptor:
             The `function` that calculates this feature.
         key : str
             The key (name) of the signal where this feature needs to be calculated on.
+            This allows to process multivariate series.
         window : int
             The window size on which this feature will be applied, expressed in the
             number of samples from the input signal.
