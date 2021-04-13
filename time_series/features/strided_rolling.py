@@ -66,9 +66,9 @@ class StridedRolling:
         * If `np_func` is only a callable argument, with no additional logic, this
             will only work for a one-to-one mapping, i.e., no multiple feature-output
             columns are supported for this case!
-        * If you want to calculate one-to-many -> use the `apply_func` method,
-             which takes a `NumpyFuncWrapper` instance as argument and explicitly use
-             the `output_names` attributes to the constructor.
+        * If you want to calculate one-to-many -> `np_func` should be 
+             a `NumpyFuncWrapper` instance and explicitly use
+             the `output_names` attributes of its constructor.
 
         Parameters
         ----------
