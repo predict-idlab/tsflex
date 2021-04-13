@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import Dict, Iterator, List, Tuple, Union
 
 import dill
+from tqdm import tqdm
 import pandas as pd
 from pathos.multiprocessing import ProcessPool
 
@@ -186,12 +187,11 @@ class FeatureCollection:
         # nodes = number (and potentially description) of workers
         # ncpus - number of worker processors servers
         with ProcessPool(nodes=njobs) as pool:
-            calculated_feature_list.extend(
-                pool.map(
-                    self._executor,
-                    self._stroll_feature_generator(series_dict)
-                )
+            results = pool.imap(
+                self._executor, self._stroll_feature_generator(series_dict)
             )
+            for f in tqdm(results, total=len(self._feature_desc_list)):
+                calculated_feature_list.append(f)
 
         if merge_dfs:
             df_merged = pd.DataFrame()
@@ -231,14 +231,14 @@ class FeatureCollection:
     def __repr__(self) -> str:
         """Representation string of a Featurecollection."""
         signals = sorted(set(k[0] for k in self._feature_desc_dict.keys()))
-        output_str = ''
+        output_str = ""
         for signal in signals:
             output_str += f"{signal}: ("
             keys = (x for x in self._feature_desc_dict.keys() if x[0] == signal)
             for _, win_size, stride in keys:
-                output_str += f'\n\twin: {str(win_size):<6}, stride: {str(stride)}: ['
+                output_str += f"\n\twin: {str(win_size):<6}, stride: {str(stride)}: ["
                 for feat_desc in self._feature_desc_dict[signal, win_size, stride]:
                     output_str += f"\n\t\t{feat_desc._func_str()},"
-                output_str += '\n\t]'
+                output_str += "\n\t]"
             output_str += "\n)\n"
         return output_str
