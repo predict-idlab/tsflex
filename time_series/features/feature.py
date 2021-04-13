@@ -24,6 +24,7 @@ class FeatureDescriptor:
             The `function` that calculates this feature.
         key : str
             The key (name) of the signal where this feature needs to be calculated on.
+            This allows to process multivariate series.
         window : int
             The window size on which this feature will be applied, expressed in the
             number of samples from the input signal.
@@ -34,7 +35,7 @@ class FeatureDescriptor:
         Raises
         ------
         TypeError
-            Raised when the `function` is not an instance of Callable or 
+            Raised when the `function` is not an instance of Callable or
             NumpyFuncWrapper.
 
         """
@@ -55,9 +56,14 @@ class FeatureDescriptor:
 
     def __repr__(self) -> str:
         """Representation string of Feature."""
-        return (
-            f"{self.__class__.__name__}({self.key}, {self.window}, {self.stride})"
-        )
+        return f"{self.__class__.__name__}({self.key}, {self.window}, {self.stride})"
+
+    def _func_str(self) -> str:
+        if isinstance(self.function, NumpyFuncWrapper):
+            f_name = self.function
+        else:
+            f_name = self.function.__name__
+        return f"{self.__class__.__name__} - func: {str(f_name)}"
 
 
 class MultipleFeatureDescriptors:
@@ -65,10 +71,10 @@ class MultipleFeatureDescriptors:
 
     def __init__(
         self,
-        signal_keys: List[str],
+        signal_keys: Union[str, List[str]],
         functions: List[Union[NumpyFuncWrapper, Callable]],
-        windows: List[int],
-        strides: List[int],
+        windows: Union[int, List[int]],
+        strides: Union[int, List[int]],
     ):
         """Create a MultipleFeatureDescriptors object.
 
@@ -78,16 +84,22 @@ class MultipleFeatureDescriptors:
 
         Parameters
         ----------
-        signal_keys : List[str]
+        signal_keys : Union[str, List[str]],
             All the signal keys.
         functions : List[Union[NumpyFuncWrapper, Callable]]
             The functions, can be either of both types (even in a single array).
-        windows : List[int]
+        windows : Union[int, List[int]],
             All the window sizes.
-        strides : List[int]
+        strides : Union[int, List[int]],
             All the strides.
 
         """
+        # convert all types to list
+        to_list = lambda x: [x] if not isinstance(x, list) else x
+        signal_keys = to_list(signal_keys)
+        windows = to_list(windows)
+        strides = to_list(strides)
+
         self.feature_descriptions = []
         # iterate over all combinations
         combinations = [functions, signal_keys, windows, strides]
