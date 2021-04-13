@@ -3,7 +3,7 @@
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
 from itertools import chain
-from typing import Dict, List, Union
+from typing import Dict, List, Union, Optional
 
 import pandas as pd
 
@@ -22,6 +22,7 @@ def dataframe_func(func):
     def wrapper(series_dict: Dict[str, pd.Series], **kwargs):
         df = _series_dict_to_df(series_dict)
         res = func(df, **kwargs)
+        assert isinstance(res, pd.DataFrame)
         return res
 
     return wrapper
@@ -41,11 +42,38 @@ def single_series_func(func):
     def wrapper(series_dict: Dict[str, pd.Series], **kwargs):
         output_dict = dict()
         for k, v in series_dict.items():
-            output_dict[k] = func(v, **kwargs)
+            res = func(v, **kwargs)
+            assert(isinstance(res, pd.Series))
+            output_dict[k] = res
 
         return output_dict
 
     return wrapper
+
+
+def _df_dict_to_series_list(
+    df_dict: Dict[str, Union[pd.DataFrame, pd.Series]]
+) -> List[pd.Series]:
+    """Convert a DataFrame dict to a list of Series.
+
+    Parameters
+    ----------
+    df_dict : Dict[str, Union[pd.DataFrame, pd.Series]]
+        The series dict that will be converted.
+
+    Returns
+    -------
+    List[pd.Series]
+        A list of series.
+
+    """
+    series_list = []
+    for dfs in df_dict.values():
+        if isinstance(dfs, pd.Series):
+            series_list.append(dfs)
+        elif isinstance(dfs, pd.DataFrame):
+            series_list += [dfs[c] for c in dfs.columns]
+    return series_list
 
 
 def _series_dict_to_df(series_dict: Dict[str, pd.Series]) -> pd.DataFrame:
@@ -152,7 +180,7 @@ class SeriesProcessor:
 class SeriesProcessorPipeline:
     """Pipeline containing `SeriesProcessor` object to be applied sequentially."""
 
-    def __init__(self, processors: List[SeriesProcessor] = []):
+    def __init__(self, processors: Optional[List[SeriesProcessor]] = None):
         """Init `SeriesProcessorPipeline object.
 
         Parameters
@@ -160,10 +188,12 @@ class SeriesProcessorPipeline:
         processors : List[SeriesProcessor], optional
             List of `SeriesProcessor` objects that will be applied sequentially to the
             signals dict. The processing steps will be executed in the same order as
-            passed with this list, by default []
+            passed with this list, by default None
 
         """
-        self.processing_registry: List[SeriesProcessor] = processors
+        self.processing_registry: List[SeriesProcessor] = []
+        if processors is not None:
+            self.processing_registry = processors
 
     def get_all_required_signals(self) -> List[str]:
         """Return required signal for this pipeline.
@@ -198,23 +228,29 @@ class SeriesProcessorPipeline:
 
     def __call__(
         self,
-        signals: Union[List[pd.Series], pd.DataFrame],
+        signals: Union[
+            Dict[str, Union[pd.Series, pd.DataFrame]],
+            List[Union[pd.Series, pd.DataFrame]],
+            pd.Series,
+            pd.DataFrame,
+        ],
         return_all_signals=True,
         return_df=True,
-    ) -> Union[Dict[str, pd.Series], pd.DataFrame]:
+    ) -> Union[Dict[str, Union[pd.Series, pd.DataFrame]], pd.DataFrame]:
         """Execute all `SeriesProcessor` objects in pipeline sequentially.
 
         Apply all the processing steps on passed Series list or DataFrame and return the
         preprocessed Series list or DataFrame.
+
         Parameters
         ----------
-        signals : Union[List[pd.Series], pd.DataFrame]
+        signals : Union[Dict[str, Union[pd.Series, pd.DataFrame]], List[Union[pd.Series, pd.DataFrame]], pd.Series, pd.DataFrame]
             The signals on which the preprocessing steps will be executed. The signals
             need a datetime index.
         return_all_signals : bool, default: True
             Whether the output needs to return all the signals. If `True` the output
             will contain all signals that were passed to this method. If `False` the
-            output will contain just the required signals (see 
+            output will contain just the required signals (see
             `get_all_required_signals`).
         return_df : bool, default: True
             Whether the output needs to be a series dict or a DataFrame. If `True` the
@@ -235,13 +271,23 @@ class SeriesProcessorPipeline:
         # Converting the signals list into a dict
         series_dict = dict()
 
-        if type(signals) == pd.DataFrame:
-            series_list = [signals[c] for c in signals.columns]
-        else:
-            series_list = signals
+        def to_list(x):
+            if not isinstance(x, list):
+                return [x]
+            return x
+
+        if isinstance(signals, dict):
+            signals = _df_dict_to_series_list(signals)
+
+        series_list = []
+        for series in to_list(signals):
+            if type(series) == pd.DataFrame:
+                series_list += [series[c] for c in series.columns]
+            else:
+                series_list.append(series)
 
         for s in series_list:
-            assert type(s) == pd.Series, "Error non pd.Series object passed"
+            assert type(s) == pd.Series, f"Error non pd.Series object passed: {type(s)}"
             if not return_all_signals:
                 # If just the required signals have to be returned
                 if s.name in self.get_all_required_signals():
