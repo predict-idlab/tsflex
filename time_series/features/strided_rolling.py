@@ -3,7 +3,7 @@
 
 __author__ = "Vic Degraeve, Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
 
-from typing import Union, Dict
+from typing import Callable, Union, Dict
 
 import numpy as np
 import pandas as pd
@@ -35,9 +35,8 @@ class StridedRolling:
         df = df.to_frame() if isinstance(df, pd.Series) else df
         self.window = window
         self.stride = stride
-        self.time_indexes = df.index[window - 1:][
-                            ::stride
-                            ]  # Index indicates the end of the windows
+        # Index indicates the end of the windows
+        self.time_indexes = df.index[window - 1:][::stride]
         # TODO: Make this here lazy by only doing on first call of apply func
         self._strided_vals = {}
         for col in df.columns:
@@ -54,16 +53,26 @@ class StridedRolling:
         Dict[str, np.ndarray]
             A `dict` with the column-name as key, and the corresponding expanded
             series as value.
+
         """
         return self._strided_vals
 
     # Make this the __call__ method
-    def apply_func(self, np_func: NumpyFuncWrapper) -> pd.DataFrame:
+    def apply_func(self, np_func: Union[Callable, NumpyFuncWrapper]) -> pd.DataFrame:
         """Apply a function to the expanded time-series.
+
+        Note
+        ----
+        * If `np_func` is only a callable argument, with no additional logic, this
+            will only work for a one-to-one mapping, i.e., no multiple feature-output
+                columns are supported for this case!
+        * If you want to calculate one-to-many -> use the `apply_func` method,
+             which takes a `NumpyFuncWrapper` instance as argument and explicitly use
+             the `output_names` attributes to the constructor.
 
         Parameters
         ----------
-        np_func : NumpyFuncWrapper
+        np_func : Union[Callable, NumpyFuncWrapper]
             The Callable (wrapped) function which will be applied.
 
         Returns
@@ -75,7 +84,11 @@ class StridedRolling:
 
         """
         feat_out = {}
+
+        if isinstance(np_func, Callable):
+            np_func = NumpyFuncWrapper(np_func)
         feat_names = np_func.output_names
+
         for col in self.strided_vals.keys():
             out = np.apply_along_axis(np_func, axis=-1, arr=self.strided_vals[col])
             if out.ndim == 1 or (out.ndim == 2 and out.shape[1] == 1):
