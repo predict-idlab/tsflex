@@ -85,7 +85,7 @@ class StridedRolling:
         """
         feat_out = {}
 
-        if isinstance(np_func, Callable):
+        if not isinstance(np_func, NumpyFuncWrapper):
             np_func = NumpyFuncWrapper(np_func)
         feat_names = np_func.output_names
 
