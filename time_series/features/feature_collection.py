@@ -134,6 +134,10 @@ class FeatureCollection:
     ) -> Union[List[pd.DataFrame], pd.DataFrame]:
         """Calculate features on the passed signals.
 
+        Note
+        ----
+        The column-names of the signals represent the signal-keys.
+
         Parameters
         ----------
         signals : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]
@@ -162,11 +166,12 @@ class FeatureCollection:
 
         if not isinstance(signals, list):
             signals = [signals]
+
         for s in signals:
             if isinstance(s, pd.DataFrame):
                 series_list += [s[c] for c in s.columns]
             elif isinstance(s, pd.Series):
-                series_list += s
+                series_list.append(s)
             else:
                 raise TypeError("Non pd.Series or pd.DataFrame object passed.")
 
@@ -222,9 +227,17 @@ class FeatureCollection:
         with open(file_path, "wb") as f:
             dill.dump(self, f, recurse=True)
 
-    def __repr__(self):
-        """Representation string of FeatureCollection."""
-        repr_string = f"{self.__class__.__name__}(\n"
-        for feature in self._feature_desc_list:
-            repr_string += f"\t{repr(feature)} \n"
-        return repr_string + ")"
+    def __repr__(self) -> str:
+        """Representation string of a Featurecollection."""
+        signals = sorted(set(k[0] for k in self._feature_desc_dict.keys()))
+        output_str = ''
+        for signal in signals:
+            output_str += f"{signal}: ("
+            keys = (x for x in self._feature_desc_dict.keys() if x[0] == signal)
+            for _, win_size, stride in keys:
+                output_str += f'\n\twin: {str(win_size):<6}, stride: {str(stride)}: ['
+                for feat_desc in self._feature_desc_dict[signal, win_size, stride]:
+                    output_str += f"\n\t\t{feat_desc._func_str()},"
+                output_str += '\n\t]'
+            output_str += "\n)\n"
+        return output_str
