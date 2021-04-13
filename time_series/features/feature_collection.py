@@ -108,23 +108,25 @@ class FeatureCollection:
                 raise TypeError(f"type: {type(feature)} is not supported")
 
     @staticmethod
-    def _executor(stroll: StridedRolling, function: NumpyFuncWrapper):
+    def _executor(t: Tuple[StridedRolling, NumpyFuncWrapper]):
+        stroll = t[0]
+        function = t[1]
         return stroll.apply_func(function)
 
-    def _stroll_generator(
+    def _stroll_feature_generator(
         self, series_dict: Dict[str, pd.Series]
-    ) -> Iterator[StridedRolling]:
+    ) -> Iterator[Tuple[StridedRolling, NumpyFuncWrapper]]:
         # We could also make the StridedRolling creation multithreaded
         # Another possible option to speed up this creations by making this lazy
         # and only creating it upon calling.
-        for feature in self._feature_desc_list:
+        for signal_key, win, stride in self._feature_desc_dict.keys():
             try:
-                stroll = StridedRolling(
-                    series_dict[feature.key], feature.window, feature.stride
-                )
+                stroll = StridedRolling(series_dict[signal_key], win, stride)
             except KeyError:
-                raise KeyError(f"Key {feature.key} not found in series dict.")
-            yield stroll
+                raise KeyError(f"Key {signal_key} not found in series dict.")
+
+            for feature in self._feature_desc_dict[(signal_key, win, stride)]:
+                yield stroll, feature.function
 
     def calculate(
         self,
@@ -187,8 +189,7 @@ class FeatureCollection:
             calculated_feature_list.extend(
                 pool.map(
                     self._executor,
-                    self._stroll_generator(series_dict),
-                    (x.function for x in self._feature_desc_list),
+                    self._stroll_feature_generator(series_dict)
                 )
             )
 
