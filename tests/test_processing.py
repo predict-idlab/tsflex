@@ -5,7 +5,12 @@ __author__ = "Jeroen Van Der Donckt, Emiel Deprost, Jonas Van Der Donckt"
 import pandas as pd
 import numpy as np
 
-from time_series.processing import single_series_func, dataframe_func
+from time_series.processing import (
+    single_series_func,
+    dataframe_func,
+    numpy_func,
+    series_numpy_func,
+)
 from time_series.processing import SeriesProcessor, SeriesProcessorPipeline
 
 from .utils import dummy_data, dataframe_to_series_dict, series_to_series_dict
@@ -77,6 +82,78 @@ def test_dataframe_func_decorator(dummy_data):
     assert isinstance(res, pd.DataFrame)  # TODO: WHY NOT RETURN A SERIES DICT?
     assert res.shape == (dummy_data.shape[0] - 10,) + dummy_data.shape[1:]
     assert not np.any(pd.isna(res))  # Check that there are no NANs present
+
+
+def test_numpy_func_decorator(dummy_data):
+    # Create undecorated numpy function
+    def numpy_is_close_med(sig: np.ndarray) -> np.ndarray:
+        return np.isclose(sig, np.median(sig))
+
+    # Create decorated numpy function
+    @numpy_func
+    def numpy_is_close_med_decorated(sig: np.ndarray) -> np.ndarray:
+        return np.isclose(sig, np.median(sig))
+
+    inp = dummy_data["TMP"]
+
+    # Undecorated numpy function
+    numpy_f = numpy_is_close_med
+    assert isinstance(inp.values, np.ndarray)
+    res = numpy_f(inp.values)
+    assert isinstance(res, np.ndarray)
+    assert res.shape == dummy_data["TMP"].shape
+    assert res.dtype == np.bool8
+    assert sum(res) > 0  # Check if at least 1 value is True
+
+    # # Decorated series function
+    decorated_numpy_f = numpy_is_close_med_decorated
+    series_dict = series_to_series_dict(inp)
+    assert isinstance(inp, pd.Series)
+    res = decorated_numpy_f(series_dict)
+    assert isinstance(res, dict)
+    assert res.keys() == series_dict.keys()
+    assert isinstance(res["TMP"], pd.Series)
+    assert res["TMP"].shape == dummy_data["TMP"].shape
+    assert np.issubdtype(res["TMP"], np.bool8)
+    assert sum(res["TMP"]) > 0  # Check if at least 1 value is True
+
+
+def test_series_numpy_func_decorator(dummy_data):
+    # Create undecorated series numpy function
+    def normalized_freq_scale(series: pd.Series) -> np.ndarray:
+        # NOTE: this is a really useless function, but it highlights a legit use case
+        sr = 1 / pd.to_timedelta(pd.infer_freq(series.index)).total_seconds()
+        return np.interp(series, (series.min(), series.max()), (0, sr))
+
+    # Create decorated series numpy function
+    @series_numpy_func
+    def sin_normalized_freq_close_zero_decorated(series: pd.Series) -> np.ndarray:
+        # NOTE: this is a really useless function, but it highlights a legit use case
+        sr = 1 / pd.to_timedelta(pd.infer_freq(series.index)).total_seconds()
+        return np.interp(series, (series.min(), series.max()), (0, sr))
+
+    inp = dummy_data["TMP"]
+
+    # Undecorated numpy function
+    series_numpy_f = normalized_freq_scale
+    assert isinstance(inp, pd.Series)
+    res = series_numpy_f(inp)
+    assert isinstance(res, np.ndarray)
+    assert res.shape == dummy_data["TMP"].shape
+    assert res.dtype == np.float64
+    assert (min(res) == 0) & (max(res) > 0)
+
+    # # Decorated series function
+    decorated_series_numpy_f = sin_normalized_freq_close_zero_decorated
+    series_dict = series_to_series_dict(inp)
+    assert isinstance(inp, pd.Series)
+    res = decorated_series_numpy_f(series_dict)
+    assert isinstance(res, dict)
+    assert res.keys() == series_dict.keys()
+    assert isinstance(res["TMP"], pd.Series)
+    assert res["TMP"].shape == dummy_data["TMP"].shape
+    assert np.issubdtype(res["TMP"], np.number)
+    assert (min(res["TMP"]) == 0) & (max(res["TMP"]) > 0)
 
 
 ## SeriesProcessor
@@ -164,12 +241,12 @@ def test_single_signal_series_processor_pipeline(dummy_data):
     assert res_df_req.columns == ["TMP"]
 
     # Check if length is smaller because NANs were removed
-    assert len(res_df_req) < len(dummy_data) # Because only required signals returned
-    assert len(res_dict_all["TMP"]) < len(dummy_data) # Because no df
-    assert len(res_dict_req["TMP"]) < len(dummy_data) # Because no df
+    assert len(res_df_req) < len(dummy_data)  # Because only required signals returned
+    assert len(res_dict_all["TMP"]) < len(dummy_data)  # Because no df
+    assert len(res_dict_req["TMP"]) < len(dummy_data)  # Because no df
     # When merging all signals to df, the length should be the original length
     assert len(res_df_all) == len(dummy_data)
-    
+
     # Check that there are no NANs present
     assert not any(res_df_req["TMP"].isna())
     assert (~any(res_dict_all["TMP"].isna())) & (~any(res_dict_req["TMP"].isna()))
@@ -219,9 +296,9 @@ def test_multi_signal_series_processor_pipeline(dummy_data):
     assert res_dict_req.keys() == set(["TMP", "EDA"])
     assert set(res_df_req.columns) == set(["TMP", "EDA"])
 
-    # Check if length is smaller because NANs were removed 
-    assert len(res_dict_all["TMP"]) < len(dummy_data) # Because no df
-    assert len(res_dict_req["TMP"]) < len(dummy_data) # Because no df
+    # Check if length is smaller because NANs were removed
+    assert len(res_dict_all["TMP"]) < len(dummy_data)  # Because no df
+    assert len(res_dict_req["TMP"]) < len(dummy_data)  # Because no df
     # When merging to df, the length should be the original length
     assert (len(res_df_all) == len(dummy_data)) & (len(res_df_req) == len(dummy_data))
 
@@ -230,12 +307,12 @@ def test_multi_signal_series_processor_pipeline(dummy_data):
     # NaNs get introduced when merging to df
     assert any(res_df_all["TMP"].isna()) & any(res_df_req["TMP"].isna())
 
-    assert all(res_dict_req["TMP"] == res_dict_all["TMP"]) # Check dict_req == dict_all
+    assert all(res_dict_req["TMP"] == res_dict_all["TMP"])  # Check dict_req == dict_all
     # Check the rest against all dict_all
     # Drop NANs for df because they got introduced when merging to df
     assert all(res_df_all["TMP"].dropna().values == res_dict_all["TMP"])
     assert all(res_df_req["TMP"].dropna().values == res_dict_all["TMP"])
-    assert all(res_dict_req["EDA"] == res_dict_all["EDA"]) # Check dict_req == dict_all
+    assert all(res_dict_req["EDA"] == res_dict_all["EDA"])  # Check dict_req == dict_all
     # Check the rest against all dict_all
     assert all(res_df_all["EDA"] == res_dict_all["EDA"])
     assert all(res_df_req["EDA"] == res_dict_all["EDA"])

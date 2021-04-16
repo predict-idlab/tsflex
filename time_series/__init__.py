@@ -10,6 +10,8 @@ from .processing import (
     SeriesProcessorPipeline,
     dataframe_func,
     single_series_func,
+    numpy_func,
+    series_numpy_func,
 )
 
 __all__ = [
@@ -21,4 +23,6 @@ __all__ = [
     "SeriesProcessorPipeline",
     "dataframe_func",
     "single_series_func",
+    "numpy_func",
+    "series_numpy_func",
 ]
