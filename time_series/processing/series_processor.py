@@ -6,6 +6,7 @@ from itertools import chain
 from typing import Dict, List, Union, Optional
 
 import pandas as pd
+import numpy as np
 
 
 def dataframe_func(func):
@@ -25,6 +26,7 @@ def dataframe_func(func):
         assert isinstance(res, pd.DataFrame)
         return res
 
+    wrapper.__name__ = "[wrapped: dataframe_func] " + func.__name__
     return wrapper
 
 
@@ -32,22 +34,80 @@ def single_series_func(func):
     """Decorate function to use single Series instead of a series dict.
 
     The signals dict will be passed as multiple signals to the decorated function.
-    This should be in function where the key has no importance and the processing
+    This should be a function where the key has no importance and the processing
     can be applied to all the required signals identically. The decorated function
     has to take a pandas Series as input and also return a pandas Series.
     The function's prototype should be:
-    "func(signals: pd.Series, **kwargs) -> pd.Series"
+    "func(signal: pd.Series, **kwargs) -> pd.Series"
     """
 
     def wrapper(series_dict: Dict[str, pd.Series], **kwargs):
         output_dict = dict()
         for k, v in series_dict.items():
             res = func(v, **kwargs)
-            assert(isinstance(res, pd.Series))
+            assert isinstance(res, pd.Series)
             output_dict[k] = res
 
         return output_dict
 
+    wrapper.__name__ = "[wrapped: single_series_func] " + func.__name__
+    return wrapper
+
+
+def numpy_func(func):
+    """Decorate function to use numpy array instead of a series dict.
+
+    The signals dict will be passed as multiple signals to the decorated function.
+    This should be a function where the key has no importance and the processing
+    can be applied to all the required signals identically. The decorated function
+    has to take a numpy array as input and also return a numpy array.
+    The function's prototype should be:
+    "func(signal: np.ndarray, **kwargs) -> np.ndarray"
+    """
+
+    def wrapper(series_dict: Dict[str, pd.Series], **kwargs):
+        output_dict = dict()
+        for k, v in series_dict.items():
+            res = func(v.values, **kwargs)
+            assert isinstance(res, np.ndarray)
+            res = pd.Series(data=res, index=v.index, name=v.name)
+            output_dict[k] = res
+
+        return output_dict
+
+    wrapper.__name__ = "[wrapped: numpy_func] " + func.__name__
+    return wrapper
+
+
+def series_numpy_func(func):
+    """Decorate function to use pandas series instead of a series dict.
+
+    The signals dict will be passed as multiple signals to the decorated function.
+    This should be a function where the key has no importance and the processing
+    can be applied to all the required signals identically. The decorated function
+    has to take a pandas Series as input and return a numpy array.
+    The function's prototype should be:
+    "func(signal: pd.Series, **kwargs) -> np.ndarray"
+
+    Note
+    ----
+    This decorator is only useful when the index of the `pd.Series` is used in
+    `func`. When the index is not used, `func` should take a np.ndarray as input,
+    in that case the `numpy_func` decorator should be used.
+
+    """
+
+    def wrapper(series_dict: Dict[str, pd.Series], **kwargs):
+        output_dict = dict()
+        for k, v in series_dict.items():
+            res = func(v, **kwargs)
+            assert isinstance(res, np.ndarray)
+            res = pd.Series(data=res, index=v.index, name=v.name)
+            output_dict[k] = res
+
+        return output_dict
+
+    wrapper.__name__ = "[wrapped: series_numpy_func] " + func.__name__
     return wrapper
 
 
