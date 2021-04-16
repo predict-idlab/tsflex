@@ -127,7 +127,7 @@ def test_series_numpy_func_decorator(dummy_data):
 
     # Create decorated series numpy function
     @series_numpy_func
-    def sin_normalized_freq_close_zero_decorated(series: pd.Series) -> np.ndarray:
+    def normalized_freq_scale_decorated(series: pd.Series) -> np.ndarray:
         # NOTE: this is a really useless function, but it highlights a legit use case
         sr = 1 / pd.to_timedelta(pd.infer_freq(series.index)).total_seconds()
         return np.interp(series, (series.min(), series.max()), (0, sr))
@@ -144,7 +144,7 @@ def test_series_numpy_func_decorator(dummy_data):
     assert (min(res) == 0) & (max(res) > 0)
 
     # # Decorated series function
-    decorated_series_numpy_f = sin_normalized_freq_close_zero_decorated
+    decorated_series_numpy_f = normalized_freq_scale_decorated
     series_dict = series_to_series_dict(inp)
     assert isinstance(inp, pd.Series)
     res = decorated_series_numpy_f(series_dict)
