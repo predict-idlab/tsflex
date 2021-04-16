@@ -10,13 +10,14 @@ from __future__ import annotations
 
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
-from pathlib import Path
-from typing import Dict, Iterator, List, Tuple, Union
-
 import dill
-from tqdm.auto import tqdm
 import pandas as pd
+
 from pathos.multiprocessing import ProcessPool
+from tqdm.auto import tqdm
+from pathlib import Path
+
+from typing import Dict, Iterator, List, Tuple, Union
 
 from ..features.function_wrapper import NumpyFuncWrapper
 from .feature import FeatureDescriptor, MultipleFeatureDescriptors
@@ -187,7 +188,7 @@ class FeatureCollection:
         # nodes = number (and potentially description) of workers
         # ncpus - number of worker processors servers
         with ProcessPool(nodes=njobs) as pool:
-            results = pool.imap(
+            results = pool.uimap(
                 self._executor, self._stroll_feature_generator(series_dict)
             )
             for f in tqdm(results, total=len(self._feature_desc_list)):
