@@ -10,12 +10,14 @@ from __future__ import annotations
 
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
-from pathlib import Path
-from typing import Dict, Iterator, List, Tuple, Union
-
 import dill
 import pandas as pd
+
 from pathos.multiprocessing import ProcessPool
+from tqdm.auto import tqdm
+from pathlib import Path
+
+from typing import Dict, Iterator, List, Tuple, Union
 
 from ..features.function_wrapper import NumpyFuncWrapper
 from .feature import FeatureDescriptor, MultipleFeatureDescriptors
@@ -108,23 +110,25 @@ class FeatureCollection:
                 raise TypeError(f"type: {type(feature)} is not supported")
 
     @staticmethod
-    def _executor(stroll: StridedRolling, function: NumpyFuncWrapper):
+    def _executor(t: Tuple[StridedRolling, NumpyFuncWrapper]):
+        stroll = t[0]
+        function = t[1]
         return stroll.apply_func(function)
 
-    def _stroll_generator(
+    def _stroll_feature_generator(
         self, series_dict: Dict[str, pd.Series]
-    ) -> Iterator[StridedRolling]:
+    ) -> Iterator[Tuple[StridedRolling, NumpyFuncWrapper]]:
         # We could also make the StridedRolling creation multithreaded
         # Another possible option to speed up this creations by making this lazy
         # and only creating it upon calling.
-        for feature in self._feature_desc_list:
+        for signal_key, win, stride in self._feature_desc_dict.keys():
             try:
-                stroll = StridedRolling(
-                    series_dict[feature.key], feature.window, feature.stride
-                )
+                stroll = StridedRolling(series_dict[signal_key], win, stride)
             except KeyError:
-                raise KeyError(f"Key {feature.key} not found in series dict.")
-            yield stroll
+                raise KeyError(f"Key {signal_key} not found in series dict.")
+
+            for feature in self._feature_desc_dict[(signal_key, win, stride)]:
+                yield stroll, feature.function
 
     def calculate(
         self,
@@ -184,13 +188,11 @@ class FeatureCollection:
         # nodes = number (and potentially description) of workers
         # ncpus - number of worker processors servers
         with ProcessPool(nodes=njobs) as pool:
-            calculated_feature_list.extend(
-                pool.map(
-                    self._executor,
-                    self._stroll_generator(series_dict),
-                    (x.function for x in self._feature_desc_list),
-                )
+            results = pool.uimap(
+                self._executor, self._stroll_feature_generator(series_dict)
             )
+            for f in tqdm(results, total=len(self._feature_desc_list)):
+                calculated_feature_list.append(f)
 
         if merge_dfs:
             df_merged = pd.DataFrame()
@@ -230,14 +232,14 @@ class FeatureCollection:
     def __repr__(self) -> str:
         """Representation string of a Featurecollection."""
         signals = sorted(set(k[0] for k in self._feature_desc_dict.keys()))
-        output_str = ''
+        output_str = ""
         for signal in signals:
             output_str += f"{signal}: ("
             keys = (x for x in self._feature_desc_dict.keys() if x[0] == signal)
             for _, win_size, stride in keys:
-                output_str += f'\n\twin: {str(win_size):<6}, stride: {str(stride)}: ['
+                output_str += f"\n\twin: {str(win_size):<6}, stride: {str(stride)}: ["
                 for feat_desc in self._feature_desc_dict[signal, win_size, stride]:
                     output_str += f"\n\t\t{feat_desc._func_str()},"
-                output_str += '\n\t]'
+                output_str += "\n\t]"
             output_str += "\n)\n"
         return output_str
