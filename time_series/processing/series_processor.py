@@ -356,13 +356,21 @@ class SeriesProcessorPipeline:
                 # If all the signals have to be returned
                 series_dict[s.name] = s.copy()
 
+        output_keys = set()  # Maintain set of output signals
         for processor in self.processing_registry:
             try:
-                series_dict.update(processor(series_dict))
+                processed_dict = processor(series_dict)
+                output_keys.update(processed_dict.keys())
+                series_dict.update(processed_dict)
             except Exception as e:
                 raise _ProcessingError(
                     "Error while processing function {}".format(processor.name)
                 ) from e
+
+        if not return_all_signals:
+            # Return jus the output signals
+            output_dict = {key: series_dict[key] for key in output_keys}
+            series_dict = output_dict
 
         if return_df:
             # We merge the signals dict into a DataFrame
