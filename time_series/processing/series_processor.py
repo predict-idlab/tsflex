@@ -34,7 +34,7 @@ def single_series_func(func):
     """Decorate function to use single Series instead of a series dict.
 
     The signals dict will be passed as multiple signals to the decorated function.
-    This should be in function where the key has no importance and the processing
+    This should be a function where the key has no importance and the processing
     can be applied to all the required signals identically. The decorated function
     has to take a pandas Series as input and also return a pandas Series.
     The function's prototype should be:
@@ -58,7 +58,7 @@ def numpy_func(func):
     """Decorate function to use numpy array instead of a series dict.
 
     The signals dict will be passed as multiple signals to the decorated function.
-    This should be in function where the key has no importance and the processing
+    This should be a function where the key has no importance and the processing
     can be applied to all the required signals identically. The decorated function
     has to take a numpy array as input and also return a numpy array.
     The function's prototype should be:
@@ -83,16 +83,18 @@ def series_numpy_func(func):
     """Decorate function to use pandas series instead of a series dict.
 
     The signals dict will be passed as multiple signals to the decorated function.
-    This should be in function where the key has no importance and the processing
+    This should be a function where the key has no importance and the processing
     can be applied to all the required signals identically. The decorated function
     has to take a pandas Series as input and return a numpy array.
     The function's prototype should be:
     "func(signal: pd.Series, **kwargs) -> np.ndarray"
 
-    NOTE: This decorator is only useful when the index of the pandas Series is used in
-          the function `func`. When the index is not used, the function `func` should
-          take a np.ndarray as input, in that case the `numpy_func` decorator should be
-          used.
+    Note
+    ----
+    This decorator is only useful when the index of the `pd.Series` is used in
+    `func`. When the index is not used, `func` should take a np.ndarray as input,
+    in that case the `numpy_func` decorator should be used.
+
     """
 
     def wrapper(series_dict: Dict[str, pd.Series], **kwargs):
