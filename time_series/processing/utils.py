@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Utilities for the processing pipelines
-"""
+"""Utilities for the processing pipelines."""
 
 __author__ = 'Jonas Van Der Donckt'
 
@@ -21,7 +20,7 @@ def process_chunks_multithreaded(
         njobs: int,
         **processing_kwargs
 ) -> List[Any]:
-    """Process  `df_dict_list` in a multithreaded manner, order is preserved.
+    """Process `df_dict_list` in a multithreaded manner, order is preserved.
 
     Note
     ----
@@ -31,7 +30,7 @@ def process_chunks_multithreaded(
     Parameters
     ----------
     df_dict_list: List[Dict[str, pd.DataFrame]]
-        A list of df_dict chunks. most likely the output of `chunk_df_dict`.
+        A list of df_dict chunks, most likely the output of `chunk_df_dict`.
     processing_pipeline: SeriesProcessorPipeline
         The pipeline that will be called on each item in `df_dict_list`.
     njobs: int
@@ -43,12 +42,22 @@ def process_chunks_multithreaded(
     -------
     List[Any]
         A list of the `processing_pipeline`'s outputs. The order is preserved.
+
+    Note
+    ----
+    If any error occurs while executing the `processing_pipeline` on one of the
+    chunks in `df_dict_list`, the traceback is printed and an empty dataframe is
+    returned. We chose for this behavior, because in this way the other parallel
+    processes are not halted in case of an error.
+    
     """
 
     def _executor(chunk):
         try:
             return processing_pipeline(chunk, **processing_kwargs)
         except:
+            # Print traceback and return empty datafrane in order to not
+            # break the other parallel processes.
             traceback.print_exc()
             return pd.DataFrame()
 
