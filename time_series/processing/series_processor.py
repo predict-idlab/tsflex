@@ -149,9 +149,20 @@ def _series_dict_to_df(series_dict: Dict[str, pd.Series]) -> pd.DataFrame:
     pd.DataFrame
         The merged pandas DataFrame
 
+    Note
+    ----
+    This method performs a basic check to validate whether the time-indexed `pd.Series`
+    have the same index. In this check we assume that each `pd.Series` has a constant
+    sampling rate.
+
     """
+    # Check if the time-indexes of the series are equal
+    index_info = set([(s.index[0], s.index[-1], len(s)) for s in series_dict.values()])
+    if len(index_info) == 1:
+        # When the time-indexes are the same we can create df very efficiently
+        return pd.DataFrame(series_dict)
     df = pd.DataFrame()
-    for _, s in series_dict.items():
+    for s in series_dict.values():
         df = df.merge(s, left_index=True, right_index=True, how="outer")
     return df
 
