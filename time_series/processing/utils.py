@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """Utilities for the processing pipelines."""
 
-__author__ = 'Jonas Van Der Donckt'
+__author__ = 'Jonas Van Der Donckt, Jeroen Van Der Donckt'
 
 import traceback
 from datetime import timedelta
@@ -83,11 +83,12 @@ def chunk_df_dict(
 
     Does 2 things:
         1. Detecting gaps in the `df_dict` time series
-        2. Divides the df_dict into chunks, according to the parameter configuration.
+        2. Divides the `df_dict` into chunks, according to the parameter 
+           configuration.
 
     Note
     ----
-    Assumes that the data modalities within the df_dict_users have identical gaps on
+    Assumes that the data modalities within the `df_dict` have identical gaps on
     the same time-positions!
 
     Note
@@ -101,16 +102,19 @@ def chunk_df_dict(
         The data-dict, the key represents the sensor modality, and its value the
         corresponding `DataFrame`. Each DataFrame must have a `DateTime-index`.
     fs_dict: Dict[str, int]
-        The sample frequency dict. This dict must at least withhold of the keys from the
-        `df_dict`.
+        The sample frequency dict. This dict must at least withhold all the keys 
+        from the `df_dict`.
     verbose : bool, optional
         If set, will print more verbose output, by default True
     cut_minute_wise : bool, optional
         If set, will cut on minute level granularity, by default False
     min_chunk_dur_s : int, optional
-        The minimum duration of a chunk in seconds, by default None
+        The minimal duration of a chunk in seconds, by default None
+        Chunks with durations smaller than this will not be processed.
     max_chunk_dur_s : int, optional
-        The max duration of a chunk, by default None
+        The maximal duration of a chunk in seconds, by default None
+        Chunks with durations larger than this will be chunked in smaller chunks
+        with maximal duration of `max_chunk_dur_s`.
     sub_chunk_margin_s: int, optional
         The left and right margin of the sub-chunks.
     copy: boolean, optional
@@ -144,6 +148,7 @@ def chunk_df_dict(
             return df_s[t_begin:t_end]
 
     def insert_chunk(idx, dict_key, chunk):
+        """Inserts the chunck into the `df_list_dict`."""
         t_chunk_start, t_chunk_end = chunk.index[[0, -1]]
         if idx >= len(df_list_dict):
             df_list_dict.append({dict_key: chunk})
@@ -151,10 +156,11 @@ def chunk_df_dict(
                 chunk, t_chunk_start, t_chunk_end, "APPEND sub chunk"
             )
         else:
-            # there already exists a key-(sub)chunk template on that place,
-            # just add this other sensor modality to it
-            # !!!note: no guarantee that this is this other key-(sub)chunk template
-            #           covers the same time range!!!
+            # There already exists a key-(sub)chunk template on that place,
+            # thus just add this other sensor modality to it.
+            # !! Note: there is no guarantee that this is this other
+            #          key-(sub)chunk template covers the same time range
+            assert dict_key not in df_list_dict[idx].keys()
             df_list_dict[idx][dict_key] = chunk
             print_verbose_time(
                 chunk, t_chunk_start, t_chunk_end, "INSERT sub chunk"
@@ -170,15 +176,17 @@ def chunk_df_dict(
         assert i == len(df_list_dict)
         assert sensor_str in fs_dict.keys()
         fs_sensor = fs_dict[sensor_str]
-        gaps = df_sensor.index.to_series().diff() > timedelta(seconds=1.05 / fs_sensor)
-        # set the first and last timestamp to True
+        sample_period = 1 / fs_sensor
+        # Allowed offset (in seconds) is sample_period + 0.5*sample_period
+        gaps = df_sensor.index.to_series().diff() > timedelta(seconds=(3/2)*sample_period)
+        # Set the first and last timestamp to True
         gaps.iloc[[0, -1]] = True
         gaps = df_sensor[gaps].index.tolist()
         if verbose:
             print('-' * 10, ' detected gaps', '-' * 10)
             print(*gaps, sep="\n")
 
-        # reset the iterator
+        # Reset the iterator
         i = 0
         for (t_begin_c, t_end_c) in zip(gaps, gaps[1:]):
             if cut_minute_wise:
@@ -193,10 +201,11 @@ def chunk_df_dict(
                     continue
 
             # The t_end is the t_start of the new time range -> hence [:-1]
-            # cut on -> [t_start_c(hunk), t_end_c(hunk)[
+            # => cut on [t_start_c(hunk), t_end_c(hunk)[
             df_chunk = df_sensor[t_begin_c:t_end_c][:-1]
             if len(df_chunk) > 2:  # re-adjust the t_end
-                t_end_c = df_chunk.index.to_series().iloc[-1]
+                # TODO: snap ik niet helemaal 
+                t_end_c = df_chunk.index[-1]
             else:
                 print_verbose_time(df_sensor, t_begin_c, t_end_c, "too small df_chunk")
                 continue
@@ -212,7 +221,7 @@ def chunk_df_dict(
                 )
                 continue
 
-            # divide the chunk into sub_chunks (sc's)
+            # Divide the chunk into sub_chunks (sc's)
             if max_chunk_dur_s is not None and chunk_range_s > max_chunk_dur_s:
                 print_verbose_time(df_chunk, t_begin_c, t_end_c,
                                    "Dividing in sub-chunks")
@@ -235,11 +244,11 @@ def chunk_df_dict(
 
                     # update the condition's variable
                     t_begin_sc = t_end_sc
-                continue
+            else:
+                i = insert_chunk(
+                    idx=i,
+                    dict_key=sensor_str,
+                    chunk=slice_time(df_sensor, t_begin_c, t_end_c)
+                )
 
-            i = insert_chunk(
-                idx=i,
-                dict_key=sensor_str,
-                chunk=slice_time(df_sensor, t_begin_c, t_end_c)
-            )
     return df_list_dict
