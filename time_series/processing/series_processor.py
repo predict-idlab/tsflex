@@ -152,7 +152,7 @@ def _series_dict_to_df(series_dict: Dict[str, pd.Series]) -> pd.DataFrame:
     Note
     ----
     The `series_dict` is an internal representation of the signals list.
-    In this dictionary, the key always is the accompanying series its name.
+    In this dictionary, the key is always the accompanying series its name.
     This internal representation is constructed in the `__call__` method of the 
     `SeriesProcessorPipeline`.
 
