@@ -149,9 +149,28 @@ def _series_dict_to_df(series_dict: Dict[str, pd.Series]) -> pd.DataFrame:
     pd.DataFrame
         The merged pandas DataFrame
 
+    Note
+    ----
+    The `series_dict` is an internal representation of the signals list.
+    In this dictionary, the key is always the accompanying series its name.
+    This internal representation is constructed in the `__call__` method of the 
+    `SeriesProcessorPipeline`.
+
     """
+    # 0. Check if the series_dict has only 1 signal, to create the df efficiently
+    if len(series_dict) == 1:
+        return pd.DataFrame(series_dict)
+    # 1. Check if the time-indexes of the series are equal, to create the df efficiently
+    index_info = set(
+        [(s.index[0], s.index[-1], len(s), s.index.freq) for s in series_dict.values()]
+    )
+    freq_idx = -1  # The index of the frequency info in the tuple(s) in index_info
+    if len(index_info) == 1 and list(index_info)[0][freq_idx] is not None:
+        # When the time-indexes are the same we can create df very efficiently
+        return pd.DataFrame(series_dict)
+    # 2. If check failed, create the df by merging the series (the slow way)
     df = pd.DataFrame()
-    for _, s in series_dict.items():
+    for s in series_dict.values():
         df = df.merge(s, left_index=True, right_index=True, how="outer")
     return df
 
@@ -197,6 +216,7 @@ class SeriesProcessor:
         ----------
         series_dict : Dict[str, pd.Series]
             A dict of pandas signals containing the signals that need to be processed.
+            The key should always be the accompanying series its name.
 
         Returns
         -------
@@ -208,6 +228,12 @@ class SeriesProcessor:
         KeyError
             Raised when a key is not present in the `series_dict` but required for the
             processing.
+
+        Note
+        ----
+        The `series_dict` is actually an internal representation of the signals list.
+        This internal representation is constructed in the `__call__` method of the 
+        `SeriesProcessorPipeline`.
 
         """
         # Only selecting the signals that are needed for this processing step
