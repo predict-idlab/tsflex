@@ -149,7 +149,17 @@ def _series_dict_to_df(series_dict: Dict[str, pd.Series]) -> pd.DataFrame:
     pd.DataFrame
         The merged pandas DataFrame
 
+    Note
+    ----
+    The `series_dict` is an internal representation of the signals list.
+    In this dictionary, the key always is the accompanying series its name.
+    This internal representation is constructed in the `__call__` method of the 
+    `SeriesProcessorPipeline`.
+
     """
+    # 0. Check if the series_dict has only 1 signal, to create the df efficiently
+    if len(series_dict) == 1:
+        return pd.DataFrame(series_dict)
     # 1. Check if the time-indexes of the series are equal, to create the df efficiently
     index_info = set(
         [(s.index[0], s.index[-1], len(s), s.index.freq) for s in series_dict.values()]
@@ -206,6 +216,7 @@ class SeriesProcessor:
         ----------
         series_dict : Dict[str, pd.Series]
             A dict of pandas signals containing the signals that need to be processed.
+            The key should always be the accompanying series its name.
 
         Returns
         -------
@@ -217,6 +228,12 @@ class SeriesProcessor:
         KeyError
             Raised when a key is not present in the `series_dict` but required for the
             processing.
+
+        Note
+        ----
+        The `series_dict` is actually an internal representation of the signals list.
+        This internal representation is constructed in the `__call__` method of the 
+        `SeriesProcessorPipeline`.
 
         """
         # Only selecting the signals that are needed for this processing step
