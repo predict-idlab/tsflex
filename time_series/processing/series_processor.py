@@ -54,61 +54,29 @@ def single_series_func(func):
     return wrapper
 
 
-def numpy_func(func):
-    """Decorate function to use numpy array instead of a series dict.
+# def numpy_func(func):
+#     """Decorate function to use numpy array instead of a series dict.
 
-    The signals dict will be passed as multiple signals to the decorated function.
-    This should be a function where the key has no importance and the processing
-    can be applied to all the required signals identically. The decorated function
-    has to take a numpy array as input and also return a numpy array.
-    The function's prototype should be:
-    "func(signal: np.ndarray, **kwargs) -> np.ndarray"
-    """
+#     The signals dict will be passed as multiple signals to the decorated function.
+#     This should be a function where the key has no importance and the processing
+#     can be applied to all the required signals identically. The decorated function
+#     has to take a numpy array as input and also return a numpy array.
+#     The function's prototype should be:
+#     "func(signal: np.ndarray, **kwargs) -> np.ndarray"
+#     """
 
-    def wrapper(series_dict: Dict[str, pd.Series], **kwargs):
-        output_dict = dict()
-        for k, v in series_dict.items():
-            res = func(v.values, **kwargs)
-            assert isinstance(res, np.ndarray)
-            res = pd.Series(data=res, index=v.index, name=v.name)
-            output_dict[k] = res
+#     def wrapper(series_dict: Dict[str, pd.Series], **kwargs):
+#         output_dict = dict()
+#         for k, v in series_dict.items():
+#             res = func(v.values, **kwargs)
+#             assert isinstance(res, np.ndarray)
+#             res = pd.Series(data=res, index=v.index, name=v.name)
+#             output_dict[k] = res
 
-        return output_dict
+#         return output_dict
 
-    wrapper.__name__ = "[wrapped: numpy_func] " + func.__name__
-    return wrapper
-
-
-def series_numpy_func(func):
-    """Decorate function to use pandas series instead of a series dict.
-
-    The signals dict will be passed as multiple signals to the decorated function.
-    This should be a function where the key has no importance and the processing
-    can be applied to all the required signals identically. The decorated function
-    has to take a pandas Series as input and return a numpy array.
-    The function's prototype should be:
-    "func(signal: pd.Series, **kwargs) -> np.ndarray"
-
-    Note
-    ----
-    This decorator is only useful when the index of the `pd.Series` is used in
-    `func`. When the index is not used, `func` should take a np.ndarray as input,
-    in that case the `numpy_func` decorator should be used.
-
-    """
-
-    def wrapper(series_dict: Dict[str, pd.Series], **kwargs):
-        output_dict = dict()
-        for k, v in series_dict.items():
-            res = func(v, **kwargs)
-            assert isinstance(res, np.ndarray)
-            res = pd.Series(data=res, index=v.index, name=v.name)
-            output_dict[k] = res
-
-        return output_dict
-
-    wrapper.__name__ = "[wrapped: series_numpy_func] " + func.__name__
-    return wrapper
+#     wrapper.__name__ = "[wrapped: numpy_func] " + func.__name__
+#     return wrapper
 
 
 def _df_dict_to_series_list(
@@ -153,7 +121,7 @@ def _series_dict_to_df(series_dict: Dict[str, pd.Series]) -> pd.DataFrame:
     ----
     The `series_dict` is an internal representation of the signals list.
     In this dictionary, the key is always the accompanying series its name.
-    This internal representation is constructed in the `__call__` method of the 
+    This internal representation is constructed in the `__call__` method of the
     `SeriesProcessorPipeline`.
 
     """
@@ -175,6 +143,30 @@ def _series_dict_to_df(series_dict: Dict[str, pd.Series]) -> pd.DataFrame:
     return df
 
 
+def _np_array_to_series(np_array: np.ndarray, series: pd.Series) -> pd.Series:
+    """Convert the `np_array` into a pandas Series.
+
+    Parameters
+    ----------
+    np_array: np.ndarray
+        The numpy array that needs to be converted to a pandas Series.
+    series: pd.Series
+        The pandas Series that contains the name and the index for the `np_array`.
+
+    Returns
+    -------
+    pd.Series
+        The numpy array as a pandas Series with as index the given series its index and
+        as name the series its name
+
+    Note
+    ----
+    This method requires the `np_array` to have the same length as the `series`.
+
+    """
+    return pd.Series(data=np_array, index=series.index, name=series.name)
+
+
 class _ProcessingError(Exception):
     pass
 
@@ -194,7 +186,8 @@ class SeriesProcessor:
             to take a dict with keys the signal names and the corresponding
             (time indexed) Series as input. It has to output the processed
             series_dict. The prototype of the function should match:
-            `func(series_dict: Dict[str, pd.Series]) -> Dict[str, pd.Series]`.
+            `func(series_dict: Dict[str, pd.Series]) 
+                -> Union[np.ndarray, pd.Series, pd.DataFrame, Dict[str, pd.Series]]`.
         name : str, optional
             The name of the processor, by default None and the `func.__name__`
             will be used.
@@ -209,7 +202,9 @@ class SeriesProcessor:
 
         self.kwargs = kwargs
 
-    def __call__(self, series_dict: Dict[str, pd.Series]) -> Dict[str, pd.Series]:
+    def __call__(
+        self, series_dict: Dict[str, pd.Series]
+    ) -> Union[Dict[str, pd.Series], pd.DataFrame]:
         """Cal(l)culates the processed signal.
 
         Parameters
@@ -228,11 +223,13 @@ class SeriesProcessor:
         KeyError
             Raised when a key is not present in the `series_dict` but required for the
             processing.
+        TypeError
+            Raised when the output of the `SeriesProcessor` is not of the correct type.
 
         Note
         ----
         The `series_dict` is actually an internal representation of the signals list.
-        This internal representation is constructed in the `__call__` method of the 
+        This internal representation is constructed in the `__call__` method of the
         `SeriesProcessorPipeline`.
 
         """
@@ -248,11 +245,35 @@ class SeriesProcessor:
                 % (key, self.name)
             )
 
-        return (
+        func_output = (
             self.func(requested_dict, **self.kwargs)
             if self.kwargs is not None
             else self.func(requested_dict)
         )
+
+        if isinstance(func_output, pd.DataFrame):
+            # Nothing has to be done! A pd.DataFrame can be added to a series_dict using
+            # series_dict.update(df)
+            # Note: converting this to a dictionary (to_dict()) is very very inefficient
+            return func_output
+        elif isinstance(func_output, pd.Series):
+            # Convert series to series_dict and return
+            return {func_output.name, func_output}
+        elif isinstance(func_output, np.ndarray):
+            # Must be constructed from just 1 signal
+            assert len(requested_dict) == 1
+            input_signal = list(requested_dict.values())[0]
+            # The length of the out has to be the same as the signal length
+            assert len(input_signal) == len(func_output)
+            # TODO: check if func_output ndim is correct
+            return {input_signal.name: _np_array_to_series(func_output, input_signal)}
+        elif isinstance(func_output, dict):
+            # Nothing has to be done! A dict can be directly added to the series_dict
+            return func_output
+        else:
+            raise TypeError(
+                f"Function output type is invalid for processor {self.name}"
+            )
 
     def __repr__(self):
         """Return formal representation of object."""
