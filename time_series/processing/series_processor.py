@@ -3,10 +3,11 @@
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
 from itertools import chain
-from typing import Dict, List, Union, Optional
+from typing import Callable, Dict, List, Union, Optional
 
 import pandas as pd
 import numpy as np
+from pandas.core.algorithms import isin
 
 
 def dataframe_func(func):
@@ -27,30 +28,6 @@ def dataframe_func(func):
         return res
 
     wrapper.__name__ = "[wrapped: dataframe_func] " + func.__name__
-    return wrapper
-
-
-def single_series_func(func):
-    """Decorate function to use single Series instead of a series dict.
-
-    The signals dict will be passed as multiple signals to the decorated function.
-    This should be a function where the key has no importance and the processing
-    can be applied to all the required signals identically. The decorated function
-    has to take a pandas Series as input and also return a pandas Series.
-    The function's prototype should be:
-    "func(signal: pd.Series, **kwargs) -> pd.Series"
-    """
-
-    def wrapper(series_dict: Dict[str, pd.Series], **kwargs):
-        output_dict = dict()
-        for k, v in series_dict.items():
-            res = func(v, **kwargs)
-            assert isinstance(res, pd.Series)
-            output_dict[k] = res
-
-        return output_dict
-
-    wrapper.__name__ = "[wrapped: single_series_func] " + func.__name__
     return wrapper
 
 
@@ -77,6 +54,40 @@ def single_series_func(func):
 
 #     wrapper.__name__ = "[wrapped: numpy_func] " + func.__name__
 #     return wrapper
+
+
+def _handle_single_series_func(
+    func: Callable[[pd.Series], Union[pd.Series, np.ndarray]],
+    series_dict: Dict[str, pd.Series],
+    **kwargs,
+) -> Dict[str, pd.Series]:
+    """Handle a function that uses a single Series instead of a series dict.
+
+    This is a wrapper for a function that requires a `pd.Series` as input and transforms
+    that input signal to either a `pd.Series` or `np.ndarray`. The signals of the 
+    `series_dict` are passed one-by-one to the function and the output is aggregated in
+    a (new) series_dict.
+    The function's prototype should be:
+    "func(signal: pd.Series, **kwargs) -> Union[pd.Series, np.ndarray]"
+
+    Note
+    ----
+    The function `func` transforms a signal, hence the function should output a single
+    series or array (this array should have the same length as the input signal).
+
+    """
+    output_dict = dict()
+    for k, v in series_dict.items():
+        func_output = func(v, **kwargs)
+        if isinstance(func_output, pd.Series):
+            output_dict[k] = func_output
+        elif isinstance(func_output, np.ndarray):
+            output_dict[k] = _np_array_to_series(func_output, v)
+        else:
+            raise TypeError(
+                f"Function output type is invalid for function {func.__name__}"
+            )
+    return output_dict
 
 
 def _df_dict_to_series_list(
@@ -164,6 +175,9 @@ def _np_array_to_series(np_array: np.ndarray, series: pd.Series) -> pd.Series:
     This method requires the `np_array` to have the same length as the `series`.
 
     """
+    # The length of the out has to be the same as the signal length
+    assert len(np_array) == len(series)
+    # TODO: check if func_output ndim is correct
     return pd.Series(data=np_array, index=series.index, name=series.name)
 
 
@@ -174,7 +188,14 @@ class _ProcessingError(Exception):
 class SeriesProcessor:
     """Class that executes a specific operation on the passed series_dict."""
 
-    def __init__(self, required_series: List[str], func, name=None, **kwargs):
+    def __init__(
+        self,
+        required_series: List[str],
+        func,
+        single_series_func=False,
+        name=None,
+        **kwargs,
+    ):
         """Init a SeriesProcessor object.
 
         Parameters
@@ -186,8 +207,12 @@ class SeriesProcessor:
             to take a dict with keys the signal names and the corresponding
             (time indexed) Series as input. It has to output the processed
             series_dict. The prototype of the function should match:
-            `func(series_dict: Dict[str, pd.Series]) 
+            `func(series_dict: Dict[str, pd.Series])
                 -> Union[np.ndarray, pd.Series, pd.DataFrame, Dict[str, pd.Series]]`.
+        single_series_func : bool, optional
+            Whether the given `func` is a single series function, by default False.
+            A single series function is a function that takes 1 series as input and
+            thus has to be called for each of the `required_series`.
         name : str, optional
             The name of the processor, by default None and the `func.__name__`
             will be used.
@@ -195,6 +220,7 @@ class SeriesProcessor:
         """
         self.required_series = required_series
         self.func = func
+        self.single_series_func = single_series_func
         if name:
             self.name = name
         else:
@@ -245,16 +271,17 @@ class SeriesProcessor:
                 % (key, self.name)
             )
 
-        func_output = (
-            self.func(requested_dict, **self.kwargs)
-            if self.kwargs is not None
-            else self.func(requested_dict)
-        )
+        def call_func():
+            if self.single_series_func:
+                return  _handle_single_series_func(self.func, requested_dict, **self.kwargs)
+            return self.func(requested_dict, **self.kwargs)
+
+        func_output = call_func()
 
         if isinstance(func_output, pd.DataFrame):
             # Nothing has to be done! A pd.DataFrame can be added to a series_dict using
             # series_dict.update(df)
-            # Note: converting this to a dictionary (to_dict()) is very very inefficient
+            # Note: converting this to a dictionary (to_dict()) is **very** inefficient!
             return func_output
         elif isinstance(func_output, pd.Series):
             # Convert series to series_dict and return
@@ -263,9 +290,6 @@ class SeriesProcessor:
             # Must be constructed from just 1 signal
             assert len(requested_dict) == 1
             input_signal = list(requested_dict.values())[0]
-            # The length of the out has to be the same as the signal length
-            assert len(input_signal) == len(func_output)
-            # TODO: check if func_output ndim is correct
             return {input_signal.name: _np_array_to_series(func_output, input_signal)}
         elif isinstance(func_output, dict):
             # Nothing has to be done! A dict can be directly added to the series_dict
