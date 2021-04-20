@@ -7,7 +7,6 @@ from typing import Callable, Dict, List, Union, Optional
 
 import pandas as pd
 import numpy as np
-from pandas.core.algorithms import isin
 
 
 def dataframe_func(func):
@@ -366,7 +365,7 @@ class SeriesProcessorPipeline:
             pd.DataFrame,
         ],
         return_all_signals=True,
-        return_df=True,
+        return_df=True, # TODO: drop_cols parameter??
     ) -> Union[Dict[str, Union[pd.Series, pd.DataFrame]], pd.DataFrame]:
         """Execute all `SeriesProcessor` objects in pipeline sequentially.
 
