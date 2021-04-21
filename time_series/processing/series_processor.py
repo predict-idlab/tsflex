@@ -210,7 +210,6 @@ def _np_array_to_series(np_array: np.ndarray, series: pd.Series) -> pd.Series:
     """
     # The length of the out has to be the same as the signal length
     assert len(np_array) == len(series)
-    # TODO: check if func_output ndim is correct
     return pd.Series(data=np_array, index=series.index, name=series.name)
 
 
@@ -401,7 +400,7 @@ class SeriesProcessorPipeline:
             pd.DataFrame,
         ],
         return_all_signals=True,
-        return_df=True,  # TODO: drop_cols parameter??
+        return_df=True,
         drop_keys=[],
     ) -> Union[Dict[str, Union[pd.Series, pd.DataFrame]], pd.DataFrame]:
         """Execute all `SeriesProcessor` objects in pipeline sequentially.

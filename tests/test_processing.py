@@ -222,8 +222,6 @@ def test_multi_signal_series_processor(dummy_data):
     assert max(res["TMP"]) == dummy_data["TMP"].quantile(upper)
 
 
-# TODO: test dataframe output func
-
 ## SeriesProcessorPipeline
 
 
@@ -343,3 +341,6 @@ def test_multi_signal_series_processor_pipeline(dummy_data):
     assert max(res_dict_all["EDA"]) == dummy_data["EDA"].quantile(upper)
     assert min(res_dict_all["TMP"]) == inp["TMP"].quantile(lower)
     assert max(res_dict_all["TMP"]) == inp["TMP"].quantile(upper)
+
+
+# TODO: test drop_keys
