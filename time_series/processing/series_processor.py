@@ -57,31 +57,65 @@ def dataframe_func(func):
 
 def _handle_single_series_func(
     func: Callable[[pd.Series], Union[pd.Series, np.ndarray]],
-    series_dict: Dict[str, pd.Series],
+    required_dict: Dict[str, pd.Series],
     **kwargs,
-) -> Dict[str, pd.Series]:
+) -> Union[Dict[str, pd.Series], pd.DataFrame]:
     """Handle a function that uses a single Series instead of a series dict.
 
-    This is a wrapper for a function that requires a `pd.Series` as input and transforms
-    that input signal to either a `pd.Series` or `np.ndarray`. The signals of the 
-    `series_dict` are passed one-by-one to the function and the output is aggregated in
-    a (new) series_dict.
-    The function's prototype should be:
-    "func(signal: pd.Series, **kwargs) -> Union[pd.Series, np.ndarray]"
+    This is a wrapper for a function that requires a `pd.Series` as input and processes
+    that input signal.
+    The signals of the  `required_dict` are passed one-by-one to the function and the 
+    output is aggregated in a (new) series_dict.
+
+    There are two possible cases (for the function);
+    1. The single output case
+       => The `func` transforms the input signal to a `pd.Series` or `np.ndarray`. 
+          The output is in this case aggregated at the key of the input signal.
+          In this case the function's prototype should be:
+            `func(series_dict: Dict[str, pd.Series]) 
+                -> Union[np.ndarray, pd.Series]`.
+    2. The multi output case
+       => The `func` produces a multi-output format, i.e., a `pd.DataFrame` or 
+          `series_dict`.
+          The output is in this  case aggregated at the columns / keys of the 
+          produced multi-output format.
+          In this case the function's prototype should be:
+            `func(series_dict: Dict[str, pd.Series]) 
+                -> Union[pd.DataFrame, Dict[str, pd.Series]]`.
+
 
     Note
     ----
-    The function `func` transforms a signal, hence the function should output a single
-    series or array (this array should have the same length as the input signal).
+    In the single output case (1.), the function `func` transforms a signal, hence the 
+    function should output a single series or array (this array should have the same 
+    length as the input signal).
+    In the multi output case (2.), the function `func` produces a new output based on
+    the passed signal, hence the  function should output a dataframe or series_dict.
+    !! Note that when the func is called multiple times (when len(required_dict) > 1),
+       than should the multi-output have distinct keys for each function call.
+       => Thus it is the end-user its responsability to have `func` output different 
+          columns / keys depending on the input signal (when len(required_dict) > 1).
+       # TODO: add this note also at the Series Processor?
 
     """
     output_dict = dict()
-    for k, v in series_dict.items():
+    nb_required_signals = len(required_dict)
+    for k, v in required_dict.items():
         func_output = func(v, **kwargs)
+        # 1. Single output case
         if isinstance(func_output, pd.Series):
             output_dict[k] = func_output
         elif isinstance(func_output, np.ndarray):
             output_dict[k] = _np_array_to_series(func_output, v)
+        # 2. Multi output case
+        elif isinstance(func_output, pd.DataFrame) or isinstance(func_output, dict):
+            # 2.1 If there is just 1 signal => return the dataframe / dict
+            if nb_required_signals == 1:
+                return func_output
+            # 2.2 Else update the output dict
+            # Check that the output of the function call produces unique columns / keys
+            assert len(set(output_dict.keys()).intersection(func_output.keys())) == 0
+            output_dict.update(func_output)
         else:
             raise TypeError(
                 f"Function output type is invalid for function {func.__name__}"

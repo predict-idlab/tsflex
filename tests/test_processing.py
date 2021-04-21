@@ -13,7 +13,6 @@ from .utils import dummy_data, dataframe_to_series_dict, series_to_series_dict
 
 ## Function wrappers
 
-
 def test_dataframe_func_decorator(dummy_data):
     # Create undecorated dataframe function
     def drop_nans(df: pd.DataFrame) -> pd.DataFrame:
@@ -48,9 +47,40 @@ def test_dataframe_func_decorator(dummy_data):
 
 ## Various output types for single_series_func = True
 
+def test_dataframe_output(dummy_data):
+    # Create dataframe output function
+    def duplicate_with_offset(series: pd.Series, offset: float) -> pd.DataFrame:
+        offset = abs(offset)
+        df = pd.DataFrame()
+        df[series.name+'+'+str(offset)] = series + offset
+        df[series.name+'-'+str(offset)] = series - offset
+        return df
 
-def test_single_series_func(dummy_data):
-    # Create single series function
+    dataframe_f = duplicate_with_offset
+    offset = 0.5
+
+    inp = dummy_data["TMP"]
+    assert isinstance(inp, pd.Series)
+
+    # Raw series function
+    res = dataframe_f(inp, offset)
+    assert isinstance(res, pd.DataFrame)
+    assert (res.shape[0] == len(dummy_data["TMP"])) & (res.shape[1] == 2)
+    assert np.all(res[f'TMP+{offset}'] == inp + offset)
+    assert np.all(res[f'TMP-{offset}'] == inp - offset)
+
+    # SeriesProcessor with series function
+    processor = SeriesProcessor(["TMP"], func=dataframe_f, single_series_func=True, offset=offset)
+    series_dict = series_to_series_dict(inp)
+    res = processor(series_dict)
+    assert isinstance(res, pd.DataFrame)
+    assert (res.shape[0] == len(dummy_data["TMP"])) & (res.shape[1] == 2)
+    assert np.all(res[f'TMP+{offset}'] == inp + offset)
+    assert np.all(res[f'TMP-{offset}'] == inp - offset)
+
+
+def test_series_output(dummy_data):
+    # Create series output function
     def to_numeric(series: pd.Series) -> pd.Series:
         return pd.to_numeric(series)
 
