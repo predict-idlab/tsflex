@@ -64,36 +64,36 @@ def _handle_single_series_func(
 
     This is a wrapper for a function that requires a `pd.Series` as input and processes
     that input signal.
-    The signals of the  `required_dict` are passed one-by-one to the function and the 
+    The signals of the  `required_dict` are passed one-by-one to the function and the
     output is aggregated in a (new) series_dict.
 
     There are two possible cases (for the function);
     1. The single output case
-       => The `func` transforms the input signal to a `pd.Series` or `np.ndarray`. 
+       => The `func` transforms the input signal to a `pd.Series` or `np.ndarray`.
           The output is in this case aggregated at the key of the input signal.
           In this case the function's prototype should be:
-            `func(series_dict: Dict[str, pd.Series]) 
+            `func(series_dict: Dict[str, pd.Series])
                 -> Union[np.ndarray, pd.Series]`.
     2. The multi output case
-       => The `func` produces a multi-output format, i.e., a `pd.DataFrame` or 
+       => The `func` produces a multi-output format, i.e., a `pd.DataFrame` or
           `series_dict`.
-          The output is in this  case aggregated at the columns / keys of the 
+          The output is in this  case aggregated at the columns / keys of the
           produced multi-output format.
           In this case the function's prototype should be:
-            `func(series_dict: Dict[str, pd.Series]) 
+            `func(series_dict: Dict[str, pd.Series])
                 -> Union[pd.DataFrame, Dict[str, pd.Series]]`.
 
 
     Note
     ----
-    In the single output case (1.), the function `func` transforms a signal, hence the 
-    function should output a single series or array (this array should have the same 
+    In the single output case (1.), the function `func` transforms a signal, hence the
+    function should output a single series or array (this array should have the same
     length as the input signal).
     In the multi output case (2.), the function `func` produces a new output based on
     the passed signal, hence the  function should output a dataframe or series_dict.
     !! Note that when the func is called multiple times (when len(required_dict) > 1),
        than should the multi-output have distinct keys for each function call.
-       => Thus it is the end-user its responsability to have `func` output different 
+       => Thus it is the end-user its responsability to have `func` output different
           columns / keys depending on the input signal (when len(required_dict) > 1).
        # TODO: add this note also at the Series Processor?
 
@@ -306,7 +306,9 @@ class SeriesProcessor:
 
         def call_func():
             if self.single_series_func:
-                return  _handle_single_series_func(self.func, requested_dict, **self.kwargs)
+                return _handle_single_series_func(
+                    self.func, requested_dict, **self.kwargs
+                )
             return self.func(requested_dict, **self.kwargs)
 
         func_output = call_func()
@@ -399,7 +401,8 @@ class SeriesProcessorPipeline:
             pd.DataFrame,
         ],
         return_all_signals=True,
-        return_df=True, # TODO: drop_cols parameter??
+        return_df=True,  # TODO: drop_cols parameter??
+        drop_keys=[],
     ) -> Union[Dict[str, Union[pd.Series, pd.DataFrame]], pd.DataFrame]:
         """Execute all `SeriesProcessor` objects in pipeline sequentially.
 
@@ -420,6 +423,8 @@ class SeriesProcessorPipeline:
             Whether the output needs to be a series dict or a DataFrame. If `True` the
             output series will be combined to a DataFrame with an outer merge,
             by default True.
+        drop_keys : List[str], default: []
+            Which keys should be dropped when returning the output.
 
         Returns
         -------
@@ -472,8 +477,16 @@ class SeriesProcessorPipeline:
                 ) from e
 
         if not return_all_signals:
-            # Return jus the output signals
+            # Return just the output signals
             output_dict = {key: series_dict[key] for key in output_keys}
+            series_dict = output_dict
+
+        if drop_keys:
+            # Drop the keys that should not be included in the output
+            output_dict = {
+                key: series_dict[key]
+                for key in set(series_dict.keys()).difference(drop_keys)
+            }
             series_dict = output_dict
 
         if return_df:
