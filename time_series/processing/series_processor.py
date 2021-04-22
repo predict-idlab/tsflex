@@ -12,18 +12,17 @@ import numpy as np
 def dataframe_func(func):
     """Decorate function to use a DataFrame instead of a series dict.
 
-    This decorator can be used for functions that need to work on a
-    whole DataFrame, it will convert the series dict into a DataFrame with an outer
-    merge. The decorated function has to take a DataFrame as first
-    argument and also return a DataFrame.
+    This decorator can be used for functions that need to work on a whole DataFrame,
+    it will convert the series dict into a DataFrame with an outer merge. 
+    The decorated function has to take a DataFrame as first argument.
     The function's prototype should be:
-    "func(df : pd.DataFrame, **kwargs) -> pd.DataFrame"
+    "func(df : pd.DataFrame, **kwargs) 
+        -> Union[np.ndarray, pd.Series, pd.DataFrame, Dict[str, pd.Series]]"
     """
 
     def wrapper(series_dict: Dict[str, pd.Series], **kwargs):
         df = _series_dict_to_df(series_dict)
         res = func(df, **kwargs)
-        assert isinstance(res, pd.DataFrame)
         return res
 
     wrapper.__name__ = "[wrapped: dataframe_func] " + func.__name__
