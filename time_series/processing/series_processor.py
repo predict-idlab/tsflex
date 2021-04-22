@@ -7,17 +7,18 @@ from typing import Callable, Dict, List, Union, Optional
 
 import pandas as pd
 import numpy as np
+import warnings
 
 
 def dataframe_func(func):
     """Decorate function to use a DataFrame instead of a series dict.
 
     This decorator can be used for functions that need to work on a whole DataFrame,
-    it will convert the series dict into a DataFrame with an outer merge. 
+    it will convert the series dict into a DataFrame with an outer merge.
     The decorated function has to take a DataFrame as first argument.
     The function's prototype should be:
-    "func(df : pd.DataFrame, **kwargs) 
-        -> Union[np.ndarray, pd.Series, pd.DataFrame, Dict[str, pd.Series]]"
+    "func(df : pd.DataFrame, **kwargs)
+        -> Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]"
     """
 
     def wrapper(series_dict: Dict[str, pd.Series], **kwargs):
@@ -52,74 +53,6 @@ def dataframe_func(func):
 
 #     wrapper.__name__ = "[wrapped: numpy_func] " + func.__name__
 #     return wrapper
-
-
-def _handle_single_series_func(
-    func: Callable[[pd.Series], Union[pd.Series, np.ndarray]],
-    required_dict: Dict[str, pd.Series],
-    **kwargs,
-) -> Union[Dict[str, pd.Series], pd.DataFrame]:
-    """Handle a function that uses a single Series instead of a series dict.
-
-    This is a wrapper for a function that requires a `pd.Series` as input and processes
-    that input signal.
-    The signals of the  `required_dict` are passed one-by-one to the function and the
-    output is aggregated in a (new) series_dict.
-
-    There are two possible cases (for the function);
-    1. The single output case
-       => The `func` transforms the input signal to a `pd.Series` or `np.ndarray`.
-          The output is in this case aggregated at the key of the input signal.
-          In this case the function's prototype should be:
-            `func(series_dict: Dict[str, pd.Series])
-                -> Union[np.ndarray, pd.Series]`.
-    2. The multi output case
-       => The `func` produces a multi-output format, i.e., a `pd.DataFrame` or
-          `series_dict`.
-          The output is in this  case aggregated at the columns / keys of the
-          produced multi-output format.
-          In this case the function's prototype should be:
-            `func(series_dict: Dict[str, pd.Series])
-                -> Union[pd.DataFrame, Dict[str, pd.Series]]`.
-
-
-    Note
-    ----
-    In the single output case (1.), the function `func` transforms a signal, hence the
-    function should output a single series or array (this array should have the same
-    length as the input signal).
-    In the multi output case (2.), the function `func` produces a new output based on
-    the passed signal, hence the  function should output a dataframe or series_dict.
-    !! Note that when the func is called multiple times (when len(required_dict) > 1),
-       than should the multi-output have distinct keys for each function call.
-       => Thus it is the end-user its responsability to have `func` output different
-          columns / keys depending on the input signal (when len(required_dict) > 1).
-       # TODO: add this note also at the Series Processor?
-
-    """
-    output_dict = dict()
-    nb_required_signals = len(required_dict)
-    for k, v in required_dict.items():
-        func_output = func(v, **kwargs)
-        # 1. Single output case
-        if isinstance(func_output, pd.Series):
-            output_dict[k] = func_output
-        elif isinstance(func_output, np.ndarray):
-            output_dict[k] = _np_array_to_series(func_output, v)
-        # 2. Multi output case
-        elif isinstance(func_output, pd.DataFrame) or isinstance(func_output, dict):
-            # 2.1 If there is just 1 signal => return the dataframe / dict
-            if nb_required_signals == 1:
-                return func_output
-            # 2.2 Else update the output dict
-            # Check that the output of the function call produces unique columns / keys
-            assert len(set(output_dict.keys()).intersection(func_output.keys())) == 0
-            output_dict.update(func_output)
-        else:
-            raise TypeError(
-                f"Function output type is invalid for function {func.__name__}"
-            )
-    return output_dict
 
 
 def _df_dict_to_series_list(
@@ -212,6 +145,96 @@ def _np_array_to_series(np_array: np.ndarray, series: pd.Series) -> pd.Series:
     return pd.Series(data=np_array, index=series.index, name=series.name)
 
 
+def _handle_seriesprocessor_func_output(
+    func_output, requested_dict: Dict[str, pd.Series]
+) -> Union[Dict[str, pd.Series], pd.DataFrame]:
+    """TODO"""
+    if isinstance(func_output, pd.DataFrame):
+        # Nothing has to be done! A pd.DataFrame can be added to a series_dict using
+        # series_dict.update(df)
+        # Note: converting this to a dictionary (to_dict()) is **very** inefficient!
+        return func_output
+    elif isinstance(func_output, pd.Series):
+        # Convert series to series_dict and return
+        if len(requested_dict) == 1:
+            # In a series_dict input_key == series.name
+            input_key = list(requested_dict.keys())[0]
+            if input_key != func_output.name:
+                # TODO: unsure about this warning
+                # TODO: specify this in documentation of series_processor
+                warnings.warn(
+                    "Function output is a single series with a different name "
+                    + f"({func_output.name}) from the input series name {input_key}!\n"
+                    + "\t > Make sure this is expected behavior! Input signal "
+                    + f"{input_key} won't be updated with the function output, instead "
+                    + f"output {func_output.name} will be appended to the outputs."
+                )
+        return {func_output.name: func_output}
+    elif isinstance(func_output, np.ndarray):
+        # Must be constructed from just 1 signal
+        assert len(requested_dict) == 1
+        input_signal = list(requested_dict.values())[0]
+        return {input_signal.name: _np_array_to_series(func_output, input_signal)}
+    elif isinstance(func_output, list):
+        # Nothing has to be done! A dict can be directly added to the series_dict
+        return {s.name: s for s in func_output}
+    else:
+        raise TypeError(f"Function output type is invalid for processor {self.name}")
+
+
+def _handle_single_series_func(
+    func: Callable[[pd.Series], Union[pd.Series, np.ndarray]],
+    required_dict: Dict[str, pd.Series],
+    **kwargs,
+) -> Dict[str, pd.Series]:
+    """Handle a function that uses a single Series instead of a series dict.
+
+    This is a wrapper for a function that requires a `pd.Series` as input and processes
+    that input signal.
+    The signals of the  `required_dict` are passed one-by-one to the function and the
+    output is aggregated in a (new) series_dict.
+
+    There are two possible cases (for the function);
+    1. The single output case
+       => The `func` transforms the input signal to a `pd.Series` or `np.ndarray`.
+          The output is in this case aggregated at the key of the input signal.
+          In this case the function's prototype should be:
+            `func(series_dict: Dict[str, pd.Series])
+                -> Union[np.ndarray, pd.Series]`.
+    2. The multi output case
+       => The `func` produces a multi-output format, i.e., a `pd.DataFrame` or
+          `series_dict`.
+          The output is in this  case aggregated at the columns / keys of the
+          produced multi-output format.
+          In this case the function's prototype should be:
+            `func(series_dict: Dict[str, pd.Series])
+                -> Union[pd.DataFrame, Dict[str, pd.Series]]`.
+
+    Note
+    ----
+    If the func returns a `np.ndarray` 
+    In the single output case (1.), the function `func` transforms a signal, hence the
+    function should output a single series or array (this array should have the same
+    length as the input signal).
+    In the multi output case (2.), the function `func` produces a new output based on
+    the passed signal, hence the  function should output a dataframe or series_dict.
+    !! Note that when the func is called multiple times (when len(required_dict) > 1),
+       than should the multi-output have distinct keys for each function call.
+       => Thus it is the end-user its responsability to have `func` output different
+          columns / keys depending on the input signal (when len(required_dict) > 1).
+       # TODO: add this note also at the Series Processor?
+
+    """
+    output_dict = dict()
+    for k, v in required_dict.items():
+        func_output = func(v, **kwargs)
+        func_output = _handle_seriesprocessor_func_output(func_output, {k: v})
+        # Check that the output of the function call produces unique columns / keys
+        assert len(set(output_dict.keys()).intersection(func_output.keys())) == 0
+        output_dict.update(func_output)
+    return output_dict
+
+
 class _ProcessingError(Exception):
     pass
 
@@ -239,7 +262,7 @@ class SeriesProcessor:
             (time indexed) Series as input. It has to output the processed
             series_dict. The prototype of the function should match:
             `func(series_dict: Dict[str, pd.Series])
-                -> Union[np.ndarray, pd.Series, pd.DataFrame, Dict[str, pd.Series]]`.
+                -> Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]`.
         single_series_func : bool, optional
             Whether the given `func` is a single series function, by default False.
             A single series function is a function that takes 1 series as input and
@@ -302,35 +325,13 @@ class SeriesProcessor:
                 % (key, self.name)
             )
 
-        def call_func():
-            if self.single_series_func:
-                return _handle_single_series_func(
-                    self.func, requested_dict, **self.kwargs
-                )
-            return self.func(requested_dict, **self.kwargs)
-
-        func_output = call_func()
-
-        if isinstance(func_output, pd.DataFrame):
-            # Nothing has to be done! A pd.DataFrame can be added to a series_dict using
-            # series_dict.update(df)
-            # Note: converting this to a dictionary (to_dict()) is **very** inefficient!
-            return func_output
-        elif isinstance(func_output, pd.Series):
-            # Convert series to series_dict and return
-            return {func_output.name, func_output}
-        elif isinstance(func_output, np.ndarray):
-            # Must be constructed from just 1 signal
-            assert len(requested_dict) == 1
-            input_signal = list(requested_dict.values())[0]
-            return {input_signal.name: _np_array_to_series(func_output, input_signal)}
-        elif isinstance(func_output, dict):
-            # Nothing has to be done! A dict can be directly added to the series_dict
-            return func_output
-        else:
-            raise TypeError(
-                f"Function output type is invalid for processor {self.name}"
+        if self.single_series_func:
+            # Handle series func includes _handle_seriesprocessor_func_output
+            return _handle_single_series_func(
+                self.func, requested_dict, **self.kwargs
             )
+        func_output = self.func(requested_dict, **self.kwargs)
+        return _handle_seriesprocessor_func_output(func_output, requested_dict)
 
     def __repr__(self):
         """Return formal representation of object."""
