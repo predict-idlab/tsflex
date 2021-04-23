@@ -193,6 +193,11 @@ class FeatureCollection:
             )
             for f in tqdm(results, total=len(self._feature_desc_list)):
                 calculated_feature_list.append(f)
+            # Close & join because: https://github.com/uqfoundation/pathos/issues/131
+            pool.close()
+            pool.join()
+            # Clear because: https://github.com/uqfoundation/pathos/issues/111
+            pool.clear()
 
         if merge_dfs:
             df_merged = pd.DataFrame()
