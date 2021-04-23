@@ -10,7 +10,7 @@ import numpy as np
 import warnings
 
 
-def dataframe_func(func):
+def dataframe_func(func: Callable):
     """Decorate function to use a DataFrame instead of a series dict.
 
     This decorator can be used for functions that need to work on a whole DataFrame,
@@ -218,7 +218,7 @@ def _handle_seriesprocessor_func_output(
 
 
 def _handle_single_series_func(
-    func,
+    func: Callable,
     required_dict: Dict[str, pd.Series],
     func_name: str,
     **kwargs,
@@ -289,7 +289,7 @@ class SeriesProcessor:
     def __init__(
         self,
         required_series: List[str],
-        func,
+        func: Callable,
         single_series_func=False,
         name=None,
         **kwargs,
