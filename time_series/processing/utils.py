@@ -66,6 +66,11 @@ def process_chunks_multithreaded(
         results = pool.imap(_executor, df_dict_list)
         for f in tqdm(results, total=len(df_dict_list)):
             processed_out.append(f)
+        # Close & join because: https://github.com/uqfoundation/pathos/issues/131
+        pool.close()
+        pool.join()
+        # Clear because: https://github.com/uqfoundation/pathos/issues/111
+        pool.clear()
     return processed_out
 
 
