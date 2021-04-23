@@ -14,7 +14,7 @@ def dataframe_func(func: Callable):
     """Decorate function to use a DataFrame instead of a series dict.
 
     This decorator can be used for functions that need to work on a whole DataFrame,
-    it will convert the series dict into a DataFrame with an outer merge.
+    it will convert the series dict input into a DataFrame with an outer merge.
     The decorated function has to take a DataFrame as first argument.
     The function's prototype should be:
     "func(df : pd.DataFrame, **kwargs)
@@ -137,7 +137,13 @@ def _np_array_to_series(np_array: np.ndarray, series: pd.Series) -> pd.Series:
 
     Note
     ----
-    This method requires the `np_array` to have the same length as the `series`.
+    The given `np_array` receives the same index and name as the `series`.
+    Hence, the `np_array` needs to have the same length as the `series`.
+    Giving the `np_array` the same name as the `series`, will result in transforming
+    (i.e., replacing) the `series` in the pipeline.
+    When a user does not want a numpy array to replace its input series, it is his / her
+    responsability to create a new `pd.Series` (or `pd.DataFrame`) of that numpy array
+    with a different (column) name.
 
     """
     # The length of the out has to be the same as the signal length
@@ -157,7 +163,7 @@ def _handle_seriesprocessor_func_output(
     func_output: Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]
         The output of the SeriesProcessor its function.
     required_dict: Dict[str, pd.Series]
-        The series dict that contains the required signales for the SeriesProcessor its
+        The series dict that contains the required signals for the `SeriesProcessor` its
         function.
     func_name: str
         The name of the SeriesProcessor (its function).
@@ -178,10 +184,12 @@ def _handle_seriesprocessor_func_output(
     Note
     ----
     If `func_output` is a `np.ndarray`, the given `requested_dict` must contain just 1
-    series!! Than that series its name and index are used to return a series dict.
+    series! That series its name and index are used to return a series dict. When a
+    user does not want a numpy array to replace its input series, it is his / her
+    responsability to create a new `pd.Series` (or `pd.DataFrame`) of that numpy array
+    with a different (column) name.
     If `func_output` is a `pd.Series`, keep in mind that the input series gets
     transformed (i.e., replaced) with the `func_output` when the series name is equal.
-
 
     """
     if isinstance(func_output, pd.DataFrame):
@@ -234,13 +242,13 @@ def _handle_single_series_func(
     func: Callable[[pd.Series], Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]]
         The output of the SeriesProcessor its function.
     func : Callable
-        A callable that processes a single series. `func` has to take a Series as input. 
+        A callable that processes a single series. `func` has to take a Series as input.
         The output can be rather versatile.
         The prototype of the function should match:
         `func(series: pd.Series)
             -> Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]`.
     required_dict: Dict[str, pd.Series]
-        The series dict that contains the required signales for the SeriesProcessor its
+        The series dict that contains the required signals for the SeriesProcessor its
         function.
     func_name: str
         The name of the SeriesProcessor (its function).
@@ -257,12 +265,13 @@ def _handle_single_series_func(
 
     Note
     ----
-    If you want to transform (i.e., replace) the input series in the pipeline, than 
+    If you want to transform (i.e., replace) the input series in the pipeline, than
     `func` should return either:
         * a `np.ndarray`.
         * a `pd.Series` with the same name as the input series.
         * a `pd.DataFrame` with (one) column name equal to the input series its name.
-        * a list of `pd.Series` where (exact) with the same name as the input series.
+        * a list of `pd.Series` in which (exact) one series has the same name as the
+          input series.
     Series (& columns) with other (column) names will be added to the series dict.
 
     """
@@ -301,9 +310,9 @@ class SeriesProcessor:
         required_series : List[str]
             A list of the required signals for this processor.
         func : Callable
-            A callable that processes a series_dict (or a single series; see below). 
+            A callable that processes a series_dict (or a single series; see below).
             `func` has to take a dict with keys the signal names and the corresponding
-            (time indexed) Series as input. 
+            (time indexed) Series as input.
             `func` could also take a `pd.Series` as input, in that case the flag
             `single_series_func` should be set to True.
             The output can be rather versatile.
@@ -317,6 +326,12 @@ class SeriesProcessor:
         name : str, optional
             The name of the processor, by default None and the `func.__name__`
             will be used.
+
+        Note
+        ----
+        If the output of `func` is a `np.ndarray`, the given `required_series` must have
+        length 1, i.e., the function requires just 1 series! That series its name and
+        index are used to return a series dict.
 
         """
         self.required_series = required_series
@@ -360,7 +375,7 @@ class SeriesProcessor:
         `SeriesProcessorPipeline`.
 
         """
-        # TODO: also support more versatile input here?? Want first a discussion!
+        # TODO: also support more versatile input here => Will do in future PR
 
         # Only selecting the signals that are needed for this processing step
         requested_dict = {}
@@ -445,7 +460,7 @@ class SeriesProcessorPipeline:
     def __call__(
         self,
         signals: Union[
-            Dict[str, Union[pd.Series, pd.DataFrame]],  # TODO: why not just list??
+            Dict[str, Union[pd.Series, pd.DataFrame]],  # TODO: why not just list => remove in other PR
             List[Union[pd.Series, pd.DataFrame]],
             pd.Series,
             pd.DataFrame,
@@ -485,6 +500,18 @@ class SeriesProcessorPipeline:
         ------
         _ProcessingError
             Error raised when a processing step fails.
+
+        Note
+        ----
+        If a series processor its function output is a `np.ndarray`, the input series
+        dict (required dict for that function) must contain just 1 series! That series
+        its name and index are used to return a series dict. When a user does not want a
+        numpy array to replace its input series, it is his / her responsability to
+        create a new `pd.Series` (or `pd.DataFrame`) of that numpy array with a
+        different (column) name.
+        If `func_output` is a `pd.Series`, keep in mind that the input series gets
+        transformed (i.e., replaced) in the pipeline with the `func_output` when the
+        series name is  equal.
 
         """
         # Converting the signals list into a dict
