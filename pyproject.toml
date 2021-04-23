@@ -8,7 +8,7 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = "^3.7.1"
 pandas = "^1.2.3"
-numpy = "^1.20.1"
+numpy = "^1.19.0"
 pathos = "^0.2.7"
 tqdm = "^4.60.0"
 
@@ -19,6 +19,7 @@ pydocstyle = "^5.1.1"
 Sphinx = "^3.5.2"
 jupyterlab = "^3.0.12"
 memory-profiler = "^0.58.0"
+pytest = "^6.2.3"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
