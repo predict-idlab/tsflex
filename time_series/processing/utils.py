@@ -7,6 +7,7 @@ import traceback
 from datetime import timedelta
 from typing import Dict, List, Any
 
+import os
 import pandas as pd
 from pathos.multiprocessing import ProcessPool
 from tqdm.auto import tqdm
@@ -17,7 +18,7 @@ from .series_processor import SeriesProcessorPipeline
 def process_chunks_multithreaded(
     df_dict_list: List[Dict[str, pd.DataFrame]],
     processing_pipeline: SeriesProcessorPipeline,
-    njobs: int,
+    njobs=None,
     **processing_kwargs,
 ) -> List[Any]:
     """Process `df_dict_list` in a multithreaded manner, order is preserved.
@@ -33,8 +34,9 @@ def process_chunks_multithreaded(
         A list of df_dict chunks, most likely the output of `chunk_df_dict`.
     processing_pipeline: SeriesProcessorPipeline
         The pipeline that will be called on each item in `df_dict_list`.
-    njobs: int
-        The number of jobs that will be spawned.
+    njobs: int, optional
+        The number of processes used for the chunked series processing. If `None`, then
+        the number returned by `os.cpu_count()` is used, by default None.
     **processing_kwargs
         Keyword args that will be passed on to the processing pipeline.
 
@@ -51,6 +53,8 @@ def process_chunks_multithreaded(
     not halted in case of an error.
 
     """
+    if njobs is None:
+        njobs = os.cpu_count()
 
     def _executor(chunk):
         try:
@@ -66,6 +70,11 @@ def process_chunks_multithreaded(
         results = pool.imap(_executor, df_dict_list)
         for f in tqdm(results, total=len(df_dict_list)):
             processed_out.append(f)
+        # Close & join because: https://github.com/uqfoundation/pathos/issues/131
+        pool.close()
+        pool.join()
+        # Clear because: https://github.com/uqfoundation/pathos/issues/111
+        pool.clear()
     return processed_out
 
 
