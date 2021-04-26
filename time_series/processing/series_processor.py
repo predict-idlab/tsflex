@@ -352,7 +352,7 @@ class SeriesProcessor:
         Note
         ----
         If you want to test or debug your `SeriesProcessor` object, just encapsulate 
-        yout instance of this class in a `SeriesProcessorPipeline`. The latter
+        your instance of this class in a `SeriesProcessorPipeline`. The latter
         allows more versatile input for the `__call__` method.
 
         """
