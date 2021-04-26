@@ -347,11 +347,15 @@ class SeriesProcessor:
         ----
         The `series_dict` is actually an internal representation of the signals list.
         This internal representation is constructed in the `__call__` method of the
-        `SeriesProcessorPipeline`.
+        `SeriesProcessorPipeline`. 
+
+        Note
+        ----
+        If you want to test or debug your `SeriesProcessor` object, just encapsulate 
+        yout instance of this class in a `SeriesProcessorPipeline`. The latter
+        allows more versatile input for the `__call__` method.
 
         """
-        # TODO: also support more versatile input here => Will do in future PR
-
         # Only selecting the signals that are needed for this processing step
         requested_dict = {}
         try:
