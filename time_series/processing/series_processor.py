@@ -55,31 +55,6 @@ def dataframe_func(func: Callable):
 #     return wrapper
 
 
-def _df_dict_to_series_list(
-    df_dict: Dict[str, Union[pd.DataFrame, pd.Series]]
-) -> List[pd.Series]:
-    """Convert a DataFrame dict to a list of Series.
-
-    Parameters
-    ----------
-    df_dict : Dict[str, Union[pd.DataFrame, pd.Series]]
-        The series dict that will be converted.
-
-    Returns
-    -------
-    List[pd.Series]
-        A list of series.
-
-    """
-    series_list = []
-    for dfs in df_dict.values():
-        if isinstance(dfs, pd.Series):
-            series_list.append(dfs)
-        elif isinstance(dfs, pd.DataFrame):
-            series_list += [dfs[c] for c in dfs.columns]
-    return series_list
-
-
 def _series_dict_to_df(series_dict: Dict[str, pd.Series]) -> pd.DataFrame:
     """Convert the `series_dict` into a pandas DataFrame with an outer merge.
 
@@ -372,11 +347,15 @@ class SeriesProcessor:
         ----
         The `series_dict` is actually an internal representation of the signals list.
         This internal representation is constructed in the `__call__` method of the
-        `SeriesProcessorPipeline`.
+        `SeriesProcessorPipeline`. 
+
+        Note
+        ----
+        If you want to test or debug your `SeriesProcessor` object, just encapsulate 
+        your instance of this class in a `SeriesProcessorPipeline`. The latter
+        allows more versatile input for the `__call__` method.
 
         """
-        # TODO: also support more versatile input here => Will do in future PR
-
         # Only selecting the signals that are needed for this processing step
         requested_dict = {}
         try:
@@ -460,7 +439,6 @@ class SeriesProcessorPipeline:
     def __call__(
         self,
         signals: Union[
-            Dict[str, Union[pd.Series, pd.DataFrame]],  # TODO: why not just list => remove in other PR
             List[Union[pd.Series, pd.DataFrame]],
             pd.Series,
             pd.DataFrame,
@@ -468,7 +446,7 @@ class SeriesProcessorPipeline:
         return_all_signals=True,
         return_df=True,
         drop_keys=[],
-    ) -> Union[Dict[str, Union[pd.Series, pd.DataFrame]], pd.DataFrame]:
+    ) -> Union[Dict[str, pd.Series], pd.DataFrame]:
         """Execute all `SeriesProcessor` objects in pipeline sequentially.
 
         Apply all the processing steps on passed Series list or DataFrame and return the
@@ -476,7 +454,7 @@ class SeriesProcessorPipeline:
 
         Parameters
         ----------
-        signals : Union[Dict[str, Union[pd.Series, pd.DataFrame]], List[Union[pd.Series, pd.DataFrame]], pd.Series, pd.DataFrame]
+        signals : Union[List[Union[pd.Series, pd.DataFrame]], pd.Series, pd.DataFrame]
             The signals on which the preprocessing steps will be executed. The signals
             need a datetime index.
         return_all_signals : bool, default: True
@@ -522,14 +500,12 @@ class SeriesProcessorPipeline:
                 return [x]
             return x
 
-        if isinstance(signals, dict):
-            signals = _df_dict_to_series_list(signals)
-
         series_list = []
         for series in to_list(signals):
             if type(series) == pd.DataFrame:
                 series_list += [series[c] for c in series.columns]
             else:
+                assert isinstance(series, pd.Series)
                 series_list.append(series)
 
         for s in series_list:
