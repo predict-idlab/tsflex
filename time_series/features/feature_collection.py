@@ -11,6 +11,7 @@ from __future__ import annotations
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
 import dill
+import logging
 import pandas as pd
 
 from pathos.multiprocessing import ProcessPool
@@ -22,7 +23,7 @@ from typing import Dict, Iterator, List, Tuple, Union
 from ..features.function_wrapper import NumpyFuncWrapper
 from .feature import FeatureDescriptor, MultipleFeatureDescriptors
 from .strided_rolling import StridedRolling
-
+from .logger import logger
 
 class FeatureCollection:
     """Collection of features to be calculated."""
@@ -135,6 +136,7 @@ class FeatureCollection:
         signals: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         merge_dfs=False,
         njobs=None,
+        logging_file_path=None, # TODO: specify
     ) -> Union[List[pd.DataFrame], pd.DataFrame]:
         """Calculate features on the passed signals.
 
@@ -153,11 +155,19 @@ class FeatureCollection:
         njobs : int, optional
             The number of processes used for the feature calculation. If `None`, then
             the number returned by `os.cpu_count()` is used, by default None.
+        logging_file_path: str
+            The file path where the logged messages are stored. 
 
         Returns
         -------
         Union[List[pd.DataFrame], pd.DataFrame]
             A DataFrame or List of DataFrames with the features in it.
+
+        Note
+        ----
+        If a `logging_file_path` is provided, the execution (time) statistics can be
+        retrieved by calling `logger.get_function_duration_stats(logging_file_path)` and
+        `logger.get_key_duration_stats(logging_file_path)`.
 
         Raises
         ------
@@ -165,6 +175,19 @@ class FeatureCollection:
             Raised when a required key is not found in `signals`.
 
         """
+
+        if logging_file_path:
+            if len(logger.handlers) == 1:  # At index 0 we have the StreamHandler
+                # Avoids creating a 2nd file handler when this method is called twice
+                f_handler = logging.FileHandler(logging_file_path)
+                f_handler.setFormatter(
+                    logging.Formatter(
+                        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+                        )
+                    )
+                f_handler.setLevel(logging.DEBUG)
+                logger.addHandler(f_handler)
+
         series_dict = dict()
         series_list = []
 
