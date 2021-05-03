@@ -80,13 +80,19 @@ def _series_dict_to_df(series_dict: Dict[str, pd.Series]) -> pd.DataFrame:
     if len(series_dict) == 1:
         return pd.DataFrame(series_dict)
     # 1. Check if the time-indexes of the series are equal, to create the df efficiently
-    index_info = set(
-        [(s.index[0], s.index[-1], len(s), s.index.freq) for s in series_dict.values()]
-    )
-    freq_idx = -1  # The index of the frequency info in the tuple(s) in index_info
-    if len(index_info) == 1 and list(index_info)[0][freq_idx] is not None:
-        # When the time-indexes are the same we can create df very efficiently
-        return pd.DataFrame(series_dict)
+    try:
+        index_info = set(
+            [(s.index[0], s.index[-1], len(s), s.index.freq) for s in series_dict.values()]
+        )
+        freq_idx = -1  # The index of the frequency info in the tuple(s) in index_info
+        if len(index_info) == 1 and list(index_info)[0][freq_idx] is not None:
+            # When the time-indexes are the same we can create df very efficiently
+            return pd.DataFrame(series_dict)
+    except IndexError:
+        # We catch an indexError as we make the assumption that there is data within the
+        # series -> we do not make that assumption when constructing the DataFrame the
+        # slow way.
+        pass
     # 2. If check failed, create the df by merging the series (the slow way)
     df = pd.DataFrame()
     for s in series_dict.values():
@@ -347,12 +353,12 @@ class SeriesProcessor:
         ----
         The `series_dict` is actually an internal representation of the signals list.
         This internal representation is constructed in the `__call__` method of the
-        `SeriesProcessorPipeline`. 
+        `SeriesProcessorPipeline`.
 
         Note
         ----
-        If you want to test or debug your `SeriesProcessor` object, just encapsulate 
-        your instance of this class in a `SeriesProcessorPipeline`. The latter
+        If you want to test or debug your `SeriesProcessor` object, just encapsulate
+        yout instance of this class in a `SeriesProcessorPipeline`. The latter
         allows more versatile input for the `__call__` method.
 
         """
