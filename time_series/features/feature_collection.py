@@ -152,7 +152,7 @@ class FeatureCollection:
             Whether the results should be merged to a DataFrame with an outer merge,
             by default False
         show_progress: bool, optional
-            If set, the progress will be shown iwh a progressbar. by default True.
+            If True, the progress will be shown with a progressbar, by default True.
         njobs : int, optional
             The number of processes used for the feature calculation. If `None`, then
             the number returned by `os.cpu_count()` is used, by default None.
