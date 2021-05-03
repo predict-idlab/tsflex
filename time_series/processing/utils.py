@@ -19,6 +19,7 @@ def process_chunks_multithreaded(
     df_dict_list: List[Dict[str, pd.DataFrame]],
     processing_pipeline: SeriesProcessorPipeline,
     njobs=None,
+    show_progress=True,
     **processing_kwargs,
 ) -> List[Any]:
     """Process `df_dict_list` in a multithreaded manner, order is preserved.
@@ -37,6 +38,8 @@ def process_chunks_multithreaded(
     njobs: int, optional
         The number of processes used for the chunked series processing. If `None`, then
         the number returned by `os.cpu_count()` is used, by default None.
+    show_progress: bool, optional
+        If set, the progress will be shown iwh a progressbar. by default True.
     **processing_kwargs
         Keyword args that will be passed on to the processing pipeline.
 
@@ -58,8 +61,8 @@ def process_chunks_multithreaded(
 
     def _executor(chunk):
         try:
-            return processing_pipeline(chunk, **processing_kwargs)
-        except:
+            return processing_pipeline(list(chunk.values()), **processing_kwargs)
+        except Exception:
             # Print traceback and return empty datafrane in order to not break the
             # other parallel processes.
             traceback.print_exc()
@@ -68,7 +71,9 @@ def process_chunks_multithreaded(
     processed_out = []
     with ProcessPool(nodes=min(njobs, len(df_dict_list))) as pool:
         results = pool.imap(_executor, df_dict_list)
-        for f in tqdm(results, total=len(df_dict_list)):
+        if show_progress:
+            results = tqdm(results, total=len(df_dict_list))
+        for f in results:
             processed_out.append(f)
         # Close & join because: https://github.com/uqfoundation/pathos/issues/131
         pool.close()

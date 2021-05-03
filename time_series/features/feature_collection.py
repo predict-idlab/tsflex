@@ -134,6 +134,7 @@ class FeatureCollection:
         self,
         signals: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         merge_dfs=False,
+        show_progress=True,
         njobs=None,
     ) -> Union[List[pd.DataFrame], pd.DataFrame]:
         """Calculate features on the passed signals.
@@ -150,6 +151,8 @@ class FeatureCollection:
         merge_dfs : bool, optional
             Whether the results should be merged to a DataFrame with an outer merge,
             by default False
+        show_progress: bool, optional
+            If set, the progress will be shown iwh a progressbar. by default True.
         njobs : int, optional
             The number of processes used for the feature calculation. If `None`, then
             the number returned by `os.cpu_count()` is used, by default None.
@@ -191,7 +194,9 @@ class FeatureCollection:
             results = pool.uimap(
                 self._executor, self._stroll_feature_generator(series_dict)
             )
-            for f in tqdm(results, total=len(self._feature_desc_list)):
+            if show_progress:
+                results = tqdm(results, total=len(self._feature_desc_list))
+            for f in results:
                 calculated_feature_list.append(f)
             # Close & join because: https://github.com/uqfoundation/pathos/issues/131
             pool.close()
