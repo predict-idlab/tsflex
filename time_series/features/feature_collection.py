@@ -12,6 +12,7 @@ __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
 import dill
 import logging
+import warnings
 import pandas as pd
 
 from pathos.multiprocessing import ProcessPool
@@ -24,6 +25,7 @@ from ..features.function_wrapper import NumpyFuncWrapper
 from .feature import FeatureDescriptor, MultipleFeatureDescriptors
 from .strided_rolling import StridedRolling
 from .logger import logger
+
 
 class FeatureCollection:
     """Collection of features to be calculated."""
@@ -136,7 +138,7 @@ class FeatureCollection:
         signals: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         merge_dfs=False,
         njobs=None,
-        logging_file_path=None, # TODO: specify
+        logging_file_path=None,
     ) -> Union[List[pd.DataFrame], pd.DataFrame]:
         """Calculate features on the passed signals.
 
@@ -156,7 +158,7 @@ class FeatureCollection:
             The number of processes used for the feature calculation. If `None`, then
             the number returned by `os.cpu_count()` is used, by default None.
         logging_file_path: str
-            The file path where the logged messages are stored. 
+            The file path where the logged messages are stored.
 
         Returns
         -------
@@ -177,15 +179,22 @@ class FeatureCollection:
         """
 
         if logging_file_path:
+            if Path(logging_file_path).exists():
+                warnings.warn(
+                    f"Logging file ({logging_file_path}) already exists. This file will be overwritten!"
+                )
+                # Clear the file
+                #  -> because same FileHandler is used when calling this method twice
+                open(logging_file_path, 'w').close()
             if len(logger.handlers) == 1:  # At index 0 we have the StreamHandler
                 # Avoids creating a 2nd file handler when this method is called twice
-                f_handler = logging.FileHandler(logging_file_path)
+                f_handler = logging.FileHandler(logging_file_path, mode="w")
                 f_handler.setFormatter(
                     logging.Formatter(
-                        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-                        )
+                        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
                     )
-                f_handler.setLevel(logging.DEBUG)
+                )
+                f_handler.setLevel(logging.INFO)
                 logger.addHandler(f_handler)
 
         series_dict = dict()

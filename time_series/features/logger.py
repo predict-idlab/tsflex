@@ -9,10 +9,10 @@ The `FeatureCollection` its `logging_file_path` of the calculation method.
 __author__ = "Jeroen Van Der Donckt"
 
 import logging
-from typing import Union, Tuple
 import pandas as pd
 import re
 
+# Package specific logger
 logger = logging.getLogger("feature_calculation_logger")
 logger.setLevel(logging.DEBUG)
 
