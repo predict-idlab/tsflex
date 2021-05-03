@@ -89,7 +89,7 @@ def _series_dict_to_df(series_dict: Dict[str, pd.Series]) -> pd.DataFrame:
             # When the time-indexes are the same we can create df very efficiently
             return pd.DataFrame(series_dict)
     except IndexError:
-        # we catch an indexError as we make the assumption that there is data within the
+        # We catch an indexError as we make the assumption that there is data within the
         # series -> we do not make that assumption when constructing the DataFrame the
         # slow way.
         pass
