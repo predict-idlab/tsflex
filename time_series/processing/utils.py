@@ -39,7 +39,7 @@ def process_chunks_multithreaded(
         The number of processes used for the chunked series processing. If `None`, then
         the number returned by `os.cpu_count()` is used, by default None.
     show_progress: bool, optional
-        If set, the progress will be shown iwh a progressbar. by default True.
+        If True, the progress will be shown with a progressbar, by default True.
     **processing_kwargs
         Keyword args that will be passed on to the processing pipeline.
 
