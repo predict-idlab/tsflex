@@ -13,6 +13,7 @@ from .logger import logger
 
 import time
 
+
 class StridedRolling:
     """Custom sliding window with stride for pandas DataFrames."""
 
@@ -38,7 +39,7 @@ class StridedRolling:
         self.window = window
         self.stride = stride
         # Index indicates the end of the windows
-        self.time_indexes = df.index[window - 1:][::stride]
+        self.time_indexes = df.index[window - 1 :][::stride]
         # TODO: Make this here lazy by only doing on first call of apply func
         self._strided_vals = {}
         for col in df.columns:
@@ -68,7 +69,7 @@ class StridedRolling:
         * If `np_func` is only a callable argument, with no additional logic, this
             will only work for a one-to-one mapping, i.e., no multiple feature-output
             columns are supported for this case!
-        * If you want to calculate one-to-many -> `np_func` should be 
+        * If you want to calculate one-to-many -> `np_func` should be
              a `NumpyFuncWrapper` instance and explicitly use
              the `output_names` attributes of its constructor.
 
@@ -106,9 +107,11 @@ class StridedRolling:
                     feat_out[
                         f"{col}_{feat_names[col_idx]}__w={self.window}_s={self.stride}"
                     ] = out[:, col_idx]
-        
+
         elapsed = time.time() - t_start
-        logger.info(f'Finished function [{np_func.func.__name__}] on {list(self.strided_vals.keys())} in [{elapsed} seconds]!')
+        logger.info(
+            f"Finished function [{np_func.func.__name__}] on {list(self.strided_vals.keys())} with window-stride [{self.window}, {self.stride}] in [{elapsed} seconds]!"
+        )
 
         return pd.DataFrame(index=self.time_indexes, data=feat_out)
 
