@@ -5,7 +5,7 @@ __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt"
 
 import traceback
 from datetime import timedelta
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 
 import os
 import pandas as pd
@@ -18,8 +18,8 @@ from .series_processor import SeriesProcessorPipeline
 def process_chunks_multithreaded(
     df_dict_list: List[Dict[str, pd.DataFrame]],
     processing_pipeline: SeriesProcessorPipeline,
-    njobs=None,
-    show_progress=True,
+    show_progress: Optional[bool] = True,
+    n_jobs:  Optional[int] = None,
     **processing_kwargs,
 ) -> List[Any]:
     """Process `df_dict_list` in a multithreaded manner, order is preserved.
@@ -35,11 +35,11 @@ def process_chunks_multithreaded(
         A list of df_dict chunks, most likely the output of `chunk_df_dict`.
     processing_pipeline: SeriesProcessorPipeline
         The pipeline that will be called on each item in `df_dict_list`.
-    njobs: int, optional
-        The number of processes used for the chunked series processing. If `None`, then
-        the number returned by `os.cpu_count()` is used, by default None.
     show_progress: bool, optional
         If True, the progress will be shown with a progressbar, by default True.
+    n_jobs: int, optional
+        The number of processes used for the chunked series processing. If `None`, then
+        the number returned by `os.cpu_count()` is used, by default None.
     **processing_kwargs
         Keyword args that will be passed on to the processing pipeline.
 
@@ -56,8 +56,8 @@ def process_chunks_multithreaded(
     not halted in case of an error.
 
     """
-    if njobs is None:
-        njobs = os.cpu_count()
+    if n_jobs is None:
+        n_jobs = os.cpu_count()
 
     def _executor(chunk):
         try:
@@ -69,7 +69,7 @@ def process_chunks_multithreaded(
             return pd.DataFrame()
 
     processed_out = []
-    with ProcessPool(nodes=min(njobs, len(df_dict_list))) as pool:
+    with ProcessPool(nodes=min(n_jobs, len(df_dict_list)), source=True) as pool:
         results = pool.imap(_executor, df_dict_list)
         if show_progress:
             results = tqdm(results, total=len(df_dict_list))

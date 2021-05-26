@@ -136,11 +136,10 @@ class FeatureCollection:
     def calculate(
         self,
         signals: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
-        merge_dfs=False,
-        njobs: int = None,
+        merge_dfs: Optional[bool] =False,
+        show_progress: Optional[bool] = True,
         logging_file_path: Optional[Union[str, Path]] = None,
-        show_progress=True,
-        njobs=None,
+        n_jobs: Optional[int] = None,
     ) -> Union[List[pd.DataFrame], pd.DataFrame]:
         """Calculate features on the passed signals.
 
@@ -158,14 +157,14 @@ class FeatureCollection:
             by default False
         show_progress: bool, optional
             If True, the progress will be shown with a progressbar, by default True.
-        njobs : int, optional
-            The number of processes used for the feature calculation. If `None`, then
-            the number returned by `os.cpu_count()` is used, by default None.
         logging_file_path: str, optional
             The file path where the logged messages are stored. If `None`, then no 
             logging `FileHandler` will be used and the logging messages are only pushed
             to stdout. Otherwise, a logging `FileHandler` will write the logged messages
             to the given file path.
+        n_jobs : int, optional
+            The number of processes used for the feature calculation. If `None`, then
+            the number returned by `os.cpu_count()` is used, by default None.
 
         Returns
         -------
@@ -231,7 +230,7 @@ class FeatureCollection:
         # https://pathos.readthedocs.io/en/latest/pathos.html#usage
         # nodes = number (and potentially description) of workers
         # ncpus - number of worker processors servers
-        with ProcessPool(nodes=njobs, source=True) as pool:
+        with ProcessPool(nodes=n_jobs, source=True) as pool:
             results = pool.uimap(
                 self._executor, self._stroll_feature_generator(series_dict)
             )
