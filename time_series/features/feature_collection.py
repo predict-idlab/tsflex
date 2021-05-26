@@ -183,7 +183,7 @@ class FeatureCollection:
 
         # Delete other logging handlers
         if len(logger.handlers) > 1:
-            logger.handlers = [h for h in logger.handlers if isinstance(h, logging.StreamHandler)]
+            logger.handlers = [h for h in logger.handlers if type(h) == logging.StreamHandler]
         assert len(logger.handlers) == 1, 'Multiple logging StreamHandlers present!!'
 
         if logging_file_path:
