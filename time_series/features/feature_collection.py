@@ -139,6 +139,8 @@ class FeatureCollection:
         merge_dfs=False,
         njobs: int = None,
         logging_file_path: Optional[Union[str, Path]] = None,
+        show_progress=True,
+        njobs=None,
     ) -> Union[List[pd.DataFrame], pd.DataFrame]:
         """Calculate features on the passed signals.
 
@@ -154,6 +156,8 @@ class FeatureCollection:
         merge_dfs : bool, optional
             Whether the results should be merged to a DataFrame with an outer merge,
             by default False
+        show_progress: bool, optional
+            If True, the progress will be shown with a progressbar, by default True.
         njobs : int, optional
             The number of processes used for the feature calculation. If `None`, then
             the number returned by `os.cpu_count()` is used, by default None.
@@ -227,11 +231,13 @@ class FeatureCollection:
         # https://pathos.readthedocs.io/en/latest/pathos.html#usage
         # nodes = number (and potentially description) of workers
         # ncpus - number of worker processors servers
-        with ProcessPool(nodes=njobs) as pool:
+        with ProcessPool(nodes=njobs, source=True) as pool:
             results = pool.uimap(
                 self._executor, self._stroll_feature_generator(series_dict)
             )
-            for f in tqdm(results, total=len(self._feature_desc_list)):
+            if show_progress:
+                results = tqdm(results, total=len(self._feature_desc_list))
+            for f in results:
                 calculated_feature_list.append(f)
             # Close & join because: https://github.com/uqfoundation/pathos/issues/131
             pool.close()
