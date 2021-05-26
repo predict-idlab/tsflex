@@ -2,13 +2,14 @@
 
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
+import warnings
 from itertools import chain
 from pathlib import Path
 from typing import Callable, Dict, List, Optional, Union
 
-import pandas as pd
+import dill
 import numpy as np
-import warnings
+import pandas as pd
 
 
 def dataframe_func(func: Callable):
