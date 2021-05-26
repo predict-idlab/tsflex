@@ -2,6 +2,7 @@
 
 __author__ = "Vic Degraeve, Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
 
+import time
 from typing import Callable, Union, Dict
 
 import numpy as np
@@ -9,8 +10,6 @@ import pandas as pd
 
 from .function_wrapper import NumpyFuncWrapper
 from .logger import logger
-
-import time
 
 
 class StridedRolling:
@@ -38,7 +37,7 @@ class StridedRolling:
         self.window = window
         self.stride = stride
         # Index indicates the end of the windows
-        self.time_indexes = df.index[window - 1 :][::stride]
+        self.time_indexes = df.index[window - 1:][::stride]
         # TODO: Make this here lazy by only doing on first call of apply func
         self._strided_vals = {}
         for col in df.columns:

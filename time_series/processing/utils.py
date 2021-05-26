@@ -5,7 +5,7 @@ __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt"
 
 import traceback
 from datetime import timedelta
-from typing import Dict, List, Any
+from typing import Dict, List, Any, Optional
 
 import os
 import pandas as pd
@@ -18,8 +18,8 @@ from .series_processor import SeriesProcessorPipeline
 def process_chunks_multithreaded(
     df_dict_list: List[Dict[str, pd.DataFrame]],
     processing_pipeline: SeriesProcessorPipeline,
-    njobs=None,
-    show_progress=True,
+    show_progress: Optional[bool] = True,
+    n_jobs:  Optional[int] = None,
     **processing_kwargs,
 ) -> List[Any]:
     """Process `df_dict_list` in a multithreaded manner, order is preserved.
@@ -35,11 +35,11 @@ def process_chunks_multithreaded(
         A list of df_dict chunks, most likely the output of `chunk_df_dict`.
     processing_pipeline: SeriesProcessorPipeline
         The pipeline that will be called on each item in `df_dict_list`.
-    njobs: int, optional
-        The number of processes used for the chunked series processing. If `None`, then
-        the number returned by `os.cpu_count()` is used, by default None.
     show_progress: bool, optional
         If True, the progress will be shown with a progressbar, by default True.
+    n_jobs: int, optional
+        The number of processes used for the chunked series processing. If `None`, then
+        the number returned by `os.cpu_count()` is used, by default None.
     **processing_kwargs
         Keyword args that will be passed on to the processing pipeline.
 
@@ -56,20 +56,20 @@ def process_chunks_multithreaded(
     not halted in case of an error.
 
     """
-    if njobs is None:
-        njobs = os.cpu_count()
+    if n_jobs is None:
+        n_jobs = os.cpu_count()
 
     def _executor(chunk):
         try:
             return processing_pipeline(list(chunk.values()), **processing_kwargs)
         except Exception:
-            # Print traceback and return empty datafrane in order to not break the
+            # Print traceback and return empty `pd.DataFrame` in order to not break the
             # other parallel processes.
             traceback.print_exc()
             return pd.DataFrame()
 
     processed_out = []
-    with ProcessPool(nodes=min(njobs, len(df_dict_list))) as pool:
+    with ProcessPool(nodes=min(n_jobs, len(df_dict_list)), source=True) as pool:
         results = pool.imap(_executor, df_dict_list)
         if show_progress:
             results = tqdm(results, total=len(df_dict_list))
@@ -128,7 +128,7 @@ def chunk_df_dict(
     max_chunk_dur_s : int, optional
         The maximal duration of a chunk in seconds, by default None
         Chunks with durations larger than this will be chunked in smaller chunks where
-        each subchunk has a maximal duration of `max_chunk_dur_s`.
+        each sub-chunk has a maximal duration of `max_chunk_dur_s`.
     sub_chunk_margin_s: int, optional
         The left and right margin of the sub-chunks.
     copy: boolean, optional
@@ -185,7 +185,7 @@ def chunk_df_dict(
             continue
         assert i == len(df_list_dict)
         assert sensor_str in fs_dict.keys()
-        fs_sensor = fs_dict[sensor_str]
+        fs_sensor = fs_dict.get(sensor_str)
         sample_period = 1 / fs_sensor
         # Allowed offset (in seconds) is sample_period + 0.5*sample_period
         gaps = df_sensor.index.to_series().diff() > timedelta(
@@ -193,7 +193,7 @@ def chunk_df_dict(
         )
         # Set the first and last timestamp to True
         gaps.iloc[[0, -1]] = True
-        gaps = df_sensor[gaps].index.to_list()
+        gaps: List[pd.Timestamp] = df_sensor[gaps].index.to_list()
         if verbose:
             print("-" * 10, " detected gaps", "-" * 10)
             print(*gaps, sep="\n")
