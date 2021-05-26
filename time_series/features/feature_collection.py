@@ -11,17 +11,20 @@ from __future__ import annotations
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
 import dill
+import logging
+import warnings
 import pandas as pd
 
 from pathos.multiprocessing import ProcessPool
 from tqdm.auto import tqdm
 from pathlib import Path
 
-from typing import Dict, Iterator, List, Tuple, Union
+from typing import Dict, Iterator, List, Optional, Tuple, Union
 
 from ..features.function_wrapper import NumpyFuncWrapper
 from .feature import FeatureDescriptor, MultipleFeatureDescriptors
 from .strided_rolling import StridedRolling
+from .logger import logger
 
 
 class FeatureCollection:
@@ -134,6 +137,8 @@ class FeatureCollection:
         self,
         signals: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         merge_dfs=False,
+        njobs: int = None,
+        logging_file_path: Optional[Union[str, Path]] = None,
         show_progress=True,
         njobs=None,
     ) -> Union[List[pd.DataFrame], pd.DataFrame]:
@@ -156,11 +161,22 @@ class FeatureCollection:
         njobs : int, optional
             The number of processes used for the feature calculation. If `None`, then
             the number returned by `os.cpu_count()` is used, by default None.
+        logging_file_path: str, optional
+            The file path where the logged messages are stored. If `None`, then no 
+            logging `FileHandler` will be used and the logging messages are only pushed
+            to stdout. Otherwise, a logging `FileHandler` will write the logged messages
+            to the given file path.
 
         Returns
         -------
         Union[List[pd.DataFrame], pd.DataFrame]
             A DataFrame or List of DataFrames with the features in it.
+
+        Note
+        ----
+        If a `logging_file_path` is provided, the execution (time) statistics can be
+        retrieved by calling `logger.get_function_duration_stats(logging_file_path)` and
+        `logger.get_key_duration_stats(logging_file_path)`.
 
         Raises
         ------
@@ -168,6 +184,31 @@ class FeatureCollection:
             Raised when a required key is not found in `signals`.
 
         """
+
+        # Delete other logging handlers
+        if len(logger.handlers) > 1:
+            logger.handlers = [h for h in logger.handlers if type(h) == logging.StreamHandler]
+        assert len(logger.handlers) == 1, 'Multiple logging StreamHandlers present!!'
+
+        if logging_file_path:
+            if not isinstance(logging_file_path, Path):
+                logging_file_path = Path(logging_file_path)
+            if logging_file_path.exists():
+                warnings.warn(
+                    f"Logging file ({logging_file_path}) already exists. This file will be overwritten!"
+                )
+                # Clear the file
+                #  -> because same FileHandler is used when calling this method twice
+                open(logging_file_path, 'w').close()
+            f_handler = logging.FileHandler(logging_file_path, mode="w")
+            f_handler.setFormatter(
+                logging.Formatter(
+                    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+                )
+            )
+            f_handler.setLevel(logging.INFO)
+            logger.addHandler(f_handler)
+
         series_dict = dict()
         series_list = []
 
@@ -190,7 +231,7 @@ class FeatureCollection:
         # https://pathos.readthedocs.io/en/latest/pathos.html#usage
         # nodes = number (and potentially description) of workers
         # ncpus - number of worker processors servers
-        with ProcessPool(nodes=njobs) as pool:
+        with ProcessPool(nodes=njobs, source=True) as pool:
             results = pool.uimap(
                 self._executor, self._stroll_feature_generator(series_dict)
             )
