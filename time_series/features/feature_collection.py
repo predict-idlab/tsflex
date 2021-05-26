@@ -19,7 +19,7 @@ from pathos.multiprocessing import ProcessPool
 from tqdm.auto import tqdm
 from pathlib import Path
 
-from typing import Dict, Iterator, List, Tuple, Union
+from typing import Dict, Iterator, List, Optional, Tuple, Union
 
 from ..features.function_wrapper import NumpyFuncWrapper
 from .feature import FeatureDescriptor, MultipleFeatureDescriptors
@@ -137,8 +137,8 @@ class FeatureCollection:
         self,
         signals: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         merge_dfs=False,
-        njobs=None,
-        logging_file_path=None,
+        njobs: int = None,
+        logging_file_path: Optional[Union[str, Path]] = None,
     ) -> Union[List[pd.DataFrame], pd.DataFrame]:
         """Calculate features on the passed signals.
 
@@ -157,8 +157,11 @@ class FeatureCollection:
         njobs : int, optional
             The number of processes used for the feature calculation. If `None`, then
             the number returned by `os.cpu_count()` is used, by default None.
-        logging_file_path: str
-            The file path where the logged messages are stored.
+        logging_file_path: str, optional
+            The file path where the logged messages are stored. If `None`, then no 
+            logging `FileHandler` will be used and the logging messages are only pushed
+            to stdout. Otherwise, a logging `FileHandler` will write the logged messages
+            to the given file path.
 
         Returns
         -------
@@ -178,24 +181,29 @@ class FeatureCollection:
 
         """
 
+        # Delete other logging handlers
+        if len(logger.handlers) > 1:
+            logger.handlers = [h for h in logger.handlers if isinstance(h, logging.StreamHandler)]
+        assert len(logger.handlers) == 1, 'Multiple logging StreamHandlers present!!'
+
         if logging_file_path:
-            if Path(logging_file_path).exists():
+            if not isinstance(logging_file_path, Path):
+                logging_file_path = Path(logging_file_path)
+            if logging_file_path.exists():
                 warnings.warn(
                     f"Logging file ({logging_file_path}) already exists. This file will be overwritten!"
                 )
                 # Clear the file
                 #  -> because same FileHandler is used when calling this method twice
                 open(logging_file_path, 'w').close()
-            if len(logger.handlers) == 1:  # At index 0 we have the StreamHandler
-                # Avoids creating a 2nd file handler when this method is called twice
-                f_handler = logging.FileHandler(logging_file_path, mode="w")
-                f_handler.setFormatter(
-                    logging.Formatter(
-                        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-                    )
+            f_handler = logging.FileHandler(logging_file_path, mode="w")
+            f_handler.setFormatter(
+                logging.Formatter(
+                    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
                 )
-                f_handler.setLevel(logging.INFO)
-                logger.addHandler(f_handler)
+            )
+            f_handler.setLevel(logging.INFO)
+            logger.addHandler(f_handler)
 
         series_dict = dict()
         series_list = []

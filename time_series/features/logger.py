@@ -30,8 +30,8 @@ def _parse_message(message: str) -> list:
     func = matches[0]
     key = matches[1].strip("'")  # TODO: up until now a function can have just 1 key?
     window, stride = int(matches[2].split(",")[0]), int(matches[2].split(",")[1])
-    duration = float(matches[3].rstrip(" seconds"))
-    return [func, key, window, stride, duration]
+    duration_s = float(matches[3].rstrip(" seconds"))
+    return [func, key, window, stride, duration_s]
 
 
 def parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
@@ -44,6 +44,7 @@ def parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
         is passed to the feature collection its `calculate` method. # TODO: update if calculate gets replaced
 
     Returns
+    -------
     pd.DataFrame
         A DataFrame with the features its method, input keys and calculation duration.
 
@@ -69,9 +70,10 @@ def get_function_duration_stats(logging_file_path: str) -> pd.DataFrame:
     ----------
     logging_file_path: str
         The file path where the logged messages are stored. This is the file path that
-        is passed to the feature collection its `calculate` method. # TODO: update if calculate gets replaced
+        is passed to the FeatureCollection its `calculate` method. # TODO: update if calculate gets replaced
 
     Returns
+    -------
     pd.DataFrame
         A DataFrame with for each function - (window, stride) combination the
         mean (time), std (time), sum (time), and number of executions.
@@ -95,6 +97,7 @@ def get_key_duration_stats(logging_file_path: str) -> pd.DataFrame:
         is passed to the feature collection its `calculate` method. # TODO: update if calculate gets replaced
 
     Returns
+    -------
     pd.DataFrame
         A DataFrame with for each function the mean (time), std (time), sum (time), and
         number of executions.
