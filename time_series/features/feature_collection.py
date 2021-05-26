@@ -136,7 +136,7 @@ class FeatureCollection:
     def calculate(
         self,
         signals: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
-        merge_dfs: Optional[bool] =False,
+        merge_dfs: Optional[bool] = False,
         show_progress: Optional[bool] = True,
         logging_file_path: Optional[Union[str, Path]] = None,
         n_jobs: Optional[int] = None,

@@ -125,7 +125,7 @@ def _np_array_to_series(np_array: np.ndarray, series: pd.Series) -> pd.Series:
     Giving the `np_array` the same name as the `series`, will result in transforming
     (i.e., replacing) the `series` in the pipeline.
     When a user does not want a numpy array to replace its input series, it is his / her
-    responsability to create a new `pd.Series` (or `pd.DataFrame`) of that numpy array
+    responsibility to create a new `pd.Series` (or `pd.DataFrame`) of that numpy array
     with a different (column) name.
 
     """
@@ -169,7 +169,7 @@ def _handle_seriesprocessor_func_output(
     If `func_output` is a `np.ndarray`, the given `requested_dict` must contain just 1
     series! That series its name and index are used to return a series dict. When a
     user does not want a numpy array to replace its input series, it is his / her
-    responsability to create a new `pd.Series` (or `pd.DataFrame`) of that numpy array
+    responsibility to create a new `pd.Series` (or `pd.DataFrame`) of that numpy array
     with a different (column) name.
     If `func_output` is a `pd.Series`, keep in mind that the input series gets
     transformed (i.e., replaced) with the `func_output` when the series name is equal.
@@ -360,7 +360,7 @@ class SeriesProcessor:
         Note
         ----
         If you want to test or debug your `SeriesProcessor` object, just encapsulate
-        yout instance of this class in a `SeriesProcessorPipeline`. The latter
+        your instance of this class in a `SeriesProcessorPipeline`. The latter
         allows more versatile input for the `__call__` method.
 
         """
@@ -492,7 +492,7 @@ class SeriesProcessorPipeline:
         If a series processor its function output is a `np.ndarray`, the input series
         dict (required dict for that function) must contain just 1 series! That series
         its name and index are used to return a series dict. When a user does not want a
-        numpy array to replace its input series, it is his / her responsability to
+        numpy array to replace its input series, it is his / her responsibility to
         create a new `pd.Series` (or `pd.DataFrame`) of that numpy array with a
         different (column) name.
         If `func_output` is a `pd.Series`, keep in mind that the input series gets
@@ -561,7 +561,8 @@ class SeriesProcessorPipeline:
 
         Note
         ----
-        As we use `dill` to serialize, we can also serialize (decorator)functions which are defined in the local scope, like lambdas.
+        As we use `dill` to serialize, we can also serialize (decorator)functions which
+        are defined in the local scope, like lambdas.
 
         Parameters
         ----------

@@ -63,7 +63,7 @@ def process_chunks_multithreaded(
         try:
             return processing_pipeline(list(chunk.values()), **processing_kwargs)
         except Exception:
-            # Print traceback and return empty datafrane in order to not break the
+            # Print traceback and return empty `pd.DataFrame` in order to not break the
             # other parallel processes.
             traceback.print_exc()
             return pd.DataFrame()
@@ -128,7 +128,7 @@ def chunk_df_dict(
     max_chunk_dur_s : int, optional
         The maximal duration of a chunk in seconds, by default None
         Chunks with durations larger than this will be chunked in smaller chunks where
-        each subchunk has a maximal duration of `max_chunk_dur_s`.
+        each sub-chunk has a maximal duration of `max_chunk_dur_s`.
     sub_chunk_margin_s: int, optional
         The left and right margin of the sub-chunks.
     copy: boolean, optional
@@ -185,7 +185,7 @@ def chunk_df_dict(
             continue
         assert i == len(df_list_dict)
         assert sensor_str in fs_dict.keys()
-        fs_sensor = fs_dict[sensor_str]
+        fs_sensor = fs_dict.get(sensor_str)
         sample_period = 1 / fs_sensor
         # Allowed offset (in seconds) is sample_period + 0.5*sample_period
         gaps = df_sensor.index.to_series().diff() > timedelta(
@@ -193,7 +193,7 @@ def chunk_df_dict(
         )
         # Set the first and last timestamp to True
         gaps.iloc[[0, -1]] = True
-        gaps = df_sensor[gaps].index.to_list()
+        gaps: List[pd.Timestamp] = df_sensor[gaps].index.to_list()
         if verbose:
             print("-" * 10, " detected gaps", "-" * 10)
             print(*gaps, sep="\n")
