@@ -3,7 +3,8 @@
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
 from itertools import chain
-from typing import Callable, Dict, List, Union, Optional
+from pathlib import Path
+from typing import Callable, Dict, List, Optional, Union
 
 import pandas as pd
 import numpy as np
@@ -553,6 +554,26 @@ class SeriesProcessorPipeline:
             return _series_dict_to_df(series_dict)
         else:
             return series_dict
+
+    def serialize(self, file_path: Union[str, Path]):
+        """Serialize this `SeriesProcessor` instance.
+
+        Note
+        ----
+        As we use `dill` to serialize, we can also serialize (decorator)functions which are defined in the local scope, like lambdas.
+
+        Parameters
+        ----------
+        file_path : Union[str, Path]
+            The path where the `SeriesProcessor` will be serialized.
+
+        See Also
+        --------
+        https://github.com/uqfoundation/dill
+
+        """
+        with open(file_path, "wb") as f:
+            dill.dump(self, f, recurse=True)
 
     def __repr__(self):
         """Return formal representation of object."""
