@@ -2,7 +2,6 @@
 
 __author__ = "Vic Degraeve, Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
 
-from datetime import datetime
 from typing import Callable, Union, Dict
 
 import numpy as np
