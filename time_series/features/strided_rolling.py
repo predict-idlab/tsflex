@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 
 from .function_wrapper import NumpyFuncWrapper
+from ..utils import tightest_bounds
 from .logger import logger
 
 
@@ -16,7 +17,12 @@ class StridedRolling:
     """Custom sliding window with stride for pandas DataFrames."""
 
     # Only keep pd.Series and not Union
-    def __init__(self, df: Union[pd.Series, pd.DataFrame], window: int, stride: int):
+    def __init__(
+        self,
+        df: Union[pd.Series, pd.DataFrame],
+        window: Union[int, pd.Timedelta],
+        stride: Union[int, pd.Timedelta]
+    ):
         """Create StridedRolling object.
 
         Parameters
@@ -24,26 +30,72 @@ class StridedRolling:
         df : Union[pd.Series, pd.DataFrame]
             :class:`pd.Series` or :class:`pd.DataFrame` to slide over, the index must
             be a (time-zone-aware) :class:`pd.DatetimeIndex`.
-        window : int
-            Sliding window length in samples.
-        stride : int
-            Step/stride length in samples.
+        window : Union[int, pd.Timedelta]
+            Either an int or `pd.Timedelta`, representing the sliding window length in
+            samples or the sliding window duration, respectively.
+        stride : Union[int, pd.Timedelta]
+            Either an int or `pd.Timedelta`, representing the stride size in samples or
+            the stride duration, respectively.
+        Note
+        ----
+        Downsampling als die windown/stride een pd....
 
         """
         # construct the (expanded) sliding window-stride array
         # Old code: self.time_indexes = df.index[:-window + 1][::stride]
         # Index indicates the start of the windows
         df = df.to_frame() if isinstance(df, pd.Series) else df
-        self.window = window
-        self.stride = stride
+
+        # store the orig input
+        self.orig_window = window
+        self.orig_stride = stride
+
+        self.window: int = StridedRolling._time_arg_to_int(window, df)
+        self.stride: int = StridedRolling._time_arg_to_int(stride, df)
         # Index indicates the end of the windows
-        self.time_indexes = df.index[window - 1:][::stride]
+        self.time_indexes = df.index[self.window - 1:][::self.stride]
         # TODO: Make this here lazy by only doing on first call of apply func
         self._strided_vals = {}
         for col in df.columns:
             self._strided_vals[col] = sliding_window(
-                df[col], window=window, stride=stride
+                df[col], window=self.window, stride=self.stride
             )
+
+    @staticmethod
+    def _time_arg_to_int(
+            arg: Union[int, pd.Timedelta],
+            df: Union[pd.DataFrame, pd.Series]
+    ) -> int:
+        """Converts the time arg into a int and **uses flooring**.
+
+        Parameters
+        ----------
+        arg: Union[int, pd.Timedelta]
+            The possible time-based arg that will be converted into an string
+        df:
+            The `pd.DatetimeIndex`ed dataframe that will be used to infer the frequency
+            if necessary.
+
+        Returns
+        -------
+        int
+            The converted int
+
+        Raises
+        ------
+        ValueError
+            When the frequency could not be inferred from the `pd.DatetimeIndex`.
+        """
+
+        if isinstance(arg, int):
+            return arg
+        elif isinstance(arg, pd.Timedelta):
+            # use the df to determine the freq
+            freq: str = pd.infer_freq(df.index)
+            if freq is None:
+                raise ValueError(f'could not infer frequency from df {df.columns}')
+            return arg // pd.Timedelta(freq)
+        raise ValueError(f"arg {arg} has invalid type = {type(arg)}")
 
     @property
     def strided_vals(self) -> Dict[str, np.ndarray]:
@@ -84,31 +136,40 @@ class StridedRolling:
                 `<signal_col_name>_<feature_name>__w=<window>_s=<stride>`.
 
         """
-        feat_out = {}
+        # convert win & stride to time-string if available :)
+        def create_feat_col_name(signal_key, feat_name) -> str:
+            win_str, stride_str = str(self.window), str(self.stride)
+            if isinstance(self.orig_window, pd.Timedelta):
+                win_str = tightest_bounds(self.orig_window)
+            if isinstance(self.orig_stride, pd.Timedelta):
+                stride_str = tightest_bounds(self.orig_stride)
+            win_stride_str = f"w={win_str}_s={stride_str}"
+            return f"{signal_key}_{feat_name}__{win_stride_str}"
 
+        feat_out = {}
         if not isinstance(np_func, NumpyFuncWrapper):
             np_func = NumpyFuncWrapper(np_func)
         feat_names = np_func.output_names
 
         t_start = time.time()
 
-        for col in self.strided_vals.keys():
-            out = np.apply_along_axis(np_func, axis=-1, arr=self.strided_vals[col])
+        for sig_key in self.strided_vals.keys():
+            out = np.apply_along_axis(np_func, axis=-1, arr=self.strided_vals[sig_key])
             if out.ndim == 1 or (out.ndim == 2 and out.shape[1] == 1):
                 assert len(feat_names) == 1
-                feat_out[
-                    f"{col}_{feat_names[0]}__w={self.window}_s={self.stride}"
-                ] = out.flatten()
+                feat_out[create_feat_col_name(sig_key, feat_names[0])] = out.flatten()
             if out.ndim == 2 and out.shape[1] > 1:
                 assert len(feat_names) == out.shape[1]
                 for col_idx in range(out.shape[1]):
                     feat_out[
-                        f"{col}_{feat_names[col_idx]}__w={self.window}_s={self.stride}"
+                        create_feat_col_name(sig_key, feat_names[col_idx])
                     ] = out[:, col_idx]
 
         elapsed = time.time() - t_start
         logger.info(
-            f"Finished function [{np_func.func.__name__}] on {list(self.strided_vals.keys())} with window-stride [{self.window}, {self.stride}] in [{elapsed} seconds]!"
+            f"Finished function [{np_func.func.__name__}] on "
+            f"{list(self.strided_vals.keys())} with window-stride "
+            f"[{self.window}, {self.stride}] in [{elapsed} seconds]!"
         )
 
         return pd.DataFrame(index=self.time_indexes, data=feat_out)
