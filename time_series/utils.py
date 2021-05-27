@@ -9,6 +9,7 @@ from typing import Dict, List
 import pandas as pd
 
 
+# TODO: maybe rename this method?
 def tightest_bounds(td: pd.Timedelta) -> str:
     """Construct the tightest bounds string representation for the given timedelta arg.
 
@@ -23,12 +24,19 @@ def tightest_bounds(td: pd.Timedelta) -> str:
         The tight string bounds of format '$d-$h$m$s.$ms'.
 
     """
-    c = td.components
     out_str = ""
+
+    # edge case if we deal with negative
+    if td < pd.Timedelta(seconds=0):
+        td *= -1
+        out_str += 'NEG'
+
+    # note -> this must happen after the *= -1
+    c = td.components
     if c.days > 0:
         out_str = f'{c.days}D'
     if c.hours > 0 or c.minutes > 0 or c.seconds > 0 or c.milliseconds > 0:
-        out_str += '-' if len(out_str) else ""
+        out_str += '_' if len(out_str) else ""
 
     if c.hours > 0:
         out_str += f"{c.hours}h"
@@ -40,7 +48,6 @@ def tightest_bounds(td: pd.Timedelta) -> str:
             out_str += f".{str(c.milliseconds / 1000).split('.')[-1].rstrip('0')}"
         out_str += "s"
     return out_str
-
 
 def chunk_df_dict(
         df_dict: Dict[str, pd.DataFrame],
