@@ -9,7 +9,12 @@ from typing import Callable, Dict, List, Optional, Union
 
 import dill
 import numpy as np
+import logging
+import time
+import warnings
 import pandas as pd
+
+from .logger import logger
 
 
 def dataframe_func(func: Callable):
@@ -28,7 +33,7 @@ def dataframe_func(func: Callable):
         res = func(df, **kwargs)
         return res
 
-    wrapper.__name__ = "[wrapped: dataframe_func] " + func.__name__
+    wrapper.__name__ = "dataframe_func: " + func.__name__
     return wrapper
 
 
@@ -364,6 +369,8 @@ class SeriesProcessor:
         allows more versatile input for the `__call__` method.
 
         """
+        t_start = time.time()
+
         # Only selecting the signals that are needed for this processing step
         requested_dict = {}
         try:
@@ -376,15 +383,23 @@ class SeriesProcessor:
                 % (key, self.name)
             )
 
+        # Variable that will contain the final output of this method
+        processed_output: Union[Dict[str, pd.Series], pd.DataFrame]
         if self.single_series_func:
-            # Handle series func includes _handle_seriesprocessor_func_output
-            return _handle_single_series_func(
+            # Handle series func includes _handle_seriesprocessor_func_output!
+            processed_output =  _handle_single_series_func(
                 self.func, requested_dict, self.name, **self.kwargs
             )
-        func_output = self.func(requested_dict, **self.kwargs)
-        return _handle_seriesprocessor_func_output(
-            func_output, requested_dict, self.name
+        else:
+            func_output = self.func(requested_dict, **self.kwargs)
+            processed_output = _handle_seriesprocessor_func_output(func_output, requested_dict, self.name)
+
+        elapsed = time.time() - t_start
+        logger.info(
+                f"Finished function [{self.name}] as [single_series_func={self.single_series_func}] on {list(requested_dict.keys())} in [{elapsed} seconds]!"
         )
+
+        return processed_output
 
     def __repr__(self):
         """Return formal representation of object."""
@@ -454,6 +469,7 @@ class SeriesProcessorPipeline:
         return_all_signals=True,
         return_df=True,
         drop_keys=[],
+        logging_file_path: Optional[Union[str, Path]] = None,
     ) -> Union[Dict[str, pd.Series], pd.DataFrame]:
         """Execute all `SeriesProcessor` objects in pipeline sequentially.
 
@@ -476,11 +492,25 @@ class SeriesProcessorPipeline:
             by default True.
         drop_keys : List[str], default: []
             Which keys should be dropped when returning the output.
+        logging_file_path: str, default: None
+            The file path where the logged messages are stored. If `None`, then no 
+            logging `FileHandler` will be used and the logging messages are only pushed
+            to stdout. Otherwise, a logging `FileHandler` will write the logged messages
+            to the given file path.
 
         Returns
         -------
         Union[Dict[str, pd.Series], pd.DataFrame]
             The preprocessed series.
+
+        Note
+        ----
+        If a `logging_file_path` is provided, the execution (time) statistics can be
+        retrieved by calling `logger.get_function_duration_stats(logging_file_path)` and
+        `logger.get_key_duration_stats(logging_file_path)`.
+        Be aware that the `logging_file_path` gets cleared before the logger pushes 
+        logged messages. Hence, one should use a separate logging file for the 
+        processing and the feature part of this library.
 
         Raises
         ------
@@ -500,6 +530,30 @@ class SeriesProcessorPipeline:
         series name is  equal.
 
         """
+        # Delete other logging handlers
+        if len(logger.handlers) > 1:
+            logger.handlers = [h for h in logger.handlers if type(h) == logging.StreamHandler]
+        assert len(logger.handlers) == 1, 'Multiple logging StreamHandlers present!!'
+
+        if logging_file_path:
+            if not isinstance(logging_file_path, Path):
+                logging_file_path = Path(logging_file_path)
+            if logging_file_path.exists():
+                warnings.warn(
+                    f"Logging file ({logging_file_path}) already exists. This file will be overwritten!"
+                )
+                # Clear the file
+                #  -> because same FileHandler is used when calling this method twice
+                open(logging_file_path, 'w').close()
+            f_handler = logging.FileHandler(logging_file_path, mode="w")
+            f_handler.setFormatter(
+                logging.Formatter(
+                    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+                )
+            )
+            f_handler.setLevel(logging.INFO)
+            logger.addHandler(f_handler)
+
         # Converting the signals list into a dict
         series_dict = dict()
 

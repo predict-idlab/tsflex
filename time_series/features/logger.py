@@ -41,7 +41,12 @@ def parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
     ----------
     logging_file_path: str
         The file path where the logged messages are stored. This is the file path that
-        is passed to the feature collection its `calculate` method. # TODO: update if calculate gets replaced
+        is passed to the FeatureCollection its `calculate` method. # TODO: update if calculate gets replaced
+
+    Note
+    ----
+    This function only works when the `logging_file_path` that is used in a
+    FeatureCollection is passed.
 
     Returns
     -------
@@ -94,7 +99,7 @@ def get_key_duration_stats(logging_file_path: str) -> pd.DataFrame:
     ----------
     logging_file_path: str
         The file path where the logged messages are stored. This is the file path that
-        is passed to the feature collection its `calculate` method. # TODO: update if calculate gets replaced
+        is passed to the FeatureCollection its `calculate` method. # TODO: update if calculate gets replaced
 
     Returns
     -------
