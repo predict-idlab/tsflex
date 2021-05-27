@@ -22,7 +22,7 @@ from pathlib import Path
 from typing import Dict, Iterator, List, Optional, Tuple, Union
 
 from ..features.function_wrapper import NumpyFuncWrapper
-from ..utils import tightest_bounds
+from ..utils import tightest_timedelta_bounds
 from .feature import FeatureDescriptor, MultipleFeatureDescriptors
 from .strided_rolling import StridedRolling
 from .logger import logger
@@ -298,9 +298,9 @@ class FeatureCollection:
                 output_str += f"\n\twin: "
                 win_str, stride_str = win_size, stride
                 if isinstance(win_str, pd.Timedelta):
-                    win_str = tightest_bounds(win_str)
+                    win_str = tightest_timedelta_bounds(win_str)
                 if isinstance(stride_str, pd.Timedelta):
-                    stride_str = tightest_bounds(stride_str)
+                    stride_str = tightest_timedelta_bounds(stride_str)
                 output_str += f"{str(win_str):<6}, stride: {str(stride_str)}: ["
                 for feat_desc in self._feature_desc_dict[signal, win_size, stride]:
                     output_str += f"\n\t\t{feat_desc._func_str()},"

@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 from .function_wrapper import NumpyFuncWrapper
-from ..utils import tightest_bounds
+from ..utils import tightest_timedelta_bounds
 from .logger import logger
 
 
@@ -36,9 +36,14 @@ class StridedRolling:
         stride : Union[int, pd.Timedelta]
             Either an int or `pd.Timedelta`, representing the stride size in samples or
             the stride duration, respectively.
+
         Note
         ----
-        Downsampling als die windown/stride een pd....
+        Time based window-stride parameters will be converted into integers at inference
+        time. The integer conversion will use flooring, and can be written as the
+        following formula::
+
+            time_parameter // series_period
 
         """
         # construct the (expanded) sliding window-stride array
@@ -46,15 +51,18 @@ class StridedRolling:
         # Index indicates the start of the windows
         df = df.to_frame() if isinstance(df, pd.Series) else df
 
-        # store the orig input
+        # store the orig input (can be pd.Timedelta)
         self.orig_window = window
         self.orig_stride = stride
 
         self.window: int = StridedRolling._time_arg_to_int(window, df)
         self.stride: int = StridedRolling._time_arg_to_int(stride, df)
+
         # Index indicates the end of the windows
         self.time_indexes = df.index[self.window - 1:][::self.stride]
+
         # TODO: Make this here lazy by only doing on first call of apply func
+        #   with the goal to lower memory usage (peak)
         self._strided_vals = {}
         for col in df.columns:
             self._strided_vals[col] = sliding_window(
@@ -140,9 +148,9 @@ class StridedRolling:
         def create_feat_col_name(signal_key, feat_name) -> str:
             win_str, stride_str = str(self.window), str(self.stride)
             if isinstance(self.orig_window, pd.Timedelta):
-                win_str = tightest_bounds(self.orig_window)
+                win_str = tightest_timedelta_bounds(self.orig_window)
             if isinstance(self.orig_stride, pd.Timedelta):
-                stride_str = tightest_bounds(self.orig_stride)
+                stride_str = tightest_timedelta_bounds(self.orig_stride)
             win_stride_str = f"w={win_str}_s={stride_str}"
             return f"{signal_key}_{feat_name}__{win_stride_str}"
 

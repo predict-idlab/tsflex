@@ -10,7 +10,7 @@ import pandas as pd
 
 
 # TODO: maybe rename this method?
-def tightest_bounds(td: pd.Timedelta) -> str:
+def tightest_timedelta_bounds(td: pd.Timedelta) -> str:
     """Construct the tightest bounds string representation for the given timedelta arg.
 
     Parameters
@@ -48,6 +48,7 @@ def tightest_bounds(td: pd.Timedelta) -> str:
             out_str += f".{str(c.milliseconds / 1000).split('.')[-1].rstrip('0')}"
         out_str += "s"
     return out_str
+
 
 def chunk_df_dict(
         df_dict: Dict[str, pd.DataFrame],
