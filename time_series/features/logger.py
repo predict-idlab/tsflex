@@ -45,7 +45,7 @@ def parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
 
     Note
     ----
-    This function only works when the `logging_file_path` that is used in a \
+    This function only works when the `logging_file_path` that is used in a
     FeatureCollection is passed.
 
     Returns
