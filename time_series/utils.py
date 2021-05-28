@@ -34,7 +34,7 @@ def tightest_timedelta_bounds(td: pd.Timedelta) -> str:
     # note -> this must happen after the *= -1
     c = td.components
     if c.days > 0:
-        out_str = f'{c.days}D'
+        out_str += f'{c.days}D'
     if c.hours > 0 or c.minutes > 0 or c.seconds > 0 or c.milliseconds > 0:
         out_str += '_' if len(out_str) else ""
 
