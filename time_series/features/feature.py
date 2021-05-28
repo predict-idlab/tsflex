@@ -63,7 +63,7 @@ class FeatureDescriptor:
         See Also
         --------
         The `StridedRolling` class, as the window-stride (time) conversion takes
-        there place.
+        place there.
 
         """
         self.key = key
