@@ -22,6 +22,7 @@ from pathlib import Path
 from typing import Dict, Iterator, List, Optional, Tuple, Union
 
 from ..features.function_wrapper import NumpyFuncWrapper
+from ..utils import tightest_timedelta_bounds
 from .feature import FeatureDescriptor, MultipleFeatureDescriptors
 from .strided_rolling import StridedRolling
 from .logger import logger
@@ -47,7 +48,8 @@ class FeatureCollection:
         # The feature collection is a dict where the key is a tuple(str, int, int), the
         # tuple values correspond to (signal_key, window, stride)
         self._feature_desc_dict: Dict[
-            Tuple[str, int, int], List[FeatureDescriptor]
+            Tuple[str, Union[int, pd.Timedelta], Union[int, pd.Timedelta]],
+            List[FeatureDescriptor]
         ] = {}
         # A list of all the features, holds the same references as the dict above but
         # is simply stored in another way
@@ -57,6 +59,7 @@ class FeatureCollection:
 
     @staticmethod
     def _get_collection_key(feature: FeatureDescriptor):
+        # Note `window` & `stride` properties can either be a pd.Timedelta or an int
         return feature.key, feature.window, feature.stride
 
     def _add_feature(self, feature: FeatureDescriptor):
@@ -165,6 +168,9 @@ class FeatureCollection:
         n_jobs : int, optional
             The number of processes used for the feature calculation. If `None`, then
             the number returned by `os.cpu_count()` is used, by default None.
+            If n_jobs is either 0 or 1, the code will be executed sequentially without
+            creating a process pool. This is very useful when debugging, as the stack
+            trace will be more comprehensible.
 
         Returns
         -------
@@ -233,19 +239,24 @@ class FeatureCollection:
         # https://pathos.readthedocs.io/en/latest/pathos.html#usage
         # nodes = number (and potentially description) of workers
         # ncpus - number of worker processors servers
-        with ProcessPool(nodes=n_jobs, source=True) as pool:
-            results = pool.uimap(
-                self._executor, self._stroll_feature_generator(series_dict)
-            )
-            if show_progress:
-                results = tqdm(results, total=len(self._feature_desc_list))
-            for f in results:
-                calculated_feature_list.append(f)
-            # Close & join because: https://github.com/uqfoundation/pathos/issues/131
-            pool.close()
-            pool.join()
-            # Clear because: https://github.com/uqfoundation/pathos/issues/111
-            pool.clear()
+        if n_jobs in [0,1]:
+            # print('Executing feature extraction sequentially')
+            for stroll, func in self._stroll_feature_generator(series_dict):
+                calculated_feature_list.append(stroll.apply_func(func))
+        else:
+            with ProcessPool(nodes=n_jobs, source=True) as pool:
+                results = pool.uimap(
+                    self._executor, self._stroll_feature_generator(series_dict)
+                )
+                if show_progress:
+                    results = tqdm(results, total=len(self._feature_desc_list))
+                for f in results:
+                    calculated_feature_list.append(f)
+                # Close & join because: https://github.com/uqfoundation/pathos/issues/131
+                pool.close()
+                pool.join()
+                # Clear because: https://github.com/uqfoundation/pathos/issues/111
+                pool.clear()
 
         if merge_dfs:
             df_merged = pd.DataFrame()
@@ -290,7 +301,17 @@ class FeatureCollection:
             output_str += f"{signal}: ("
             keys = (x for x in self._feature_desc_dict.keys() if x[0] == signal)
             for _, win_size, stride in keys:
-                output_str += f"\n\twin: {str(win_size):<6}, stride: {str(stride)}: ["
+                output_str += f"\n\twin: "
+                win_str, stride_str = win_size, stride
+                if isinstance(win_str, pd.Timedelta):
+                    win_str = tightest_timedelta_bounds(win_str)
+                else:
+                    win_str = f"{win_str} samples"
+                if isinstance(stride_str, pd.Timedelta):
+                    stride_str = tightest_timedelta_bounds(stride_str)
+                else:
+                    stride_str = f"{stride_str} samples"
+                output_str += f"{str(win_str):<6}, stride: {str(stride_str)}: ["
                 for feat_desc in self._feature_desc_dict[signal, win_size, stride]:
                     output_str += f"\n\t\t{feat_desc._func_str()},"
                 output_str += "\n\t]"

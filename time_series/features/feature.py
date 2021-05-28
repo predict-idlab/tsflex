@@ -3,6 +3,8 @@
 import itertools
 from typing import Callable, List, Union
 
+import pandas as pd
+
 from .function_wrapper import NumpyFuncWrapper
 
 
@@ -13,8 +15,8 @@ class FeatureDescriptor:
         self,
         function: Union[NumpyFuncWrapper, Callable],
         key: str,
-        window: int,
-        stride: int,
+        window: Union[int, str, pd.Timedelta],
+        stride: Union[int, str, pd.Timedelta],
     ):
         """Create a FeatureDescriptor object.
 
@@ -25,12 +27,32 @@ class FeatureDescriptor:
         key : str
             The key (name) of the signal where this feature needs to be calculated on.
             This allows to process multivariate series.
-        window : int
-            The window size on which this feature will be applied, expressed in the
-            number of samples from the input signal.
-        stride : int
-            The stride of the window rolling process, also as a number of samples of the
-            input signal.
+        window :  Union[int, str, pd.Timedelta]
+            The window size, this argument supports multiple types.
+            If the type is an int, it represents the number of samples of the input
+            signal. If the window's type is a `pd.Timedelta`, the window size represents
+            the window-time. If a `str`, it represents a window-time-string.
+        stride :  Union[int, str, pd.Timedelta]
+            The stride of the window rolling process, supports multiple types.
+            If the type is an int, it represents the number of samples of the input
+            signal that will be rolled over. If the stride's type is a `pd.Timedelta`,
+            it represents the stride-roll timedelta. If a `str`, it represents a
+            stride-roll-time-string.
+
+        Note
+        ----
+        Later on, the (not-int) time-based window-stride parameters, are converted into
+        ints in the `StridedRolling` class. This time -> int conversion implies three
+        things:
+
+        1. The time -> int conversion will be done at inference time. Hence, the
+            converted int will be dependent of the inference-time `series-argument`'s
+            frequency (for which this feature will be extracted).
+        2. This inference time conversion also implies that **each** series on
+            which the features will be extracted **must contain** a frequency.
+            **So no gaps are allowed in these series!**
+        3. The time **will be converted to an int**, and as this is achieved by dividing
+            the `pd.TimeDelta` through the signal's inferred freq timedelta.
 
         Raises
         ------
@@ -38,10 +60,15 @@ class FeatureDescriptor:
             Raised when the `function` is not an instance of Callable or
             NumpyFuncWrapper.
 
+        See Also
+        --------
+        The `StridedRolling` class, as the window-stride (time) conversion takes
+        place there.
+
         """
         self.key = key
-        self.window = window
-        self.stride = stride
+        self.window = FeatureDescriptor._parse_time_arg(window)
+        self.stride = FeatureDescriptor._parse_time_arg(stride)
 
         # Order of if statements is important!
         if isinstance(function, NumpyFuncWrapper):
@@ -53,6 +80,33 @@ class FeatureDescriptor:
                 "Expected feature function to be a `NumpyFuncWrapper` but is a"
                 f" {type(function)}."
             )
+
+    @staticmethod
+    def _parse_time_arg(arg: Union[int, str, pd.Timedelta]) -> Union[int, pd.Timedelta]:
+        """Parse the `window`/`stride` arg into a fixed set of types.
+
+        Parameters
+        ----------
+        arg: Union[int, str, pd.Timedelta]
+            The arg that will be parsed. If the type is either an `int` or
+            `pd.Timedelta`, nothing will happen. If the type is a `str`, `arg` should
+            represent a time-string, and will be converted to a `pd.Timedelta`.
+
+        Returns
+        -------
+        Union[int, pd.Timedelta]
+            Either an int or `pd.Timedelta`, dependent on the arg-input.
+
+        Raises
+        ------
+        TypeError
+            Raised when `arg` is not an instance of `int`, `str`, `pd.Timedelta`
+        """
+        if isinstance(arg, int) or isinstance(arg, pd.Timedelta):
+            return arg
+        elif isinstance(arg, str):
+            return pd.Timedelta(arg)
+        raise TypeError(f"arg type {type(arg)} is not supported!")
 
     def __repr__(self) -> str:
         """Representation string of Feature."""
