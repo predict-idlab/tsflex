@@ -94,7 +94,6 @@ class StridedRolling:
         ValueError
             When the frequency could not be inferred from the `pd.DatetimeIndex`.
         """
-
         if isinstance(arg, int):
             return arg
         elif isinstance(arg, pd.Timedelta):
