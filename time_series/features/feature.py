@@ -49,7 +49,7 @@ class FeatureDescriptor:
             converted int will be dependent of the inference-time `series-argument`'s
             frequency (for which this feature will be extracted).
         2. This inference time conversion also implies that **each** series on
-            which the features will be extracted  **must contain** a frequency.
+            which the features will be extracted **must contain** a frequency.
             **So no gaps are allowed in these series!**
         3. The time **will be converted to an int**, and as this is achieved by dividing
             the `pd.TimeDelta` through the signal's inferred freq timedelta.
