@@ -37,7 +37,7 @@ class FeatureDescriptor:
             If the type is an int, it represents the number of samples of the input
             signal that will be rolled over. If the stride's type is a `pd.Timedelta`,
             it represents the stride-roll timedelta. If a `str`, it represents a
-            roll-time-string.
+            stride-roll-time-string.
 
         Note
         ----
