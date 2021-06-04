@@ -31,7 +31,7 @@ def process_chunks_multithreaded(
     Parameters
     ----------
     df_dict_list: List[Dict[str, pd.DataFrame]]
-        A list of df_dict chunks, most likely the output of `chunk_df_dict`.
+        A list of df_dict chunks, most likely the output of `chunk_signals`.
     processing_pipeline: SeriesProcessorPipeline
         The pipeline that will be called on each item in `df_dict_list`.
     show_progress: bool, optional
