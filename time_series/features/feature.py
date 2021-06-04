@@ -127,8 +127,8 @@ class MultipleFeatureDescriptors:
         self,
         signal_keys: Union[str, List[str]],
         functions: List[Union[NumpyFuncWrapper, Callable]],
-        windows: Union[int, List[int]],
-        strides: Union[int, List[int]],
+        windows: Union[int, str, pd.Timedelta, List[Union[int, str, pd.Timedelta]]],
+        strides: Union[int, str,  pd.Timedelta, List[Union[int, str, pd.Timedelta]]],
     ):
         """Create a MultipleFeatureDescriptors object.
 
@@ -142,9 +142,9 @@ class MultipleFeatureDescriptors:
             All the signal keys.
         functions : List[Union[NumpyFuncWrapper, Callable]]
             The functions, can be either of both types (even in a single array).
-        windows : Union[int, List[int]],
+        windows : Union[int, str, pd.Timedelta, List[Union[int, str, pd.Timedelta]]],
             All the window sizes.
-        strides : Union[int, List[int]],
+        strides : Union[int, str, pd.Timedelta, List[Union[int, str, pd.Timedelta]]],
             All the strides.
 
         """

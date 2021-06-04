@@ -7,6 +7,7 @@ from typing import Callable, Union, Dict
 
 import numpy as np
 import pandas as pd
+from pandas.tseries.frequencies import to_offset
 
 from .function_wrapper import NumpyFuncWrapper
 from ..utils import tightest_timedelta_bounds
@@ -101,7 +102,12 @@ class StridedRolling:
             freq: str = pd.infer_freq(df.index)
             if freq is None:
                 raise ValueError(f'could not infer frequency from df {df.columns}')
-            return arg // pd.Timedelta(freq)
+            try:
+                # https://stackoverflow.com/a/31471631/9010039
+                int_arg = arg // pd.to_timedelta(to_offset(freq))
+                return int_arg
+            except Exception:
+                print("arg:", arg, "\tfreq: ", freq)
         raise ValueError(f"arg {arg} has invalid type = {type(arg)}")
 
     @property
@@ -219,6 +225,8 @@ def sliding_window(series: pd.Series, window: int, stride=1, axis=-1) -> np.ndar
     if stride < 1:
         raise ValueError("Step size may not be zero or negative")
     if window > data.shape[axis]:
+        print("Series", series.name, series.shape, " -  window:", window, ", stride:", stride)
+        print("Series", series.index.to_series().diff().value_counts())
         raise ValueError("Sliding window size may not exceed size of selected axis")
 
     shape = list(data.shape)
