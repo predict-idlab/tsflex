@@ -225,7 +225,7 @@ def sliding_window(series: pd.Series, window: int, stride=1, axis=-1) -> np.ndar
     if stride < 1:
         raise ValueError("Step size may not be zero or negative")
     if window > data.shape[axis]:
-        print("Series", series.name, series.shape, "window: ", window, "\tstride: ", stride)
+        print("Series", series.name, series.shape, " -  window:", window, ", stride:", stride)
         print("Series", series.index.to_series().diff().value_counts())
         raise ValueError("Sliding window size may not exceed size of selected axis")
 
