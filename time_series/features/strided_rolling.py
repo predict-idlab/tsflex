@@ -105,7 +105,6 @@ class StridedRolling:
             try:
                 # https://stackoverflow.com/a/31471631/9010039
                 int_arg = arg // pd.to_timedelta(to_offset(freq))
-                # print("arg:", arg, "\tfreq: ", freq, "\t int arg: ", int_arg)
                 return int_arg
             except Exception:
                 print("arg:", arg, "\tfreq: ", freq)
