@@ -49,7 +49,7 @@ def process_chunks_multithreaded(
 
     Note
     ----
-    If any error occurs while executing the `processing_pipeline` on one of the chunks
+    If any error occurs while executing the `series_pipeline` on one of the chunks
     in `same_range_chunks_list`, the traceback is printed and an empty dataframe is
     returned. We chose for this behavior, because in this way the other parallel
     processes are not halted in case of an error.

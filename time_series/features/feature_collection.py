@@ -159,7 +159,7 @@ class FeatureCollection:
             by default False
         show_progress: bool, optional
             If True, the progress will be shown with a progressbar, by default True.
-        logging_file_path: str, optional
+        logging_file_path : Union[str, Path], optional
             The file path where the logged messages are stored. If `None`, then no
             logging `FileHandler` will be used and the logging messages are only pushed
             to stdout. Otherwise, a logging `FileHandler` will write the logged messages
@@ -292,7 +292,7 @@ class FeatureCollection:
             dill.dump(self, f, recurse=True)
 
     def __repr__(self) -> str:
-        """Representation string of a Featurecollection."""
+        """Representation string of a FeatureCollection."""
         signals = sorted(set(k[0] for k in self._feature_desc_dict.keys()))
         output_str = ""
         for signal in signals:
