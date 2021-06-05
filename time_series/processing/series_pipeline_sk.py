@@ -1,4 +1,4 @@
-"""SKSeriesProcessingPipeline class for wrapped sklearn-compatible `SeriesProcessingPipeline`.
+"""SKSeriesPipeline class for wrapped sklearn-compatible `SeriesPipeline`.
 
 See Also
 --------
@@ -113,7 +113,7 @@ class SKSeriesPipeline(TransformerMixin):
 
         Returns
         -------
-        SKSeriesProcessingPipeline
+        SKSeriesPipeline
             The transformer instance itself is returned.
         """
         return self
