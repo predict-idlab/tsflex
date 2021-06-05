@@ -23,7 +23,8 @@ from .feature import FeatureDescriptor, MultipleFeatureDescriptors
 # * BaseEstimator support: it is not really useful right now to support this.
 #   As for example sklearn GridSearchCV requires X and y to have the same length,
 #   but FeatureCalculation (almost always) transforms the length of X in your pipeline.
-#   => Possible solution; look into sklearn-contrib how they handle this 
+#   => Possible solution; look into sklearn-contrib how they handle this
+
 
 class SKFeatureCollection(TransformerMixin):
     """Sklearn-compatible transformer for extracting features using a `FeatureCollection`.
