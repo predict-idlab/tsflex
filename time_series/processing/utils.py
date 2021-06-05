@@ -11,12 +11,12 @@ import pandas as pd
 from pathos.multiprocessing import ProcessPool
 from tqdm.auto import tqdm
 
-from .series_processor import SeriesProcessorPipeline
+from .series_pipeline import SeriesPipeline
 
 
 def process_chunks_multithreaded(
         same_range_chunks_list: List[List[Union[pd.Series, pd.DataFrame]]],
-        processing_pipeline: SeriesProcessorPipeline,
+        series_pipeline: SeriesPipeline,
         show_progress: Optional[bool] = True,
         n_jobs: Optional[int] = None,
         **processing_kwargs,
@@ -32,7 +32,7 @@ def process_chunks_multithreaded(
     ----------
     same_range_chunks_list: List[List[Union[pd.Series, pd.DataFrame]]]
         A list of same-range-chunks, most likely the output of `chunk_signals`.
-    processing_pipeline: SeriesProcessorPipeline
+    series_pipeline: SeriesPipeline
         The pipeline that will be called on each item in `same_range_chunks_list`.
     show_progress: bool, optional
         If True, the progress will be shown with a progressbar, by default True.
@@ -45,7 +45,7 @@ def process_chunks_multithreaded(
     Returns
     -------
     List[Any]
-        A list of the `processing_pipeline`'s outputs. The order is preserved.
+        A list of the `series_pipeline`'s outputs. The order is preserved.
 
     Note
     ----
@@ -59,7 +59,7 @@ def process_chunks_multithreaded(
 
     def _executor(same_range_chunks: List[Union[pd.Series, pd.DataFrame]]):
         try:
-            return processing_pipeline(same_range_chunks, **processing_kwargs)
+            return series_pipeline(same_range_chunks, **processing_kwargs)
         except Exception:
             # Print traceback and return empty `pd.DataFrame` in order to not break the
             # other parallel processes.

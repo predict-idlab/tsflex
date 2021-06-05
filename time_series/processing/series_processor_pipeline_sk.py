@@ -23,7 +23,7 @@ from .processor_pipeline import ProcessorPipeline
 ## Future work
 # * BaseEstimator support: it is not really useful right now to support this.
 #   As for example sklearn GridSearchCV requires X and y to have the same length,
-#   but SeriesProcessorPipeline (sometimes) transforms the length of X in your pipeline.
+#   but SeriesPipeline (sometimes) transforms the length of X in your pipeline.
 #   => Possible solution; look into sklearn-contrib imblearn how they handle this
 
 

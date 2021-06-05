@@ -2,7 +2,7 @@
 
 See Also
 --------
-The `SeriesProcessorPipeline` its `logging_file_path` of the call method.
+The `SeriesPipeline` its `logging_file_path` of the call method.
 
 """
 
@@ -41,12 +41,12 @@ def parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
     ----------
     logging_file_path: str
         The file path where the logged messages are stored. This is the file path that
-        is passed to the SeriesProcessorPipeline its `__call__` method.
+        is passed to the SeriesPipeline its `__call__` method.
 
     Note
     ----
     This function only works when the `logging_file_path` that is used in a 
-    SeriesProcessorPipeline is passed.
+    SeriesPipeline is passed.
 
     Returns
     -------
@@ -67,13 +67,13 @@ def parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
 
 
 def get_duration_stats(logging_file_path: str) -> pd.DataFrame:
-    """Get execution (time) statistics for each function of a SeriesProcessorPipeline.
+    """Get execution (time) statistics for each function of a SeriesPipeline.
 
     Parameters
     ----------
     logging_file_path: str
         The file path where the logged messages are stored. This is the file path that
-        is passed to the SeriesProcessorPipeline its `__call___` method.
+        is passed to the SeriesPipeline its `__call___` method.
 
     Returns
     -------
