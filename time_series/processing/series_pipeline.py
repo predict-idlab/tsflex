@@ -29,8 +29,8 @@ class SeriesPipeline:
         ----------
         processors : List[SeriesProcessor], optional
             List of `SeriesProcessor` objects that will be applied sequentially to the
-            given signals, by default None. The processing steps will be executed in the 
-            same order as passed with this list.
+            internal signals dict, by default None. The processing steps will be executed
+            in the same order as passed with this list.
 
         """
         self.processing_registry: List[SeriesProcessor] = []
