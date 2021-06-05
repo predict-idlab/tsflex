@@ -21,7 +21,7 @@ def process_chunks_multithreaded(
         n_jobs: Optional[int] = None,
         **processing_kwargs,
 ) -> List[Any]:
-    """Process `df_dict_list` in a multithreaded manner, order is preserved.
+    """Process `same_range_chunks_list` in a multithreaded manner, order is preserved.
 
     Note
     ----
