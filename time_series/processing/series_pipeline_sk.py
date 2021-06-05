@@ -82,11 +82,11 @@ class SKSeriesPipeline(TransformerMixin):
 
         Notes
         -----
-        *  If a `logging_file_path` is provided, the execution (time) statistics can be
-           retrieved by calling `logger.get_duration_stats(logging_file_path)`. <br>
-           Be aware that the `logging_file_path` gets cleared before the logger pushes
-           logged messages. Hence, one should use a separate logging file for each
-           constructed processing and feature instance with this library.
+        * If a `logging_file_path` is provided, the execution (time) statistics can be
+          retrieved by calling `logger.get_duration_stats(logging_file_path)`. <br>
+          Be aware that the `logging_file_path` gets cleared before the logger pushes
+          logged messages. Hence, one should use a separate logging file for each
+          constructed processing and feature instance with this library.
         * It is not possible to pass the `return_df` argument from the `process`
           method, because this should always be True (in order to output a valid
           iterable in the `transform` method)
@@ -136,8 +136,8 @@ class SKSeriesPipeline(TransformerMixin):
             A DataFrame, containing the processed signals.
 
         """
-        processing_pipeline = SeriesPipeline(self.processors)
-        return processing_pipeline.process(
+        series_pipeline = SeriesPipeline(self.processors)
+        return series_pipeline.process(
             signals=X,
             return_all_signals=self.return_all_signals,
             return_df=True,
