@@ -6,7 +6,7 @@ Example notebooks and model serialization documentation.
 
 """
 
-from __future__ import annotations
+from __future__ import annotations  # Make typing work for the enclosing class
 
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
@@ -192,7 +192,6 @@ class FeatureCollection:
             Raised when a required key is not found in `signals`.
 
         """
-
         # Delete other logging handlers
         if len(logger.handlers) > 1:
             logger.handlers = [h for h in logger.handlers if type(h) == logging.StreamHandler]
