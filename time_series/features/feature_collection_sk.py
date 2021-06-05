@@ -46,8 +46,7 @@ class SKFeatureCollection(TransformerMixin):
 
     def __init__(
         self,
-        feature_desc_list: Optional[List[Union[
-            FeatureDescriptor, MultipleFeatureDescriptors]]] = None,
+        feature_desc_list: List[Union[FeatureDescriptor, MultipleFeatureDescriptors]],
         logging_file_path: Optional[Union[str, Path]] = None,
         n_jobs: Optional[int] = None,
     ):
@@ -58,8 +57,8 @@ class SKFeatureCollection(TransformerMixin):
 
         Parameters
         ----------
-        feature_desc_list : List[Union[FeatureDescriptor, MultipleFeatureDescriptors]], optional
-            Initial list of Features to add to collection, by default None
+        feature_desc_list : List[Union[FeatureDescriptor, MultipleFeatureDescriptors]]
+            List of Features to include in the collection.
         logging_file_path: str, optional
             The file path where the logged messages are stored. If `None`, then no
             logging `FileHandler` will be used and the logging messages are only pushed
@@ -79,7 +78,7 @@ class SKFeatureCollection(TransformerMixin):
           and `logger.get_key_duration_stats(logging_file_path)`. <br>
           Be aware that the `logging_file_path` gets cleared before the logger pushes
           logged messages. Hence, one should use a separate logging file for each
-          constructed processing and the feature instance with this library.
+          constructed processing and feature instance with this library.
         * It is not possible to pass the `merge_dfs` argument from the `calculate`
           method, because this should always be True (in order to output a valid
           iterable in the `transform` method)
