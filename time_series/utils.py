@@ -53,7 +53,6 @@ def tightest_timedelta_bounds(td: pd.Timedelta) -> str:
 def chunk_signals(
         signals: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         fs_dict: Dict[str, int],
-        cut_minute_wise: bool = False,
         chunk_range_margin_s: Optional[float] = None,
         min_chunk_dur_s: Optional[float] = None,
         max_chunk_dur_s: Optional[float] = None,
@@ -88,9 +87,6 @@ def chunk_signals(
     fs_dict: Dict[str, int]
         The sample frequency dict. This dict must at least withhold all the keys
         from `signals`.
-    cut_minute_wise : bool, optional
-        If set, the start-time of each chunk will be cut on minute level granularity,
-        by default False
     chunk_range_margin_s: float, optional
         The allowed margin (in seconds) between same time-range chunks their start
         and end time. If `None` the margin will be set as
@@ -217,18 +213,6 @@ def chunk_signals(
 
         # Reset the iterator
         for (t_begin_c, t_end_c) in zip(gaps, gaps[1:]):
-            if cut_minute_wise:
-                t_begin_c = (t_begin_c + timedelta(seconds=60)).replace(
-                    second=0, microsecond=0
-                )
-
-                # As we add time -> we might want to add this sanity check
-                if t_begin_c > t_end_c:
-                    print_verbose_time(
-                        signal, t_begin_c, t_end_c, "[W] t_end > t_start"
-                    )
-                    continue
-
             # The t_end is the t_start of the new time range -> hence [:-1]
             # => cut on [t_start_c(hunk), t_end_c(hunk)[
             sig_chunk = signal[t_begin_c:t_end_c][:-1]
