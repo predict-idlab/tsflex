@@ -13,6 +13,7 @@ from .features import (
 from .processing import (
     SeriesProcessor,
     SeriesPipeline,
+    SKSeriesPipeline,
     dataframe_func,
 )
 
@@ -24,5 +25,6 @@ __all__ = [
     "NumpyFuncWrapper",
     "SeriesProcessor",
     "SeriesPipeline",
+    "SKSeriesPipeline",
     "dataframe_func",
 ]
