@@ -6,7 +6,7 @@ import pandas as pd
 import numpy as np
 
 from time_series.processing import dataframe_func
-from time_series.processing import SeriesProcessor, SeriesProcessorPipeline
+from time_series.processing import SeriesProcessor, SeriesPipeline
 
 from .utils import dummy_data, dataframe_to_series_dict, series_to_series_dict
 
@@ -223,7 +223,7 @@ def test_multi_signal_series_processor(dummy_data):
     assert max(res["TMP"]) == dummy_data["TMP"].quantile(upper)
 
 
-## SeriesProcessorPipeline
+## SeriesPipeline
 
 
 def test_single_signal_series_processor_pipeline(dummy_data):
@@ -238,7 +238,7 @@ def test_single_signal_series_processor_pipeline(dummy_data):
     inp = dummy_data.copy()
     inp.loc[inp["TMP"] > 31.5, "TMP"] = pd.NA
     assert any(inp["TMP"].isna())  # Check that there are some NANs present
-    processing_pipeline = SeriesProcessorPipeline(
+    processing_pipeline = SeriesPipeline(
         [
             SeriesProcessor(["TMP"], func=interpolate, single_series_func=True),
             SeriesProcessor(["TMP"], func=drop_nans),
@@ -294,7 +294,7 @@ def test_multi_signal_series_processor_pipeline(dummy_data):
     assert all(~inp["EDA"].isna())
     lower = 0.02
     upper = 0.99  # The default value => do not pass
-    processing_pipeline = SeriesProcessorPipeline(
+    processing_pipeline = SeriesPipeline(
         [
             SeriesProcessor(["TMP"], func=drop_nans),
             SeriesProcessor(

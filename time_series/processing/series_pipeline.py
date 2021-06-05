@@ -19,11 +19,11 @@ class _ProcessingError(Exception):
     pass
 
 
-class SeriesProcessorPipeline:
-    """Pipeline containing `SeriesProcessor` object to be applied sequentially."""
+class SeriesPipeline:
+    """Pipeline for applying `SeriesProcessor` objects sequentially."""
 
     def __init__(self, processors: Optional[List[SeriesProcessor]] = None):
-        """Init `SeriesProcessorPipeline object.
+        """Create a `SeriesPipeline` instance.
 
         Parameters
         ----------

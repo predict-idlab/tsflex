@@ -7,9 +7,8 @@ from .features.function_wrapper import NumpyFuncWrapper
 
 from .processing import (
     SeriesProcessor,
-    SeriesProcessorPipeline,
+    SeriesPipeline,
     dataframe_func,
-    #numpy_func,
 )
 
 __all__ = [
@@ -18,7 +17,6 @@ __all__ = [
     "FeatureCollection",
     "NumpyFuncWrapper",
     "SeriesProcessor",
-    "SeriesProcessorPipeline",
+    "SeriesPipeline",
     "dataframe_func",
-    #"numpy_func",
 ]
