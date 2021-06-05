@@ -24,7 +24,7 @@ logger.addHandler(console)
 
 def _parse_message(message: str) -> list:
     """Parse the message of the logged info."""
-    regex = "\[(.*?)\]"
+    regex = r"\[(.*?)\]"
     matches = re.findall(regex, message)
     assert len(matches) == 4
     func = matches[0]
