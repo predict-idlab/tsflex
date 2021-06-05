@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
-"""Utilities for the processing pipelines."""
+"""(Advanced) utilities for the processing pipelines."""
 
 __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt"
 
 import os
 import traceback
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Union
 
 import pandas as pd
 from pathos.multiprocessing import ProcessPool
@@ -15,13 +15,13 @@ from .series_processor import SeriesProcessorPipeline
 
 
 def process_chunks_multithreaded(
-    df_dict_list: List[Dict[str, pd.DataFrame]],
-    processing_pipeline: SeriesProcessorPipeline,
-    show_progress: Optional[bool] = True,
-    n_jobs:  Optional[int] = None,
-    **processing_kwargs,
+        same_range_chunks_list: List[List[Union[pd.Series, pd.DataFrame]]],
+        processing_pipeline: SeriesProcessorPipeline,
+        show_progress: Optional[bool] = True,
+        n_jobs: Optional[int] = None,
+        **processing_kwargs,
 ) -> List[Any]:
-    """Process `df_dict_list` in a multithreaded manner, order is preserved.
+    """Process `same_range_chunks_list` in a multithreaded manner, order is preserved.
 
     Note
     ----
@@ -30,10 +30,10 @@ def process_chunks_multithreaded(
 
     Parameters
     ----------
-    df_dict_list: List[Dict[str, pd.DataFrame]]
-        A list of df_dict chunks, most likely the output of `chunk_df_dict`.
+    same_range_chunks_list: List[List[Union[pd.Series, pd.DataFrame]]]
+        A list of same-range-chunks, most likely the output of `chunk_signals`.
     processing_pipeline: SeriesProcessorPipeline
-        The pipeline that will be called on each item in `df_dict_list`.
+        The pipeline that will be called on each item in `same_range_chunks_list`.
     show_progress: bool, optional
         If True, the progress will be shown with a progressbar, by default True.
     n_jobs: int, optional
@@ -50,17 +50,16 @@ def process_chunks_multithreaded(
     Note
     ----
     If any error occurs while executing the `processing_pipeline` on one of the chunks
-    in `df_dict_list`, the traceback is printed and an empty dataframe is returned.
-    We chose for this behavior, because in this way the other parallel processes are
-    not halted in case of an error.
-
+    in `same_range_chunks_list`, the traceback is printed and an empty dataframe is
+    returned. We chose for this behavior, because in this way the other parallel
+    processes are not halted in case of an error.
     """
     if n_jobs is None:
         n_jobs = os.cpu_count()
 
-    def _executor(chunk):
+    def _executor(same_range_chunks: List[Union[pd.Series, pd.DataFrame]]):
         try:
-            return processing_pipeline(list(chunk.values()), **processing_kwargs)
+            return processing_pipeline(same_range_chunks, **processing_kwargs)
         except Exception:
             # Print traceback and return empty `pd.DataFrame` in order to not break the
             # other parallel processes.
@@ -68,10 +67,11 @@ def process_chunks_multithreaded(
             return pd.DataFrame()
 
     processed_out = []
-    with ProcessPool(nodes=min(n_jobs, len(df_dict_list)), source=True) as pool:
-        results = pool.imap(_executor, df_dict_list)
+    with ProcessPool(nodes=min(n_jobs, len(same_range_chunks_list)),
+                     source=True) as pool:
+        results = pool.imap(_executor, same_range_chunks_list)
         if show_progress:
-            results = tqdm(results, total=len(df_dict_list))
+            results = tqdm(results, total=len(same_range_chunks_list))
         for f in results:
             processed_out.append(f)
         # Close & join because: https://github.com/uqfoundation/pathos/issues/131

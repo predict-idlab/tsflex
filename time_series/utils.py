@@ -4,14 +4,14 @@
 __author__ = 'Jonas Van Der Donckt'
 
 from datetime import timedelta
-from typing import Dict, List
+from typing import Dict, List, Union, Tuple, Optional
 
 import pandas as pd
 
 
-# TODO: maybe rename this method?
+# TODO: maybe rename this method? -> to `timedelta_to_str`
 def tightest_timedelta_bounds(td: pd.Timedelta) -> str:
-    """Construct the tightest bounds string representation for the given timedelta arg.
+    """Construct a tight string representation for the given timedelta arg.
 
     Parameters
     ----------
@@ -26,12 +26,12 @@ def tightest_timedelta_bounds(td: pd.Timedelta) -> str:
     """
     out_str = ""
 
-    # edge case if we deal with negative
+    # Edge case if we deal with negative
     if td < pd.Timedelta(seconds=0):
         td *= -1
         out_str += 'NEG'
 
-    # note -> this must happen after the *= -1
+    # Note: this must happen after the *= -1
     c = td.components
     if c.days > 0:
         out_str += f'{c.days}D'
@@ -50,185 +50,210 @@ def tightest_timedelta_bounds(td: pd.Timedelta) -> str:
     return out_str
 
 
-def chunk_df_dict(
-        df_dict: Dict[str, pd.DataFrame],
+def chunk_signals(
+        signals: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         fs_dict: Dict[str, int],
-        verbose=False,
-        cut_minute_wise: bool = False,
-        min_chunk_dur_s=None,
-        max_chunk_dur_s=None,
-        sub_chunk_margin_s=0,
+        chunk_range_margin_s: Optional[float] = None,
+        min_chunk_dur_s: Optional[float] = None,
+        max_chunk_dur_s: Optional[float] = None,
+        sub_chunk_overlap_s: Optional[float] = 0,
         copy=True,
-) -> List[Dict[str, pd.DataFrame]]:
-    """Divide the `df_dict` in chunks.
+        verbose=False,
+) -> List[List[pd.Series]]:
+    """Divide the `signals` in same time-range chunks.
 
     Does 2 things:
-        1. Detecting gaps in the `df_dict` time series
-        2. Divides the `df_dict` into chunks, according to the parameter
-           configuration.
 
-    Note
-    ----
-    Assumes that the data modalities within the `df_dict` have identical gaps on
-    the same time-positions!
+    1. Detecting gaps in the `signals`-list time series
+    2. Divides the `signals` into chunks, according to the parameter
+        configuration and the detected gaps.
 
-    Note
-    ----
-    The term `sub-chunk` refers to the chunks who exceed the `max_chunk_duration_s`
-    parameter and are therefore further divided into sub-chunks.
+    Notes
+    -----
+    * As the `fs_dict` is requested, the assumption is made that **each signal** has a
+      **fixed sample frequency**.
+    * All subsequent signal-chunks are matched against the time-ranges of the first
+      signal. This implies that **the first item in `signals` serves as a reference**
+      for gap-matching.
+    * The term `sub-chunk` refers to the chunks who exceed the `max_chunk_duration_s`
+      parameter and are therefore further divided into sub-chunks.
 
     Parameters
     ----------
-    df_dict : Dict[str, pd.DataFrame]
-        The data-dict, the key represents the sensor modality, and its value the
-        corresponding `DataFrame`. Each DataFrame must have a `DateTime-index`.
+    signals: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
+        The signals which will be chunked. Each signal must have a `pd.DatetimeIndex`.
+        The assumption is made that each signal has a _nearly-constant_ sample frequency
+        (when there are no gaps).
     fs_dict: Dict[str, int]
         The sample frequency dict. This dict must at least withhold all the keys
-        from the `df_dict`.
-    verbose : bool, optional
-        If set, will print more verbose output, by default True
-    cut_minute_wise : bool, optional
-        If set, will cut on minute level granularity, by default False
-    min_chunk_dur_s : int, optional
+        from `signals`.
+    chunk_range_margin_s: float, optional
+        The allowed margin (in seconds) between same time-range chunks their start
+        and end time. If `None` the margin will be set as
+
+            2 / min(fs_dict.intersection(signals.names).values())
+
+         Which is equivalent to twice the min-fs (= max-period) of the passed `signals`,
+         by default None.
+    min_chunk_dur_s : float, optional
         The minimal duration of a chunk in seconds, by default None
-        Chunks with durations smaller than this will not be processed.
-    max_chunk_dur_s : int, optional
+        Chunks with durations smaller than this will be discarded (and not returned).
+    max_chunk_dur_s : float, optional
         The maximal duration of a chunk in seconds, by default None
-        Chunks with durations larger than this will be chunked in smaller chunks where
-        each sub-chunk has a maximal duration of `max_chunk_dur_s`.
-    sub_chunk_margin_s: int, optional
-        The left and right margin of the sub-chunks.
+        Chunks with durations larger than this will be chunked in smaller `sub_chunks`
+        where each sub-chunk has a maximal duration of `max_chunk_dur_s`.
+    sub_chunk_overlap_s: float, optional
+        The sub-chunk boundary overlap in seconds. If available, this margin will be
+        added to either side of the `sub_chunk`. \n
+        This is especially useful to not lose inter-`sub_chunk` data (as each
+        `sub_chunk` is in fact a continuous chunk) when window-based aggregations
+        are performed on these same time range output (sub_)chunks. \n
+        This argument is only relevant if `max_chunk_dur_s` is set.
     copy: boolean, optional
         If set True will return a new view (on which you won't get a
         `SettingWithCopyWarning` if you change the content), by default False.
+    verbose : bool, optional
+        If set, will print more verbose output, by default False
 
     Returns
     -------
-    List[Dict[str, pd.DataFrame]]
-        A list of df_dict chunks.
+    List[List[pd.Series]]
+        A list of same time range chunks.
 
     """
-    df_list_dict: List[Dict[str, pd.DataFrame]] = []
+    # Convert the input signals
+    series_list: List[pd.Series] = []
+    if not isinstance(signals, list):
+        signals = [signals]
 
-    def print_verbose_time(df_s, t_begin, t_end, msg=""):
+    for s in signals:
+        if isinstance(s, pd.DataFrame):
+            series_list += [s[c] for c in s.columns]
+        elif isinstance(s, pd.Series):
+            series_list.append(s)
+        else:
+            raise TypeError("Non pd.Series or pd.DataFrame object passed.")
+    # Assert that there are no duplicate signal names and the names reside in fs_dict
+    assert len(series_list) == len(set([s.name for s in series_list]))
+    assert all([str(s.name) in fs_dict for s in series_list])
+
+    # Default arg -> set the chunk range margin to 2x the min-freq its period
+    if chunk_range_margin_s is None:
+        chunk_range_margin_s = 2 / min([fs_dict[str(s.name)] for s in series_list])
+    assert chunk_range_margin_s > 0, "chunk_range_margin_s must be > 0"
+    chunk_range_margin_s = pd.Timedelta(seconds=chunk_range_margin_s)
+
+    # Some range asserts
+    assert sub_chunk_overlap_s >= 0, f"sub_chunk_overlap_s must be > 0"
+    if max_chunk_dur_s is not None:
+        assert max_chunk_dur_s > 0, f"max_chunk_dur_s must be > 0"
+
+    # Variable in which the same time-range chunks are stored
+    # Each list item can be seen as (t_start_chunk, t_end_chunk, chunk_list)
+    same_range_chunks: List[Tuple[pd.Timestamp, pd.Timestamp, List[pd.Series]]] = []
+
+    def print_verbose_time(sig, t_begin, t_end, msg=""):
         fmt = "%Y-%m-%d %H:%M"
         if not verbose:
             return
         print(
-            f"slice {t_begin.strftime(fmt)} - {t_end.strftime(fmt)} -"
-            f" {df_s[t_begin:t_end].shape}"
+            f"slice {sig.name} {t_begin.strftime(fmt):<10} - {t_end.strftime(fmt):<10} "
+            f"-  shape: {sig[t_begin:t_end].shape}"
         )
         if len(msg):
             print(f"\t└──>  {msg}")
 
-    def slice_time(df_s, t_begin, t_end):
-        """Slice the ds_s dict."""
+    def slice_time(sig: pd.Series, t_begin: pd.Timestamp,
+                   t_end: pd.Timestamp) -> pd.Series:
+        """Slice the sig Series"""
         if copy:
-            return df_s[t_begin:t_end].copy()
+            return sig[t_begin:t_end].copy()
         else:
-            return df_s[t_begin:t_end]
+            return sig[t_begin:t_end]
 
-    def insert_chunk(idx, dict_key, chunk):
-        """Insert the chunk into the `df_list_dict`."""
+    def insert_chunk(chunk: pd.Series):
+        """Insert the chunk into `same_range_chunks`."""
         t_chunk_start, t_chunk_end = chunk.index[[0, -1]]
-        if idx >= len(df_list_dict):
-            df_list_dict.append({dict_key: chunk})
-            print_verbose_time(chunk, t_chunk_start, t_chunk_end, "APPEND sub chunk")
-        else:
-            # There already exists a key-(sub)chunk template on that place,
-            # thus just add this other sensor modality to it.
-            # !! Note: there is no guarantee that this is this other
-            #          key-(sub)chunk template covers the same time range
-            assert dict_key not in df_list_dict[idx].keys()
-            df_list_dict[idx][dict_key] = chunk
-            print_verbose_time(chunk, t_chunk_start, t_chunk_end, "INSERT sub chunk")
-        return idx + 1
 
-    i = 0
-    for sensor_str, df_sensor in df_dict.items():
-        if len(df_sensor) < 2:
+        # Iterate over the same-(time)range-chunk (src) collection
+        for src_start, src_end, src_chunks in same_range_chunks:
+            # Check for overlap
+            if (abs(src_start - t_chunk_start) <= chunk_range_margin_s and
+                    abs(src_end - t_chunk_end) <= chunk_range_margin_s):
+                # Check signal name not in src_chunks
+                if chunk.name not in [src_c.name for src_c in src_chunks]:
+                    src_chunks.append(chunk)
+                    print_verbose_time(chunk, t_chunk_start, t_chunk_end,
+                                       "INSERT chunk")
+                    return
+                else:
+                    # There already exists a sub_chunk of this signal-name
+                    raise ValueError("There already exists a chunk with this signal"
+                                     f" name - {chunk.name}")
+
+        same_range_chunks.append((t_chunk_start, t_chunk_end, [chunk]))
+        print_verbose_time(chunk, t_chunk_start, t_chunk_end, "APPEND sub chunk")
+
+    for signal in series_list:
+        # 1. Some checks
+        if len(signal) < 2:
             if verbose:
-                print(f"too small df_sensor - {df_sensor.shape}")
+                print(f"too small signal: {signal.name} - shape: {signal.shape} ")
             continue
-        assert i == len(df_list_dict)
-        assert sensor_str in fs_dict.keys()
-        fs_sensor = fs_dict.get(sensor_str)
-        sample_period = 1 / fs_sensor
+
         # Allowed offset (in seconds) is sample_period + 0.5*sample_period
-        gaps = df_sensor.index.to_series().diff() > timedelta(
-            seconds=(3 / 2) * sample_period
-        )
+        fs_sig = fs_dict[str(signal.name)]
+        gaps = signal.index.to_series().diff() > timedelta(seconds=(1 + .5) / fs_sig)
         # Set the first and last timestamp to True
         gaps.iloc[[0, -1]] = True
-        gaps: List[pd.Timestamp] = df_sensor[gaps].index.to_list()
+        gaps: List[pd.Timestamp] = signal[gaps].index.to_list()
         if verbose:
             print("-" * 10, " detected gaps", "-" * 10)
             print(*gaps, sep="\n")
 
-        # Reset the iterator
-        i = 0
         for (t_begin_c, t_end_c) in zip(gaps, gaps[1:]):
-            if cut_minute_wise:
-                t_begin_c = (t_begin_c + timedelta(seconds=60)).replace(
-                    second=0, microsecond=0
-                )
-
-                # As we add time -> we might want to add this sanity check
-                if t_begin_c > t_end_c:
-                    print_verbose_time(
-                        df_sensor, t_begin_c, t_end_c, "[W] t_end > t_start"
-                    )
-                    continue
-
             # The t_end is the t_start of the new time range -> hence [:-1]
             # => cut on [t_start_c(hunk), t_end_c(hunk)[
-            df_chunk = df_sensor[t_begin_c:t_end_c][:-1]
-            if len(df_chunk) > 2:  # re-adjust the t_end
-                t_end_c = df_chunk.index[-1]
+            sig_chunk = signal[t_begin_c:t_end_c][:-1]
+            if len(sig_chunk) > 2:  # re-adjust the t_end
+                t_end_c = sig_chunk.index[-1]
             else:
-                print_verbose_time(df_sensor, t_begin_c, t_end_c, "too small df_chunk")
+                print_verbose_time(signal, t_begin_c, t_end_c, "too small df_chunk")
                 continue
 
             # Check for min duration
-            chunk_range_s = len(df_chunk) // fs_sensor
+            chunk_range_s = int(len(sig_chunk) / fs_sig)
             if isinstance(min_chunk_dur_s, int) and chunk_range_s < min_chunk_dur_s:
                 print_verbose_time(
-                    df_chunk,
+                    sig_chunk,
                     t_begin_c,
                     t_end_c,
-                    f"Too small chunk min_dur {min_chunk_dur_s} > {df_chunk.shape}",
+                    f"Too small chunk min_dur {min_chunk_dur_s} > {sig_chunk.shape}",
                 )
                 continue
 
             # Divide the chunk into sub_chunks (sc's)
             if max_chunk_dur_s is not None and chunk_range_s > max_chunk_dur_s:
                 print_verbose_time(
-                    df_chunk, t_begin_c, t_end_c, "Dividing in sub-chunks"
+                    sig_chunk, t_begin_c, t_end_c, "Dividing in sub-chunks"
                 )
                 t_begin_sc = t_begin_c
                 while t_begin_sc < t_end_c:
-                    # Slice, by making use of the margin
+                    # Calculate the end sub-chunk time
                     t_end_sc = t_begin_sc + timedelta(seconds=max_chunk_dur_s)
-                    t_end_sc_m = t_end_sc + timedelta(seconds=sub_chunk_margin_s)
+
+                    # Get the end and begin sub-chunk margin
+                    t_end_sc_m = t_end_sc + timedelta(seconds=sub_chunk_overlap_s)
                     t_end_sc_m = min(t_end_c, t_end_sc_m)
 
-                    t_begin_sc_m = t_begin_sc - timedelta(seconds=sub_chunk_margin_s)
+                    t_begin_sc_m = t_begin_sc - timedelta(seconds=sub_chunk_overlap_s)
                     t_begin_sc_m = max(t_begin_c, t_begin_sc_m)
 
                     # Slice & add the sub-chunk to the list
-                    i = insert_chunk(
-                        idx=i,
-                        dict_key=sensor_str,
-                        chunk=slice_time(df_sensor, t_begin_sc_m, t_end_sc_m),
-                    )
+                    insert_chunk(chunk=slice_time(signal, t_begin_sc_m, t_end_sc_m), )
 
                     # Update the condition's variable
                     t_begin_sc = t_end_sc
             else:
-                i = insert_chunk(
-                    idx=i,
-                    dict_key=sensor_str,
-                    chunk=slice_time(df_sensor, t_begin_c, t_end_c),
-                )
-
-    return df_list_dict
+                insert_chunk(chunk=slice_time(signal, t_begin_c, t_end_c))
+    return [chunk_range[-1] for chunk_range in same_range_chunks]
