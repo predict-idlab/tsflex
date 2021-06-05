@@ -68,7 +68,7 @@ class SeriesPipeline:
         """
         self.processing_registry.append(processor)
 
-    def __call__(
+    def process(
         self,
         signals: Union[
             List[Union[pd.Series, pd.DataFrame]],
@@ -115,11 +115,10 @@ class SeriesPipeline:
         Note
         ----
         If a `logging_file_path` is provided, the execution (time) statistics can be
-        retrieved by calling `logger.get_function_duration_stats(logging_file_path)` and
-        `logger.get_key_duration_stats(logging_file_path)`.
-        Be aware that the `logging_file_path` gets cleared before the logger pushes 
-        logged messages. Hence, one should use a separate logging file for the 
-        processing and the feature part of this library.
+        retrieved by calling `logger.get_duration_stats(logging_file_path)`. <br>
+        Be aware that the `logging_file_path` gets cleared before the logger pushes
+        logged messages. Hence, one should use a separate logging file for each
+        constructed processing and feature instance with this library.
 
         Raises
         ------

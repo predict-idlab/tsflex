@@ -13,6 +13,7 @@ from .utils import dummy_data, dataframe_to_series_dict, series_to_series_dict
 
 ## Function wrappers
 
+
 def test_dataframe_func_decorator(dummy_data):
     # Create undecorated dataframe function
     def drop_nans(df: pd.DataFrame) -> pd.DataFrame:
@@ -47,13 +48,14 @@ def test_dataframe_func_decorator(dummy_data):
 
 ## Various output types for single_series_func = True
 
+
 def test_dataframe_output(dummy_data):
     # Create dataframe output function
     def duplicate_with_offset(series_dict, offset: float) -> pd.DataFrame:
         offset = abs(offset)
         df = pd.DataFrame()
-        df['TMP'+'+'+str(offset)] = series_dict['TMP'] + offset
-        df['TMP'+'-'+str(offset)] = series_dict['TMP'] - offset
+        df["TMP" + "+" + str(offset)] = series_dict["TMP"] + offset
+        df["TMP" + "-" + str(offset)] = series_dict["TMP"] - offset
         return df
 
     dataframe_f = duplicate_with_offset
@@ -68,16 +70,16 @@ def test_dataframe_output(dummy_data):
     res = dataframe_f(series_dict, offset)
     assert isinstance(res, pd.DataFrame)
     assert (res.shape[0] == len(dummy_data["TMP"])) & (res.shape[1] == 2)
-    assert np.all(res[f'TMP+{offset}'] == inp + offset)
-    assert np.all(res[f'TMP-{offset}'] == inp - offset)
+    assert np.all(res[f"TMP+{offset}"] == inp + offset)
+    assert np.all(res[f"TMP-{offset}"] == inp - offset)
 
     # SeriesProcessor with series function
     processor = SeriesProcessor(["TMP"], func=dataframe_f, offset=offset)
     res = processor(series_dict)
     assert isinstance(res, pd.DataFrame)
     assert (res.shape[0] == len(dummy_data["TMP"])) & (res.shape[1] == 2)
-    assert np.all(res[f'TMP+{offset}'] == inp + offset)
-    assert np.all(res[f'TMP-{offset}'] == inp - offset)
+    assert np.all(res[f"TMP+{offset}"] == inp + offset)
+    assert np.all(res[f"TMP-{offset}"] == inp - offset)
 
 
 def test_series_output(dummy_data):
@@ -238,16 +240,20 @@ def test_single_signal_series_processor_pipeline(dummy_data):
     inp = dummy_data.copy()
     inp.loc[inp["TMP"] > 31.5, "TMP"] = pd.NA
     assert any(inp["TMP"].isna())  # Check that there are some NANs present
-    processing_pipeline = SeriesPipeline(
+    series_pipeline = SeriesPipeline(
         [
             SeriesProcessor(["TMP"], func=interpolate, single_series_func=True),
             SeriesProcessor(["TMP"], func=drop_nans),
         ]
     )
-    res_dict_all = processing_pipeline(inp, return_all_signals=True, return_df=False)
-    res_dict_req = processing_pipeline(inp, return_all_signals=False, return_df=False)
-    res_df_all = processing_pipeline(inp, return_all_signals=True, return_df=True)
-    res_df_req = processing_pipeline(inp, return_all_signals=False, return_df=True)
+    res_dict_all = series_pipeline.process(
+        inp, return_all_signals=True, return_df=False
+    )
+    res_dict_req = series_pipeline.process(
+        inp, return_all_signals=False, return_df=False
+    )
+    res_df_all = series_pipeline.process(inp, return_all_signals=True, return_df=True)
+    res_df_req = series_pipeline.process(inp, return_all_signals=False, return_df=True)
 
     assert isinstance(res_dict_all, dict) & isinstance(res_dict_req, dict)
     assert isinstance(res_df_all, pd.DataFrame) & isinstance(res_df_req, pd.DataFrame)
@@ -294,7 +300,7 @@ def test_multi_signal_series_processor_pipeline(dummy_data):
     assert all(~inp["EDA"].isna())
     lower = 0.02
     upper = 0.99  # The default value => do not pass
-    processing_pipeline = SeriesPipeline(
+    series_pipeline = SeriesPipeline(
         [
             SeriesProcessor(["TMP"], func=drop_nans),
             SeriesProcessor(
@@ -305,10 +311,14 @@ def test_multi_signal_series_processor_pipeline(dummy_data):
             ),
         ]
     )
-    res_dict_all = processing_pipeline(inp, return_all_signals=True, return_df=False)
-    res_dict_req = processing_pipeline(inp, return_all_signals=False, return_df=False)
-    res_df_all = processing_pipeline(inp, return_all_signals=True, return_df=True)
-    res_df_req = processing_pipeline(inp, return_all_signals=False, return_df=True)
+    res_dict_all = series_pipeline.process(
+        inp, return_all_signals=True, return_df=False
+    )
+    res_dict_req = series_pipeline.process(
+        inp, return_all_signals=False, return_df=False
+    )
+    res_df_all = series_pipeline.process(inp, return_all_signals=True, return_df=True)
+    res_df_req = series_pipeline.process(inp, return_all_signals=False, return_df=True)
 
     assert isinstance(res_dict_all, dict) & isinstance(res_dict_req, dict)
     assert isinstance(res_df_all, pd.DataFrame) & isinstance(res_df_req, pd.DataFrame)

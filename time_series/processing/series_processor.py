@@ -50,7 +50,7 @@ def _series_dict_to_df(series_dict: Dict[str, pd.Series]) -> pd.DataFrame:
     ----
     The `series_dict` is an internal representation of the signals list.
     In this dictionary, the key is always the accompanying series its name.
-    This internal representation is constructed in the `__call__` method of the
+    This internal representation is constructed in the `process` method of the
     `SeriesPipeline`.
 
     """
@@ -325,14 +325,14 @@ class SeriesProcessor:
         Note
         ----
         The `series_dict` is actually an internal representation of the signals list.
-        This internal representation is constructed in the `__call__` method of the
+        This internal representation is constructed in the `process` method of the
         `SeriesPipeline`.
 
         Note
         ----
         If you want to test or debug your `SeriesProcessor` object, just encapsulate
         your instance of this class in a `SeriesPipeline`. The latter allows more 
-        versatile input for the `__call__` method.
+        versatile input for its `process` method.
 
         """
         t_start = time.time()

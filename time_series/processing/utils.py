@@ -33,7 +33,7 @@ def process_chunks_multithreaded(
     same_range_chunks_list: List[List[Union[pd.Series, pd.DataFrame]]]
         A list of same-range-chunks, most likely the output of `chunk_signals`.
     series_pipeline: SeriesPipeline
-        The pipeline that will be called on each item in `same_range_chunks_list`.
+        The pipeline that will process each item in `same_range_chunks_list`.
     show_progress: bool, optional
         If True, the progress will be shown with a progressbar, by default True.
     n_jobs: int, optional
@@ -45,7 +45,7 @@ def process_chunks_multithreaded(
     Returns
     -------
     List[Any]
-        A list of the `series_pipeline`'s outputs. The order is preserved.
+        A list of the `series_pipeline` its processed outputs. The order is preserved.
 
     Note
     ----
@@ -59,7 +59,7 @@ def process_chunks_multithreaded(
 
     def _executor(same_range_chunks: List[Union[pd.Series, pd.DataFrame]]):
         try:
-            return series_pipeline(same_range_chunks, **processing_kwargs)
+            return series_pipeline.process(same_range_chunks, **processing_kwargs)
         except Exception:
             # Print traceback and return empty `pd.DataFrame` in order to not break the
             # other parallel processes.
