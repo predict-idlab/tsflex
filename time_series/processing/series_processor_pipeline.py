@@ -29,8 +29,8 @@ class SeriesProcessorPipeline:
         ----------
         processors : List[SeriesProcessor], optional
             List of `SeriesProcessor` objects that will be applied sequentially to the
-            signals dict. The processing steps will be executed in the same order as
-            passed with this list, by default None
+            signals dict, by default None. The processing steps will be executed in the 
+            same order as passed with this list.
 
         """
         self.processing_registry: List[SeriesProcessor] = []
@@ -75,9 +75,9 @@ class SeriesProcessorPipeline:
             pd.Series,
             pd.DataFrame,
         ],
-        return_all_signals=True,
-        return_df=True,
-        drop_keys=[],
+        return_all_signals: Optional[bool] = True,
+        return_df: Optional[bool] = True,
+        drop_keys: Optional[List[str]] = [],
         logging_file_path: Optional[Union[str, Path]] = None,
     ) -> Union[Dict[str, pd.Series], pd.DataFrame]:
         """Execute all `SeriesProcessor` objects in pipeline sequentially.
@@ -90,22 +90,22 @@ class SeriesProcessorPipeline:
         signals : Union[List[Union[pd.Series, pd.DataFrame]], pd.Series, pd.DataFrame]
             The signals on which the preprocessing steps will be executed. The signals
             need a datetime index.
-        return_all_signals : bool, default: True
-            Whether the output needs to return all the signals. If `True` the output
-            will contain all signals that were passed to this method. If `False` the
-            output will contain just the required signals (see
+        return_all_signals : bool, optional
+            Whether the output needs to return all the signals, by default True. 
+            If `True` the output will contain all signals that were passed to this 
+            method. If `False` the output will contain just the required signals (see
             `get_all_required_signals`).
-        return_df : bool, default: True
-            Whether the output needs to be a series dict or a DataFrame. If `True` the
-            output series will be combined to a DataFrame with an outer merge,
-            by default True.
-        drop_keys : List[str], default: []
-            Which keys should be dropped when returning the output.
-        logging_file_path: str, default: None
-            The file path where the logged messages are stored. If `None`, then no 
-            logging `FileHandler` will be used and the logging messages are only pushed
-            to stdout. Otherwise, a logging `FileHandler` will write the logged messages
-            to the given file path.
+        return_df : bool, optional
+            Whether the output needs to be a series dict or a DataFrame, default True. 
+            If `True` the output series will be combined to a DataFrame with an outer 
+            merge.
+        drop_keys : List[str], optional
+            Which keys should be dropped when returning the output, by default [].
+        logging_file_path : Union[str, Path], optional
+            The file path where the logged messages are stored, by default None. 
+            If `None`, then no logging `FileHandler` will be used and the logging 
+            messages are only pushed to stdout. Otherwise, a logging `FileHandler` will 
+            write the logged messages to the given file path.
 
         Returns
         -------

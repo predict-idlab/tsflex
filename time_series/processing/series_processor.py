@@ -1,4 +1,4 @@
-"""Code for signals preprocessing pipeline.""" #TODO
+"""Code for signals preprocessing."""
 
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
@@ -253,8 +253,8 @@ class SeriesProcessor:
         self,
         required_series: List[str],
         func: Callable,
-        single_series_func=False,
-        name=None,
+        single_series_func: Optional[bool] = False,
+        name: Optional[str] =None,
         **kwargs,
     ):
         """Init a SeriesProcessor object.
