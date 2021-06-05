@@ -33,15 +33,14 @@ class FeatureCollection:
 
     def __init__(
         self,
-        feature_desc_list: Union[
-            List[FeatureDescriptor], List[MultipleFeatureDescriptors]
-        ] = None,
+        feature_desc_list: Optional[List[Union[
+            FeatureDescriptor, MultipleFeatureDescriptors]]] = None,
     ):
         """Create a FeatureCollection.
 
         Parameters
         ----------
-        feature_desc_list : Union[List[Feature], List[MultipleFeatures]], optional
+        feature_desc_list : List[Union[FeatureDescriptor, MultipleFeatureDescriptors]], optional
             Initial list of Features to add to collection, by default None
 
         """
@@ -161,13 +160,13 @@ class FeatureCollection:
         show_progress: bool, optional
             If True, the progress will be shown with a progressbar, by default True.
         logging_file_path: str, optional
-            The file path where the logged messages are stored. If `None`, then no 
+            The file path where the logged messages are stored. If `None`, then no
             logging `FileHandler` will be used and the logging messages are only pushed
             to stdout. Otherwise, a logging `FileHandler` will write the logged messages
             to the given file path.
         n_jobs : int, optional
             The number of processes used for the feature calculation. If `None`, then
-            the number returned by `os.cpu_count()` is used, by default None.
+            the number returned by `os.cpu_count()` is used, by default None. \n
             If n_jobs is either 0 or 1, the code will be executed sequentially without
             creating a process pool. This is very useful when debugging, as the stack
             trace will be more comprehensible.
@@ -180,11 +179,11 @@ class FeatureCollection:
         Note
         ----
         If a `logging_file_path` is provided, the execution (time) statistics can be
-        retrieved by calling `logger.get_function_duration_stats(logging_file_path)` and
-        `logger.get_key_duration_stats(logging_file_path)`.
-        Be aware that the `logging_file_path` gets cleared before the logger pushes 
-        logged messages. Hence, one should use a separate logging file for the 
-        processing and the feature part of this library.
+        retrieved by calling `logger.get_function_duration_stats(logging_file_path)`
+        and `logger.get_key_duration_stats(logging_file_path)`. <br>
+        Be aware that the `logging_file_path` gets cleared before the logger pushes
+        logged messages. Hence, one should use a separate logging file for each
+        constructed processing and the feature instance with this library.
 
         Raises
         ------

@@ -39,27 +39,26 @@ class SKFeatureCollection(TransformerMixin):
        class.
     2. The relevant parameters of the `FeatureCollection` its `calculate` method have
        been moved to the constructor and are also logged.
-    3. The `FeatureCollection` its 'calculate' method is wrapped in this class its
+    3. The `FeatureCollection` its `calculate` method is wrapped in this class its
        `transform` method,
 
     """
 
     def __init__(
         self,
-        feature_desc_list: Union[
-            List[FeatureDescriptor], List[MultipleFeatureDescriptors]
-        ] = None,
+        feature_desc_list: Optional[List[Union[
+            FeatureDescriptor, MultipleFeatureDescriptors]]] = None,
         logging_file_path: Optional[Union[str, Path]] = None,
         n_jobs: Optional[int] = None,
     ):
-        """Create a SKFeatureCollection.
+        """Create a `SKFeatureCollection`.
 
         This constructor wraps the `FeatureCollection` constructor arguments and the
         relevant paremeters of its `calculate` method.
 
         Parameters
         ----------
-        feature_desc_list : Union[List[Feature], List[MultipleFeatures]], optional
+        feature_desc_list : List[Union[FeatureDescriptor, MultipleFeatureDescriptors]], optional
             Initial list of Features to add to collection, by default None
         logging_file_path: str, optional
             The file path where the logged messages are stored. If `None`, then no
@@ -68,7 +67,7 @@ class SKFeatureCollection(TransformerMixin):
             to the given file path.
         n_jobs : int, optional
             The number of processes used for the feature calculation. If `None`, then
-            the number returned by `os.cpu_count()` is used, by default None.
+            the number returned by `os.cpu_count()` is used, by default None. \n
             If n_jobs is either 0 or 1, the code will be executed sequentially without
             creating a process pool. This is very useful when debugging, as the stack
             trace will be more comprehensible.
@@ -77,10 +76,10 @@ class SKFeatureCollection(TransformerMixin):
         -----
         * If a `logging_file_path` is provided, the execution (time) statistics can be
           retrieved by calling `logger.get_function_duration_stats(logging_file_path)`
-          and `logger.get_key_duration_stats(logging_file_path)`.
+          and `logger.get_key_duration_stats(logging_file_path)`. <br>
           Be aware that the `logging_file_path` gets cleared before the logger pushes
-          logged messages. Hence, one should use a separate logging file for the
-          processing and the feature part of this library.
+          logged messages. Hence, one should use a separate logging file for each
+          constructed processing and the feature instance with this library.
         * It is not possible to pass the `merge_dfs` argument from the `calculate`
           method, because this should always be True (in order to output a valid
           iterable in the `transform` method)
@@ -113,27 +112,27 @@ class SKFeatureCollection(TransformerMixin):
 
     def transform(
         self,
-        signals: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
+        X: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
     ) -> pd.DataFrame:
-        """Calculate features on the signals.
+        """Calculate the signals their features.
 
         Parameters
         ----------
         X : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]
             Dataframe or Series list with all the required signals for the feature
-            calculation.
+            calculation.\n
             Note that this parameter corresponds to the `signals` parameter of the
             `FeatureCollection` its `calculate` method.
 
         Returns
         -------
         pd.DataFrame
-            A DataFrame with the calculated features in it.
+            A DataFrame, containing the calculated features.
 
         """
         feature_collection = FeatureCollection(self.feature_desc_list)
         return feature_collection.calculate(
-            signals,
+            signals=X,
             merge_dfs=True,
             show_progress=False,
             logging_file_path=self.logging_file_path,
