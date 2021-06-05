@@ -133,8 +133,9 @@ def chunk_signals(
             series_list.append(s)
         else:
             raise TypeError("Non pd.Series or pd.DataFrame object passed.")
-    # Assert that there are no duplicate signal names
+    # Assert that there are no duplicate signal names and the names reside in fs_dict
     assert len(series_list) == len(set([s.name for s in series_list]))
+    assert all([str(s.name) in fs_dict for s in series_list])
 
     # Default arg -> set the chunk range margin to 2x the min-freq its period
     if chunk_range_margin_s is None:
@@ -148,6 +149,7 @@ def chunk_signals(
         assert max_chunk_dur_s > 0, f"max_chunk_dur_s must be > 0"
 
     # Variable in which the same time-range chunks are stored
+    # Each list item can be seen as (t_start_chunk, t_end_chunk, chunk_list)
     same_range_chunks: List[Tuple[pd.Timestamp, pd.Timestamp, List[pd.Series]]] = []
 
     def print_verbose_time(sig, t_begin, t_end, msg=""):
@@ -163,21 +165,21 @@ def chunk_signals(
 
     def slice_time(sig: pd.Series, t_begin: pd.Timestamp,
                    t_end: pd.Timestamp) -> pd.Series:
-        """Slice the sig dict."""
+        """Slice the sig Series"""
         if copy:
             return sig[t_begin:t_end].copy()
         else:
             return sig[t_begin:t_end]
 
     def insert_chunk(chunk: pd.Series):
-        """Insert the chunk into the `df_list_dict`."""
+        """Insert the chunk into `same_range_chunks`."""
         t_chunk_start, t_chunk_end = chunk.index[[0, -1]]
 
         # Iterate over the same-(time)range-chunk (src) collection
         for src_start, src_end, src_chunks in same_range_chunks:
             # Check for overlap
-            if (abs(src_start - t_chunk_start) < chunk_range_margin_s and
-                    abs(src_end - t_chunk_end) < chunk_range_margin_s):
+            if (abs(src_start - t_chunk_start) <= chunk_range_margin_s and
+                    abs(src_end - t_chunk_end) <= chunk_range_margin_s):
                 # Check signal name not in src_chunks
                 if chunk.name not in [src_c.name for src_c in src_chunks]:
                     src_chunks.append(chunk)
@@ -198,12 +200,10 @@ def chunk_signals(
             if verbose:
                 print(f"too small signal: {signal.name} - shape: {signal.shape} ")
             continue
-        assert signal.name in fs_dict
-
-        fs_sensor = fs_dict[str(signal.name)]
 
         # Allowed offset (in seconds) is sample_period + 0.5*sample_period
-        gaps = signal.index.to_series().diff() > timedelta(seconds=(1 + .5) / fs_sensor)
+        fs_sig = fs_dict[str(signal.name)]
+        gaps = signal.index.to_series().diff() > timedelta(seconds=(1 + .5) / fs_sig)
         # Set the first and last timestamp to True
         gaps.iloc[[0, -1]] = True
         gaps: List[pd.Timestamp] = signal[gaps].index.to_list()
@@ -211,7 +211,6 @@ def chunk_signals(
             print("-" * 10, " detected gaps", "-" * 10)
             print(*gaps, sep="\n")
 
-        # Reset the iterator
         for (t_begin_c, t_end_c) in zip(gaps, gaps[1:]):
             # The t_end is the t_start of the new time range -> hence [:-1]
             # => cut on [t_start_c(hunk), t_end_c(hunk)[
@@ -223,7 +222,7 @@ def chunk_signals(
                 continue
 
             # Check for min duration
-            chunk_range_s = len(sig_chunk) // fs_sensor
+            chunk_range_s = int(len(sig_chunk) / fs_sig)
             if isinstance(min_chunk_dur_s, int) and chunk_range_s < min_chunk_dur_s:
                 print_verbose_time(
                     sig_chunk,
@@ -240,8 +239,10 @@ def chunk_signals(
                 )
                 t_begin_sc = t_begin_c
                 while t_begin_sc < t_end_c:
-                    # Slice, by making use of the margin
+                    # Calculate the end sub-chunk time
                     t_end_sc = t_begin_sc + timedelta(seconds=max_chunk_dur_s)
+
+                    # Get the end and begin sub-chunk margin
                     t_end_sc_m = t_end_sc + timedelta(seconds=sub_chunk_overlap_s)
                     t_end_sc_m = min(t_end_c, t_end_sc_m)
 
