@@ -14,16 +14,18 @@ import pandas as pd
 
 from typing import List, Optional, Union
 from pathlib import Path
-from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.base import TransformerMixin
 
 from .feature_collection import FeatureCollection
 from .feature import FeatureDescriptor, MultipleFeatureDescriptors
 
-# TODO: BaseEstimator is not really useful as support for sklearn gridsearch is not
-# possible ...
+## Future work
+# * BaseEstimator support: it is not really useful right now to support this.
+#   As for example sklearn GridSearchCV requires X and y to have the same length,
+#   but FeatureCalculation (almost always) transforms the length of X in your pipeline.
+#   => Possible solution; look into sklearn-contrib how they handle this 
 
-
-class SKFeatureCollection(BaseEstimator, TransformerMixin):
+class SKFeatureCollection(TransformerMixin):
     """Sklearn-compatible transformer for extracting features using a `FeatureCollection`.
 
     This class is basically a wrapper around `FeatureCollection` and its `calculate`
