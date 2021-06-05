@@ -50,7 +50,7 @@ class SKFeatureCollection(TransformerMixin):
         logging_file_path: Optional[Union[str, Path]] = None,
         n_jobs: Optional[int] = None,
     ):
-        """Create a `SKFeatureCollection`.
+        """Create a `SKFeatureCollection`, which is a sklearn-compatible transformer.
 
         This constructor wraps the `FeatureCollection` constructor arguments and the
         relevant paremeters of its `calculate` method.
@@ -59,7 +59,7 @@ class SKFeatureCollection(TransformerMixin):
         ----------
         feature_desc_list : List[Union[FeatureDescriptor, MultipleFeatureDescriptors]]
             List of Features to include in the collection.
-        logging_file_path: str, optional
+        logging_file_path : Union[str, Path], optional
             The file path where the logged messages are stored. If `None`, then no
             logging `FileHandler` will be used and the logging messages are only pushed
             to stdout. Otherwise, a logging `FileHandler` will write the logged messages
@@ -137,3 +137,7 @@ class SKFeatureCollection(TransformerMixin):
             logging_file_path=self.logging_file_path,
             n_jobs=self.n_jobs,
         )
+
+    def __repr__(self) -> str:
+        """Representation string of a SKFeatureCollection."""
+        return repr(FeatureCollection(self.feature_desc_list))

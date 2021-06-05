@@ -29,7 +29,7 @@ class SeriesPipeline:
         ----------
         processors : List[SeriesProcessor], optional
             List of `SeriesProcessor` objects that will be applied sequentially to the
-            signals dict, by default None. The processing steps will be executed in the 
+            given signals, by default None. The processing steps will be executed in the 
             same order as passed with this list.
 
         """
@@ -196,7 +196,7 @@ class SeriesPipeline:
                 series_dict.update(processed_dict)
             except Exception as e:
                 raise _ProcessingError(
-                    "Error while processing function {}".format(processor.name)
+                    "Error while processing function {}:\n {}".format(processor.name, str(e))
                 ) from e
 
         if not return_all_signals:
