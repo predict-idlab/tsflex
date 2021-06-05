@@ -183,7 +183,7 @@ class FeatureCollection:
         and `logger.get_key_duration_stats(logging_file_path)`. <br>
         Be aware that the `logging_file_path` gets cleared before the logger pushes
         logged messages. Hence, one should use a separate logging file for each
-        constructed processing and the feature instance with this library.
+        constructed processing and feature instance with this library.
 
         Raises
         ------
