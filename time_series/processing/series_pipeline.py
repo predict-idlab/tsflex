@@ -11,7 +11,8 @@ import dill
 import logging
 import warnings
 
-from .series_processor import SeriesProcessor, _series_dict_to_df
+from ..utils.series_dict import series_dict_to_df
+from .series_processor import SeriesProcessor
 from .logger import logger
 
 
@@ -214,7 +215,7 @@ class SeriesPipeline:
 
         if return_df:
             # We merge the signals dict into a DataFrame
-            return _series_dict_to_df(series_dict)
+            return series_dict_to_df(series_dict)
         else:
             return series_dict
 

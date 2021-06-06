@@ -29,7 +29,7 @@ def _parse_message(message: str) -> list:
     assert len(matches) == 4
     func = matches[0]
     single_series_func = bool(matches[1].lstrip("single_series_func="))
-    keys = matches[2].strip("'")
+    keys = matches[2].replace("'","")
     duration_s = float(matches[3].rstrip(" seconds"))
     return [func, single_series_func, keys, duration_s]
 

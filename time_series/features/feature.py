@@ -1,7 +1,7 @@
 """Contains Feature and MultipleFeature class."""
 
 import itertools
-from typing import Callable, List, Union
+from typing import Callable, List, Union, Tuple
 
 import pandas as pd
 
@@ -14,19 +14,37 @@ class FeatureDescriptor:
     def __init__(
         self,
         function: Union[NumpyFuncWrapper, Callable],
-        key: str,
+        func_input: Union[str, Tuple[str]],  # TODO: is het wel goed om `key` te exposen aan de end-user? => veranderd nr func_input
         window: Union[int, str, pd.Timedelta],
         stride: Union[int, str, pd.Timedelta],
     ):
         """Create a FeatureDescriptor object.
 
+        Notes
+        -----
+        * For each function - input(-signals) - window - stride combination, one needs 
+          to create a distinct FeatureDescriptor. Hence it is more convenient to create
+          a `MultipleFeatureDescriptors` when `function` - `window` - `stride`
+          combination should be applied on various input-signals.
+        * When `function` takes multiple signals (i.e., arguments) as input, these are
+          merged (based on the index) before applying the function. Thus make sure to 
+          use time-based window and stride arguments in this constructor to avoid
+          unexpected behavior. If the indexes of the signals are not exactly the same, 
+          there will be `NaN`s after merging into a dataframe, hence make sure that the
+          `function` can deal with this!
+
         Parameters
         ----------
         function : Union[NumpyFuncWrapper, Callable]
             The `function` that calculates this feature.
-        key : str
-            The key (name) of the signal where this feature needs to be calculated on.
-            This allows to process multivariate series.
+        func_input : Union[str,Tuple[str]]
+            The name(s) of the signal(s) on which this feature (its `function`) needs to
+            be calculated.
+            If `function` uses just one signal, this argument should be a string
+            containing the name of that signal.
+            If `function` uses multiple signals, this argument should be a tuple of
+            strings containing the ordered names of those signals. When calculating this
+            feature, the exact order of signals is used as  provided by that tuple.
         window :  Union[int, str, pd.Timedelta]
             The window size, this argument supports multiple types.
             If the type is an int, it represents the number of samples of the input
@@ -66,7 +84,8 @@ class FeatureDescriptor:
         place there.
 
         """
-        self.key = key
+        to_tuple = lambda x: tuple([x]) if isinstance(x, str) else x
+        self.key = to_tuple(func_input) # TODO: wrm per se allemaal tuple?
         self.window = FeatureDescriptor._parse_time_arg(window)
         self.stride = FeatureDescriptor._parse_time_arg(stride)
 
@@ -80,6 +99,16 @@ class FeatureDescriptor:
                 "Expected feature function to be a `NumpyFuncWrapper` but is a"
                 f" {type(function)}."
             )
+
+    def is_single_series_func(self) -> bool: # TODO: dit nodig?
+        """Return whether this feature takes a single series as input.
+
+        Returns
+        -------
+        bool
+            Whether the feature its function takes a single series as input.
+        """
+        return len(self.key) == 1
 
     @staticmethod
     def _parse_time_arg(arg: Union[int, str, pd.Timedelta]) -> Union[int, pd.Timedelta]:
@@ -125,34 +154,43 @@ class MultipleFeatureDescriptors:
 
     def __init__(
         self,
-        signal_keys: Union[str, List[str]],
         functions: List[Union[NumpyFuncWrapper, Callable]],
+        # TODO: perhaps signal_keys was better 
+        func_inputs: Union[str, Tuple[str], List[str], List[Tuple[str]]], # TODO: is het wel goed om `key` te exposen aan de end-user? => veranderd nr func_input
         windows: Union[int, str, pd.Timedelta, List[Union[int, str, pd.Timedelta]]],
-        strides: Union[int, str,  pd.Timedelta, List[Union[int, str, pd.Timedelta]]],
+        strides: Union[int, str, pd.Timedelta, List[Union[int, str, pd.Timedelta]]],
     ):
         """Create a MultipleFeatureDescriptors object.
 
         Create a list of features from **all** combinations of the given parameter
         lists. Total number of created Features will be:
-        len(keys)*len(functions)*len(windows)*len(strides).
+        len(func_inputs)*len(functions)*len(windows)*len(strides).
 
         Parameters
         ----------
-        signal_keys : Union[str, List[str]],
-            All the signal keys.
         functions : List[Union[NumpyFuncWrapper, Callable]]
             The functions, can be either of both types (even in a single array).
+        func_inputs : Union[str, Tuple[str], List[str], List[Tuple[str]]],
+            All the function inputs. A single function input is/are the name(s) of the
+            signal(s) on which every function in `functions` needs to be calculated.
+            # TODO: assumption van merge nr pd.DataFrame in stroll? => signals zelfde freq / gaps ?
         windows : Union[int, str, pd.Timedelta, List[Union[int, str, pd.Timedelta]]],
             All the window sizes.
         strides : Union[int, str, pd.Timedelta, List[Union[int, str, pd.Timedelta]]],
             All the strides.
 
         """
-        # convert all types to list
+        # Convert all types to list
         to_list = lambda x: [x] if not isinstance(x, list) else x
-        signal_keys = to_list(signal_keys)
+        signal_keys = to_list(func_inputs)
         windows = to_list(windows)
         strides = to_list(strides)
+
+        # Assert that function inputs are from the same length
+        to_tuple = lambda x: tuple([x]) if isinstance(x, str) else x
+        assert all(
+            [len(to_tuple(signal_keys[0])) == len(to_tuple(key)) for key in signal_keys]
+        )
 
         self.feature_descriptions = []
         # iterate over all combinations

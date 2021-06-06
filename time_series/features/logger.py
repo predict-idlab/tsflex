@@ -28,7 +28,7 @@ def _parse_message(message: str) -> list:
     matches = re.findall(regex, message)
     assert len(matches) == 4
     func = matches[0]
-    key = matches[1].strip("'")  # TODO: up until now a function can have just 1 key?
+    key = matches[1].replace("'","")  # TODO: support multiple keys
     window, stride = int(matches[2].split(",")[0]), int(matches[2].split(",")[1])
     duration_s = float(matches[3].rstrip(" seconds"))
     return [func, key, window, stride, duration_s]

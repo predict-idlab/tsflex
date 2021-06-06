@@ -22,7 +22,8 @@ from pathlib import Path
 from typing import Dict, Iterator, List, Optional, Tuple, Union
 
 from ..features.function_wrapper import NumpyFuncWrapper
-from ..utils import tightest_timedelta_bounds
+from ..utils.series_dict import series_dict_to_df
+from ..utils.timedelta import tightest_timedelta_bounds
 from .feature import FeatureDescriptor, MultipleFeatureDescriptors
 from .strided_rolling import StridedRolling
 from .logger import logger
@@ -33,8 +34,10 @@ class FeatureCollection:
 
     def __init__(
         self,
-        feature_desc_list: Optional[List[Union[
-            FeatureDescriptor, MultipleFeatureDescriptors]]] = None,
+        # TODO: why should this be a list?? -> also support just multiplefeaturedescriptors?
+        feature_desc_list: Optional[
+            List[Union[FeatureDescriptor, MultipleFeatureDescriptors]]
+        ] = None,
     ):
         """Create a FeatureCollection.
 
@@ -45,10 +48,10 @@ class FeatureCollection:
 
         """
         # The feature collection is a dict where the key is a tuple(str, int, int), the
-        # tuple values correspond to (signal_key, window, stride)
+        # tuple values correspond to (signal_key(s), window, stride)
         self._feature_desc_dict: Dict[
-            Tuple[str, Union[int, pd.Timedelta], Union[int, pd.Timedelta]],
-            List[FeatureDescriptor]
+            Tuple[Tuple[str], Union[int, pd.Timedelta], Union[int, pd.Timedelta]],
+            List[FeatureDescriptor],
         ] = {}
         # A list of all the features, holds the same references as the dict above but
         # is simply stored in another way
@@ -80,10 +83,8 @@ class FeatureCollection:
 
     def add(
         self,
-        features_list: Union[
-            List[FeatureDescriptor],
-            List[MultipleFeatureDescriptors],
-            List[FeatureCollection],
+        features_list: List[
+            Union[FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection]
         ],
     ):
         """Add a list of FeatureDescription to the FeatureCollection.
@@ -94,8 +95,8 @@ class FeatureCollection:
 
         Parameters
         ----------
-        features_list : Union[List[FeatureDescriptor], List[MultipleFeatureDescriptors], List[FeatureCollection]],
-            List of feature(containers) which features will be added.
+        features_list : List[Union[FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection]]
+            List of feature(containers) which contained features will be added.
 
         Raises
         ------
@@ -115,10 +116,11 @@ class FeatureCollection:
                 raise TypeError(f"type: {type(feature)} is not supported")
 
     @staticmethod
-    def _executor(t: Tuple[StridedRolling, NumpyFuncWrapper]):
+    def _executor(t: Tuple[StridedRolling, NumpyFuncWrapper, bool]):
         stroll = t[0]
         function = t[1]
-        return stroll.apply_func(function)
+        single_series_func = t[2]
+        return stroll.apply_func(function, single_series_func)
 
     def _stroll_feature_generator(
         self, series_dict: Dict[str, pd.Series]
@@ -126,20 +128,32 @@ class FeatureCollection:
         # We could also make the StridedRolling creation multithreaded
         # Another possible option to speed up this creations by making this lazy
         # and only creating it upon calling.
+        def get_feature_df(signal_key: Tuple[str]) -> Union[pd.Series, pd.DataFrame]:
+            """Get the data for the feature.
+            
+            Returns a `pd.Series` for a single input series func and a `pd.Dataframe` 
+            for multiple input series func (this dataframe contains the merged series).
+            """
+            if len(signal_key) == 1:
+                # Very efficient => return just the reference to the single series
+                return series_dict[signal_key[0]]
+            # Otherwise create efficiently a dataframe for the multiple series
+            return series_dict_to_df({key: series_dict[key] for key in signal_key})
+
         for signal_key, win, stride in self._feature_desc_dict.keys():
             try:
-                stroll = StridedRolling(series_dict[signal_key], win, stride)
+                stroll = StridedRolling(get_feature_df(signal_key), win, stride)
             except KeyError:
                 raise KeyError(f"Key {signal_key} not found in series dict.")
 
             for feature in self._feature_desc_dict[(signal_key, win, stride)]:
-                yield stroll, feature.function
+                yield stroll, feature.function, feature.is_single_series_func()
 
     def calculate(
         self,
         signals: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         merge_dfs: Optional[bool] = False,
-        show_progress: Optional[bool] = True,
+        show_progress: Optional[bool] = False,
         logging_file_path: Optional[Union[str, Path]] = None,
         n_jobs: Optional[int] = None,
     ) -> Union[List[pd.DataFrame], pd.DataFrame]:
@@ -158,7 +172,7 @@ class FeatureCollection:
             Whether the results should be merged to a DataFrame with an outer merge,
             by default False
         show_progress: bool, optional
-            If True, the progress will be shown with a progressbar, by default True.
+            If True, the progress will be shown with a progressbar, by default False.
         logging_file_path : Union[str, Path], optional
             The file path where the logged messages are stored. If `None`, then no
             logging `FileHandler` will be used and the logging messages are only pushed
@@ -193,8 +207,10 @@ class FeatureCollection:
         """
         # Delete other logging handlers
         if len(logger.handlers) > 1:
-            logger.handlers = [h for h in logger.handlers if type(h) == logging.StreamHandler]
-        assert len(logger.handlers) == 1, 'Multiple logging StreamHandlers present!!'
+            logger.handlers = [
+                h for h in logger.handlers if type(h) == logging.StreamHandler
+            ]
+        assert len(logger.handlers) == 1, "Multiple logging StreamHandlers present!!"
 
         if logging_file_path:
             if not isinstance(logging_file_path, Path):
@@ -205,7 +221,7 @@ class FeatureCollection:
                 )
                 # Clear the file
                 #  -> because same FileHandler is used when calling this method twice
-                open(logging_file_path, 'w').close()
+                open(logging_file_path, "w").close()
             f_handler = logging.FileHandler(logging_file_path, mode="w")
             f_handler.setFormatter(
                 logging.Formatter(
@@ -237,10 +253,14 @@ class FeatureCollection:
         # https://pathos.readthedocs.io/en/latest/pathos.html#usage
         # nodes = number (and potentially description) of workers
         # ncpus - number of worker processors servers
-        if n_jobs in [0,1]:
+        if n_jobs in [0, 1]:
             # print('Executing feature extraction sequentially')
-            for stroll, func in self._stroll_feature_generator(series_dict):
-                calculated_feature_list.append(stroll.apply_func(func))
+            for stroll, func, single_series_func in self._stroll_feature_generator(
+                series_dict
+            ):
+                calculated_feature_list.append(
+                    stroll.apply_func(func, single_series_func)
+                )
         else:
             with ProcessPool(nodes=n_jobs, source=True) as pool:
                 results = pool.uimap(
