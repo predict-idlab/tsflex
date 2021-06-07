@@ -5,7 +5,7 @@ __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt"
 
 import os
 import traceback
-from typing import Dict, List, Any, Optional, Union
+from typing import List, Any, Optional, Union
 
 import pandas as pd
 from pathos.multiprocessing import ProcessPool

@@ -4,8 +4,8 @@ __author__ = 'Jonas Van Der Donckt'
 
 import pandas as pd
 
-# TODO: maybe rename this method? -> to `timedelta_to_str`
-def tightest_timedelta_bounds(td: pd.Timedelta) -> str:
+
+def timedelta_to_str(td: pd.Timedelta) -> str:
     """Construct a tight string representation for the given timedelta arg.
 
     Parameters

@@ -2,5 +2,5 @@
 
 Note
 ----
-Those utility functions should only be used internally inside tsflex.
+Those functions should only be used internally inside tsflex.
 """

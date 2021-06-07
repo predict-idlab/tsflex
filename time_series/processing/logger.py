@@ -1,4 +1,4 @@
-"""Contains the used variables and methods to provide logging functionality.
+"""Contains the used variables and functions to provide logging functionality.
 
 See Also
 --------
@@ -11,6 +11,8 @@ __author__ = "Jeroen Van Der Donckt"
 import logging
 import pandas as pd
 import re
+
+from ..utils.logging import logging_file_to_df
 
 # Package specific logger
 logger = logging.getLogger("feature_processing_logger")
@@ -54,14 +56,7 @@ def parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
         A DataFrame with the processor its method, keys and calculation duration.
 
     """
-    column_names = ["log_time", "name", "log_level", "message"]
-    data = {col: [] for col in column_names}
-    with open(logging_file_path, "r") as f:
-        for line in f:
-            line = line.split(" - ")
-            for idx, col in enumerate(column_names):
-                data[col].append(line[idx].strip())
-    df = pd.DataFrame(data)
+    df = logging_file_to_df(logging_file_path)
     df[["function", "single_series_func", "keys", "duration"]] = list(df["message"].apply(_parse_message))
     return df.drop(columns=["name", "log_level", "message"])
 

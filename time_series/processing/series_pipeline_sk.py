@@ -28,7 +28,7 @@ from .series_pipeline import SeriesPipeline
 
 
 class SKSeriesPipeline(TransformerMixin):
-    """Sklearn-compatible transformer for processing signals using a `SeriesPipeline`.
+    """Sklearn-compatible transformer for processing data using a `SeriesPipeline`.
 
     This class is basically a wrapper around `SeriesPipeline` and its `process`
     method, enabling sklearn compatibality, e.g. including an instance of this class
@@ -48,30 +48,26 @@ class SKSeriesPipeline(TransformerMixin):
     def __init__(
         self,
         processors: List[SeriesProcessor],
-        return_all_signals: Optional[bool] = True,
+        return_all_series: Optional[bool] = True,
         drop_keys: Optional[List[str]] = [],
         logging_file_path: Optional[Union[str, Path]] = None,
     ):
         """Create a `SKSeriesPipeline`, which is a sklearn-compatible transformer.
 
         This constructor wraps the `SeriesPipeline` constructor arguments and the
-        relevant paremeters of its `process` method.
+        relevant parameters of its `process` method.
 
         Parameters
         ----------
         processors : List[SeriesProcessor]
             List of `SeriesProcessor` objects that will be applied sequentially to the
-            given signals. The processing steps will be executed in the  same order as
+            given data. The processing steps will be executed in the  same order as
             passed with this list.
-        return_all_signals : bool, optional
-            Whether the output needs to return all the signals, by default True.
-            If `True` the output will contain all signals that were passed to this
-            method. If `False` the output will contain just the required signals (see
-            `get_all_required_signals`).
-        return_df : bool, optional
-            Whether the output needs to be a series dict or a DataFrame, default True.
-            If `True` the output series will be combined to a DataFrame with an outer
-            merge.
+        return_all_series : bool, optional
+            Whether the output needs to return all the series, by default True.
+            If `True` the output will contain all series that were passed to this
+            method. If `False` the output will contain just the required series (see
+            `SeriesPipeline.get_all_required_series`).
         drop_keys : List[str], optional
             Which keys should be dropped when returning the output, by default [].
         logging_file_path : Union[str, Path], optional
@@ -93,7 +89,7 @@ class SKSeriesPipeline(TransformerMixin):
 
         """
         self.processors = processors
-        self.return_all_signals = return_all_signals
+        self.return_all_series = return_all_series
         self.drop_keys = drop_keys
         self.logging_file_path = logging_file_path
 
@@ -120,26 +116,29 @@ class SKSeriesPipeline(TransformerMixin):
 
     def transform(
         self,
-        X: Union[List[Union[pd.Series, pd.DataFrame]], pd.Series, pd.DataFrame],
+        X: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
     ) -> pd.DataFrame:
-        """Process the signals.
+        """Process the data.
 
         Parameters
         ----------
-        X: : Union[List[Union[pd.Series, pd.DataFrame]], pd.Series, pd.DataFrame]
-            The signals on which the preprocessing steps will be executed. The signals
-            need a datetime index.
+        X: : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
+            Dataframe or Series or list thereof, with all the required data for the
+            processing steps. \n
+            **Remark**: each Series/DataFrame must have a `pd.DatetimeIndex`. \n
+            Note that this parameter corresponds to the `data` parameter of the
+            `SeriesPipeline` its `process` method.
 
         Returns
         -------
         pd.DataFrame
-            A DataFrame, containing the processed signals.
+            A DataFrame, containing the processed data.
 
         """
         series_pipeline = SeriesPipeline(self.processors)
         return series_pipeline.process(
-            signals=X,
-            return_all_signals=self.return_all_signals,
+            data=X,
+            return_all_series=self.return_all_series,
             return_df=True,
             drop_keys=self.drop_keys,
             logging_file_path=self.logging_file_path,

@@ -30,7 +30,7 @@ class SKFeatureCollection(TransformerMixin):
     """Sklearn-compatible transformer for extracting features using a `FeatureCollection`.
 
     This class is basically a wrapper around `FeatureCollection` and its `calculate`
-    method, enabling sklearn compatibality, e.g. including an instance of this class
+    method, enabling sklearn compatibility, e.g. including an instance of this class
     in `sklearn.pipeline.Pipeline`.
 
     Concretely three changes were necessary to enable this sklearn-compatibility
@@ -46,19 +46,19 @@ class SKFeatureCollection(TransformerMixin):
 
     def __init__(
         self,
-        feature_desc_list: List[Union[FeatureDescriptor, MultipleFeatureDescriptors]],
+        feature_descriptors: Union[FeatureDescriptor, MultipleFeatureDescriptors, List[Union[FeatureDescriptor, MultipleFeatureDescriptors]]],
         logging_file_path: Optional[Union[str, Path]] = None,
         n_jobs: Optional[int] = None,
     ):
         """Create a `SKFeatureCollection`, which is a sklearn-compatible transformer.
 
         This constructor wraps the `FeatureCollection` constructor arguments and the
-        relevant paremeters of its `calculate` method.
+        relevant parameters of its `calculate` method.
 
         Parameters
         ----------
-        feature_desc_list : List[Union[FeatureDescriptor, MultipleFeatureDescriptors]]
-            List of Features to include in the collection.
+        feature_descriptors : Union[FeatureDescriptor, MultipleFeatureDescriptors, List[Union[FeatureDescriptor, MultipleFeatureDescriptors]]]
+            Features to include in the collection.
         logging_file_path : Union[str, Path], optional
             The file path where the logged messages are stored. If `None`, then no
             logging `FileHandler` will be used and the logging messages are only pushed
@@ -84,7 +84,7 @@ class SKFeatureCollection(TransformerMixin):
           iterable in the `transform` method)
 
         """
-        self.feature_desc_list = feature_desc_list
+        self.feature_descriptors = feature_descriptors
         self.logging_file_path = logging_file_path
         self.n_jobs = n_jobs
 
@@ -113,14 +113,15 @@ class SKFeatureCollection(TransformerMixin):
         self,
         X: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
     ) -> pd.DataFrame:
-        """Calculate the signals their features.
+        """Calculate the data their features.
 
         Parameters
         ----------
         X : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]
-            Dataframe or Series list with all the required signals for the feature
-            calculation.\n
-            Note that this parameter corresponds to the `signals` parameter of the
+            Dataframe or Series or list thereof, with all the required data for the
+            feature calculation. \n
+            **Remark**: each Series/DataFrame must have a `pd.DatetimeIndex`. \n
+            Note that this parameter corresponds to the `data` parameter of the
             `FeatureCollection` its `calculate` method.
 
         Returns
@@ -129,9 +130,9 @@ class SKFeatureCollection(TransformerMixin):
             A DataFrame, containing the calculated features.
 
         """
-        feature_collection = FeatureCollection(self.feature_desc_list)
+        feature_collection = FeatureCollection(self.feature_descriptors)
         return feature_collection.calculate(
-            signals=X,
+            data=X,
             merge_dfs=True,
             show_progress=False,
             logging_file_path=self.logging_file_path,
@@ -140,4 +141,4 @@ class SKFeatureCollection(TransformerMixin):
 
     def __repr__(self) -> str:
         """Representation string of a SKFeatureCollection."""
-        return repr(FeatureCollection(self.feature_desc_list))
+        return repr(FeatureCollection(self.feature_descriptors))

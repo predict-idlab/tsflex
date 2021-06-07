@@ -8,9 +8,10 @@ from typing import Dict, List, Union, Tuple, Optional
 
 import pandas as pd
 
+from utils.data import to_series_list
 
 def chunk_signals(
-        signals: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
+        signals: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]], # TODO data?
         fs_dict: Dict[str, int],
         chunk_range_margin_s: Optional[float] = None,
         min_chunk_dur_s: Optional[float] = None,
@@ -81,17 +82,8 @@ def chunk_signals(
 
     """
     # Convert the input signals
-    series_list: List[pd.Series] = []
-    if not isinstance(signals, list):
-        signals = [signals]
+    series_list = to_series_list(signals)
 
-    for s in signals:
-        if isinstance(s, pd.DataFrame):
-            series_list += [s[c] for c in s.columns]
-        elif isinstance(s, pd.Series):
-            series_list.append(s)
-        else:
-            raise TypeError("Non pd.Series or pd.DataFrame object passed.")
     # Assert that there are no duplicate signal names and the names reside in fs_dict
     assert len(series_list) == len(set([s.name for s in series_list]))
     assert all([str(s.name) in fs_dict for s in series_list])

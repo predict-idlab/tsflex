@@ -1,10 +1,11 @@
-"""Utility functions for series dicts (the internal representation used inside tsflex)."""
+"""Utility functions for internal data operations."""
 
 __author__ = 'Jeroen Van Der Donckt'
 
-from typing import Dict
+from typing import Dict, List, Union
 
 import pandas as pd
+
 
 def series_dict_to_df(series_dict: Dict[str, pd.Series]) -> pd.DataFrame:
     """Convert the `series_dict` into a pandas DataFrame with an outer merge.
@@ -21,13 +22,13 @@ def series_dict_to_df(series_dict: Dict[str, pd.Series]) -> pd.DataFrame:
 
     Note
     ----
-    The `series_dict` is an internal representation of the signals list.
+    The `series_dict` is an internal representation of the time-series data.
     In this dictionary, the key is always the accompanying series its name.
     This internal representation is constructed in the `process` method of the
     `SeriesPipeline`.
 
     """
-    # 0. Check if the series_dict has only 1 signal, to create the df efficiently
+    # 0. Check if the series_dict has only 1 series, to create the df efficiently
     if len(series_dict) == 1:
         return pd.DataFrame(series_dict)
     # 1. Check if the time-indexes of the series are equal, to create the df efficiently
@@ -56,3 +57,33 @@ def series_dict_to_df(series_dict: Dict[str, pd.Series]) -> pd.DataFrame:
         assert key == s.name  
         df = df.merge(s, left_index=True, right_index=True, how="outer")
     return df
+
+
+def to_series_list(data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]) -> List[pd.Series]:
+    """Convert the data to a list of series.
+
+    Parameters
+    ----------
+    data : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]
+        Dataframe or Series or list thereof, that should be transformed to a series
+        list.
+
+    Returns
+    -------
+    List[pd.Series]
+        List of series containing the series present in `data`.
+
+    """
+    if not isinstance(data, list):
+        data = [data]
+
+    series_list: List[pd.Series] = []
+    for s in data:
+        if isinstance(s, pd.DataFrame):
+            series_list += [s[c] for c in s.columns]
+        elif isinstance(s, pd.Series):
+            series_list.append(s)
+        else:
+            raise TypeError("Non pd.Series or pd.DataFrame object passed.")
+
+    return series_list

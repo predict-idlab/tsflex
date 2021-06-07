@@ -1,8 +1,7 @@
-"""Code for signals preprocessing."""
+"""Code for time-series data (pre-)processing."""
 
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
-import warnings
 from typing import Callable, Dict, List, Optional, Union
 
 import numpy as np
@@ -10,7 +9,7 @@ import pandas as pd
 import time
 import warnings
 
-from ..utils.series_dict import series_dict_to_df
+from ..utils.data import series_dict_to_df
 from .logger import logger
 
 
@@ -61,7 +60,7 @@ def _np_array_to_series(np_array: np.ndarray, series: pd.Series) -> pd.Series:
     with a different (column) name.
 
     """
-    # The length of the out has to be the same as the signal length
+    # The length of the out has to be the same as the series length
     assert len(np_array) == len(series)
     return pd.Series(data=np_array, index=series.index, name=series.name)
 
@@ -78,7 +77,7 @@ def _handle_seriesprocessor_func_output(
     func_output: Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]
         The output of the SeriesProcessor its function.
     required_dict: Dict[str, pd.Series]
-        The series dict that contains the required signals for the `SeriesProcessor` its
+        The series dict that contains the required series for the `SeriesProcessor` its
         function.
     func_name: str
         The name of the SeriesProcessor (its function).
@@ -122,16 +121,16 @@ def _handle_seriesprocessor_func_output(
                 warnings.warn(
                     "Function output is a single series with a different name "
                     + f"({func_output.name}) from the input series name {input_key}!\n"
-                    + "\t > Make sure this is expected behavior! Input signal "
+                    + "\t > Make sure this is expected behavior! Input data "
                     + f"{input_key} won't be updated with the function output, instead "
                     + f"output {func_output.name} will be appended to the outputs."
                 )
         return {func_output.name: func_output}
     elif isinstance(func_output, np.ndarray):
-        # Must be constructed from just 1 signal
+        # Must be constructed from just 1 series
         assert len(required_dict) == 1
-        input_signal = list(required_dict.values())[0]
-        return {input_signal.name: _np_array_to_series(func_output, input_signal)}
+        input_data = list(required_dict.values())[0]
+        return {input_data.name: _np_array_to_series(func_output, input_data)}
     elif isinstance(func_output, list):
         # Nothing has to be done! A dict can be directly added to the series_dict
         assert len(set([s.name for s in func_output])) == len(func_output)
@@ -149,7 +148,7 @@ def _handle_single_series_func(
     """Handle a function that uses a single series instead of a series dict.
 
     This is a wrapper for a function that requires a `pd.Series` as input.
-    The signals of the `required_dict` are passed one-by-one to the function and the
+    The series of the `required_dict` are passed one-by-one to the function and the
     output is aggregated in a (new) series_dict.
 
     Parameters
@@ -163,7 +162,7 @@ def _handle_single_series_func(
         `func(series: pd.Series)
             -> Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]`.
     required_dict: Dict[str, pd.Series]
-        The series dict that contains the required signals for the SeriesProcessor its
+        The series dict that contains the required series for the SeriesProcessor its
         function.
     func_name: str
         The name of the SeriesProcessor (its function).
@@ -202,6 +201,7 @@ def _handle_single_series_func(
         output_dict.update(func_output)
     return output_dict
 
+
 class SeriesProcessor:
     """Class that executes a specific operation on the passed series_dict."""
 
@@ -210,7 +210,7 @@ class SeriesProcessor:
         required_series: List[str],
         func: Callable,
         single_series_func: Optional[bool] = False,
-        name: Optional[str] =None,
+        name: Optional[str] = None,
         **kwargs,
     ):
         """Init a SeriesProcessor object.
@@ -218,10 +218,10 @@ class SeriesProcessor:
         Parameters
         ----------
         required_series : List[str]
-            A list of the required signals for this processor.
+            A list of the required series for this processor.
         func : Callable
             A callable that processes a series_dict (or a single series; see below).
-            `func` has to take a dict with keys the signal names and the corresponding
+            `func` has to take a dict with keys the series names and the corresponding
             (time indexed) Series as input.
             `func` could also take a `pd.Series` as input, in that case the flag
             `single_series_func` should be set to True.
@@ -257,12 +257,12 @@ class SeriesProcessor:
     def __call__(
         self, series_dict: Dict[str, pd.Series]
     ) -> Union[Dict[str, pd.Series], pd.DataFrame]:
-        """Cal(l)culates the processed signal.
+        """Cal(l)culates the processed series.
 
         Parameters
         ----------
         series_dict : Dict[str, pd.Series]
-            A dict of pandas signals containing the signals that need to be processed.
+            A dict of `pd.Series` containing the data that need to be processed.
             The key should always be the accompanying series its name.
 
         Returns
@@ -280,7 +280,7 @@ class SeriesProcessor:
 
         Note
         ----
-        The `series_dict` is actually an internal representation of the signals list.
+        The `series_dict` is an internal representation of the time-series data .
         This internal representation is constructed in the `process` method of the
         `SeriesPipeline`.
 
@@ -293,7 +293,7 @@ class SeriesProcessor:
         """
         t_start = time.time()
 
-        # Only selecting the signals that are needed for this processing step
+        # Only selecting the series that are needed for this processing step
         requested_dict = {}
         try:
             for sig in self.required_series:

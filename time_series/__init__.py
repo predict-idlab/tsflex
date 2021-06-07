@@ -21,7 +21,7 @@ __all__ = [
     "FeatureDescriptor",
     "MultipleFeatureDescriptors",
     "FeatureCollection",
-    "SKFeatureCollection"
+    "SKFeatureCollection",
     "NumpyFuncWrapper",
     "SeriesProcessor",
     "SeriesPipeline",

@@ -1,4 +1,4 @@
-"""Contains Feature and MultipleFeature class."""
+"""FeatureDescriptor and MultipleFeatureDescriptors class for creating time-series features."""
 
 import itertools
 from typing import Callable, List, Union, Tuple
@@ -14,7 +14,7 @@ class FeatureDescriptor:
     def __init__(
         self,
         function: Union[NumpyFuncWrapper, Callable],
-        func_input: Union[str, Tuple[str]],  # TODO: is het wel goed om `key` te exposen aan de end-user? => veranderd nr func_input
+        key: Union[str, Tuple[str]],
         window: Union[int, str, pd.Timedelta],
         stride: Union[int, str, pd.Timedelta],
     ):
@@ -22,40 +22,43 @@ class FeatureDescriptor:
 
         Notes
         -----
-        * For each function - input(-signals) - window - stride combination, one needs 
-          to create a distinct FeatureDescriptor. Hence it is more convenient to create
+        * For each function - input(-series) - window - stride combination, one needs
+          to create a distinct `FeatureDescriptor`. Hence it is more convenient to create
           a `MultipleFeatureDescriptors` when `function` - `window` - `stride`
-          combination should be applied on various input-signals.
-        * When `function` takes multiple signals (i.e., arguments) as input, these are
+          combination should be applied on various input-series (combinations).
+        * When `function` takes multiple series (i.e., arguments) as input, these are
           merged (based on the index) before applying the function. Thus make sure to 
           use time-based window and stride arguments in this constructor to avoid
-          unexpected behavior. If the indexes of the signals are not exactly the same, 
+          unexpected behavior. If the indexes of the series are not exactly the same,
           there will be `NaN`s after merging into a dataframe, hence make sure that the
           `function` can deal with this!
 
         Parameters
         ----------
         function : Union[NumpyFuncWrapper, Callable]
-            The `function` that calculates this feature.
-        func_input : Union[str,Tuple[str]]
-            The name(s) of the signal(s) on which this feature (its `function`) needs to
-            be calculated.
-            If `function` uses just one signal, this argument should be a string
-            containing the name of that signal.
-            If `function` uses multiple signals, this argument should be a tuple of
-            strings containing the ordered names of those signals. When calculating this
-            feature, the exact order of signals is used as  provided by that tuple.
+            The function that calculates this feature.
+        key : Union[str,Tuple[str]]
+            The name(s) of the series on which this feature (its `function`) needs to
+            be calculated. \n
+            * If `function` has just one series as argument, `key` should be a string
+              containing the name of that series. We call such a function a
+              *single input-series function*.
+            * If `function` has multiple series, this argument should be a tuple of
+              strings containing the ordered names of those series. When calculating
+              this feature, the exact order of series is used as provided by the tuple.
+              We call such a function a *multi input-series function*.
+            TODO: assumption van merge nr pd.DataFrame in stroll? => signals zelfde freq / gaps ?
         window :  Union[int, str, pd.Timedelta]
             The window size, this argument supports multiple types.
             If the type is an int, it represents the number of samples of the input
-            signal. If the window's type is a `pd.Timedelta`, the window size represents
+            series. If the window's type is a `pd.Timedelta`, the window size represents
             the window-time. If a `str`, it represents a window-time-string.
         stride :  Union[int, str, pd.Timedelta]
-            The stride of the window rolling process, supports multiple types.
-            If the type is an int, it represents the number of samples of the input
-            signal that will be rolled over. If the stride's type is a `pd.Timedelta`,
-            it represents the stride-roll timedelta. If a `str`, it represents a
-            stride-roll-time-string.
+            The stride of the window rolling process, supports multiple types. \n
+            * If the type is int, it represents the number of samples of the input
+              series that will be rolled over.
+            * If the type is `pd.Timedelta`, it represents the stride-roll timedelta.
+            * If a type is str, it represents a stride-roll-time-string.
 
         Note
         ----
@@ -70,7 +73,7 @@ class FeatureDescriptor:
             which the features will be extracted **must contain** a frequency.
             **So no gaps are allowed in these series!**
         3. The time **will be converted to an int**, and as this is achieved by dividing
-            the `pd.TimeDelta` through the signal's inferred freq timedelta.
+            the `pd.TimeDelta` through the series' inferred freq timedelta.
 
         Raises
         ------
@@ -85,7 +88,7 @@ class FeatureDescriptor:
 
         """
         to_tuple = lambda x: tuple([x]) if isinstance(x, str) else x
-        self.key = to_tuple(func_input) # TODO: wrm per se allemaal tuple?
+        self.key = to_tuple(key)  # TODO: wrm per se allemaal tuple?
         self.window = FeatureDescriptor._parse_time_arg(window)
         self.stride = FeatureDescriptor._parse_time_arg(stride)
 
@@ -100,13 +103,15 @@ class FeatureDescriptor:
                 f" {type(function)}."
             )
 
-    def is_single_series_func(self) -> bool: # TODO: dit nodig?
-        """Return whether this feature takes a single series as input.
+    def is_single_series_func(self) -> bool:  # TODO: dit nodig?
+        """Return whether this feature is a single series function.
+
+        A single series function is a `function` that takes single series as input.
 
         Returns
         -------
         bool
-            Whether the feature its function takes a single series as input.
+            Whether the feature its `function` takes a single series as input.
         """
         return len(self.key) == 1
 
@@ -116,7 +121,7 @@ class FeatureDescriptor:
 
         Parameters
         ----------
-        arg: Union[int, str, pd.Timedelta]
+        arg : Union[int, str, pd.Timedelta]
             The arg that will be parsed. If the type is either an `int` or
             `pd.Timedelta`, nothing will happen. If the type is a `str`, `arg` should
             represent a time-string, and will be converted to a `pd.Timedelta`.
@@ -155,8 +160,7 @@ class MultipleFeatureDescriptors:
     def __init__(
         self,
         functions: List[Union[NumpyFuncWrapper, Callable]],
-        # TODO: perhaps signal_keys was better 
-        func_inputs: Union[str, Tuple[str], List[str], List[Tuple[str]]], # TODO: is het wel goed om `key` te exposen aan de end-user? => veranderd nr func_input
+        keys: Union[str, Tuple[str], List[str], List[Tuple[str]]],
         windows: Union[int, str, pd.Timedelta, List[Union[int, str, pd.Timedelta]]],
         strides: Union[int, str, pd.Timedelta, List[Union[int, str, pd.Timedelta]]],
     ):
@@ -170,10 +174,17 @@ class MultipleFeatureDescriptors:
         ----------
         functions : List[Union[NumpyFuncWrapper, Callable]]
             The functions, can be either of both types (even in a single array).
-        func_inputs : Union[str, Tuple[str], List[str], List[Tuple[str]]],
-            All the function inputs. A single function input is/are the name(s) of the
-            signal(s) on which every function in `functions` needs to be calculated.
-            # TODO: assumption van merge nr pd.DataFrame in stroll? => signals zelfde freq / gaps ?
+        keys : Union[str, Tuple[str], List[str], List[Tuple[str]]],
+            All the function inputs (either a `key` or a list of `key`s).
+            A `key` contains the name(s) of the series on which every function in
+            `functions` needs to be calculated. Hence, when the function(s) should be
+            called on multiple (combinations of) series, one should pass a list of
+            `key`s. \n
+            Note: when passing a list of `key`s, all `key`s in this
+            list should have the same type, i.e, either \n
+            * all a str
+            * or, all a tuple with same length. \n
+            Read more about the `key` argument in `FeatureDescriptor`.
         windows : Union[int, str, pd.Timedelta, List[Union[int, str, pd.Timedelta]]],
             All the window sizes.
         strides : Union[int, str, pd.Timedelta, List[Union[int, str, pd.Timedelta]]],
@@ -182,19 +193,19 @@ class MultipleFeatureDescriptors:
         """
         # Convert all types to list
         to_list = lambda x: [x] if not isinstance(x, list) else x
-        signal_keys = to_list(func_inputs)
+        keys = to_list(keys)
         windows = to_list(windows)
         strides = to_list(strides)
 
         # Assert that function inputs are from the same length
         to_tuple = lambda x: tuple([x]) if isinstance(x, str) else x
         assert all(
-            [len(to_tuple(signal_keys[0])) == len(to_tuple(key)) for key in signal_keys]
+            [len(to_tuple(keys[0])) == len(to_tuple(key)) for key in keys]
         )
 
         self.feature_descriptions = []
         # iterate over all combinations
-        combinations = [functions, signal_keys, windows, strides]
+        combinations = [functions, keys, windows, strides]
         for function, key, window, stride in itertools.product(*combinations):
             self.feature_descriptions.append(
                 FeatureDescriptor(function, key, window, stride)

@@ -1,4 +1,4 @@
-"""Code for signals preprocessing pipeline."""
+"""SeriesPipeline class for time-series data (pre-)processing pipeline"""
 
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
@@ -11,7 +11,7 @@ import dill
 import logging
 import warnings
 
-from ..utils.series_dict import series_dict_to_df
+from ..utils.data import series_dict_to_df, to_series_list
 from .series_processor import SeriesProcessor
 from .logger import logger
 
@@ -30,7 +30,7 @@ class SeriesPipeline:
         ----------
         processors : List[SeriesProcessor], optional
             List of `SeriesProcessor` objects that will be applied sequentially to the
-            internal signals dict, by default None. The processing steps will be executed
+            internal series dict, by default None. The processing steps will be executed
             in the same order as passed with this list.
 
         """
@@ -38,16 +38,16 @@ class SeriesPipeline:
         if processors is not None:
             self.processing_registry = processors
 
-    def get_all_required_signals(self) -> List[str]:
-        """Return required signal for this pipeline.
+    def get_all_required_series(self) -> List[str]:
+        """Return required series names for this pipeline.
 
-        Return a list of signal keys that are required in order to execute all the
-        `SeriesProcessor` objects that currently are in the pipeline.
+        Return the list of series names that are required in order to execute all the
+        `SeriesProcessor` objects of this processing pipeline.
 
         Returns
         -------
         List[str]
-            List of all the required signal keys.
+            List of all the required series names.
 
         """
         return list(
@@ -71,16 +71,16 @@ class SeriesPipeline:
 
     def process(
         self,
-        signals: Union[
-            List[Union[pd.Series, pd.DataFrame]],
+        data: Union[
             pd.Series,
             pd.DataFrame,
+            List[Union[pd.Series, pd.DataFrame]],
         ],
-        return_all_signals: Optional[bool] = True,
+        return_all_series: Optional[bool] = True, # TODO return_all_series / return_all_data?
         return_df: Optional[bool] = True,
         drop_keys: Optional[List[str]] = [],
         logging_file_path: Optional[Union[str, Path]] = None,
-    ) -> Union[Dict[str, pd.Series], pd.DataFrame]:
+    ) -> Union[List[pd.Series], pd.DataFrame]:
         """Execute all `SeriesProcessor` objects in pipeline sequentially.
 
         Apply all the processing steps on passed Series list or DataFrame and return the
@@ -88,14 +88,15 @@ class SeriesPipeline:
 
         Parameters
         ----------
-        signals : Union[List[Union[pd.Series, pd.DataFrame]], pd.Series, pd.DataFrame]
-            The signals on which the preprocessing steps will be executed. The signals
-            need a datetime index.
-        return_all_signals : bool, optional
-            Whether the output needs to return all the signals, by default True. 
-            If `True` the output will contain all signals that were passed to this 
-            method. If `False` the output will contain just the required signals (see
-            `get_all_required_signals`).
+        data : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
+            Dataframe or Series or list thereof, with all the required data for the
+            processing steps. \n
+            **Remark**: each Series/DataFrame must have a `pd.DatetimeIndex`.
+        return_all_series : bool, optional
+            Whether the output needs to return all the series, by default True.
+            If `True` the output will contain all series that were passed to this
+            method. If `False` the output will contain just the required series (see
+            `get_all_required_series`).
         return_df : bool, optional
             Whether the output needs to be a series dict or a DataFrame, default True. 
             If `True` the output series will be combined to a DataFrame with an outer 
@@ -110,7 +111,7 @@ class SeriesPipeline:
 
         Returns
         -------
-        Union[Dict[str, pd.Series], pd.DataFrame]
+        Union[List[pd.Series], pd.DataFrame]
             The preprocessed series.
 
         Note
@@ -163,33 +164,20 @@ class SeriesPipeline:
             f_handler.setLevel(logging.INFO)
             logger.addHandler(f_handler)
 
-        # Converting the signals list into a dict
-        series_dict = dict()
-
-        def to_list(x):
-            if not isinstance(x, list):
-                return [x]
-            return x
-
-        series_list = []
-        for series in to_list(signals):
-            if type(series) == pd.DataFrame:
-                series_list += [series[c] for c in series.columns]
-            else:
-                assert isinstance(series, pd.Series)
-                series_list.append(series)
-
+        # Convert the data to a series_dict
+        series_list = to_series_list(data)
+        series_dict : Dict[str, pd.Series] = {}
         for s in series_list:
             assert type(s) == pd.Series, f"Error non pd.Series object passed: {type(s)}"
-            if not return_all_signals:
-                # If just the required signals have to be returned
-                if s.name in self.get_all_required_signals():
+            if not return_all_series:
+                # If just the required series have to be returned
+                if s.name in self.get_all_required_series():
                     series_dict[s.name] = s.copy()
             else:
-                # If all the signals have to be returned
+                # If all the series have to be returned
                 series_dict[s.name] = s.copy()
 
-        output_keys = set()  # Maintain set of output signals
+        output_keys = set()  # Maintain set of output series
         for processor in self.processing_registry:
             try:
                 processed_dict = processor(series_dict)
@@ -200,8 +188,8 @@ class SeriesPipeline:
                     "Error while processing function {}:\n {}".format(processor.name, str(e))
                 ) from e
 
-        if not return_all_signals:
-            # Return just the output signals
+        if not return_all_series:
+            # Return just the output series
             output_dict = {key: series_dict[key] for key in output_keys}
             series_dict = output_dict
 
@@ -214,10 +202,10 @@ class SeriesPipeline:
             series_dict = output_dict
 
         if return_df:
-            # We merge the signals dict into a DataFrame
+            # We merge the series dict into a DataFrame
             return series_dict_to_df(series_dict)
         else:
-            return series_dict
+            return [s for s in series_dict.values()]
 
     def serialize(self, file_path: Union[str, Path]):
         """Serialize this `SeriesProcessor` instance.

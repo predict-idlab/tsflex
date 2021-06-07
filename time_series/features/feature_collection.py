@@ -1,4 +1,4 @@
-"""FeatureCollection class for collection and calculation of features.
+"""FeatureCollection class for collection and calculation of time-series features.
 
 See Also
 --------
@@ -22,8 +22,8 @@ from pathlib import Path
 from typing import Dict, Iterator, List, Optional, Tuple, Union
 
 from ..features.function_wrapper import NumpyFuncWrapper
-from ..utils.series_dict import series_dict_to_df
-from ..utils.timedelta import tightest_timedelta_bounds
+from ..utils.data import series_dict_to_df, to_series_list
+from ..utils.timedelta import timedelta_to_str
 from .feature import FeatureDescriptor, MultipleFeatureDescriptors
 from .strided_rolling import StridedRolling
 from .logger import logger
@@ -34,21 +34,23 @@ class FeatureCollection:
 
     def __init__(
         self,
-        # TODO: why should this be a list?? -> also support just multiplefeaturedescriptors?
-        feature_desc_list: Optional[
-            List[Union[FeatureDescriptor, MultipleFeatureDescriptors]]
+        feature_descriptors: Optional[
+            Union[
+                FeatureDescriptor, MultipleFeatureDescriptors,
+                List[Union[FeatureDescriptor, MultipleFeatureDescriptors]]
+            ]
         ] = None,
     ):
         """Create a FeatureCollection.
 
         Parameters
         ----------
-        feature_desc_list : List[Union[FeatureDescriptor, MultipleFeatureDescriptors]], optional
-            Initial list of Features to add to collection, by default None
+        feature_descriptors : Union[FeatureDescriptor, MultipleFeatureDescriptors, List[Union[FeatureDescriptor, MultipleFeatureDescriptors]]], optional
+            Initial (list of) feature(s) to add to collection, by default None
 
         """
         # The feature collection is a dict where the key is a tuple(str, int, int), the
-        # tuple values correspond to (signal_key(s), window, stride)
+        # tuple values correspond to (series_key(s), window, stride)
         self._feature_desc_dict: Dict[
             Tuple[Tuple[str], Union[int, pd.Timedelta], Union[int, pd.Timedelta]],
             List[FeatureDescriptor],
@@ -56,8 +58,8 @@ class FeatureCollection:
         # A list of all the features, holds the same references as the dict above but
         # is simply stored in another way
         self._feature_desc_list: List[FeatureDescriptor] = []
-        if feature_desc_list:
-            self.add(feature_desc_list)
+        if feature_descriptors:
+            self.add(feature_descriptors)
 
     @staticmethod
     def _get_collection_key(feature: FeatureDescriptor):
@@ -70,7 +72,7 @@ class FeatureCollection:
         Parameters
         ----------
         feature : FeatureDescriptor
-            The featuredescriptor that will be added.
+            The feature that will be added to this feature collection.
 
         """
         self._feature_desc_list.append(feature)
@@ -83,29 +85,30 @@ class FeatureCollection:
 
     def add(
         self,
-        features_list: List[
-            Union[FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection]
+        features: Union[
+            FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection,
+            List[
+                Union[FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection]
+            ]
         ],
     ):
-        """Add a list of FeatureDescription to the FeatureCollection.
-
-        Todo
-        ----
-        Type hint of `feature_list` is not totally correct.
+        """Add feature(s) to the FeatureCollection.
 
         Parameters
         ----------
-        features_list : List[Union[FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection]]
-            List of feature(containers) which contained features will be added.
+        features : Union[FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection, List[Union[FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection]]]
+            Feature(s) (containers) which contained features will be added.
 
         Raises
         ------
         TypeError
-            Raised when an item within `features_list` is not an instance of
+            Raised when an item within `features` is not an instance of
             [`MultipleFeatureDescriptors`, `FeatureDescriptors`, `FeatureCollection`].
 
         """
-        for feature in features_list:
+        if not isinstance(features, list):
+            features = [features]
+        for feature in features:
             if isinstance(feature, MultipleFeatureDescriptors):
                 self.add(feature.feature_descriptions)
             elif isinstance(feature, FeatureDescriptor):
@@ -128,46 +131,49 @@ class FeatureCollection:
         # We could also make the StridedRolling creation multithreaded
         # Another possible option to speed up this creations by making this lazy
         # and only creating it upon calling.
-        def get_feature_df(signal_key: Tuple[str]) -> Union[pd.Series, pd.DataFrame]:
+        def get_feature_df(feature_key: Tuple[str]) -> Union[pd.Series, pd.DataFrame]:
             """Get the data for the feature.
             
-            Returns a `pd.Series` for a single input series func and a `pd.Dataframe` 
-            for multiple input series func (this dataframe contains the merged series).
+            Returns
+            * `pd.Series` for a *single input-series function*
+            * `pd.Dataframe` for a *multiple input-series function*
+              (this dataframe contains the merged series).
             """
-            if len(signal_key) == 1:
+            if len(feature_key) == 1:
                 # Very efficient => return just the reference to the single series
-                return series_dict[signal_key[0]]
+                return series_dict[feature_key[0]]
             # Otherwise create efficiently a dataframe for the multiple series
-            return series_dict_to_df({key: series_dict[key] for key in signal_key})
+            return series_dict_to_df({name: series_dict[name] for name in feature_key})
 
-        for signal_key, win, stride in self._feature_desc_dict.keys():
+        for key, win, stride in self._feature_desc_dict.keys():
             try:
-                stroll = StridedRolling(get_feature_df(signal_key), win, stride)
+                stroll = StridedRolling(get_feature_df(key), win, stride)
             except KeyError:
-                raise KeyError(f"Key {signal_key} not found in series dict.")
+                raise KeyError(f"Key {key} not found in series dict.")
 
-            for feature in self._feature_desc_dict[(signal_key, win, stride)]:
+            for feature in self._feature_desc_dict[(key, win, stride)]:
                 yield stroll, feature.function, feature.is_single_series_func()
 
     def calculate(
         self,
-        signals: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
+        data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         merge_dfs: Optional[bool] = False,
         show_progress: Optional[bool] = False,
         logging_file_path: Optional[Union[str, Path]] = None,
         n_jobs: Optional[int] = None,
     ) -> Union[List[pd.DataFrame], pd.DataFrame]:
-        """Calculate features on the passed signals.
+        """Calculate features on the passed data.
 
         Note
-        ----
-        The column-names of the signals represent the signal-keys.
+        -----
+        The (column-)names of the series in `data` represent the names in the keys.
 
         Parameters
         ----------
-        signals : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]
-            Dataframe or Series list with all the required signals for the feature
-            calculation.
+        data : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
+            Dataframe or Series or list thereof, with all the required data for the
+            feature calculation. \n
+            **Remark**: each Series/DataFrame must have a `pd.DatetimeIndex`.
         merge_dfs : bool, optional
             Whether the results should be merged to a DataFrame with an outer merge,
             by default False
@@ -202,7 +208,7 @@ class FeatureCollection:
         Raises
         ------
         KeyError
-            Raised when a required key is not found in `signals`.
+            Raised when a required key is not found in `data`.
 
         """
         # Delete other logging handlers
@@ -231,28 +237,15 @@ class FeatureCollection:
             f_handler.setLevel(logging.INFO)
             logger.addHandler(f_handler)
 
-        series_dict = dict()
-        series_list = []
-
-        if not isinstance(signals, list):
-            signals = [signals]
-
-        for s in signals:
-            if isinstance(s, pd.DataFrame):
-                series_list += [s[c] for c in s.columns]
-            elif isinstance(s, pd.Series):
-                series_list.append(s)
-            else:
-                raise TypeError("Non pd.Series or pd.DataFrame object passed.")
-
+        # Convert the data to a series_dict
+        series_list = to_series_list(data)
+        series_dict : Dict[str, pd.Series] = {}
         for s in series_list:
             series_dict[s.name] = s
 
         calculated_feature_list: List[pd.DataFrame] = []
 
         # https://pathos.readthedocs.io/en/latest/pathos.html#usage
-        # nodes = number (and potentially description) of workers
-        # ncpus - number of worker processors servers
         if n_jobs in [0, 1]:
             # print('Executing feature extraction sequentially')
             for stroll, func, single_series_func in self._stroll_feature_generator(
@@ -313,24 +306,24 @@ class FeatureCollection:
 
     def __repr__(self) -> str:
         """Representation string of a FeatureCollection."""
-        signals = sorted(set(k[0] for k in self._feature_desc_dict.keys()))
+        feature_keys = sorted(set(k[0] for k in self._feature_desc_dict.keys()))
         output_str = ""
-        for signal in signals:
-            output_str += f"{signal}: ("
-            keys = (x for x in self._feature_desc_dict.keys() if x[0] == signal)
+        for feature_key in feature_keys:
+            output_str += f"{feature_key}: ("
+            keys = (x for x in self._feature_desc_dict.keys() if x[0] == feature_key)
             for _, win_size, stride in keys:
                 output_str += f"\n\twin: "
                 win_str, stride_str = win_size, stride
                 if isinstance(win_str, pd.Timedelta):
-                    win_str = tightest_timedelta_bounds(win_str)
+                    win_str = timedelta_to_str(win_str)
                 else:
                     win_str = f"{win_str} samples"
                 if isinstance(stride_str, pd.Timedelta):
-                    stride_str = tightest_timedelta_bounds(stride_str)
+                    stride_str = timedelta_to_str(stride_str)
                 else:
                     stride_str = f"{stride_str} samples"
                 output_str += f"{str(win_str):<6}, stride: {str(stride_str)}: ["
-                for feat_desc in self._feature_desc_dict[signal, win_size, stride]:
+                for feat_desc in self._feature_desc_dict[feature_key, win_size, stride]:
                     output_str += f"\n\t\t{feat_desc._func_str()},"
                 output_str += "\n\t]"
             output_str += "\n)\n"

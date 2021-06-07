@@ -1,4 +1,4 @@
-"""Object-oriented representation of a function."""
+"""NumpyFuncWrapper class for object-oriented representation of a function."""
 
 __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
 
@@ -8,7 +8,7 @@ from typing import Callable, List, Union
 import numpy as np
 
 
-class NumpyFuncWrapper:
+class NumpyFuncWrapper: # TODO: waarom niet gewoon FuncWrapper?
     """Numpy function wrapper.
 
     A Numpy function wrapper which takes a numpy array as input and returns a numpy
