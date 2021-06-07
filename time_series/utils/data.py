@@ -52,7 +52,7 @@ def series_dict_to_df(series_dict: Dict[str, pd.Series]) -> pd.DataFrame:
         pass
     # 2. If check failed, create the df by merging the series (the slow way)
     df = pd.DataFrame()
-    for key, s in series_dict.values():
+    for key, s in series_dict.items():
         # Check if we deal with a valid series_dict before merging on series.name
         assert key == s.name  
         df = df.merge(s, left_index=True, right_index=True, how="outer")
