@@ -246,39 +246,45 @@ def test_single_signal_series_processor_pipeline(dummy_data):
             SeriesProcessor(["TMP"], func=drop_nans),
         ]
     )
-    res_dict_all = series_pipeline.process(
-        inp, return_all_signals=True, return_df=False
+    res_list_all = series_pipeline.process(
+        inp, return_all_series=True, return_df=False
     )
-    res_dict_req = series_pipeline.process(
-        inp, return_all_signals=False, return_df=False
+    res_list_req = series_pipeline.process(
+        inp, return_all_series=False, return_df=False
     )
-    res_df_all = series_pipeline.process(inp, return_all_signals=True, return_df=True)
-    res_df_req = series_pipeline.process(inp, return_all_signals=False, return_df=True)
+    res_df_all = series_pipeline.process(inp, return_all_series=True, return_df=True)
+    res_df_req = series_pipeline.process(inp, return_all_series=False, return_df=True)
 
-    assert isinstance(res_dict_all, dict) & isinstance(res_dict_req, dict)
+    assert isinstance(res_list_all, list) & isinstance(res_list_req, list)
     assert isinstance(res_df_all, pd.DataFrame) & isinstance(res_df_req, pd.DataFrame)
-    assert res_dict_all.keys() == set(["TMP", "EDA"])
+
+    assert set([s.name for s in res_list_all]) == set(["TMP", "EDA"])
     assert set(res_df_all.columns) == set(["TMP", "EDA"])
-    assert res_dict_req.keys() == set(["TMP"])
+    assert set([s.name for s in res_list_req])== set(["TMP"])
     assert res_df_req.columns == ["TMP"]
+
+    tmp_idx_all = [i for i in range(len(res_list_all)) if res_list_all[i].name == "TMP"][0]
+    tmp_idx_req = [i for i in range(len(res_list_req)) if res_list_req[i].name == "TMP"][0]
+    eda_idx_all = [i for i in range(len(res_list_all)) if res_list_all[i].name == "EDA"][0]
 
     # Check if length is smaller because NANs were removed
     assert len(res_df_req) < len(dummy_data)  # Because only required signals returned
-    assert len(res_dict_all["TMP"]) < len(dummy_data)  # Because no df
-    assert len(res_dict_req["TMP"]) < len(dummy_data)  # Because no df
+    assert len(res_list_all[tmp_idx_all]) < len(dummy_data)  # Because no df
+    assert len(res_list_req[tmp_idx_req]) < len(dummy_data)  # Because no df
     # When merging all signals to df, the length should be the original length
     assert len(res_df_all) == len(dummy_data)
 
     # Check that there are no NANs present
     assert not any(res_df_req["TMP"].isna())
-    assert (~any(res_dict_all["TMP"].isna())) & (~any(res_dict_req["TMP"].isna()))
+    assert ~any(res_list_all[tmp_idx_all].isna())
+    assert ~any(res_list_req[tmp_idx_req].isna())
     # NaNs get introduced when merging all signalsto df
     assert any(res_df_all["TMP"].isna())
 
-    assert all(res_df_all["TMP"].dropna().values == res_dict_all["TMP"])
-    assert all(res_df_req["TMP"].values == res_dict_all["TMP"])
+    assert all(res_df_all["TMP"].dropna().values == res_list_all[tmp_idx_all])
+    assert all(res_df_req["TMP"].values == res_list_all[tmp_idx_all])
 
-    assert all(res_dict_all["EDA"] == inp["EDA"])
+    assert all(res_list_all[eda_idx_all] == inp["EDA"])
     assert all(res_df_all["EDA"] == inp["EDA"])
 
 
@@ -311,47 +317,53 @@ def test_multi_signal_series_processor_pipeline(dummy_data):
             ),
         ]
     )
-    res_dict_all = series_pipeline.process(
-        inp, return_all_signals=True, return_df=False
+    res_list_all = series_pipeline.process(
+        inp, return_all_series=True, return_df=False
     )
-    res_dict_req = series_pipeline.process(
-        inp, return_all_signals=False, return_df=False
+    res_list_req = series_pipeline.process(
+        inp, return_all_series=False, return_df=False
     )
-    res_df_all = series_pipeline.process(inp, return_all_signals=True, return_df=True)
-    res_df_req = series_pipeline.process(inp, return_all_signals=False, return_df=True)
+    res_df_all = series_pipeline.process(inp, return_all_series=True, return_df=True)
+    res_df_req = series_pipeline.process(inp, return_all_series=False, return_df=True)
 
-    assert isinstance(res_dict_all, dict) & isinstance(res_dict_req, dict)
+    assert isinstance(res_list_all, list) & isinstance(res_list_req, list)
     assert isinstance(res_df_all, pd.DataFrame) & isinstance(res_df_req, pd.DataFrame)
-    assert res_dict_all.keys() == set(["TMP", "EDA"])
+    assert set([s.name for s in res_list_all]) == set(["TMP", "EDA"])
     assert set(res_df_all.columns) == set(["TMP", "EDA"])
-    assert res_dict_req.keys() == set(["TMP", "EDA"])
+    assert set([s.name for s in res_list_req])== set(["TMP", "EDA"])
     assert set(res_df_req.columns) == set(["TMP", "EDA"])
 
     # Check if length is smaller because NANs were removed
-    assert len(res_dict_all["TMP"]) < len(dummy_data)  # Because no df
-    assert len(res_dict_req["TMP"]) < len(dummy_data)  # Because no df
+    assert all([len(s) < len(dummy_data) for s in res_list_all if s.name == "TMP"])  # Because no df
+    assert all([len(s) < len(dummy_data) for s in res_list_all if s.name == "TMP"])  # Because no df
     # When merging to df, the length should be the original length
     assert (len(res_df_all) == len(dummy_data)) & (len(res_df_req) == len(dummy_data))
 
+    tmp_idx_all = [i for i in range(len(res_list_all)) if res_list_all[i].name == "TMP"][0]
+    tmp_idx_req = [i for i in range(len(res_list_req)) if res_list_req[i].name == "TMP"][0]
+    eda_idx_all = [i for i in range(len(res_list_all)) if res_list_all[i].name == "EDA"][0]
+    eda_idx_req = [i for i in range(len(res_list_req)) if res_list_req[i].name == "EDA"][0]
+
     # Check if there are no NANs present (only valid if return_df=False)
-    assert (~any(res_dict_all["TMP"].isna())) & (~any(res_dict_req["TMP"].isna()))
+    assert ~any(res_list_all[tmp_idx_all].isna()) 
+    assert ~any(res_list_req[tmp_idx_req].isna())
     # NaNs get introduced when merging to df
     assert any(res_df_all["TMP"].isna()) & any(res_df_req["TMP"].isna())
 
-    assert all(res_dict_req["TMP"] == res_dict_all["TMP"])  # Check dict_req == dict_all
+    assert all(res_list_req[tmp_idx_req] == res_list_all[tmp_idx_all])  # Check list_req == req_all
     # Check the rest against all dict_all
     # Drop NANs for df because they got introduced when merging to df
-    assert all(res_df_all["TMP"].dropna().values == res_dict_all["TMP"])
-    assert all(res_df_req["TMP"].dropna().values == res_dict_all["TMP"])
-    assert all(res_dict_req["EDA"] == res_dict_all["EDA"])  # Check dict_req == dict_all
+    assert all(res_df_all["TMP"].dropna().values == res_list_all[tmp_idx_all])
+    assert all(res_df_req["TMP"].dropna().values == res_list_all[tmp_idx_all])
+    assert all(res_list_req[eda_idx_req] == res_list_all[eda_idx_all])  # Check list_req == list_all
     # Check the rest against all dict_all
-    assert all(res_df_all["EDA"] == res_dict_all["EDA"])
-    assert all(res_df_req["EDA"] == res_dict_all["EDA"])
+    assert all(res_df_all["EDA"] == res_list_all[eda_idx_all])
+    assert all(res_df_req["EDA"] == res_list_all[eda_idx_all])
 
-    assert min(res_dict_all["EDA"]) == dummy_data["EDA"].quantile(lower)
-    assert max(res_dict_all["EDA"]) == dummy_data["EDA"].quantile(upper)
-    assert min(res_dict_all["TMP"]) == inp["TMP"].quantile(lower)
-    assert max(res_dict_all["TMP"]) == inp["TMP"].quantile(upper)
+    assert min(res_list_all[eda_idx_all]) == dummy_data["EDA"].quantile(lower)
+    assert max(res_list_all[eda_idx_all]) == dummy_data["EDA"].quantile(upper)
+    assert min(res_list_all[tmp_idx_all]) == inp["TMP"].quantile(lower)
+    assert max(res_list_all[tmp_idx_all]) == inp["TMP"].quantile(upper)
 
 
 # TODO: test drop_keys
