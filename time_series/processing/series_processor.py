@@ -129,8 +129,8 @@ def _handle_seriesprocessor_func_output(
     elif isinstance(func_output, np.ndarray):
         # Must be constructed from just 1 series
         assert len(required_dict) == 1
-        input_data = list(required_dict.values())[0]
-        return {input_data.name: _np_array_to_series(func_output, input_data)}
+        input_series = list(required_dict.values())[0]
+        return {input_series.name: _np_array_to_series(func_output, input_series)}
     elif isinstance(func_output, list):
         # Nothing has to be done! A dict can be directly added to the series_dict
         assert len(set([s.name for s in func_output])) == len(func_output)
