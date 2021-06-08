@@ -49,6 +49,8 @@ MANIFEST
 
 # Per-project virtualenvs
 .venv*/
+venv
 
 # Jupyter NB Checkpoints
-.ipynb_checkpoints/
+.ipynb_checkpoints
+.virtual_documents
