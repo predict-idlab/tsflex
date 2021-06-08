@@ -8,7 +8,7 @@ from typing import Callable, List, Union
 import numpy as np
 
 
-class NumpyFuncWrapper: # TODO: waarom niet gewoon FuncWrapper?
+class NumpyFuncWrapper:  # TODO: waarom niet gewoon FuncWrapper?
     """Numpy function wrapper.
 
     A Numpy function wrapper which takes a numpy array as input and returns a numpy

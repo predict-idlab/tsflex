@@ -30,8 +30,8 @@ class SeriesPipeline:
         ----------
         processors : List[SeriesProcessor], optional
             List of `SeriesProcessor` objects that will be applied sequentially to the
-            internal series dict, by default None. The processing steps will be executed
-            in the same order as passed with this list.
+            internal series dict, by default None. **The processing steps will be
+            executed in the same order as passed in this list**.
 
         """
         self.processing_registry: List[SeriesProcessor] = []
@@ -69,6 +69,8 @@ class SeriesPipeline:
         """
         self.processing_registry.append(processor)
 
+    # TODO -> maybe add an insert method
+
     def process(
         self,
         data: Union[
@@ -76,9 +78,9 @@ class SeriesPipeline:
             pd.DataFrame,
             List[Union[pd.Series, pd.DataFrame]],
         ],
-        return_all_series: Optional[bool] = True, # TODO return_all_series / return_all_data?
+        return_all_series: Optional[bool] = True,
         return_df: Optional[bool] = True,
-        drop_keys: Optional[List[str]] = [],
+        drop_keys: Optional[List[str]] = None,
         logging_file_path: Optional[Union[str, Path]] = None,
     ) -> Union[List[pd.Series], pd.DataFrame]:
         """Execute all `SeriesProcessor` objects in pipeline sequentially.
@@ -102,7 +104,7 @@ class SeriesPipeline:
             If `True` the output series will be combined to a DataFrame with an outer 
             merge.
         drop_keys : List[str], optional
-            Which keys should be dropped when returning the output, by default [].
+            Which keys should be dropped when returning the output, by default None.
         logging_file_path : Union[str, Path], optional
             The file path where the logged messages are stored, by default None. 
             If `None`, then no logging `FileHandler` will be used and the logging 
@@ -114,35 +116,33 @@ class SeriesPipeline:
         Union[List[pd.Series], pd.DataFrame]
             The preprocessed series.
 
-        Note
-        ----
-        If a `logging_file_path` is provided, the execution (time) statistics can be
-        retrieved by calling `logger.get_duration_stats(logging_file_path)`. <br>
-        Be aware that the `logging_file_path` gets cleared before the logger pushes
-        logged messages. Hence, one should use a separate logging file for each
-        constructed processing and feature instance with this library.
+        Notes
+        -----
+        * If a `logging_file_path` is provided, the execution (time) statistics can be
+          retrieved by calling `logger.get_duration_stats(logging_file_path)`. <br>
+          Be aware that the `logging_file_path` gets cleared before the logger pushes
+          logged messages. Hence, one should use a separate logging file for each
+          constructed processing and feature instance with this library.
+        * If a series processor its function output is a `np.ndarray`, the input series
+          dict (required dict for that function) must contain just 1 series! That series
+          its name and index are used to return a series dict. When a user does not want
+          a numpy array to replace its input series, it is his / her responsibility to
+          create a new `pd.Series` (or `pd.DataFrame`) of that numpy array with a
+          different (column) name.
+        * If `func_output` is a `pd.Series`, keep in mind that the input series gets
+          transformed (i.e., replaced) in the pipeline with the `func_output` when the
+          series name is  equal.
 
         Raises
         ------
         _ProcessingError
             Error raised when a processing step fails.
 
-        Note
-        ----
-        If a series processor its function output is a `np.ndarray`, the input series
-        dict (required dict for that function) must contain just 1 series! That series
-        its name and index are used to return a series dict. When a user does not want a
-        numpy array to replace its input series, it is his / her responsibility to
-        create a new `pd.Series` (or `pd.DataFrame`) of that numpy array with a
-        different (column) name.
-        If `func_output` is a `pd.Series`, keep in mind that the input series gets
-        transformed (i.e., replaced) in the pipeline with the `func_output` when the
-        series name is  equal.
-
         """
         # Delete other logging handlers
         if len(logger.handlers) > 1:
-            logger.handlers = [h for h in logger.handlers if type(h) == logging.StreamHandler]
+            logger.handlers = [h for h in logger.handlers
+                               if type(h) == logging.StreamHandler]
         assert len(logger.handlers) == 1, 'Multiple logging StreamHandlers present!!'
 
         if logging_file_path:
@@ -150,7 +150,8 @@ class SeriesPipeline:
                 logging_file_path = Path(logging_file_path)
             if logging_file_path.exists():
                 warnings.warn(
-                    f"Logging file ({logging_file_path}) already exists. This file will be overwritten!"
+                    f"Logging file ({logging_file_path}) already exists. "
+                    "This file will be overwritten!"
                 )
                 # Clear the file
                 #  -> because same FileHandler is used when calling this method twice
@@ -165,17 +166,16 @@ class SeriesPipeline:
             logger.addHandler(f_handler)
 
         # Convert the data to a series_dict
-        series_list = to_series_list(data)
-        series_dict : Dict[str, pd.Series] = {}
-        for s in series_list:
+        series_dict: Dict[str, pd.Series] = {}
+        for s in to_series_list(data):
             assert type(s) == pd.Series, f"Error non pd.Series object passed: {type(s)}"
             if not return_all_series:
                 # If just the required series have to be returned
                 if s.name in self.get_all_required_series():
-                    series_dict[s.name] = s.copy()
+                    series_dict[str(s.name)] = s.copy()
             else:
                 # If all the series have to be returned
-                series_dict[s.name] = s.copy()
+                series_dict[str(s.name)] = s.copy()
 
         output_keys = set()  # Maintain set of output series
         for processor in self.processing_registry:
@@ -185,15 +185,16 @@ class SeriesPipeline:
                 series_dict.update(processed_dict)
             except Exception as e:
                 raise _ProcessingError(
-                    "Error while processing function {}:\n {}".format(processor.name, str(e))
+                    "Error while processing function {}:\n {}"
+                    .format(processor.name, str(e))
                 ) from e
 
         if not return_all_series:
             # Return just the output series
-            output_dict = {key: series_dict[key] for key in output_keys}
+            output_dict = {key: series_dict[str(key)] for key in output_keys}
             series_dict = output_dict
 
-        if drop_keys:
+        if drop_keys is not None:
             # Drop the keys that should not be included in the output
             output_dict = {
                 key: series_dict[key]

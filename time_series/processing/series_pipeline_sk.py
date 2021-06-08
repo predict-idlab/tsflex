@@ -31,7 +31,7 @@ class SKSeriesPipeline(TransformerMixin):
     """Sklearn-compatible transformer for processing data using a `SeriesPipeline`.
 
     This class is basically a wrapper around `SeriesPipeline` and its `process`
-    method, enabling sklearn compatibality, e.g. including an instance of this class
+    method, enabling sklearn compatibility, e.g. including an instance of this class
     in `sklearn.pipeline.Pipeline`.
 
     Concretely three changes were necessary to enable this sklearn-compatibility
@@ -49,7 +49,7 @@ class SKSeriesPipeline(TransformerMixin):
         self,
         processors: List[SeriesProcessor],
         return_all_series: Optional[bool] = True,
-        drop_keys: Optional[List[str]] = [],
+        drop_keys: Optional[List[str]] = None,
         logging_file_path: Optional[Union[str, Path]] = None,
     ):
         """Create a `SKSeriesPipeline`, which is a sklearn-compatible transformer.
@@ -64,17 +64,19 @@ class SKSeriesPipeline(TransformerMixin):
             given data. The processing steps will be executed in the  same order as
             passed with this list.
         return_all_series : bool, optional
-            Whether the output needs to return all the series, by default True.
-            If `True` the output will contain all series that were passed to this
-            method. If `False` the output will contain just the required series (see
-            `SeriesPipeline.get_all_required_series`).
+            Whether the output needs to return all the series, by default True. \n
+            * If `True` the output will contain all series that were passed to this
+              method.
+            * If `False` the output will contain just the required series (see
+              `SeriesPipeline.get_all_required_series`).
         drop_keys : List[str], optional
-            Which keys should be dropped when returning the output, by default [].
+            Which keys should be dropped when returning the output, by default None.
         logging_file_path : Union[str, Path], optional
-            The file path where the logged messages are stored, by default None.
-            If `None`, then no logging `FileHandler` will be used and the logging
-            messages are only pushed to stdout. Otherwise, a logging `FileHandler` will
-            write the logged messages to the given file path.
+            The file path where the logged messages are stored, by default None. \n
+            * If `None`, then no logging `FileHandler` will be used and the logging
+              messages are only pushed to stdout.
+            * Otherwise, a logging `FileHandler` will write the logged messages to
+              the given file path.
 
         Notes
         -----
@@ -122,7 +124,7 @@ class SKSeriesPipeline(TransformerMixin):
 
         Parameters
         ----------
-        X: : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
+        X : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
             Dataframe or Series or list thereof, with all the required data for the
             processing steps. \n
             **Remark**: each Series/DataFrame must have a `pd.DatetimeIndex`. \n

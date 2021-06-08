@@ -34,7 +34,8 @@ def series_dict_to_df(series_dict: Dict[str, pd.Series]) -> pd.DataFrame:
     # 1. Check if the time-indexes of the series are equal, to create the df efficiently
     try:
         index_info = set(
-            [(s.index[0], s.index[-1], len(s), s.index.freq) for s in series_dict.values()]
+            [(s.index[0], s.index[-1], len(s), s.index.freq)
+             for s in series_dict.values()]
         )
         if len(index_info) == 1:
             # If list(index_info)[0][-1] is None => this code assumes equal index to
@@ -59,7 +60,9 @@ def series_dict_to_df(series_dict: Dict[str, pd.Series]) -> pd.DataFrame:
     return df
 
 
-def to_series_list(data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]) -> List[pd.Series]:
+def to_series_list(
+        data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]])\
+        -> List[pd.Series]:
     """Convert the data to a list of series.
 
     Parameters

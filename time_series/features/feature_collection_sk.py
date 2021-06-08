@@ -33,7 +33,9 @@ class SKFeatureCollection(TransformerMixin):
     method, enabling sklearn compatibility, e.g. including an instance of this class
     in `sklearn.pipeline.Pipeline`.
 
-    Concretely three changes were necessary to enable this sklearn-compatibility
+    Note
+    ----
+    The following three changes were necessary to enable this sklearn-compatibility
 
     1. The parameters of the `FeatureCollection` its constructor are logged in this
        class.
@@ -42,11 +44,14 @@ class SKFeatureCollection(TransformerMixin):
     3. The `FeatureCollection` its `calculate` method is wrapped in this class its
        `transform` method,
 
+    ---
+
     """
 
     def __init__(
         self,
-        feature_descriptors: Union[FeatureDescriptor, MultipleFeatureDescriptors, List[Union[FeatureDescriptor, MultipleFeatureDescriptors]]],
+        feature_descriptors: Union[FeatureDescriptor, MultipleFeatureDescriptors, List[
+            Union[FeatureDescriptor, MultipleFeatureDescriptors]]],
         logging_file_path: Optional[Union[str, Path]] = None,
         n_jobs: Optional[int] = None,
     ):
@@ -106,6 +111,7 @@ class SKFeatureCollection(TransformerMixin):
         -------
         SKFeatureCollection
             The transformer instance itself is returned.
+
         """
         return self
 
@@ -113,15 +119,16 @@ class SKFeatureCollection(TransformerMixin):
         self,
         X: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
     ) -> pd.DataFrame:
-        """Calculate the data their features.
+        """Calculate features on the data.
 
         Parameters
         ----------
-        X : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]
+        X : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
             Dataframe or Series or list thereof, with all the required data for the
-            feature calculation. \n
+            feature calculation.
+
             **Remark**: each Series/DataFrame must have a `pd.DatetimeIndex`. \n
-            Note that this parameter corresponds to the `data` parameter of the
+            Also note that this parameter corresponds to the `data` parameter of the
             `FeatureCollection` its `calculate` method.
 
         Returns

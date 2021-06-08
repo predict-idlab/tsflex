@@ -23,11 +23,6 @@ def process_chunks_multithreaded(
 ) -> List[Any]:
     """Process `same_range_chunks_list` in a multithreaded manner, order is preserved.
 
-    Note
-    ----
-    This method is not concerned with joining the chunks as this operation is highly
-    dependent on the preprocessing steps. This is the user's responsibility.
-
     Parameters
     ----------
     same_range_chunks_list: List[List[Union[pd.Series, pd.DataFrame]]]
@@ -47,12 +42,15 @@ def process_chunks_multithreaded(
     List[Any]
         A list of the `series_pipeline` its processed outputs. The order is preserved.
 
-    Note
-    ----
-    If any error occurs while executing the `series_pipeline` on one of the chunks
-    in `same_range_chunks_list`, the traceback is printed and an empty dataframe is
-    returned. We chose for this behavior, because in this way the other parallel
-    processes are not halted in case of an error.
+    Notes
+    -----
+    * This method is not concerned with joining the chunks as this operation is highly
+      dependent on the preprocessing steps. This is the user's responsibility.
+    * If any error occurs while executing the `series_pipeline` on one of the chunks
+      in `same_range_chunks_list`, the traceback is printed and an empty dataframe is
+      returned. We chose for this behavior, because in this way the other parallel
+      processes are not halted in case of an error.
+
     """
     if n_jobs is None:
         n_jobs = os.cpu_count()

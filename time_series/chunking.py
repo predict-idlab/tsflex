@@ -1,5 +1,5 @@
-# -*- coding: utf-8 -*- # TODO hernoemen
-"""(Advanced) code utilities.
+# -*- coding: utf-8 -*-
+"""(Advanced) tsflex utilities to chunk the .
 """
 __author__ = 'Jonas Van Der Donckt'
 
@@ -8,10 +8,11 @@ from typing import Dict, List, Union, Tuple, Optional
 
 import pandas as pd
 
-from utils.data import to_series_list
+from .utils.data import to_series_list
+
 
 def chunk_signals(
-        signals: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]], # TODO data?
+        data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         fs_dict: Dict[str, int],
         chunk_range_margin_s: Optional[float] = None,
         min_chunk_dur_s: Optional[float] = None,
@@ -40,7 +41,7 @@ def chunk_signals(
 
     Parameters
     ----------
-    signals: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
+    data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
         The signals which will be chunked. Each signal must have a `pd.DatetimeIndex`.
         The assumption is made that each signal has a _nearly-constant_ sample frequency
         (when there are no gaps).
@@ -49,7 +50,7 @@ def chunk_signals(
         from `signals`.
     chunk_range_margin_s: float, optional
         The allowed margin (in seconds) between same time-range chunks their start
-        and end time. If `None` the margin will be set as
+        and end time. If `None` the margin will be set as:
 
             2 / min(fs_dict.intersection(signals.names).values())
 
@@ -82,7 +83,7 @@ def chunk_signals(
 
     """
     # Convert the input signals
-    series_list = to_series_list(signals)
+    series_list = to_series_list(data)
 
     # Assert that there are no duplicate signal names and the names reside in fs_dict
     assert len(series_list) == len(set([s.name for s in series_list]))

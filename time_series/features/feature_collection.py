@@ -1,4 +1,4 @@
-"""FeatureCollection class for collection and calculation of time-series features.
+"""FeatureCollection class for bookkeeping and calculation of time-series features.
 
 See Also
 --------
@@ -49,21 +49,21 @@ class FeatureCollection:
             Initial (list of) feature(s) to add to collection, by default None
 
         """
-        # The feature collection is a dict where the key is a tuple(str, int, int), the
-        # tuple values correspond to (series_key(s), window, stride)
+        # The feature collection is a dict with keys of type:
+        #   tuple(tuple(str), int OR pd.timedelta, int OR pd.timedelta)
+        # The outer tuple's values correspond to (series_key(s), window, stride)
         self._feature_desc_dict: Dict[
             Tuple[Tuple[str], Union[int, pd.Timedelta], Union[int, pd.Timedelta]],
             List[FeatureDescriptor],
         ] = {}
-        # A list of all the features, holds the same references as the dict above but
-        # is simply stored in another way
-        self._feature_desc_list: List[FeatureDescriptor] = []
+
         if feature_descriptors:
             self.add(feature_descriptors)
 
     @staticmethod
-    def _get_collection_key(feature: FeatureDescriptor):
-        # Note `window` & `stride` properties can either be a pd.Timedelta or an int
+    def _get_collection_key(feature: FeatureDescriptor)\
+            -> [tuple, Union[int, pd.Timedelta], Union[int, pd.Timedelta]]:
+        # Note: `window` & `stride` properties can either be a pd.Timedelta or an int
         return feature.key, feature.window, feature.stride
 
     def _add_feature(self, feature: FeatureDescriptor):
@@ -75,19 +75,16 @@ class FeatureCollection:
             The feature that will be added to this feature collection.
 
         """
-        self._feature_desc_list.append(feature)
-
-        key = self._get_collection_key(feature)
-        if key in self._feature_desc_dict.keys():
-            self._feature_desc_dict[key].append(feature)
+        series_win_stride_key = self._get_collection_key(feature)
+        if series_win_stride_key in self._feature_desc_dict.keys():
+            self._feature_desc_dict[series_win_stride_key].append(feature)
         else:
-            self._feature_desc_dict[key] = [feature]
+            self._feature_desc_dict[series_win_stride_key] = [feature]
 
     def add(
         self,
         features: Union[
-            FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection,
-            List[
+            FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection, List[
                 Union[FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection]
             ]
         ],
@@ -97,7 +94,7 @@ class FeatureCollection:
         Parameters
         ----------
         features : Union[FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection, List[Union[FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection]]]
-            Feature(s) (containers) which contained features will be added.
+            Feature(s) (containers) whose contained features will be added.
 
         Raises
         ------
@@ -114,7 +111,7 @@ class FeatureCollection:
             elif isinstance(feature, FeatureDescriptor):
                 self._add_feature(feature)
             elif isinstance(feature, FeatureCollection):
-                self.add(feature._feature_desc_list)
+                self.add(list(feature._feature_desc_dict.values()))
             else:
                 raise TypeError(f"type: {type(feature)} is not supported")
 
@@ -128,12 +125,22 @@ class FeatureCollection:
     def _stroll_feature_generator(
         self, series_dict: Dict[str, pd.Series]
     ) -> Iterator[Tuple[StridedRolling, NumpyFuncWrapper]]:
+        ## Future work
         # We could also make the StridedRolling creation multithreaded
-        # Another possible option to speed up this creations by making this lazy
-        # and only creating it upon calling.
+        # Another possible option to speed up / reduce memory usage, is by making
+        # this creations lazy and only creating them upon calling.
+
+        # TODO -> is this method necessary -> we could for example just return a
+        #       list of series?
+        # TODO -> change this in a next iteration
+        #   methodology:
+        #   * assert all series have freq
+        #   * cut to the tightest bounds of all the series
+        #   -> infer freq on each series for stroll
+        #   * use the index of the first series as reference.
         def get_feature_df(feature_key: Tuple[str]) -> Union[pd.Series, pd.DataFrame]:
             """Get the data for the feature.
-            
+
             Returns
             * `pd.Series` for a *single input-series function*
             * `pd.Dataframe` for a *multiple input-series function*
@@ -143,6 +150,8 @@ class FeatureCollection:
                 # Very efficient => return just the reference to the single series
                 return series_dict[feature_key[0]]
             # Otherwise create efficiently a dataframe for the multiple series
+            # TODO -> return here a series list cut to the tightest bounds
+            #   open for discussion where this needs to be placed
             return series_dict_to_df({name: series_dict[name] for name in feature_key})
 
         for key, win, stride in self._feature_desc_dict.keys():
@@ -152,7 +161,7 @@ class FeatureCollection:
                 raise KeyError(f"Key {key} not found in series dict.")
 
             for feature in self._feature_desc_dict[(key, win, stride)]:
-                yield stroll, feature.function, feature.is_single_series_func()
+                yield stroll, feature.function, feature._is_single_series_func
 
     def calculate(
         self,
@@ -164,9 +173,15 @@ class FeatureCollection:
     ) -> Union[List[pd.DataFrame], pd.DataFrame]:
         """Calculate features on the passed data.
 
-        Note
-        -----
-        The (column-)names of the series in `data` represent the names in the keys.
+        Notes
+        ------
+        * The (column-)names of the series in `data` represent the names in the keys.
+        * If a `logging_file_path` is provided, the execution (time) statistics can be
+          retrieved by calling `logger.get_function_duration_stats(logging_file_path)`
+          and `logger.get_key_duration_stats(logging_file_path)`. <br>
+          Be aware that the `logging_file_path` gets cleared before the logger pushes
+          logged messages. Hence, one should use a separate logging file for each
+          constructed processing and feature instance with this library.
 
         Parameters
         ----------
@@ -196,15 +211,6 @@ class FeatureCollection:
         Union[List[pd.DataFrame], pd.DataFrame]
             A DataFrame or List of DataFrames with the features in it.
 
-        Note
-        ----
-        If a `logging_file_path` is provided, the execution (time) statistics can be
-        retrieved by calling `logger.get_function_duration_stats(logging_file_path)`
-        and `logger.get_key_duration_stats(logging_file_path)`. <br>
-        Be aware that the `logging_file_path` gets cleared before the logger pushes
-        logged messages. Hence, one should use a separate logging file for each
-        constructed processing and feature instance with this library.
-
         Raises
         ------
         KeyError
@@ -223,7 +229,8 @@ class FeatureCollection:
                 logging_file_path = Path(logging_file_path)
             if logging_file_path.exists():
                 warnings.warn(
-                    f"Logging file ({logging_file_path}) already exists. This file will be overwritten!"
+                    f"Logging file ({logging_file_path}) already exists. "
+                    f"This file will be overwritten!"
                 )
                 # Clear the file
                 #  -> because same FileHandler is used when calling this method twice
@@ -238,14 +245,12 @@ class FeatureCollection:
             logger.addHandler(f_handler)
 
         # Convert the data to a series_dict
-        series_list = to_series_list(data)
-        series_dict : Dict[str, pd.Series] = {}
-        for s in series_list:
-            series_dict[s.name] = s
+        series_dict: Dict[str, pd.Series] = {}
+        for s in to_series_list(data):
+            series_dict[str(s.name)] = s
 
         calculated_feature_list: List[pd.DataFrame] = []
 
-        # https://pathos.readthedocs.io/en/latest/pathos.html#usage
         if n_jobs in [0, 1]:
             # print('Executing feature extraction sequentially')
             for stroll, func, single_series_func in self._stroll_feature_generator(
@@ -255,15 +260,16 @@ class FeatureCollection:
                     stroll.apply_func(func, single_series_func)
                 )
         else:
+            # https://pathos.readthedocs.io/en/latest/pathos.html#usage
             with ProcessPool(nodes=n_jobs, source=True) as pool:
                 results = pool.uimap(
                     self._executor, self._stroll_feature_generator(series_dict)
                 )
                 if show_progress:
-                    results = tqdm(results, total=len(self._feature_desc_list))
+                    results = tqdm(results, total=len(self._feature_desc_dict))
                 for f in results:
                     calculated_feature_list.append(f)
-                # Close & join because: https://github.com/uqfoundation/pathos/issues/131
+                # Close & join - see: https://github.com/uqfoundation/pathos/issues/131
                 pool.close()
                 pool.join()
                 # Clear because: https://github.com/uqfoundation/pathos/issues/111
@@ -324,7 +330,7 @@ class FeatureCollection:
                     stride_str = f"{stride_str} samples"
                 output_str += f"{str(win_str):<6}, stride: {str(stride_str)}: ["
                 for feat_desc in self._feature_desc_dict[feature_key, win_size, stride]:
-                    output_str += f"\n\t\t{feat_desc._func_str()},"
+                    output_str += f"\n\t\t{feat_desc._func_str},"
                 output_str += "\n\t]"
             output_str += "\n)\n"
         return output_str
