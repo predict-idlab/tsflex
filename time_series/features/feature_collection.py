@@ -10,23 +10,23 @@ from __future__ import annotations  # Make typing work for the enclosing class
 
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
-import dill
+import itertools
 import logging
 import warnings
-import pandas as pd
-
-from pathos.multiprocessing import ProcessPool
-from tqdm.auto import tqdm
 from pathlib import Path
-
 from typing import Dict, Iterator, List, Optional, Tuple, Union
 
+import dill
+import pandas as pd
+from pathos.multiprocessing import ProcessPool
+from tqdm.auto import tqdm
+
+from .feature import FeatureDescriptor, MultipleFeatureDescriptors
+from .logger import logger
+from .strided_rolling import StridedRolling
 from ..features.function_wrapper import NumpyFuncWrapper
 from ..utils.data import series_dict_to_df, to_series_list
 from ..utils.timedelta import timedelta_to_str
-from .feature import FeatureDescriptor, MultipleFeatureDescriptors
-from .strided_rolling import StridedRolling
-from .logger import logger
 
 
 class FeatureCollection:
@@ -113,7 +113,8 @@ class FeatureCollection:
                 self._add_feature(feature)
             elif isinstance(feature, FeatureCollection):
                 # list needs to be flattened
-                self.add(sum(list(feature._feature_desc_dict.values()), []))
+                flatten = itertools.chain.from_iterable
+                self.add(list(flatten(feature._feature_desc_dict.values())))
             else:
                 raise TypeError(f"type: {type(feature)} is not supported - {feature}")
 
