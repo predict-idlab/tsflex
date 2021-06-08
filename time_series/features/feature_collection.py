@@ -105,15 +105,17 @@ class FeatureCollection:
         """
         if not isinstance(features, list):
             features = [features]
+
         for feature in features:
             if isinstance(feature, MultipleFeatureDescriptors):
                 self.add(feature.feature_descriptions)
             elif isinstance(feature, FeatureDescriptor):
                 self._add_feature(feature)
             elif isinstance(feature, FeatureCollection):
-                self.add(list(feature._feature_desc_dict.values()))
+                # list needs to be flattened
+                self.add(sum(list(feature._feature_desc_dict.values()), []))
             else:
-                raise TypeError(f"type: {type(feature)} is not supported")
+                raise TypeError(f"type: {type(feature)} is not supported - {feature}")
 
     @staticmethod
     def _executor(t: Tuple[StridedRolling, NumpyFuncWrapper, bool]):
@@ -315,7 +317,7 @@ class FeatureCollection:
         feature_keys = sorted(set(k[0] for k in self._feature_desc_dict.keys()))
         output_str = ""
         for feature_key in feature_keys:
-            output_str += f"{feature_key}: ("
+            output_str += f"{'|'.join(feature_key)}: ("
             keys = (x for x in self._feature_desc_dict.keys() if x[0] == feature_key)
             for _, win_size, stride in keys:
                 output_str += f"\n\twin: "

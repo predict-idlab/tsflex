@@ -4,11 +4,12 @@ __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
 
 
 from typing import Callable, List, Union
+from ..utils.classes import FrozenClass
 
 import numpy as np
 
 
-class NumpyFuncWrapper:  # TODO: waarom niet gewoon FuncWrapper?
+class NumpyFuncWrapper(FrozenClass):  # TODO: waarom niet gewoon FuncWrapper?
     """Numpy function wrapper.
 
     A Numpy function wrapper which takes a numpy array as input and returns a numpy
@@ -43,6 +44,8 @@ class NumpyFuncWrapper:  # TODO: waarom niet gewoon FuncWrapper?
             self.output_names = [self.func.__name__]
         else:
             raise TypeError(f"`output_names` is unexpected type {type(output_names)}")
+
+        self._freeze()
 
     def __repr__(self) -> str:
         """Return repr string."""

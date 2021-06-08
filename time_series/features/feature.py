@@ -12,9 +12,10 @@ from typing import Callable, List, Union, Tuple
 import pandas as pd
 
 from .function_wrapper import NumpyFuncWrapper
+from ..utils.classes import FrozenClass
 
 
-class FeatureDescriptor:
+class FeatureDescriptor(FrozenClass):
     """A FeatureDescriptor object, containing all feature information."""
 
     def __init__(
@@ -130,6 +131,8 @@ class FeatureDescriptor:
             f_name = self.function.__name__
         self._func_str: str = f"{self.__class__.__name__} - func: {str(f_name)}"
 
+        self._freeze()
+
     @staticmethod
     def _parse_time_arg(arg: Union[int, str, pd.Timedelta]) -> Union[int, pd.Timedelta]:
         """Parse the `window`/`stride` arg into a fixed set of types.
@@ -161,10 +164,6 @@ class FeatureDescriptor:
     def __repr__(self) -> str:
         """Representation string of Feature."""
         return f"{self.__class__.__name__}({self.key}, {self.window}, {self.stride})"
-
-    def __setattr__(self, key, value):
-        # TODO -> fix documentation and make sure that the sentence below is valid
-        raise ValueError("This class is frozen once instantiated")
 
 
 class MultipleFeatureDescriptors:
@@ -217,7 +216,7 @@ class MultipleFeatureDescriptors:
             [len(to_tuple(keys[0])) == len(to_tuple(key)) for key in keys]
         )
 
-        self.feature_descriptions = []
+        self.feature_descriptions: List[FeatureDescriptor] = []
         # iterate over all combinations
         combinations = [functions, keys, windows, strides]
         for function, key, window, stride in itertools.product(*combinations):
