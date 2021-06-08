@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "tsflex"
 version = "0.1.0"
-description = "Toolkit for flexible operations on time-indexed data"
+description = "Toolkit for flexible operations on time-series data"
 authors = ["Emiel Deprost", "Jeroen Van Der Donckt", "Jonas Van Der Donckt"]
 license = "MIT"
 
