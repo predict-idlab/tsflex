@@ -68,7 +68,7 @@ class SKSeriesPipeline(TransformerMixin):
             * If `True` the output will contain all series that were passed to this
               method.
             * If `False` the output will contain just the required series (see
-              `SeriesPipeline.get_all_required_series`).
+              `SeriesPipeline.get_required_series`).
         drop_keys : List[str], optional
             Which keys should be dropped when returning the output, by default None.
         logging_file_path : Union[str, Path], optional

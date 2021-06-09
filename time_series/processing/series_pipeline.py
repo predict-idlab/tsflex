@@ -38,8 +38,8 @@ class SeriesPipeline:
         if processors is not None:
             self.processing_registry = processors
 
-    def get_all_required_series(self) -> List[str]:
-        """Return required series names for this pipeline.
+    def get_required_series(self) -> List[str]:
+        """Return all required series names for this pipeline.
 
         Return the list of series names that are required in order to execute all the
         `SeriesProcessor` objects of this processing pipeline.
@@ -59,7 +59,7 @@ class SeriesPipeline:
         )
 
     def append(self, processor: SeriesProcessor) -> None:
-        """Append a `SeriesProcessor` at the end of pipeline.
+        """Append a `SeriesProcessor` at the end of the pipeline.
 
         Parameters
         ----------
@@ -69,17 +69,20 @@ class SeriesPipeline:
         """
         self.processing_registry.append(processor)
 
-    def insert(self, processor: SeriesProcessor) -> None:
-        """Append a `SeriesProcessor` at the end of pipeline.
+    def insert(self, idx: int, processor: SeriesProcessor) -> None:
+        """Insert a `SeriesProcessor` at the given index in the pipeline.
 
         Parameters
         ----------
+        idx : int
+            The index where the given processor should be inserted in the pipeline.
+            Index 0 will insert the given processor at the front of the pipeline,
+            and index `len(pipeline)` is equivalent to appending the processor.
         processor : SeriesProcessor
             The `SeriesProcessor` that will be added to the end of the pipeline
 
         """
-
-    # TODO -> maybe add an insert method => decorator (overven list container class)
+        self.processing_registry.insert(idx, processor)
 
     def process(
         self,
@@ -104,17 +107,17 @@ class SeriesPipeline:
             Whether the output needs to return all the series, by default True.
             If `True` the output will contain all series that were passed to this
             method. If `False` the output will contain just the required series (see
-            `get_all_required_series`).
+            `get_required_series`).
         return_df : bool, optional
-            Whether the output needs to be a series dict or a DataFrame, default True. 
-            If `True` the output series will be combined to a DataFrame with an outer 
+            Whether the output needs to be a series dict or a DataFrame, default True.
+            If `True` the output series will be combined to a DataFrame with an outer
             merge.
         drop_keys : List[str], optional
             Which keys should be dropped when returning the output, by default None.
         logging_file_path : Union[str, Path], optional
-            The file path where the logged messages are stored, by default None. 
-            If `None`, then no logging `FileHandler` will be used and the logging 
-            messages are only pushed to stdout. Otherwise, a logging `FileHandler` will 
+            The file path where the logged messages are stored, by default None.
+            If `None`, then no logging `FileHandler` will be used and the logging
+            messages are only pushed to stdout. Otherwise, a logging `FileHandler` will
             write the logged messages to the given file path.
 
         Returns
@@ -147,9 +150,10 @@ class SeriesPipeline:
         """
         # Delete other logging handlers
         if len(logger.handlers) > 1:
-            logger.handlers = [h for h in logger.handlers
-                               if type(h) == logging.StreamHandler]
-        assert len(logger.handlers) == 1, 'Multiple logging StreamHandlers present!!'
+            logger.handlers = [
+                h for h in logger.handlers if type(h) == logging.StreamHandler
+            ]
+        assert len(logger.handlers) == 1, "Multiple logging StreamHandlers present!!"
 
         if logging_file_path:
             if not isinstance(logging_file_path, Path):
@@ -161,7 +165,7 @@ class SeriesPipeline:
                 )
                 # Clear the file
                 #  -> because same FileHandler is used when calling this method twice
-                open(logging_file_path, 'w').close()
+                open(logging_file_path, "w").close()
             f_handler = logging.FileHandler(logging_file_path, mode="w")
             f_handler.setFormatter(
                 logging.Formatter(
@@ -177,7 +181,7 @@ class SeriesPipeline:
             assert type(s) == pd.Series, f"Error non pd.Series object passed: {type(s)}"
             if not return_all_series:
                 # If just the required series have to be returned
-                if s.name in self.get_all_required_series():
+                if s.name in self.get_required_series():
                     series_dict[str(s.name)] = s.copy()
             else:
                 # If all the series have to be returned
@@ -191,8 +195,9 @@ class SeriesPipeline:
                 series_dict.update(processed_dict)
             except Exception as e:
                 raise _ProcessingError(
-                    "Error while processing function {}:\n {}"
-                    .format(processor.name, str(e))
+                    "Error while processing function {}:\n {}".format(
+                        processor.name, str(e)
+                    )
                 ) from e
 
         if not return_all_series:
