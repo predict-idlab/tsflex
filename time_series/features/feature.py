@@ -22,30 +22,10 @@ class FeatureDescriptor(FrozenClass):
         self,
         function: Union[NumpyFuncWrapper, Callable],
         key: Union[str, Tuple[str]],
-        window: Union[int, str, pd.Timedelta],
-        stride: Union[int, str, pd.Timedelta],
+        window: Union[float, str, pd.Timedelta],
+        stride: Union[float, str, pd.Timedelta],
     ):
         """Create a FeatureDescriptor object.
-
-        TODO
-        ----
-        Enhance the: "same-index & sample-freq OR otherwise `NaN`" limitation
-        (see notes below) by not stacking the series into a dataframe for the stroll
-        construction.
-        -> assumption van merge nr pd.DataFrame in stroll? => signals zelfde freq / gaps
-
-        Notes
-        -----
-        * For each function - input(-series) - window - stride combination, one needs
-          to create a distinct `FeatureDescriptor`. Hence it is more convenient to
-          create a `MultipleFeatureDescriptors` when `function` - `window` - `stride`
-          _combinations_ should be applied on various input-series (combinations).
-        * When `function` takes multiple series (i.e., arguments) as input, these are
-          merged (based on the index) before applying the function. Thus make sure to 
-          **use time-based window and stride arguments in this constructor** to avoid
-          unexpected behavior. If the indexes of the series are not exactly the same,
-          there will be `NaN`s after merging into a dataframe, hence make sure that the
-          `function` can deal with this!
 
         Parameters
         ----------
@@ -54,44 +34,41 @@ class FeatureDescriptor(FrozenClass):
         key : Union[str,Tuple[str]]
             The name(s) of the series on which this feature (its `function`) needs to
             be calculated. \n
-            * If `function` has just one series as argument, `key` should be a string
-              containing the name of that series. We call such a function a
-              *single input-series function*.
-            * If `function` has multiple series, this argument should be a tuple of
-              strings containing the ordered names of those series. When calculating
+            * If `function` has just one series as argument, `key` should be a `str`
+              containing the name of that series.
+            * If `function` has multiple series, this argument should be a `Tuple[str]`,
+              containing the ordered names of those series. When calculating
               this feature, the **exact order of series is used as provided by the
               tuple**. We call such a function a *multi input-series function*.
-        window : Union[int, str, pd.Timedelta]
+        window : Union[float, str, pd.Timedelta]
             The window size, this argument supports multiple types: \n
-            * If the type is an `int`, it represents the number of samples of the input
-              series.
+            * If the type is an `float`, it represents the series its window-size in
+              **seconds**.
             * If the window's type is a `pd.Timedelta`, the window size represents
               the window-time.
             * If a `str`, it represents a window-time-string.
-              # TODO -> refactor these hyperlinks
-              https://pandas.pydata.org/pandas-docs/stable/user_guide/timedeltas.html#parsing
-              https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Timedelta.html#pandas-timedelta
         stride : Union[int, str, pd.Timedelta]
             The stride of the window rolling process, supports multiple types. \n
-            * If the type is `int`, it represents the number of samples of the input
-              series that will be rolled over.
+            * If the type is `float`, it represents the window size in **seconds**
             * If the type is `pd.Timedelta`, it represents the stride-roll timedelta.
             * If a type is `str`, it represents a stride-roll-time-string.
 
-        Note
-        ----
-        Later on, the (not-int) time-based window-stride parameters, are converted into
-        ints in the `StridedRolling` class. This time -> int conversion implies three
-        things:
+        Notes
+        -----
+        * For each function - input(-series) - window - stride combination, one needs
+          to create a distinct `FeatureDescriptor`. Hence it is more convenient to
+          create a `MultipleFeatureDescriptors` when `function` - `window` - `stride`
+          _combinations_ should be applied on various input-series (combinations).
+        * When `function` takes multiple series (i.e., arguments) as input, these are
+          joined (based on the index) before applying the function. If the indexes of
+          these series are not exactly the same, it might occur that not all series have
+          exactly the same length! Hence,  make sure that the `function` can deal with
+           this!
 
-        1. The time -> int conversion will be done at inference time. Hence, the
-           converted int will be dependent of the inference-time `series-argument`'s
-           frequency (for which this feature will be extracted).
-        2. This inference time conversion also implies that **each** series on
-           which the features will be extracted **must contain** a frequency.
-           **So no gaps are allowed in these series!**
-        3. The time **will be converted to an int**, and as this is achieved by dividing
-           the `pd.TimeDelta` through the series' inferred freq timedelta.
+        TODO
+        ----
+        <Add documentation of how the index/slicing takes place> / which assumptions
+        we make.
 
         Raises
         ------
@@ -102,6 +79,10 @@ class FeatureDescriptor(FrozenClass):
         See Also
         --------
         StridedRolling: As the window-stride (time) conversion takes place there.
+
+        https://pandas.pydata.org/pandas-docs/stable/user_guide/timedeltas.html#parsing,
+        https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Timedelta.html#pandas-timedelta
+
         """
         to_tuple = lambda x: tuple([x]) if isinstance(x, str) else x
         self.key: tuple = to_tuple(key)
@@ -119,11 +100,6 @@ class FeatureDescriptor(FrozenClass):
                 f" {type(function)}."
             )
 
-        # set the func_type property
-        # TODO: is het logisch dat single series func hier wordt bijgehouden en niet in
-        #   numpyfuncwrapper?
-        self._is_single_series_func: bool = len(self.key) == 1
-
         # construct a function-string
         if isinstance(self.function, NumpyFuncWrapper):
             f_name = self.function
@@ -134,29 +110,33 @@ class FeatureDescriptor(FrozenClass):
         self._freeze()
 
     @staticmethod
-    def _parse_time_arg(arg: Union[int, str, pd.Timedelta]) -> Union[int, pd.Timedelta]:
+    def _parse_time_arg(arg: Union[float, str, pd.Timedelta]) -> pd.Timedelta:
         """Parse the `window`/`stride` arg into a fixed set of types.
 
         Parameters
         ----------
-        arg : Union[int, str, pd.Timedelta]
+        arg : Union[float, str, pd.Timedelta]
             The arg that will be parsed. \n
-            * If the type is either an `int` or `pd.Timedelta`, nothing will happen.
+            * If the type is an `int` or `float`, it should represent the timedelta in
+              **seconds**.
+            * If the type is a `pd.Timedelta`, nothing will happen.
             * If the type is a `str`, `arg` should represent a time-string, and will be
               converted to a `pd.Timedelta`.
 
         Returns
         -------
-        Union[int, pd.Timedelta]
-            Either an int or `pd.Timedelta`, dependent on the arg-input.
+        pd.Timedelta
+            The parsed time arg
 
         Raises
         ------
         TypeError
-            Raised when `arg` is not an instance of `int`, `str`, `pd.Timedelta`
+            Raised when `arg` is not an instance of `float`, `int`, `str`, or
+            `pd.Timedelta`.
+
         """
-        if isinstance(arg, int) or isinstance(arg, pd.Timedelta):
-            return arg
+        if isinstance(arg, int) or isinstance(arg, float):
+            return pd.Timedelta(seconds=arg)
         elif isinstance(arg, str):
             return pd.Timedelta(arg)
         raise TypeError(f"arg type {type(arg)} is not supported!")
@@ -173,8 +153,8 @@ class MultipleFeatureDescriptors:
         self,
         functions: List[Union[NumpyFuncWrapper, Callable]],
         keys: Union[str, Tuple[str], List[str], List[Tuple[str]]],
-        windows: Union[int, str, pd.Timedelta, List[Union[int, str, pd.Timedelta]]],
-        strides: Union[int, str, pd.Timedelta, List[Union[int, str, pd.Timedelta]]],
+        windows: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
+        strides: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
     ):
         """Create a MultipleFeatureDescriptors object.
 
@@ -198,9 +178,9 @@ class MultipleFeatureDescriptors:
             * all a str
             * or, all a tuple _with same length_. \n
             Read more about the `key` argument in `FeatureDescriptor`.
-        windows : Union[int, str, pd.Timedelta, List[Union[int, str, pd.Timedelta]]],
+        windows : Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
             All the window sizes.
-        strides : Union[int, str, pd.Timedelta, List[Union[int, str, pd.Timedelta]]],
+        strides : Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
             All the strides.
 
         """

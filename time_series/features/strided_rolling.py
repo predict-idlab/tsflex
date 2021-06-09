@@ -1,9 +1,10 @@
 """Contains a (rather) fast implementation of a strided rolling window."""
 
-__author__ = "Vic Degraeve, Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
+__author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
 
 import time
-from typing import Callable, Union, List
+from typing import Callable, Union, List, Tuple
+from collections import namedtuple
 
 import numpy as np
 import pandas as pd
@@ -16,12 +17,16 @@ from ..utils.timedelta import timedelta_to_str
 
 class StridedRolling:
     """Custom time-based sliding window with stride for pandas DataFrames."""
+    _NumpySeriesContainer = namedtuple(
+        "SeriesContainer", ["values", "start_indexes", "end_indexes"]
+    )
 
     def __init__(
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         window: pd.Timedelta,
-        stride: pd.Timedelta
+        stride: pd.Timedelta,
+        window_idx: str = 'end'
     ):
         """Create a time-based StridedRolling object.
 
@@ -36,78 +41,75 @@ class StridedRolling:
         stride : Union[int, pd.Timedelta]
             Either an int or `pd.Timedelta`, representing the stride size in samples or
             the stride duration, respectively.
+        window_idx : str
+            The window's index position which will be used as index for the
+            feature_window aggregation. Must be either of ['begin', 'middle', 'end']
 
         Note
         -----
-        Time based window-stride parameters will be converted into integers at inference
-        time. The integer conversion will use flooring, and can be written as the
-        following formula:
-
-            time_parameter // series_period
-
-        This also implies that **we must be able to infer the freq** from `data` when
-        time-based window-stride parameters are passed.
+        TODO: add documentation about assumptions/how we index.
 
         """
-        # Store the orig input (can be pd.Timedelta)
         self.window = window
         self.stride = stride
 
-        series_list = to_series_list(data)
-        if len(series_list) == 1:
-            self._key = tuple([str(series_list[0].name)])
-        elif isinstance(series_list, list):
-            self._key = tuple([str(s.name) for s in series_list])
+        # 0. standardize the input
+        series_list: List[pd.Series] = to_series_list(data)
+        self.series_key: Tuple[str] = tuple([str(s.name) for s in series_list])
 
-        # Determine the tightest bounds
-        self._latest_start = series_list[0].index[0]
-        self._earliest_stop = series_list[0].index[-1]
+        # 1. Determine the tightest bounds
+        latest_start = series_list[0].index[0]
+        earliest_stop = series_list[0].index[-1]
         for series in series_list[1:]:
-            self._latest_start = max(self._latest_start, series.index[0])
-            self._earliest_stop = min(self._earliest_stop, series.index[-1])
+            latest_start = max(latest_start, series.index[0])
+            earliest_stop = min(earliest_stop, series.index[-1])
 
-        # Slice the series to the tightest bounds
-        assert (self._earliest_stop - self._latest_start) > window
-        series_list = [s[self._latest_start:self._earliest_stop] for s in series_list]
+        # And slice **all** the series to these tightest bounds
+        assert (earliest_stop - latest_start) > window
+        series_list = [s[latest_start:earliest_stop] for s in series_list]
 
-        # create the time_index
-        # TODO check
-        self.index = pd.date_range(
-            self._latest_start, self._earliest_stop - window, freq=stride)
+        # 2. Create the time_index which will be used for DataFrame reconstruction
+        self.index = pd.date_range(latest_start, earliest_stop - window, freq=stride)
 
-        # adjust the time_index
-        # TODO check
-        window_idx = 'last'
-        if window_idx == "last":
+        # --- 2. adjust the time_index
+        if window_idx == "end":
             self.index += window
         elif window_idx == "middle":
             self.index += window/2
-        elif window_idx == "first":
+        elif window_idx == "begin":
             pass
+        else:
+            raise ValueError(f"window index {window_idx} must be either of: "
+                             "['end', 'middle', 'begin']")
 
-        self._values, self._start_idxs, self._end_idxs = [], [], []
-        for series in series_list:
-            start_idxs, end_idxs = self._get_slice_indexes(series.index)
-            self._start_idxs.append(start_idxs)
-            self._end_idxs.append(end_idxs)
-            self._values.append(series.values)
-
-    def _get_slice_indexes(self, series_index: pd.DatetimeIndex):
-        t_start = self._latest_start.to_datetime64().astype(np.int64)
-        t_end = self._earliest_stop.to_datetime64().astype(np.int64)
-
-        np_timestamps = series_index.values.astype(np.int64)
+        # ---------- Efficient numpy code -------
+        # 1. Convert everything to int64
+        np_latest_start = latest_start.to_datetime64().astype(np.int64)
+        np_earliest_stop = earliest_stop.to_datetime64().astype(np.int64)
         np_window = self.window.to_timedelta64().astype(np.int64)
         np_stride = self.stride.to_timedelta64().astype(np.int64)
 
-        # todo -> blijft hetzelfde voor alle series
-        start_times = np.arange(t_start, t_end - np_window, step=np_stride)
+        start_times = np.arange(
+            start=np_latest_start, stop=np_earliest_stop - np_window, step=np_stride
+        )
 
-        start_idxs = np.searchsorted(np_timestamps, start_times, 'left')
-        end_idxs = np.searchsorted(np_timestamps, start_times + np_window, 'right')
-        return start_idxs, end_idxs
+        # TODO should we subtract 1 (for the <= -> < ) in np.searchsorted
+        end_times = start_times + np_window
 
-    def apply_func(self, np_func: Union[Callable, NumpyFuncWrapper], single_series_func=False) -> pd.DataFrame:
+        self.series_containers: List[StridedRolling._NumpySeriesContainer] = []
+        for series in series_list:
+            np_timestamps = series.index.values.astype(np.int64)
+            self.series_containers.append(
+                StridedRolling._NumpySeriesContainer(
+                    values=series.values,
+                    ## Future work:
+                    # the start and end indices can maybe be improved
+                    start_indexes=np.searchsorted(np_timestamps, start_times, 'left'),
+                    end_indexes=np.searchsorted(np_timestamps, end_times, 'right')
+                )
+            )
+
+    def apply_func(self, np_func: Union[Callable, NumpyFuncWrapper]) -> pd.DataFrame:
         """Apply a function to the expanded time-series.
 
         Parameters
@@ -137,7 +139,7 @@ class StridedRolling:
             win_str = timedelta_to_str(self.window)
             stride_str = timedelta_to_str(self.stride)
             win_stride_str = f"w={win_str}_s={stride_str}"
-            return f"{'|'.join(self._key)}__{feat_name}__{win_stride_str}"
+            return f"{'|'.join(self.series_key)}__{feat_name}__{win_stride_str}"
 
         if not isinstance(np_func, NumpyFuncWrapper):
             np_func = NumpyFuncWrapper(np_func)
@@ -148,10 +150,12 @@ class StridedRolling:
         def get_slices(idx):
             # get the slice of each series for the given index
             return [
-                self._values[i][self._start_idxs[i][idx]:self._end_idxs[i][idx]]
-                for i in range(len(self._key))
+                sc.values[sc.start_indexes[idx]:sc.end_indexes[idx]]
+                for sc in self.series_containers
             ]
 
+        # would be nice if we could optimize this double for loop with something
+        # more vectorized
         out = np.array([np_func(*get_slices(idx)) for idx in range(len(self.index))])
 
         # Aggregate function output in a dictionary
@@ -167,7 +171,7 @@ class StridedRolling:
         elapsed = time.time() - t_start
         logger.info(
             f"Finished function [{np_func.func.__name__}] on "
-            f"{[self._key]} with window-stride "
+            f"{[self.series_key]} with window-stride "
             f"[{self.window}, {self.stride}] in [{elapsed} seconds]!"
         )
 

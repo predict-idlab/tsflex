@@ -25,7 +25,7 @@ from .feature import FeatureDescriptor, MultipleFeatureDescriptors
 from .logger import logger
 from .strided_rolling import StridedRolling
 from ..features.function_wrapper import NumpyFuncWrapper
-from ..utils.data import series_dict_to_df, to_series_list
+from ..utils.data import to_series_list
 from ..utils.timedelta import timedelta_to_str
 
 
@@ -53,8 +53,7 @@ class FeatureCollection:
         #   tuple(tuple(str), int OR pd.timedelta, int OR pd.timedelta)
         # The outer tuple's values correspond to (series_key(s), window, stride)
         self._feature_desc_dict: Dict[
-            Tuple[Tuple[str], Union[int, pd.Timedelta], Union[int, pd.Timedelta]],
-            List[FeatureDescriptor],
+            Tuple[Tuple[str], pd.Timedelta, pd.Timedelta], List[FeatureDescriptor]
         ] = {}
 
         if feature_descriptors:
@@ -62,7 +61,7 @@ class FeatureCollection:
 
     @staticmethod
     def _get_collection_key(feature: FeatureDescriptor)\
-            -> [tuple, Union[int, pd.Timedelta], Union[int, pd.Timedelta]]:
+            -> Tuple[tuple, pd.Timedelta, pd.Timedelta]:
         # Note: `window` & `stride` properties can either be a pd.Timedelta or an int
         return feature.key, feature.window, feature.stride
 
@@ -119,52 +118,25 @@ class FeatureCollection:
                 raise TypeError(f"type: {type(feature)} is not supported - {feature}")
 
     @staticmethod
-    def _executor(t: Tuple[StridedRolling, NumpyFuncWrapper, bool]):
-        stroll = t[0]
-        function = t[1]
-        single_series_func = t[2]
-        return stroll.apply_func(function, single_series_func)
+    def _executor(t: Tuple[StridedRolling, NumpyFuncWrapper]):
+        stroll: StridedRolling = t[0]
+        function: NumpyFuncWrapper = t[1]
+        return stroll.apply_func(function)
 
     def _stroll_feature_generator(
         self, series_dict: Dict[str, pd.Series]
     ) -> Iterator[Tuple[StridedRolling, NumpyFuncWrapper]]:
         ## Future work
         # We could also make the StridedRolling creation multithreaded
-        # Another possible option to speed up / reduce memory usage, is by making
-        # this creations lazy and only creating them upon calling.
-
-        # TODO -> is this method necessary -> we could for example just return a
-        #       list of series?
-        # TODO -> change this in a next iteration
-        #   methodology:
-        #   * assert all series have freq
-        #   * cut to the tightest bounds of all the series
-        #   -> infer freq on each series for stroll
-        #   * use the index of the first series as reference.
-        def get_feature_data(feature_key: Tuple[str]) -> Union[pd.Series, pd.DataFrame]:
-            """Get the data for the feature.
-
-            Returns
-            * `pd.Series` for a *single input-series function*
-            * `pd.Dataframe` for a *multiple input-series function*
-              (this dataframe contains the merged series).
-            """
-            if len(feature_key) == 1:
-                # Very efficient => return just the reference to the single series
-                return series_dict[feature_key[0]]
-            # Otherwise create efficiently a dataframe for the multiple series
-            # TODO -> return here a series list cut to the tightest bounds
-            #   open for discussion where this needs to be placed
-            return [series_dict[name] for name in feature_key]
-
+        # Very low priority because the STROLL __init__ is rather efficient!
         for key, win, stride in self._feature_desc_dict.keys():
             try:
-                stroll = StridedRolling(get_feature_data(key), win, stride)
+                stroll = StridedRolling([series_dict[k] for k in key], win, stride)
             except KeyError:
                 raise KeyError(f"Key {key} not found in series dict.")
 
             for feature in self._feature_desc_dict[(key, win, stride)]:
-                yield stroll, feature.function, feature._is_single_series_func
+                yield stroll, feature.function
 
     def calculate(
         self,
@@ -255,12 +227,8 @@ class FeatureCollection:
 
         if n_jobs in [0, 1]:
             # print('Executing feature extraction sequentially')
-            for stroll, func, single_series_func in self._stroll_feature_generator(
-                series_dict
-            ):
-                calculated_feature_list.append(
-                    stroll.apply_func(func, single_series_func)
-                )
+            for stroll, func in self._stroll_feature_generator(series_dict):
+                calculated_feature_list.append(stroll.apply_func(func))
         else:
             # https://pathos.readthedocs.io/en/latest/pathos.html#usage
             with ProcessPool(nodes=n_jobs, source=True) as pool:
@@ -321,15 +289,8 @@ class FeatureCollection:
             keys = (x for x in self._feature_desc_dict.keys() if x[0] == feature_key)
             for _, win_size, stride in keys:
                 output_str += f"\n\twin: "
-                win_str, stride_str = win_size, stride
-                if isinstance(win_str, pd.Timedelta):
-                    win_str = timedelta_to_str(win_str)
-                else:
-                    win_str = f"{win_str} samples"
-                if isinstance(stride_str, pd.Timedelta):
-                    stride_str = timedelta_to_str(stride_str)
-                else:
-                    stride_str = f"{stride_str} samples"
+                win_str = timedelta_to_str(win_size)
+                stride_str = timedelta_to_str(stride)
                 output_str += f"{str(win_str):<6}, stride: {str(stride_str)}: ["
                 for feat_desc in self._feature_desc_dict[feature_key, win_size, stride]:
                     output_str += f"\n\t\t{feat_desc._func_str},"
