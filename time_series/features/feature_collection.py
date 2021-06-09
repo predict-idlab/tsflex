@@ -141,7 +141,7 @@ class FeatureCollection:
         #   * cut to the tightest bounds of all the series
         #   -> infer freq on each series for stroll
         #   * use the index of the first series as reference.
-        def get_feature_df(feature_key: Tuple[str]) -> Union[pd.Series, pd.DataFrame]:
+        def get_feature_data(feature_key: Tuple[str]) -> Union[pd.Series, pd.DataFrame]:
             """Get the data for the feature.
 
             Returns
@@ -155,11 +155,11 @@ class FeatureCollection:
             # Otherwise create efficiently a dataframe for the multiple series
             # TODO -> return here a series list cut to the tightest bounds
             #   open for discussion where this needs to be placed
-            return series_dict_to_df({name: series_dict[name] for name in feature_key})
+            return [series_dict[name] for name in feature_key]
 
         for key, win, stride in self._feature_desc_dict.keys():
             try:
-                stroll = StridedRolling(get_feature_df(key), win, stride)
+                stroll = StridedRolling(get_feature_data(key), win, stride)
             except KeyError:
                 raise KeyError(f"Key {key} not found in series dict.")
 
