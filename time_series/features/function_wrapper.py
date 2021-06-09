@@ -54,6 +54,6 @@ class NumpyFuncWrapper(FrozenClass):  # TODO: waarom niet gewoon FuncWrapper?
             f" {self.kwargs})"
         )
 
-    def __call__(self, data: np.ndarray) -> np.ndarray:
+    def __call__(self, *data: np.ndarray) -> np.ndarray:
         """Call wrapped function with passed data."""
-        return self.func(data, **self.kwargs)
+        return self.func(*data, **self.kwargs)

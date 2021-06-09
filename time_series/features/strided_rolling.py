@@ -158,7 +158,6 @@ class StridedRolling:
             assert data.shape[1] > 1
             single_series = False
         axis = -1 if single_series else 0
-        # TODO: het werkt op DataFrame als je axis = 0 -> wrapper code errond
         data_np = data.values
         if axis >= data_np.ndim:
             raise ValueError("Axis value out of range")
@@ -265,12 +264,11 @@ class StridedRolling:
                 # Wrapper to allow `np.apply_along_axis` on multi input-series function
                 nb_inputs = len(self._key)
 
-                # TODO: kwargs zijn niet nodig (want in NumpyFuncWrapper gesaved)
-                def wrapper(arr, **kwargs):
+                def wrapper(arr):
                     return func(
                         *[arr[self.window*idx:self.window*(idx+1)]
                           for idx in range(nb_inputs)],
-                        **kwargs)
+                        )
                 return wrapper
 
             out = np.apply_along_axis(
