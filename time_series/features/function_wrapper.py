@@ -3,7 +3,7 @@
 __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
 
 
-from typing import Callable, List, Union
+from typing import Callable, List, Union, Any
 from ..utils.classes import FrozenClass
 
 import numpy as np
@@ -54,6 +54,6 @@ class NumpyFuncWrapper(FrozenClass):  # TODO: waarom niet gewoon FuncWrapper?
             f" {self.kwargs})"
         )
 
-    def __call__(self, *data: np.ndarray) -> np.ndarray:
+    def __call__(self, *data: np.ndarray) -> Any:
         """Call wrapped function with passed data."""
         return self.func(*data, **self.kwargs)
