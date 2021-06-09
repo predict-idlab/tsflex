@@ -2,7 +2,7 @@
 
 See Also
 --------
-SeriesPipeline: its `logging_file_path` of the process method.
+`SeriesPipeline`: its `logging_file_path` of the `process` method.
 
 """
 
@@ -36,14 +36,14 @@ def _parse_message(message: str) -> list:
     return [func, single_series_func, keys, duration_s]
 
 
-def parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
+def _parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
     """Parse the logged messages into a dataframe that contains execution info.
 
     Parameters
     ----------
     logging_file_path: str
         The file path where the logged messages are stored. This is the file path that
-        is passed to the SeriesPipeline its `process` method.
+        is passed to the `SeriesPipeline` its process method.
 
     Returns
     -------
@@ -52,8 +52,8 @@ def parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
 
     Note
     ----
-    This function only works when the `logging_file_path` that is used in a
-    SeriesPipeline is passed.
+    This function only works when the `logging_file_path` used in a
+    `SeriesPipeline` its `process` method is passed.
 
     """
     df = logging_file_to_df(logging_file_path)
@@ -62,21 +62,21 @@ def parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
     return df.drop(columns=["name", "log_level", "message"])
 
 
-def get_duration_stats(logging_file_path: str) -> pd.DataFrame:
-    """Get execution (time) statistics for each function of a SeriesPipeline.
+def get_processor_logs(logging_file_path: str) -> pd.DataFrame:
+    """Get execution (time) info for each processor of a `SeriesPipeline`.
 
     Parameters
     ----------
     logging_file_path: str
         The file path where the logged messages are stored. This is the file path that
-        is passed to the SeriesPipeline its `process` method.
+        is passed to the `SeriesPipeline` its `process` method.
 
     Returns
     -------
     pd.DataFrame
-        A DataFrame containing each function its duration, required keys, and whether it 
+        A DataFrame containing each processor its duration, required keys, and whether it 
         is a `single_series_func` .
 
     """
-    df = parse_logging_execution_to_df(logging_file_path)
+    df = _parse_logging_execution_to_df(logging_file_path)
     return df

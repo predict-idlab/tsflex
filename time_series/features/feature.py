@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 """
 
-Withholds the `FeatureDescriptor` and `MultipleFeatureDescriptors` class for creating
-time-series features.
+FeatureDescriptor and MultipleFeatureDescriptors class for creating time-series
+features.
 
 """
 
@@ -27,7 +27,7 @@ class FeatureDescriptor(FrozenClass):
     ):
         """Create a FeatureDescriptor object.
 
-        Todo
+        TODO
         ----
         Enhance the: "same-index & sample-freq OR otherwise `NaN`" limitation
         (see notes below) by not stacking the series into a dataframe for the stroll

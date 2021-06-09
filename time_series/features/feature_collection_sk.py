@@ -35,8 +35,7 @@ class SKFeatureCollection(TransformerMixin):
 
     Note
     ----
-    The following three changes were necessary to enable this sklearn-compatibility
-
+    The following three changes were necessary to enable this sklearn-compatibility: \n
     1. The parameters of the `FeatureCollection` its constructor are logged in this
        class.
     2. The relevant parameters of the `FeatureCollection` its `calculate` method have
@@ -78,9 +77,8 @@ class SKFeatureCollection(TransformerMixin):
 
         Notes
         -----
-        * If a `logging_file_path` is provided, the execution (time) statistics can be
-          retrieved by calling `logger.get_function_duration_stats(logging_file_path)`
-          and `logger.get_key_duration_stats(logging_file_path)`. <br>
+        * If a `logging_file_path` is provided, the execution (time) info can be
+          retrieved by calling `logger.get_feature_logs(logging_file_path)`. <br>
           Be aware that the `logging_file_path` gets cleared before the logger pushes
           logged messages. Hence, one should use a separate logging file for each
           constructed processing and feature instance with this library.

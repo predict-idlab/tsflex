@@ -26,7 +26,7 @@ def process_chunks_multithreaded(
     Parameters
     ----------
     same_range_chunks_list: List[List[Union[pd.Series, pd.DataFrame]]]
-        A list of same-range-chunks, most likely the output of `chunk_signals`.
+        A list of same-range-chunks, most likely the output of `chunk_data`.
     series_pipeline: SeriesPipeline
         The pipeline that will process each item in `same_range_chunks_list`.
     show_progress: bool, optional
@@ -35,7 +35,7 @@ def process_chunks_multithreaded(
         The number of processes used for the chunked series processing. If `None`, then
         the number returned by `os.cpu_count()` is used, by default None.
     **processing_kwargs
-        Keyword args that will be passed on to the processing pipeline.
+        Keyword arguments that will be passed on to the processing pipeline.
 
     Returns
     -------

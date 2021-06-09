@@ -1,4 +1,4 @@
-"""SeriesPipeline class for time-series data (pre-)processing pipeline"""
+"""SeriesPipeline class for time-series data (pre-)processing pipeline."""
 
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
@@ -69,15 +69,21 @@ class SeriesPipeline:
         """
         self.processing_registry.append(processor)
 
-    # TODO -> maybe add an insert method
+    def insert(self, processor: SeriesProcessor) -> None:
+        """Append a `SeriesProcessor` at the end of pipeline.
+
+        Parameters
+        ----------
+        processor : SeriesProcessor
+            The `SeriesProcessor` that will be added to the end of the pipeline
+
+        """
+
+    # TODO -> maybe add an insert method => decorator (overven list container class)
 
     def process(
         self,
-        data: Union[
-            pd.Series,
-            pd.DataFrame,
-            List[Union[pd.Series, pd.DataFrame]],
-        ],
+        data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         return_all_series: Optional[bool] = True,
         return_df: Optional[bool] = True,
         drop_keys: Optional[List[str]] = None,
@@ -118,8 +124,8 @@ class SeriesPipeline:
 
         Notes
         -----
-        * If a `logging_file_path` is provided, the execution (time) statistics can be
-          retrieved by calling `logger.get_duration_stats(logging_file_path)`. <br>
+        * If a `logging_file_path` is provided, the execution (time) info can be
+          retrieved by calling `logger.get_processor_logs(logging_file_path)`. <br>
           Be aware that the `logging_file_path` gets cleared before the logger pushes
           logged messages. Hence, one should use a separate logging file for each
           constructed processing and feature instance with this library.

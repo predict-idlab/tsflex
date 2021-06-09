@@ -13,22 +13,31 @@ from ..utils.data import series_dict_to_df
 from .logger import logger
 
 
-# TODO dit beter uitleggen (eg waarom series_dict vaak voldoende is)
 def dataframe_func(func: Callable):
     """Decorate function to use a DataFrame instead of a series dict.
 
     This decorator can be used for functions that need to work on a whole
     `pd.DataFrame`. It will convert the internal series dict input into a DataFrame
-    using an  **outer merge**.
+    using an **outer merge**.
 
-    The function's prototype should be::
+    The function's prototype should be:
 
         func(df : pd.DataFrame, **kwargs)
-            -> Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]:
-            ...
+            -> Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]
 
     So the decorated `func` has to take a DataFrame as first argument.
 
+    Note
+    ----
+    Only when you want to perform row-based operations, such as `df.dropna(axis=0)`,
+    this wrapper is needed.
+    Hence, in most cases that `func` requires a `pd.DataFrame`, a series dict would be
+    sufficient; \n
+    * You can access a series dict (using single keys) its items exactly like 
+      you would access a DataFrame its columns, i.e., by using a single key. 
+    * Most dataframe operations are also available for a `pd.Series`, which are the 
+      items of a series dict.
+    
     """
 
     def wrapper(series_dict: Dict[str, pd.Series], **kwargs):
@@ -39,6 +48,141 @@ def dataframe_func(func: Callable):
     wrapper.__name__ = "dataframe_func: " + func.__name__
     return wrapper
 
+class SeriesProcessor:
+    """Class that executes a specific operation on the passed series_dict."""
+
+    def __init__(
+        self,
+        required_series: List[str],
+        func: Callable,
+        single_series_func: Optional[bool] = False,
+        name: Optional[str] = None,
+        **kwargs,
+    ):
+        """Init a SeriesProcessor object.
+
+        Parameters
+        ----------
+        required_series : List[str]
+            A list of the required series for this processor.
+        func : Callable
+            A callable that processes a series_dict or a single series: \n
+            * `func` has to take a dict with keys the series names and the corresponding
+              (time indexed) Series as input.
+            * `func` could also take a `pd.Series` as input, in that case the flag
+              `single_series_func` should be set to True. 
+            
+            The output can be rather versatile. 
+            The prototype of the function should match: \n
+                func(series_dict: Union[Dict[str, pd.Series], pd.Series])
+                    -> Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]
+        single_series_func : bool, optional
+            Whether the given `func` is a single series function, by default False.
+            A single series function is a function that takes 1 series as input and
+            thus has to be called for each of the `required_series`.
+        name : str, optional
+            The name of the processor, by default None and the `func.__name__`
+            will be used.
+        **kwargs
+            Keyword arguments which will be also passed to the `func`
+
+        Note
+        ----
+        If the output of `func` is a `np.ndarray`, the given `required_series` must have
+        length 1, i.e., the function requires just 1 series! That series its name and 
+        index are used to transform (i.e., **replace**) that **series with the numpy 
+        array**. 
+
+        """
+        self.required_series = required_series
+        self.func = func
+        self.single_series_func = single_series_func
+        if name:
+            self.name = name
+        else:
+            self.name = self.func.__name__
+
+        self.kwargs = kwargs
+
+    def __call__(
+        self, series_dict: Dict[str, pd.Series]
+    ) -> Union[Dict[str, pd.Series], pd.DataFrame]:
+        """Cal(l)culates the processed series.
+
+        Parameters
+        ----------
+        series_dict : Dict[str, pd.Series]
+            A dict of `pd.Series` containing the data that need to be processed.
+            The key should always be the accompanying series its name.
+
+        Returns
+        -------
+        Union[Dict[str, pd.Series], pd.DataFrame]
+            The processed `series_dict`.
+
+        Raises
+        ------
+        KeyError
+            Raised when a key is not present in the `series_dict` but required for the
+            processing.
+        TypeError
+            Raised when the output of the `SeriesProcessor` is not of the correct type.
+
+        Notes
+        -----
+        * The `series_dict` is an internal representation of the time-series data .
+          This internal representation is constructed in the `process` method of the
+          `SeriesPipeline`.
+        * If you want to test or debug your `SeriesProcessor` object, just encapsulate
+          your instance of this class in a `SeriesPipeline`. The latter allows more
+          versatile input for its `process` method.
+
+        """
+        t_start = time.time()
+
+        # Only selecting the series that are needed for this processing step
+        requested_dict = {}
+        try:
+            for sig in self.required_series:
+                requested_dict[sig] = series_dict[sig]
+        except KeyError as key:
+            # Re raise error as we can't continue
+            raise KeyError(
+                "Key %s is not present in the input dict and needed for processor %s"
+                % (key, self.name)
+            )
+
+        # Variable that will contain the final output of this method
+        processed_output: Union[Dict[str, pd.Series], pd.DataFrame]
+        if self.single_series_func:
+            # Handle series func includes _handle_seriesprocessor_func_output!
+            processed_output = _handle_single_series_func(
+                self.func, requested_dict, self.name, **self.kwargs
+            )
+        else:
+            func_output = self.func(requested_dict, **self.kwargs)
+            processed_output = _handle_seriesprocessor_func_output(
+                func_output, requested_dict, self.name)
+
+        elapsed = time.time() - t_start
+        logger.info(
+                f"Finished function [{self.name}] as [single_series_func="
+                f"{self.single_series_func}] on {list(requested_dict.keys())} in "
+                f"[{elapsed} seconds]!"
+        )
+
+        return processed_output
+
+    def __repr__(self):
+        """Return formal representation of object."""
+        return self.name + (" " + str(self.kwargs)) if self.kwargs is not None else ""
+
+    def __str__(self):
+        """Return informal representation of object."""
+        return self.__repr__()
+
+
+# --------------------- utility functions for a SeriesProcessor
 
 def _np_array_to_series(np_array: np.ndarray, series: pd.Series) -> pd.Series:
     """Convert the `np_array` into a pandas Series.
@@ -105,12 +249,14 @@ def _handle_seriesprocessor_func_output(
     Note
     ----
     * If `func_output` is a `np.ndarray`, the given `requested_dict` must contain just 1
-      series! That series its name and index are used to return a series dict. When a
-      user does not want a numpy array to replace its input series, it is his / her
-      responsibility to create a new `pd.Series` (or `pd.DataFrame`) of that numpy array
-      with a different (column) name.
+      series! That series its name and index are used to  transform (i.e., **replace**) 
+      that **series with the numpy array**.  
+      When a user does not want a numpy array to replace its input series, it is his / 
+      her responsibility to create a new `pd.Series` (or `pd.DataFrame`) of that numpy 
+      array with a different (column) name.
     * If `func_output` is a `pd.Series`, keep in mind that the input series gets
-      transformed (i.e., replaced) with the `func_output` when the series name is equal.
+      transformed (i.e., **replaced**) with the `func_output` **when the series name is 
+      equal**.
 
     """
     if isinstance(func_output, pd.DataFrame):
@@ -186,7 +332,7 @@ def _handle_single_series_func(
 
     Note
     ----
-    If you want to transform (i.e., replace) the input series in the pipeline, than
+    If you want to transform (i.e., **replace**) the input series in the pipeline, than
     `func` should return either:\n
     * a `np.ndarray`.
     * a `pd.Series` with the same name as the input series.
@@ -207,135 +353,3 @@ def _handle_single_series_func(
         assert len(set(output_dict.keys()).intersection(func_output.keys())) == 0
         output_dict.update(func_output)
     return output_dict
-
-
-class SeriesProcessor:
-    """Class that executes a specific operation on the passed series_dict."""
-
-    def __init__(
-        self,
-        required_series: List[str],
-        func: Callable,
-        single_series_func: Optional[bool] = False,
-        name: Optional[str] = None,
-        **kwargs,
-    ):
-        """Init a SeriesProcessor object.
-
-        Parameters
-        ----------
-        required_series : List[str]
-            A list of the required series for this processor.
-        func : Callable
-            A callable that processes a series_dict (or a single series; see below).
-            `func` has to take a dict with keys the series names and the corresponding
-            (time indexed) Series as input.
-            `func` could also take a `pd.Series` as input, in that case the flag
-            `single_series_func` should be set to True.
-            The output can be rather versatile.
-            The prototype of the function should match:
-            func(series_dict: Union[Dict[str, pd.Series], pd.Series])
-                -> Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]
-        single_series_func : bool, optional
-            Whether the given `func` is a single series function, by default False.
-            A single series function is a function that takes 1 series as input and
-            thus has to be called for each of the `required_series`.
-        name : str, optional
-            The name of the processor, by default None and the `func.__name__`
-            will be used.
-        **kwargs
-            Keyword Args which will be also passed to the `func`
-
-        Note
-        ----
-        If the output of `func` is a `np.ndarray`, the given `required_series` must have
-        length 1, i.e., the function requires just 1 series! That series its name and
-        index are used to return a series dict.
-
-        """
-        self.required_series = required_series
-        self.func = func
-        self.single_series_func = single_series_func
-        if name:
-            self.name = name
-        else:
-            self.name = self.func.__name__
-
-        self.kwargs = kwargs
-
-    def __call__(
-        self, series_dict: Dict[str, pd.Series]
-    ) -> Union[Dict[str, pd.Series], pd.DataFrame]:
-        """Cal(l)culates the processed series.
-
-        Parameters
-        ----------
-        series_dict : Dict[str, pd.Series]
-            A dict of `pd.Series` containing the data that need to be processed.
-            The key should always be the accompanying series its name.
-
-        Returns
-        -------
-        Dict[str, pd.Series]
-            The processed `series_dict`
-
-        Raises
-        ------
-        KeyError
-            Raised when a key is not present in the `series_dict` but required for the
-            processing.
-        TypeError
-            Raised when the output of the `SeriesProcessor` is not of the correct type.
-
-        Notes
-        -----
-        * The `series_dict` is an internal representation of the time-series data .
-          This internal representation is constructed in the `process` method of the
-          `SeriesPipeline`.
-        * If you want to test or debug your `SeriesProcessor` object, just encapsulate
-          your instance of this class in a `SeriesPipeline`. The latter allows more
-          versatile input for its `process` method.
-
-        """
-        t_start = time.time()
-
-        # Only selecting the series that are needed for this processing step
-        requested_dict = {}
-        try:
-            for sig in self.required_series:
-                requested_dict[sig] = series_dict[sig]
-        except KeyError as key:
-            # Re raise error as we can't continue
-            raise KeyError(
-                "Key %s is not present in the input dict and needed for processor %s"
-                % (key, self.name)
-            )
-
-        # Variable that will contain the final output of this method
-        processed_output: Union[Dict[str, pd.Series], pd.DataFrame]
-        if self.single_series_func:
-            # Handle series func includes _handle_seriesprocessor_func_output!
-            processed_output = _handle_single_series_func(
-                self.func, requested_dict, self.name, **self.kwargs
-            )
-        else:
-            func_output = self.func(requested_dict, **self.kwargs)
-            processed_output = _handle_seriesprocessor_func_output(
-                func_output, requested_dict, self.name)
-
-        elapsed = time.time() - t_start
-        logger.info(
-                f"Finished function [{self.name}] as [single_series_func="
-                f"{self.single_series_func}] on {list(requested_dict.keys())} in "
-                f"[{elapsed} seconds]!"
-        )
-
-        return processed_output
-
-    def __repr__(self):
-        """Return formal representation of object."""
-        return self.name + (" " + str(self.kwargs)) if self.kwargs is not None else ""
-
-    def __str__(self):
-        """Return informal representation of object."""
-        return self.__repr__()

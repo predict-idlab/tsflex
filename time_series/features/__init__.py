@@ -6,6 +6,7 @@ from .feature import FeatureDescriptor, MultipleFeatureDescriptors
 from .feature_collection import FeatureCollection
 from .feature_collection_sk import SKFeatureCollection
 from .function_wrapper import NumpyFuncWrapper
+from .logger import get_feature_logs, get_function_stats, get_key_stats
 
 __all__ = [
     "FeatureDescriptor",
@@ -13,4 +14,7 @@ __all__ = [
     "FeatureCollection",
     "SKFeatureCollection",
     "NumpyFuncWrapper",
+    "get_feature_logs",
+    "get_function_stats",
+    "get_key_stats",
 ]

@@ -1,6 +1,6 @@
-"""Utility functions for internal data operations."""
+"""Utility functions for internal data (representation) operations."""
 
-__author__ = 'Jeroen Van Der Donckt'
+__author__ = "Jeroen Van Der Donckt"
 
 from typing import Dict, List, Union
 
@@ -34,8 +34,10 @@ def series_dict_to_df(series_dict: Dict[str, pd.Series]) -> pd.DataFrame:
     # 1. Check if the time-indexes of the series are equal, to create the df efficiently
     try:
         index_info = set(
-            [(s.index[0], s.index[-1], len(s), s.index.freq)
-             for s in series_dict.values()]
+            [
+                (s.index[0], s.index[-1], len(s), s.index.freq)
+                for s in series_dict.values()
+            ]
         )
         if len(index_info) == 1:
             # If list(index_info)[0][-1] is None => this code assumes equal index to
@@ -55,14 +57,14 @@ def series_dict_to_df(series_dict: Dict[str, pd.Series]) -> pd.DataFrame:
     df = pd.DataFrame()
     for key, s in series_dict.items():
         # Check if we deal with a valid series_dict before merging on series.name
-        assert key == s.name  
+        assert key == s.name
         df = df.merge(s, left_index=True, right_index=True, how="outer")
     return df
 
 
 def to_series_list(
-        data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]])\
-        -> List[pd.Series]:
+    data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
+) -> List[pd.Series]:
     """Convert the data to a list of series.
 
     Parameters
