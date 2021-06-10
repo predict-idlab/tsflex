@@ -28,12 +28,11 @@ def _parse_message(message: str) -> list:
     """Parse the message of the logged info."""
     regex = r"\[(.*?)\]"
     matches = re.findall(regex, message)
-    assert len(matches) == 4
+    assert len(matches) == 3
     func = matches[0]
-    single_series_func = bool(matches[1].lstrip("single_series_func="))
-    keys = matches[2].replace("'", "")
-    duration_s = float(matches[3].rstrip(" seconds"))
-    return [func, single_series_func, keys, duration_s]
+    series_names = matches[1].replace("'", "")
+    duration_s = float(matches[2].rstrip(" seconds"))
+    return [func, series_names, duration_s]
 
 
 def _parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
@@ -48,7 +47,8 @@ def _parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
     Returns
     -------
     pd.DataFrame
-        A DataFrame with the processor its method, keys and calculation duration.
+        A DataFrame with the processor its method, series names and calculation 
+        duration.
 
     Note
     ----
@@ -57,7 +57,7 @@ def _parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
 
     """
     df = logging_file_to_df(logging_file_path)
-    df[["function", "single_series_func", "keys", "duration"]] = \
+    df[["function", "series_names", "duration"]] = \
         list(df["message"].apply(_parse_message))
     return df.drop(columns=["name", "log_level", "message"])
 

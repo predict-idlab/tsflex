@@ -13,6 +13,7 @@ import pandas as pd
 import re
 
 from ..utils.logging import logging_file_to_df
+from ..utils.timedelta import timedelta_to_str
 
 # Package specific logger
 logger = logging.getLogger("feature_calculation_logger")
@@ -31,7 +32,7 @@ def _parse_message(message: str) -> list:
     assert len(matches) == 4
     func = matches[0]
     key = matches[1].replace("'", "")  # TODO: check if this support multiple keys?
-    window, stride = int(matches[2].split(",")[0]), int(matches[2].split(",")[1])
+    window, stride = matches[2].split(",")[0], matches[2].split(",")[1]
     duration_s = float(matches[3].rstrip(" seconds"))
     return [func, key, window, stride, duration_s]
 
@@ -60,6 +61,8 @@ def _parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
     df[["function", "key", "window", "stride", "duration"]] = list(
         df["message"].apply(_parse_message)
     )
+    df["window"] = pd.to_timedelta(df["window"]).apply(timedelta_to_str)
+    df["stride"] = pd.to_timedelta(df["stride"]).apply(timedelta_to_str)
     return df.drop(columns=["name", "log_level", "message"])
 
 
