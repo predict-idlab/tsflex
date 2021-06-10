@@ -86,9 +86,10 @@ class SeriesPipeline:
     def process(
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
+        return_df: Optional[bool] = False,
         return_all_series: Optional[bool] = True,
-        return_df: Optional[bool] = True,
         drop_keys: Optional[List[str]] = None,
+        copy : Optional[bool] = False,
         logging_file_path: Optional[Union[str, Path]] = None,
     ) -> Union[List[pd.Series], pd.DataFrame]:
         """Execute all `SeriesProcessor` objects in pipeline sequentially.
@@ -101,18 +102,22 @@ class SeriesPipeline:
         data : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
             Dataframe or Series or list thereof, with all the required data for the
             processing steps. \n
-            **Remark**: each Series/DataFrame must have a `pd.DatetimeIndex`.
+            **Remark**: each Series / DataFrame must have a `pd.DatetimeIndex`.
+            **Remark**: we assume that each name / column is unique.
+        return_df : bool, optional
+            Whether the output needs to be a series list or a DataFrame, by default 
+            False.
+            If `True` the output series will be combined to a DataFrame with an outer
+            merge.
         return_all_series : bool, optional
             Whether the output needs to return all the series, by default True.
             If `True` the output will contain all series that were passed to this
             method. If `False` the output will contain just the required series (see
             `get_required_series`).
-        return_df : bool, optional
-            Whether the output needs to be a series dict or a DataFrame, default True.
-            If `True` the output series will be combined to a DataFrame with an outer
-            merge.
         drop_keys : List[str], optional
             Which keys should be dropped when returning the output, by default None.
+        copy : bool, optional
+            Whether the series in `data` should be copied, by default False.
         logging_file_path : Union[str, Path], optional
             The file path where the logged messages are stored, by default None.
             If `None`, then no logging `FileHandler` will be used and the logging
@@ -181,10 +186,10 @@ class SeriesPipeline:
             if not return_all_series:
                 # If just the required series have to be returned
                 if s.name in self.get_required_series():
-                    series_dict[str(s.name)] = s.copy()
+                    series_dict[str(s.name)] = s.copy() if copy else s
             else:
                 # If all the series have to be returned
-                series_dict[str(s.name)] = s.copy()
+                series_dict[str(s.name)] = s.copy() if copy else s
 
         output_keys = set()  # Maintain set of output series
         for processor in self.processing_steps:

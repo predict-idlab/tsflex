@@ -22,7 +22,7 @@ class FeatureDescriptor(FrozenClass):
     def __init__(
         self,
         function: Union[NumpyFuncWrapper, Callable],
-        key: Union[str, Tuple[str]], # TODO: dit hernoemen naar required_series
+        series_name: Union[str, Tuple[str]],
         window: Union[float, str, pd.Timedelta],
         stride: Union[float, str, pd.Timedelta],
     ):
@@ -37,15 +37,13 @@ class FeatureDescriptor(FrozenClass):
         ----------
         function : Union[NumpyFuncWrapper, Callable]
             The function that calculates this feature.
-        key : Union[str,Tuple[str]]
-            The name(s) of the series on which this feature (its `function`) needs to
-            be calculated. \n
-            * If `function` has just one series as argument, `key` should be a `str`
-              (or a Tuple[str] of length 1) containing the name of that series.
-            * If `function` has multiple series, this argument should be a `Tuple[str]`,
-              containing the ordered names of those series. When calculating
-              this feature, the **exact order of series is used as provided by the
-              tuple**. We call such a function a *multi input-series function*.
+        series_name : Union[str, Tuple[str]]
+            The names of the series on which the feature function should be applied.
+            This argument should match the `function` its input; \n
+            * If `series_name` is a string (or tuple of a single string), than 
+              `function` should require just one series as input.
+            * If `series_name` is a tuple of strings, than `function` should
+              require `len(tuple)` series as input.
         window : Union[float, str, pd.Timedelta]
             The window size, this argument supports multiple types: \n
             * If the type is an `float`, it represents the series its window-size in
@@ -84,7 +82,7 @@ class FeatureDescriptor(FrozenClass):
         StridedRolling: As the window-stride (time) conversion takes place there.
 
         """
-        self.key: tuple = to_tuple(key)
+        self.series_name: Tuple[str] = to_tuple(series_name)
         self.window = FeatureDescriptor._parse_time_arg(window)
         self.stride = FeatureDescriptor._parse_time_arg(stride)
 
@@ -140,9 +138,23 @@ class FeatureDescriptor(FrozenClass):
             return pd.Timedelta(arg)
         raise TypeError(f"arg type {type(arg)} is not supported!")
 
+    def get_required_series(self) -> List[str]:
+        """Return all required series names for this feature descriptor.
+
+        Return the list of series names that are required in order to execute the
+        feature function.
+
+        Returns
+        -------
+        List[str]
+            List of all the required series names.
+
+        """
+        return list(set(self.series_name))        
+
     def __repr__(self) -> str:
         """Representation string of Feature."""
-        return f"{self.__class__.__name__}({self.key}, {self.window}, {self.stride})"
+        return f"{self.__class__.__name__}({self.series_name}, {self.window}, {self.stride})"
 
 
 class MultipleFeatureDescriptors:
@@ -151,7 +163,7 @@ class MultipleFeatureDescriptors:
     def __init__(
         self,
         functions: List[Union[NumpyFuncWrapper, Callable]],
-        keys: Union[str, Tuple[str], List[str], List[Tuple[str]]],
+        series_names: Union[str, Tuple[str], List[str], List[Tuple[str]]],
         windows: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
         strides: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
     ):
@@ -166,37 +178,46 @@ class MultipleFeatureDescriptors:
         ----------
         functions : List[Union[NumpyFuncWrapper, Callable]]
             The functions, can be either of both types (even in a single array).
-        keys : Union[str, Tuple[str], List[str], List[Tuple[str]]],
-            All the function inputs (either a `key` or a list of `key`s).
-            A `key` contains the name(s) of the series on which every function in
-            `functions` needs to be calculated. Hence, when the function(s) should be
-            called on multiple (combinations of) series, one should pass a list of
-            `key`s. \n
-            **Note**: when passing a list of `key`s, all `key`s in this
-            list should have the same type, i.e, either \n
+        series_names : Union[str, Tuple[str], List[str], List[Tuple[str]]]
+            The names of the series on which the feature function should be applied.
+
+            This argument should match the `function` its input; \n
+            * If `series_names` is a (list of) string (or tuple of a single string), 
+              than `function` should require just one series as input.
+            * If `series_names` is a (list of) tuple of strings, than `function` should
+              require `len(tuple)` series as input.
+
+            A list means multiple series (combinations) to extract feature from; \n
+            * If `series_names` is a string or a tuple of strings, than `function` will
+              be called only once for the series of this argument.
+            * If `series_names` is a list of either strings or tuple of strings, than
+              `function` will be called for each entry of this list.
+
+            Note: when passing a list as `series_names`, all items in this list should
+            have the same type, i.e, either \n
             * all a str
             * or, all a tuple _with same length_. \n
-            Read more about the `key` argument in `FeatureDescriptor`.
         windows : Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
             All the window sizes.
         strides : Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
             All the strides.
 
         """
-        # Convert all types to list
-        keys = to_list(keys) # TODO: ook naar tuple?
+        series_names = [to_tuple(names) for names in to_list(series_names)]
+        # Assert that function inputs (series) all have the same length
+        assert all(
+            len(series_names[0]) == len(series_name_tuple)
+            for series_name_tuple in series_names
+        )
+        # Convert the other types to list
         windows = to_list(windows)
         strides = to_list(strides)
 
-        # Assert that function inputs are from the same length
-        assert all(
-            [len(to_tuple(keys[0])) == len(to_tuple(key)) for key in keys]
-        )
 
         self.feature_descriptions: List[FeatureDescriptor] = []
         # iterate over all combinations
-        combinations = [functions, keys, windows, strides]
-        for function, key, window, stride in itertools.product(*combinations):
+        combinations = [functions, series_names, windows, strides]
+        for function, series_name, window, stride in itertools.product(*combinations):
             self.feature_descriptions.append(
-                FeatureDescriptor(function, key, window, stride)
+                FeatureDescriptor(function, series_name, window, stride)
             )

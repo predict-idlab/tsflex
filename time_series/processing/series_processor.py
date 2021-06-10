@@ -66,17 +66,17 @@ class SeriesProcessor(FrozenClass):
             The function that processes the series (given in the `series_names`).
             The prototype of the function should match: \n
 
-                function(series: *pd.Series])
+                function(*series: pd.Series])
                     -> Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]
 
             Note: a function that processes a `np.ndarray` instead of `pd.Series`,
             should work just fine. TODO: is this correct?
-        series_names : List[str]
-            The series names on which the the processing function should be applied.
+        series_names : Union[str, Tuple[str], List[str], List[Tuple[str]]]
+            The names of the series on which the processing function should be applied.
 
             This argument should match the `function` its input; \n
-            * If `series_names` is a (list of) string, than `function` should require
-              just one series as input.
+            * If `series_names` is a (list of) string (or tuple of a single string), 
+              than `function` should require just one series as input.
             * If `series_names` is a (list of) tuple of strings, than `function` should
               require `len(tuple)` series as input.
 
@@ -85,6 +85,11 @@ class SeriesProcessor(FrozenClass):
               be called only once for the series of this argument.
             * If `series_names` is a list of either strings or tuple of strings, than
               `function` will be called for each entry of this list.
+
+            Note: when passing a list as `series_names`, all items in this list should
+            have the same type, i.e, either \n
+            * all a str
+            * or, all a tuple _with same length_. \n
         **kwargs
             Keyword arguments which will be also passed to the `function`
 
@@ -106,6 +111,7 @@ class SeriesProcessor(FrozenClass):
 
         """
         series_names = [to_tuple(names) for names in to_list(series_names)]
+        # Assert that function inputs (series) all have the same length
         assert all(
             len(series_names[0]) == len(series_name_tuple)
             for series_name_tuple in series_names
@@ -167,27 +173,27 @@ class SeriesProcessor(FrozenClass):
         t_start = time.time()
 
         # Only selecting the series that are needed for this processing step
-        requested_dict = {}
-        try:
-            for sig in self.get_required_series():
-                requested_dict[sig] = series_dict[sig]
-        except KeyError as key:
-            # Re raise error as we can't continue
-            raise KeyError(
-                "Key %s is not present in the input dict and needed for processor %s"
-                % (key, self.name)
-            )
+        # requested_dict = {}
+        # try:
+        #     for sig in self.get_required_series():
+        #         requested_dict[sig] = series_dict[sig]
+        # except KeyError as key:
+        #     # Re raise error as we can't continue
+        #     raise KeyError(
+        #         "Key %s is not present in the input dict and needed for processor %s"
+        #         % (key, self.name)
+        #     )
 
         # Variable that will contain the final output of this method
         processed_output: Dict[str, pd.Series] = {}
 
         def get_series_list(keys: Tuple[str]):
             """Get an ordered series list for the given keys."""
-            return [requested_dict[key] for key in keys]
+            return [series_dict[key] for key in keys]
 
         def get_series_dict(keys: Tuple[str]):
             """Get a series dict for the given keys."""
-            return {key: requested_dict[key] for key in keys}
+            return {key: series_dict[key] for key in keys}
 
         for series_name_tuple in self.series_names:
             func_output = self.function(
@@ -204,7 +210,7 @@ class SeriesProcessor(FrozenClass):
 
         elapsed = time.time() - t_start
         logger.info(
-            f"Finished function [{self.name}] on {list(requested_dict.keys())} in "
+            f"Finished function [{self.name}] on {self.series_names} in "
             f"[{elapsed} seconds]!"
         )
 

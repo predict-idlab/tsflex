@@ -24,7 +24,7 @@ from .feature import FeatureDescriptor, MultipleFeatureDescriptors
 from .logger import logger
 from .strided_rolling import StridedRolling
 from ..features.function_wrapper import NumpyFuncWrapper
-from ..utils.data import to_series_list, flatten
+from ..utils.data import to_list, to_series_list, flatten
 from ..utils.timedelta import timedelta_to_str
 
 
@@ -49,7 +49,7 @@ class FeatureCollection:
 
         """
         # The feature collection is a dict with keys of type:
-        #   tuple(tuple(str), int OR pd.timedelta, int OR pd.timedelta)
+        #   tuple(tuple(str), float OR pd.timedelta, float OR pd.timedelta)
         # The outer tuple's values correspond to (series_key(s), window, stride)
         self._feature_desc_dict: Dict[
             Tuple[Tuple[str], pd.Timedelta, pd.Timedelta], List[FeatureDescriptor]
@@ -82,7 +82,7 @@ class FeatureCollection:
     def _get_collection_key(feature: FeatureDescriptor)\
             -> Tuple[tuple, pd.Timedelta, pd.Timedelta]:
         # Note: `window` & `stride` properties can either be a pd.Timedelta or an int
-        return feature.key, feature.window, feature.stride
+        return feature.series_name, feature.window, feature.stride
 
     def _add_feature(self, feature: FeatureDescriptor):
         """Add a `FeatureDescriptor` instance to the collection.
@@ -121,8 +121,8 @@ class FeatureCollection:
             [`MultipleFeatureDescriptors`, `FeatureDescriptors`, `FeatureCollection`].
 
         """
-        if not isinstance(features, list):
-            features = [features]
+        # Convert to list if necessary
+        features = to_list(features)
 
         for feature in features:
             if isinstance(feature, MultipleFeatureDescriptors):
@@ -159,7 +159,7 @@ class FeatureCollection:
     def calculate(
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
-        merge_dfs: Optional[bool] = False,
+        return_df: Optional[bool] = False,
         show_progress: Optional[bool] = False,
         logging_file_path: Optional[Union[str, Path]] = None,
         n_jobs: Optional[int] = None,
@@ -180,10 +180,13 @@ class FeatureCollection:
         data : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
             Dataframe or Series or list thereof, with all the required data for the
             feature calculation. \n
-            **Remark**: each Series/DataFrame must have a `pd.DatetimeIndex`.
-        merge_dfs : bool, optional
-            Whether the results should be merged to a DataFrame with an outer merge,
-            by default False
+            **Remark**: each Series / DataFrame must have a `pd.DatetimeIndex`.
+            **Remark**: we assume that each name / column is unique.
+        return_df : bool, optional
+            Whether the output needs to be a dataframe list or a DataFrame, by default 
+            False.
+            If `True` the output dataframes will be merged to a DataFrame with an outer
+            merge.
         show_progress: bool, optional
             If True, the progress will be shown with a progressbar, by default False.
         logging_file_path : Union[str, Path], optional
@@ -201,7 +204,7 @@ class FeatureCollection:
         Returns
         -------
         Union[List[pd.DataFrame], pd.DataFrame]
-            A DataFrame or List of DataFrames with the features in it.
+            The calculated features.
 
         Raises
         ------
@@ -268,7 +271,7 @@ class FeatureCollection:
                 # Clear because: https://github.com/uqfoundation/pathos/issues/111
                 pool.clear()
 
-        if merge_dfs:
+        if return_df:
             df_merged = pd.DataFrame()
             for calculated_feature in calculated_feature_list:
                 df_merged = pd.merge(
