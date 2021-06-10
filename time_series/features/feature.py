@@ -21,7 +21,7 @@ class FeatureDescriptor(FrozenClass):
     def __init__(
         self,
         function: Union[NumpyFuncWrapper, Callable],
-        key: Union[str, Tuple[str]],
+        key: Union[str, Tuple[str]], # TODO: dit hernoemen naar required_series
         window: Union[float, str, pd.Timedelta],
         stride: Union[float, str, pd.Timedelta],
     ):

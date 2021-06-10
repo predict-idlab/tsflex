@@ -2,11 +2,11 @@
 
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
-from itertools import chain
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 import pandas as pd
+import itertools
 import dill
 import logging
 import warnings
@@ -34,9 +34,9 @@ class SeriesPipeline:
             executed in the same order as passed in this list**.
 
         """
-        self.processing_registry: List[SeriesProcessor] = []
+        self.processing_steps: List[SeriesProcessor] = [] # TODO: dit private of niet?
         if processors is not None:
-            self.processing_registry = processors
+            self.processing_steps = processors
 
     def get_required_series(self) -> List[str]:
         """Return all required series names for this pipeline.
@@ -50,10 +50,11 @@ class SeriesPipeline:
             List of all the required series names.
 
         """
+        flatten = itertools.chain.from_iterable
         return list(
             set(
-                chain.from_iterable(
-                    [pr.required_series for pr in self.processing_registry]
+                flatten(
+                    [step.required_series for step in self.processing_steps]
                 )
             )
         )
@@ -67,7 +68,7 @@ class SeriesPipeline:
             The `SeriesProcessor` that will be added to the end of the pipeline
 
         """
-        self.processing_registry.append(processor)
+        self.processing_steps.append(processor)
 
     def insert(self, idx: int, processor: SeriesProcessor) -> None:
         """Insert a `SeriesProcessor` at the given index in the pipeline.
@@ -82,7 +83,7 @@ class SeriesPipeline:
             The `SeriesProcessor` that will be added to the end of the pipeline
 
         """
-        self.processing_registry.insert(idx, processor)
+        self.processing_steps.insert(idx, processor)
 
     def process(
         self,
@@ -188,7 +189,7 @@ class SeriesPipeline:
                 series_dict[str(s.name)] = s.copy()
 
         output_keys = set()  # Maintain set of output series
-        for processor in self.processing_registry:
+        for processor in self.processing_steps:
             try:
                 processed_dict = processor(series_dict)
                 output_keys.update(processed_dict.keys())
@@ -243,7 +244,7 @@ class SeriesPipeline:
     def __repr__(self):
         """Return formal representation of object."""
         return (
-            "[\n" + "".join([f"\t{str(pr)}\n" for pr in self.processing_registry]) + "]"
+            "[\n" + "".join([f"\t{str(p)}\n" for p in self.processing_steps]) + "]"
         )
 
     def __str__(self):

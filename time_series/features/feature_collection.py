@@ -10,8 +10,8 @@ from __future__ import annotations  # Make typing work for the enclosing class
 
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
-import itertools
 import logging
+import itertools
 import warnings
 from pathlib import Path
 from typing import Dict, Iterator, List, Optional, Tuple, Union
@@ -58,6 +58,27 @@ class FeatureCollection:
 
         if feature_descriptors:
             self.add(feature_descriptors)
+
+    def get_required_series(self) -> List[str]:
+        """Return all required series names for this feature collection.
+
+        Return the list of series names that are required in order to calculate all the
+        features (defined by the `FeatureDescriptor` objects) of this feature collection.
+
+        Returns
+        -------
+        List[str]
+            List of all the required series names.
+
+        """
+        flatten = itertools.chain.from_iterable
+        return list(
+            set(
+                flatten(
+                    [fr_key[0] for fr_key in self._feature_desc_dict.keys()]
+                )
+            )
+        )
 
     @staticmethod
     def _get_collection_key(feature: FeatureDescriptor)\
@@ -221,7 +242,8 @@ class FeatureCollection:
         # Convert the data to a series_dict
         series_dict: Dict[str, pd.Series] = {}
         for s in to_series_list(data):
-            series_dict[str(s.name)] = s
+            if s.name in self.get_required_series():
+                series_dict[str(s.name)] = s
 
         calculated_feature_list: List[pd.DataFrame] = []
 
