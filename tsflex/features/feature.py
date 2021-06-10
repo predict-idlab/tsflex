@@ -17,7 +17,70 @@ from ..utils.data import to_list, to_tuple
 
 
 class FeatureDescriptor(FrozenClass):
-    """A FeatureDescriptor object, containing all feature information."""
+    """A FeatureDescriptor object, containing all feature information.
+
+    Parameters
+    ----------
+    function : Union[NumpyFuncWrapper, Callable]
+        The function that calculates this feature.
+        The prototype of the function should match: \n
+
+            function(*series: pd.Series)
+                -> Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]
+
+    series_name : Union[str, Tuple[str]]
+        The names of the series on which the feature function should be applied.
+        This argument should match the `function` its input; \n
+        * If `series_name` is a string (or tuple of a single string), than 
+            `function` should require just one series as input.
+        * If `series_name` is a tuple of strings, than `function` should
+            require `len(tuple)` series as input **and in exactly the same order**
+    window : Union[float, str, pd.Timedelta]
+        The window size, this argument supports multiple types: \n
+        * If the type is an `float`, it represents the series its window-size in
+            **seconds**.
+        * If the window's type is a `pd.Timedelta`, the window size represents
+            the window-time.
+        * If a `str`, it represents a window-time-string.
+    stride : Union[int, str, pd.Timedelta]
+        The stride of the window rolling process, supports multiple types: \n
+        * If the type is `float`, it represents the window size in **seconds**
+        * If the type is `pd.Timedelta`, it represents the stride-roll timedelta.
+        * If a type is `str`, it represents a stride-roll-time-string.
+
+    Notes
+    -----
+    * For each `function` - `input`(-series) - `window` - stride combination, one needs
+      to create a distinct `FeatureDescriptor`. Hence it is more convenient to
+      create a `MultipleFeatureDescriptors` when `function` - `window` - `stride`
+      _combinations_ should be applied on various input-series (combinations).
+    * When `function` takes multiple series (i.e., arguments) as input, these are
+      joined (based on the index) before applying the function. If the indexes of
+      these series are not exactly the same, it might occur that not all series have
+      exactly the same length! Hence,  make sure that the `function` can deal with
+      this!
+    * For more information about the str-based time args, look into:
+      https://pandas.pydata.org/pandas-docs/stable/user_guide/timedeltas.html#parsing
+    *
+     .. todo::
+
+        Add documentation of how the index/slicing takes place / which
+        assumptions we make.
+
+        raise error function tries to change values of view ...
+
+
+    Raises
+    ------
+    TypeError
+        Raised when the `function` is not an instance of Callable or
+        NumpyFuncWrapper.
+
+    See Also
+    --------
+    StridedRolling: As the window-stride (time) conversion takes place there.
+
+    """
 
     def __init__(
         self,
@@ -26,62 +89,6 @@ class FeatureDescriptor(FrozenClass):
         window: Union[float, str, pd.Timedelta],
         stride: Union[float, str, pd.Timedelta],
     ):
-        """Create a FeatureDescriptor object.
-
-        .. todo::
-
-            Add documentation of how the index/slicing takes place / which
-            assumptions we make.
-
-        Parameters
-        ----------
-        function : Union[NumpyFuncWrapper, Callable]
-            The function that calculates this feature.
-        series_name : Union[str, Tuple[str]]
-            The names of the series on which the feature function should be applied.
-            This argument should match the `function` its input; \n
-            * If `series_name` is a string (or tuple of a single string), than 
-              `function` should require just one series as input.
-            * If `series_name` is a tuple of strings, than `function` should
-              require `len(tuple)` series as input.
-        window : Union[float, str, pd.Timedelta]
-            The window size, this argument supports multiple types: \n
-            * If the type is an `float`, it represents the series its window-size in
-              **seconds**.
-            * If the window's type is a `pd.Timedelta`, the window size represents
-              the window-time.
-            * If a `str`, it represents a window-time-string.
-        stride : Union[int, str, pd.Timedelta]
-            The stride of the window rolling process, supports multiple types. \n
-            * If the type is `float`, it represents the window size in **seconds**
-            * If the type is `pd.Timedelta`, it represents the stride-roll timedelta.
-            * If a type is `str`, it represents a stride-roll-time-string.
-
-        Notes
-        -----
-        * For each function - input(-series) - window - stride combination, one needs
-          to create a distinct `FeatureDescriptor`. Hence it is more convenient to
-          create a `MultipleFeatureDescriptors` when `function` - `window` - `stride`
-          _combinations_ should be applied on various input-series (combinations).
-        * When `function` takes multiple series (i.e., arguments) as input, these are
-          joined (based on the index) before applying the function. If the indexes of
-          these series are not exactly the same, it might occur that not all series have
-          exactly the same length! Hence,  make sure that the `function` can deal with
-          this!
-        * For more information about the str-based time args, look into:
-          https://pandas.pydata.org/pandas-docs/stable/user_guide/timedeltas.html#parsing
-
-        Raises
-        ------
-        TypeError
-            Raised when the `function` is not an instance of Callable or
-            NumpyFuncWrapper.
-
-        See Also
-        --------
-        StridedRolling: As the window-stride (time) conversion takes place there.
-
-        """
         self.series_name: Tuple[str] = to_tuple(series_name)
         self.window = FeatureDescriptor._parse_time_arg(window)
         self.stride = FeatureDescriptor._parse_time_arg(stride)

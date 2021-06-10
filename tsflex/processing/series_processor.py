@@ -66,11 +66,12 @@ class SeriesProcessor(FrozenClass):
             The function that processes the series (given in the `series_names`).
             The prototype of the function should match: \n
 
-                function(*series: pd.Series])
+                function(*series: pd.Series)
                     -> Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]
 
             Note: a function that processes a `np.ndarray` instead of `pd.Series`,
             should work just fine.
+
         series_names : Union[str, Tuple[str], List[str], List[Tuple[str]]]
             The names of the series on which the processing function should be applied.
 
@@ -78,7 +79,7 @@ class SeriesProcessor(FrozenClass):
             * If `series_names` is a (list of) string (or tuple of a single string),
               than `function` should require just one series as input.
             * If `series_names` is a (list of) tuple of strings, than `function` should
-              require `len(tuple)` series as input.
+              require `len(tuple)` series as input **and in exactly the same order**.
 
             A list means multiple series (combinations) to process; \n
             * If `series_names` is a string or a tuple of strings, than `function` will

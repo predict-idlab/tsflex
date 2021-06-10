@@ -23,21 +23,36 @@ class StridedRolling:
     Parameters
     ----------
     data : Union[pd.Series, pd.DataFrame]
-        :class:`pd.Series` or :class:`pd.DataFrame` to slide over, the index must
-        be a (time-zone-aware) `pd.DatetimeIndex`.
+        ``pd.Series`` or ``pd.DataFrame`` to slide over, the index must be a
+        (time-zone-aware) ``pd.DatetimeIndex``.
     window : Union[int, pd.Timedelta]
-        Either an int or `pd.Timedelta`, representing the sliding window length in
+        Either an int or ``pd.Timedelta``, representing the sliding window length in
         samples or the sliding window duration, respectively.
     stride : Union[int, pd.Timedelta]
-        Either an int or `pd.Timedelta`, representing the stride size in samples or
+        Either an int or ``pd.Timedelta``, representing the stride size in samples or
         the stride duration, respectively.
-    window_idx : str
+    window_idx : str, optional
         The window's index position which will be used as index for the
-        feature_window aggregation. Must be either of ['begin', 'middle', 'end']
+        feature_window aggregation. Must be either of: ['begin', 'middle', 'end'], by
+        default 'end'.
+    bound_method: str, optional
+        The start-end bound methodology which is used to generate the slice ranges when
+        ``data`` consists of multiple series / columns.
+        Must be either of: ['inner', 'outer', 'first'], by default 'inner'.
+
+        * if ``inner``, the inner-bounds of the series are used, the
+        * if ``outer``, the inner-bounds of the series are used
+        * if ``first``, the first-series it's bound will be used
 
     Notes
     -----
-    * This instance withholds a **read-only**-view to
+    * This instance withholds a **read-only**-view of the data its values.
+
+    <br>
+
+    .. todo::
+        The `window_idx` and `bound_method` must still be propagated to the
+        `FeatureCollection`-class.
 
     """
     _NumpySeriesContainer = namedtuple(
@@ -49,7 +64,8 @@ class StridedRolling:
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         window: pd.Timedelta,
         stride: pd.Timedelta,
-        window_idx: str = 'end'
+        window_idx: str = 'end',
+        bound_method: str = 'inner'
     ):
         self.window: pd.Timedelta = window
         self.stride: pd.Timedelta = stride
@@ -58,19 +74,15 @@ class StridedRolling:
         series_list: List[pd.Series] = to_series_list(data)
         self.series_key: Tuple[str] = tuple([str(s.name) for s in series_list])
 
-        # 1. Determine the tightest bounds
-        latest_start = series_list[0].index[0]
-        earliest_stop = series_list[0].index[-1]
-        for series in series_list[1:]:
-            latest_start = max(latest_start, series.index[0])
-            earliest_stop = min(earliest_stop, series.index[-1])
+        # 1. Determine the bounds
+        t_start, t_end = self._determine_bounds(series_list, bound_method)
 
         # And slice **all** the series to these tightest bounds
-        assert (earliest_stop - latest_start) > window
-        series_list = [s[latest_start:earliest_stop] for s in series_list]
+        assert (t_end - t_start) > window
+        series_list = [s[t_start:t_end] for s in series_list]
 
         # 2. Create the time_index which will be used for DataFrame reconstruction
-        self.index = pd.date_range(latest_start, earliest_stop - window, freq=stride)
+        self.index = pd.date_range(t_start, t_end - window, freq=stride)
 
         # --- and adjust the time_index
         if window_idx == "end":
@@ -85,15 +97,13 @@ class StridedRolling:
 
         # ---------- Efficient numpy code -------
         # 1. Convert everything to int64
-        np_latest_start = latest_start.to_datetime64().astype(np.int64)
-        np_earliest_stop = earliest_stop.to_datetime64().astype(np.int64)
+        np_start = t_start.to_datetime64().astype(np.int64)
+        np_stop = t_end.to_datetime64().astype(np.int64)
         np_window = self.window.to_timedelta64().astype(np.int64)
         np_stride = self.stride.to_timedelta64().astype(np.int64)
 
         # 2. Precompute the start & end times (these remain the same for each series)
-        start_times = np.arange(
-            start=np_latest_start, stop=np_earliest_stop - np_window, step=np_stride
-        )
+        start_times = np.arange(start=np_start, stop=np_stop - np_window, step=np_stride)
         end_times = start_times + np_window
 
         self.series_containers: List[StridedRolling._NumpySeriesContainer] = []
@@ -108,11 +118,51 @@ class StridedRolling:
                     values=np_series,
                     # the slicing will be performed on [ t_start, t_end [
                     start_indexes=np.searchsorted(np_timestamps, start_times, 'left'),
-                    # TODO -> maybe hyper param -> end_boundary -> open/closed
-                    #   (default open)
                     end_indexes=np.searchsorted(np_timestamps, end_times, 'left')
+                    # TODO: maybe hyper param for end_boundary, e.g., open or closed
                 )
             )
+
+    @staticmethod
+    def _determine_bounds(series_list: List[pd.Series], bound_method: str)\
+            -> Tuple[pd.Timestamp, pd.Timestamp]:
+        """Determine the bounds of the passed series.
+
+        Parameters
+        ----------
+        series_list : List[pd.Series]
+            The list of series for which the bounds are determined.
+
+        bound_method : str
+            The methodology which is used for the ``series_list`` bound determination
+
+        Returns
+        -------
+        Tuple[pd.Timestamp, pd.Timestamp]
+            The start & end timestamp, respectively.
+
+        """
+        if bound_method == 'inner':
+            latest_start = series_list[0].index[0]
+            earliest_stop = series_list[0].index[-1]
+            for series in series_list[1:]:
+                latest_start = max(latest_start, series.index[0])
+                earliest_stop = min(earliest_stop, series.index[-1])
+            return latest_start, earliest_stop
+
+        if bound_method == 'outer':
+            earliest_start = series_list[0].index[0]
+            latest_stop = series_list[0].index[-1]
+            for series in series_list[1:]:
+                earliest_start = min(earliest_start, series.index[0])
+                latest_stop = max(latest_stop, series.index[-1])
+            return earliest_start, latest_stop
+
+        elif bound_method == 'first':
+            return series_list[0].index[0], series_list[0].index[-1]
+
+        else:
+            raise ValueError(f"invalid bound method string passed {bound_method}")
 
     def apply_func(self, np_func: Union[Callable, NumpyFuncWrapper]) -> pd.DataFrame:
         """Apply a function to the expanded time-series.
@@ -129,14 +179,20 @@ class StridedRolling:
             new DataFrame. The DataFrame's column-names have the format:
                 `<series_col_name(s)>_<feature_name>__w=<window>_s=<stride>`.
 
+        Raises
+        ------
+        ValueError
+            If the passed ``np_func`` tries to adjust the data its read-only view.
+
+
         Notes
         -----
-        * If `np_func` is only a callable argument, with no additional logic, this
-            will only work for a one-to-one mapping, i.e., no multiple feature-output
-            columns are supported for this case!
-        * If you want to calculate one-to-many -> `np_func` should be
-             a `NumpyFuncWrapper` instance and explicitly use
-             the `output_names` attributes of its constructor.
+        * If ``np_func`` is only a callable argument, with no additional logic, this
+          will only work for a one-to-one mapping, i.e., no multiple feature-output
+          columns are supported for this case!<br>
+          If you want to calculate one-to-many, ``np_func`` should be
+          a ``NumpyFuncWrapper`` instance and explicitly use
+          the ``output_names`` attributes of its constructor.
 
         """
         # Convert win & stride to time-string if available :)

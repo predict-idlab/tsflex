@@ -224,21 +224,18 @@ class SeriesPipeline:
             return [s for s in series_dict.values()]
 
     def serialize(self, file_path: Union[str, Path]):
-        """Serialize this `SeriesProcessor` instance.
+        """Serialize this `SeriesPipeline` instance.
 
-        Note
-        ----
-        As we use `dill` to serialize, we can also serialize (decorator)functions which
-        are defined in the local scope, like lambdas.
+        Notes
+        ------
+        As we use `Dill <https://github.com/uqfoundation/dill>`_ to serialize, we can
+        also serialize (decorator)functions which are defined in the local scope,
+        like lambdas.
 
         Parameters
         ----------
         file_path : Union[str, Path]
             The path where the `SeriesProcessor` will be serialized.
-
-        See Also
-        --------
-        https://github.com/uqfoundation/dill
 
         """
         with open(file_path, "wb") as f:
