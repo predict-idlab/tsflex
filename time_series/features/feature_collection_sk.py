@@ -33,8 +33,8 @@ class SKFeatureCollection(TransformerMixin):
     method, enabling sklearn compatibility, e.g. including an instance of this class
     in `sklearn.pipeline.Pipeline`.
 
-    Note
-    ----
+    Notes
+    -----
     The following three changes were necessary to enable this sklearn-compatibility: \n
     1. The parameters of the `FeatureCollection` its constructor are logged in this
        class.
@@ -42,8 +42,6 @@ class SKFeatureCollection(TransformerMixin):
        been moved to the constructor and are also logged.
     3. The `FeatureCollection` its `calculate` method is wrapped in this class its
        `transform` method,
-
-    ---
 
     """
 

@@ -170,7 +170,7 @@ class FeatureCollection:
         ------
         * The (column-)names of the series in `data` represent the names in the keys.
         * If a `logging_file_path` is provided, the execution (time) info can be
-          retrieved by calling `logger.get_feature_logs(logging_file_path)`. <br>
+          retrieved by calling `logger.get_feature_logs(logging_file_path)`.
           Be aware that the `logging_file_path` gets cleared before the logger pushes
           logged messages. Hence, one should use a separate logging file for each
           constructed processing and feature instance with this library.
@@ -239,6 +239,10 @@ class FeatureCollection:
         # Convert the data to a series_dict
         series_dict: Dict[str, pd.Series] = {}
         for s in to_series_list(data):
+            # Assert the assumptions we make!
+            assert isinstance(s.index, pd.DatetimeIndex)
+            assert s.index.is_monotonic_increasing
+
             if s.name in self.get_required_series():
                 series_dict[str(s.name)] = s
 
@@ -281,19 +285,16 @@ class FeatureCollection:
     def serialize(self, file_path: Union[str, Path]):
         """Serialize this `FeatureCollection` instance.
 
-        Note
-        ----
-        As we use `dill` to serialize the files, we can also serialize functions which
-        are defined in the local scope, like lambdas.
-
         Parameters
         ----------
         file_path : Union[str, Path]
             The path where the `FeatureCollection` will be serialized.
 
-        See Also
-        --------
-        https://github.com/uqfoundation/dill
+        Notes
+        -----
+        * As we use `Dill <https://github.com/uqfoundation/dill>`_ to serialize the
+          files, we can **also serialize functions which are defined in the local scope,
+          like lambdas.**
 
         """
         with open(file_path, "wb") as f:

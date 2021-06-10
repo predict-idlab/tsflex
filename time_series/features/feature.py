@@ -28,6 +28,11 @@ class FeatureDescriptor(FrozenClass):
     ):
         """Create a FeatureDescriptor object.
 
+        .. todo::
+
+            Add documentation of how the index/slicing takes place / which
+            assumptions we make.
+
         Parameters
         ----------
         function : Union[NumpyFuncWrapper, Callable]
@@ -64,12 +69,9 @@ class FeatureDescriptor(FrozenClass):
           joined (based on the index) before applying the function. If the indexes of
           these series are not exactly the same, it might occur that not all series have
           exactly the same length! Hence,  make sure that the `function` can deal with
-           this!
-
-        TODO
-        ----
-        <Add documentation of how the index/slicing takes place> / which assumptions
-        we make.
+          this!
+        * For more information about the str-based time args, look into:
+          https://pandas.pydata.org/pandas-docs/stable/user_guide/timedeltas.html#parsing
 
         Raises
         ------
@@ -80,9 +82,6 @@ class FeatureDescriptor(FrozenClass):
         See Also
         --------
         StridedRolling: As the window-stride (time) conversion takes place there.
-
-        https://pandas.pydata.org/pandas-docs/stable/user_guide/timedeltas.html#parsing,
-        https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Timedelta.html#pandas-timedelta
 
         """
         self.key: tuple = to_tuple(key)
