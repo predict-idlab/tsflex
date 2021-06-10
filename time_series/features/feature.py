@@ -13,6 +13,7 @@ import pandas as pd
 
 from .function_wrapper import NumpyFuncWrapper
 from ..utils.classes import FrozenClass
+from ..utils.data import to_list, to_tuple
 
 
 class FeatureDescriptor(FrozenClass):
@@ -35,7 +36,7 @@ class FeatureDescriptor(FrozenClass):
             The name(s) of the series on which this feature (its `function`) needs to
             be calculated. \n
             * If `function` has just one series as argument, `key` should be a `str`
-              containing the name of that series.
+              (or a Tuple[str] of length 1) containing the name of that series.
             * If `function` has multiple series, this argument should be a `Tuple[str]`,
               containing the ordered names of those series. When calculating
               this feature, the **exact order of series is used as provided by the
@@ -84,7 +85,6 @@ class FeatureDescriptor(FrozenClass):
         https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.Timedelta.html#pandas-timedelta
 
         """
-        to_tuple = lambda x: tuple([x]) if isinstance(x, str) else x
         self.key: tuple = to_tuple(key)
         self.window = FeatureDescriptor._parse_time_arg(window)
         self.stride = FeatureDescriptor._parse_time_arg(stride)
@@ -93,7 +93,7 @@ class FeatureDescriptor(FrozenClass):
         if isinstance(function, NumpyFuncWrapper):
             self.function = function
         elif isinstance(function, Callable):
-            self.function = NumpyFuncWrapper(function)
+            self.function = NumpyFuncWrapper(function) # TODO: doen we dit niet nog op een andere plek?
         else:
             raise TypeError(
                 "Expected feature function to be a `NumpyFuncWrapper` but is a"
@@ -185,13 +185,11 @@ class MultipleFeatureDescriptors:
 
         """
         # Convert all types to list
-        to_list = lambda x: [x] if not isinstance(x, list) else x
-        keys = to_list(keys)
+        keys = to_list(keys) # TODO: ook naar tuple?
         windows = to_list(windows)
         strides = to_list(strides)
 
         # Assert that function inputs are from the same length
-        to_tuple = lambda x: tuple([x]) if isinstance(x, str) else x
         assert all(
             [len(to_tuple(keys[0])) == len(to_tuple(key)) for key in keys]
         )

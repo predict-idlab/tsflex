@@ -11,7 +11,6 @@ from __future__ import annotations  # Make typing work for the enclosing class
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
 import logging
-import itertools
 import warnings
 from pathlib import Path
 from typing import Dict, Iterator, List, Optional, Tuple, Union
@@ -25,7 +24,7 @@ from .feature import FeatureDescriptor, MultipleFeatureDescriptors
 from .logger import logger
 from .strided_rolling import StridedRolling
 from ..features.function_wrapper import NumpyFuncWrapper
-from ..utils.data import to_series_list
+from ..utils.data import to_series_list, flatten
 from ..utils.timedelta import timedelta_to_str
 
 
@@ -71,7 +70,6 @@ class FeatureCollection:
             List of all the required series names.
 
         """
-        flatten = itertools.chain.from_iterable
         return list(
             set(
                 flatten(
@@ -132,8 +130,7 @@ class FeatureCollection:
             elif isinstance(feature, FeatureDescriptor):
                 self._add_feature(feature)
             elif isinstance(feature, FeatureCollection):
-                # list needs to be flattened
-                flatten = itertools.chain.from_iterable
+                # List needs to be flattened
                 self.add(list(flatten(feature._feature_desc_dict.values())))
             else:
                 raise TypeError(f"type: {type(feature)} is not supported - {feature}")
