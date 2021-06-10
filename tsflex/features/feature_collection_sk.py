@@ -136,7 +136,7 @@ class SKFeatureCollection(TransformerMixin):
         feature_collection = FeatureCollection(self.feature_descriptors)
         return feature_collection.calculate(
             data=X,
-            merge_dfs=True,
+            return_df=True,
             show_progress=False,
             logging_file_path=self.logging_file_path,
             n_jobs=self.n_jobs,

@@ -2,7 +2,7 @@
 
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
-from time_series.utils.classes import FrozenClass
+from tsflex.utils.classes import FrozenClass
 from typing import Callable, Dict, List, Optional, Union, Tuple
 
 import numpy as np

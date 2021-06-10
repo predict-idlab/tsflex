@@ -1,7 +1,4 @@
-"""Contains a (rather) fast implementation of a strided rolling window.
-
-.. todo::
-    Add documentation about assumptions/how we index.
+"""Contains a (rather) fast implementation of a **time-based** strided rolling window.
 
 """
 
@@ -21,7 +18,28 @@ from ..utils.timedelta import timedelta_to_str
 
 
 class StridedRolling:
-    """Custom time-based sliding window with stride for pandas DataFrames."""
+    """Custom time-based sliding window with stride for pandas DataFrames.
+
+    Parameters
+    ----------
+    data : Union[pd.Series, pd.DataFrame]
+        :class:`pd.Series` or :class:`pd.DataFrame` to slide over, the index must
+        be a (time-zone-aware) `pd.DatetimeIndex`.
+    window : Union[int, pd.Timedelta]
+        Either an int or `pd.Timedelta`, representing the sliding window length in
+        samples or the sliding window duration, respectively.
+    stride : Union[int, pd.Timedelta]
+        Either an int or `pd.Timedelta`, representing the stride size in samples or
+        the stride duration, respectively.
+    window_idx : str
+        The window's index position which will be used as index for the
+        feature_window aggregation. Must be either of ['begin', 'middle', 'end']
+
+    Notes
+    -----
+    * This instance withholds a **read-only**-view to
+
+    """
     _NumpySeriesContainer = namedtuple(
         "SeriesContainer", ["values", "start_indexes", "end_indexes"]
     )
@@ -33,26 +51,8 @@ class StridedRolling:
         stride: pd.Timedelta,
         window_idx: str = 'end'
     ):
-        """Create a time-based StridedRolling object.
-
-        Parameters
-        ----------
-        data : Union[pd.Series, pd.DataFrame]
-            :class:`pd.Series` or :class:`pd.DataFrame` to slide over, the index must
-            be a (time-zone-aware) `pd.DatetimeIndex`.
-        window : Union[int, pd.Timedelta]
-            Either an int or `pd.Timedelta`, representing the sliding window length in
-            samples or the sliding window duration, respectively.
-        stride : Union[int, pd.Timedelta]
-            Either an int or `pd.Timedelta`, representing the stride size in samples or
-            the stride duration, respectively.
-        window_idx : str
-            The window's index position which will be used as index for the
-            feature_window aggregation. Must be either of ['begin', 'middle', 'end']
-
-        """
-        self.window = window
-        self.stride = stride
+        self.window: pd.Timedelta = window
+        self.stride: pd.Timedelta = stride
 
         # 0. standardize the input
         series_list: List[pd.Series] = to_series_list(data)
@@ -72,7 +72,7 @@ class StridedRolling:
         # 2. Create the time_index which will be used for DataFrame reconstruction
         self.index = pd.date_range(latest_start, earliest_stop - window, freq=stride)
 
-        # --- 2. adjust the time_index
+        # --- and adjust the time_index
         if window_idx == "end":
             self.index += window
         elif window_idx == "middle":
@@ -90,22 +90,25 @@ class StridedRolling:
         np_window = self.window.to_timedelta64().astype(np.int64)
         np_stride = self.stride.to_timedelta64().astype(np.int64)
 
+        # 2. Precompute the start & end times (these remain the same for each series)
         start_times = np.arange(
             start=np_latest_start, stop=np_earliest_stop - np_window, step=np_stride
         )
-
-        # TODO should we subtract 1 (for the <= -> < ) in np.searchsorted
         end_times = start_times + np_window
 
         self.series_containers: List[StridedRolling._NumpySeriesContainer] = []
         for series in series_list:
+            # create a non-writeable view of the series
+            np_series = series.values
+            np_series.flags.writeable = False
+
             np_timestamps = series.index.values.astype(np.int64)
             self.series_containers.append(
                 StridedRolling._NumpySeriesContainer(
-                    values=series.values,
+                    values=np_series,
                     # the slicing will be performed on [ t_start, t_end [
                     start_indexes=np.searchsorted(np_timestamps, start_times, 'left'),
-                    # TODO -> maybe hyperparam -> end_boundary -> open/closed
+                    # TODO -> maybe hyper param -> end_boundary -> open/closed
                     #   (default open)
                     end_indexes=np.searchsorted(np_timestamps, end_times, 'left')
                 )
