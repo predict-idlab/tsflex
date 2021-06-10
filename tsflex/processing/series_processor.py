@@ -218,7 +218,9 @@ class SeriesProcessor(FrozenClass):
 
     def __repr__(self):
         """Return formal representation of object."""
-        return self.name + (" " + str(self.kwargs)) if self.kwargs is not None else ""
+        repr_str = self.name + (" " + str(self.kwargs)) 
+        repr_str +=  " :  " + " ".join([str(s) for s in self.series_names]) 
+        return repr_str
 
     def __str__(self):
         """Return informal representation of object."""
