@@ -102,10 +102,11 @@ class StridedRolling:
             self.series_containers.append(
                 StridedRolling._NumpySeriesContainer(
                     values=series.values,
-                    ## Future work:
-                    # the start and end indices can maybe be improved
+                    # the slicing will be performed on [ t_start, t_end [
                     start_indexes=np.searchsorted(np_timestamps, start_times, 'left'),
-                    end_indexes=np.searchsorted(np_timestamps, end_times, 'right')
+                    # TODO -> maybe hyperparam -> end_boundary -> open/closed
+                    #   (default open)
+                    end_indexes=np.searchsorted(np_timestamps, end_times, 'left')
                 )
             )
 
