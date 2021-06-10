@@ -2,7 +2,8 @@
 
 __author__ = "Jeroen Van Der Donckt"
 
-from typing import Dict, List, Union
+import itertools
+from typing import Any, Dict, Iterable, Iterator, List, Union, Tuple
 
 import pandas as pd
 
@@ -92,3 +93,58 @@ def to_series_list(
             raise TypeError("Non pd.Series or pd.DataFrame object passed.")
 
     return series_list
+
+
+def to_list(x: Any) -> List:
+    """Convert the input to a list if necessary.
+
+    Parameters
+    ----------
+    x : Any
+        The input that needs to be convert to a list.
+    
+    Returns
+    -------
+    List
+        A list of `x` if `x` wasn't a list yet, otherwise `x`.
+
+    """
+    if not isinstance(x, list):
+        return [x]
+    return x
+
+
+def to_tuple(x: Any) -> Tuple:
+    """Convert the input to a tuple if necessary.
+
+    Parameters
+    ----------
+    x : Any
+        The input that needs to be convert to a tuple.
+    
+    Returns
+    -------
+    List
+        A tuple of `x` if `x` wasn't a tuple yet, otherwise `x`.
+
+    """
+    if not isinstance(x, tuple):
+        return tuple([x])
+    return x
+
+
+def flatten(data: Iterable) -> Iterator:
+    """Flatten the given input data to an iterator.
+
+    Parameters
+    ----------
+    data : Iterable
+        The iterable data that needs to be flattened.
+
+    Returns
+    -------
+    Iterator
+        An iterator for the flattened data.
+
+    """
+    return itertools.chain.from_iterable(data)

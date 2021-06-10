@@ -32,9 +32,9 @@ def dataframe_func(func: Callable):
     ----
     Only when you want to perform row-based operations, such as `df.dropna(axis=0)`,
     this wrapper is needed.
-    Hence, in most cases that `func` requires a `pd.DataFrame`, series arguments would 
+    Hence, in most cases that `func` requires a `pd.DataFrame`, series arguments would
     be sufficient; as you can perform column-based operations on multiple `pd.Series`
-    (e.g., subtract 2 series) and most dataframe operations are also available for a 
+    (e.g., subtract 2 series) and most dataframe operations are also available for a
     `pd.Series`.
 
     """
@@ -75,27 +75,27 @@ class SeriesProcessor(FrozenClass):
             The series names on which the the processing function should be applied.
 
             This argument should match the `function` its input; \n
-            * If `series_names` is a (list of) string, than `function` should require 
+            * If `series_names` is a (list of) string, than `function` should require
               just one series as input.
             * If `series_names` is a (list of) tuple of strings, than `function` should
               require `len(tuple)` series as input.
 
             A list means multiple series (combinations) to process; \n
-            * If `series_names` is a string or a tuple of strings, than `function` will 
+            * If `series_names` is a string or a tuple of strings, than `function` will
               be called only once for the series of this argument.
             * If `series_names` is a list of either strings or tuple of strings, than
               `function` will be called for each entry of this list.
         **kwargs
             Keyword arguments which will be also passed to the `function`
 
-        Note
-        ----
+        Notes
+        -----
         If the output of `function` is a `np.ndarray`, than (items of) the given
         `series_names` must have length 1, i.e., the function requires just 1 series!
         That series its name and index are used to transform (i.e., **replace**) that
         **series with the numpy array**.
 
-        If you want to transform (i.e., **replace**) the input series with the 
+        If you want to transform (i.e., **replace**) the input series with the
         processor, than `function` should return either: \n
         * a `np.ndarray` (see above).
         * a `pd.Series` with the same name as the input series.
@@ -110,7 +110,7 @@ class SeriesProcessor(FrozenClass):
             len(series_names[0]) == len(series_name_tuple)
             for series_name_tuple in series_names
         )
-        self.series_names : List[Tuple[str]] = series_names
+        self.series_names: List[Tuple[str]] = series_names
         self.function = function
         self.name = self.function.__name__
 
@@ -179,7 +179,7 @@ class SeriesProcessor(FrozenClass):
             )
 
         # Variable that will contain the final output of this method
-        processed_output: Union[Dict[str, pd.Series], pd.DataFrame] = {}
+        processed_output: Dict[str, pd.Series] = {}
 
         def get_series_list(keys: Tuple[str]):
             """Get an ordered series list for the given keys."""
@@ -194,8 +194,9 @@ class SeriesProcessor(FrozenClass):
                 *get_series_list(series_name_tuple), **self.kwargs
             )
             func_output = _handle_seriesprocessor_func_output(
-                func_output, get_series_dict(series_name_tuple), self.name
+                func_output, get_series_dict(series_name_tuple), self.name,
             )
+            # Check that the output of the function call produces unique columns / keys
             assert (
                 len(set(processed_output.keys()).intersection(func_output.keys())) == 0
             )
@@ -262,12 +263,12 @@ def _handle_seriesprocessor_func_output(
 
     Parameters
     ----------
-    func_output: Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]
+    func_output : Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]
         The output of the SeriesProcessor its function.
-    required_dict: Dict[str, pd.Series]
+    required_dict : Dict[str, pd.Series]
         The series dict that contains the required series for the `SeriesProcessor` its
         function.
-    func_name: str
+    func_name : str
         The name of the SeriesProcessor (its function).
 
     Returns
@@ -303,26 +304,19 @@ def _handle_seriesprocessor_func_output(
         return func_output
     elif isinstance(func_output, pd.Series):
         # Convert series to series_dict and return
-        if len(required_dict) == 1:
-            # In a series_dict input_key == series.name
-            input_key = list(required_dict.keys())[0]
-            if input_key != func_output.name:
-                # TODO: unsure about this warning
-                warnings.warn(
-                    "Function output is a single series with a different name "
-                    + f"({func_output.name}) from the input series name {input_key}!\n"
-                    + "\t > Make sure this is expected behavior! Input data "
-                    + f"{input_key} won't be updated with the function output, instead "
-                    + f"output {func_output.name} will be appended to the outputs."
-                )
+        # => if func_output.name is in the required_dict, than the original series will
+        #    be replaced by this new series.
         return {str(func_output.name): func_output}
     elif isinstance(func_output, np.ndarray):
         # Must be constructed from just 1 series
+        # => the input series will be replaced by this array
         assert len(required_dict) == 1
         input_series = list(required_dict.values())[0]
         return {str(input_series.name): _np_array_to_series(func_output, input_series)}
     elif isinstance(func_output, list):
         # Nothing has to be done! A dict can be directly added to the series_dict
+        # => if for any series in the list series.name is in the required_dict, than the
+        #    the original series will be replaced by this new series.
         assert len(set([s.name for s in func_output])) == len(func_output)
         return {s.name: s for s in func_output}
     else:
