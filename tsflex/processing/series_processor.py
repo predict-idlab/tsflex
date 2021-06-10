@@ -70,7 +70,7 @@ class SeriesProcessor(FrozenClass):
                     -> Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]
 
             Note: a function that processes a `np.ndarray` instead of `pd.Series`,
-            should work just fine. TODO: is this correct?
+            should work just fine.
         series_names : Union[str, Tuple[str], List[str], List[Tuple[str]]]
             The names of the series on which the processing function should be applied.
 
@@ -95,15 +95,15 @@ class SeriesProcessor(FrozenClass):
 
         Notes
         -----
-        If the output of `function` is a `np.ndarray`, than (items of) the given
-        `series_names` must have length 1, i.e., the function requires just 1 series!
-        That series its name and index are used to transform (i.e., **replace**) that
-        **series with the numpy array**.
+        If the output of `function` is a `np.ndarray` or a `pd.Series` without a name,
+        than (items of) the given `series_names` must have length 1, i.e., the function 
+        requires just 1 series! That series its name and index are used to transform 
+        (i.e., **replace**) that series.
 
         If you want to transform (i.e., **replace**) the input series with the
         processor, than `function` should return either: \n
         * a `np.ndarray` (see above).
-        * a `pd.Series` with the same name as the input series.
+        * a `pd.Series` with no name or with the same name as the input series.
         * a `pd.DataFrame` with (one) column name equal to the input series its name.
         * a list of `pd.Series` in which (exact) one series has the same name as the
           input series.
@@ -294,26 +294,34 @@ def _handle_seriesprocessor_func_output(
 
     Note
     ----
-    * If `func_output` is a `np.ndarray`, the given `requested_dict` must contain just 1
-      series! That series its name and index are used to  transform (i.e., **replace**)
-      that **series with the numpy array**.
+    * If `func_output` is a `np.ndarray` or a `pd.Series` without a name, than the given 
+      `requested_dict` must contain just 1 series! That series its name and index are 
+      used to  transform (i.e., **replace**) that **series with the numpy array**.
       When a user does not want a numpy array to replace its input series, it is his /
       her responsibility to create a new `pd.Series` (or `pd.DataFrame`) of that numpy
       array with a different (column) name.
     * If `func_output` is a `pd.Series`, keep in mind that the input series gets
       transformed (i.e., **replaced**) with the `func_output` **when the series name is
-      equal**.
+      equal** or when there is no series name (see note above).
 
     """
     if isinstance(func_output, pd.DataFrame):
         # Nothing has to be done! A pd.DataFrame can be added to a series_dict using
         # series_dict.update(df)
         # Note: converting this to a dictionary (to_dict()) is **very** inefficient!
+        assert all(func_output.columns.values != [i for i in range(func_output.shape[1])])
         return func_output
     elif isinstance(func_output, pd.Series):
         # Convert series to series_dict and return
         # => if func_output.name is in the required_dict, than the original series will
         #    be replaced by this new series.
+        # assert (func_output.name is not None) | (len(required_dict) == 1)
+        if func_output.name is None:
+            # If a series without a name is returned that is constructed from just 1
+            # series => the input series will be replaced by this series
+            assert len(required_dict) == 1
+            input_series = list(required_dict.values())[0]
+            func_output.rename(input_series.name)
         return {str(func_output.name): func_output}
     elif isinstance(func_output, np.ndarray):
         # Must be constructed from just 1 series
