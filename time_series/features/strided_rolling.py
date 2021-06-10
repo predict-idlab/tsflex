@@ -1,4 +1,9 @@
-"""Contains a (rather) fast implementation of a strided rolling window."""
+"""Contains a (rather) fast implementation of a strided rolling window.
+
+.. todo::
+    Add documentation about assumptions/how we index.
+
+"""
 
 __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
 
@@ -44,10 +49,6 @@ class StridedRolling:
         window_idx : str
             The window's index position which will be used as index for the
             feature_window aggregation. Must be either of ['begin', 'middle', 'end']
-
-        Note
-        -----
-        TODO: add documentation about assumptions/how we index.
 
         """
         self.window = window
@@ -125,8 +126,8 @@ class StridedRolling:
             new DataFrame. The DataFrame's column-names have the format:
                 `<series_col_name(s)>_<feature_name>__w=<window>_s=<stride>`.
 
-        Note
-        ----
+        Notes
+        -----
         * If `np_func` is only a callable argument, with no additional logic, this
             will only work for a one-to-one mapping, i.e., no multiple feature-output
             columns are supported for this case!
