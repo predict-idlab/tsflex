@@ -6,12 +6,11 @@ from pathlib import Path
 from typing import Dict, List, Optional, Union
 
 import pandas as pd
-import itertools
 import dill
 import logging
 import warnings
 
-from ..utils.data import series_dict_to_df, to_series_list
+from ..utils.data import series_dict_to_df, to_series_list, flatten
 from .series_processor import SeriesProcessor
 from .logger import logger
 
@@ -50,11 +49,10 @@ class SeriesPipeline:
             List of all the required series names.
 
         """
-        flatten = itertools.chain.from_iterable
         return list(
             set(
                 flatten(
-                    [step.required_series for step in self.processing_steps]
+                    [step.get_required_series() for step in self.processing_steps]
                 )
             )
         )
