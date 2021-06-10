@@ -75,7 +75,7 @@ class SeriesProcessor(FrozenClass):
             The names of the series on which the processing function should be applied.
 
             This argument should match the `function` its input; \n
-            * If `series_names` is a (list of) string (or tuple of a single string), 
+            * If `series_names` is a (list of) string (or tuple of a single string),
               than `function` should require just one series as input.
             * If `series_names` is a (list of) tuple of strings, than `function` should
               require `len(tuple)` series as input.
@@ -96,8 +96,8 @@ class SeriesProcessor(FrozenClass):
         Notes
         -----
         If the output of `function` is a `np.ndarray` or a `pd.Series` without a name,
-        than (items of) the given `series_names` must have length 1, i.e., the function 
-        requires just 1 series! That series its name and index are used to transform 
+        than (items of) the given `series_names` must have length 1, i.e., the function
+        requires just 1 series! That series its name and index are used to transform
         (i.e., **replace**) that series.
 
         If you want to transform (i.e., **replace**) the input series with the
@@ -200,7 +200,9 @@ class SeriesProcessor(FrozenClass):
                 *get_series_list(series_name_tuple), **self.kwargs
             )
             func_output = _handle_seriesprocessor_func_output(
-                func_output, get_series_dict(series_name_tuple), self.name,
+                func_output,
+                get_series_dict(series_name_tuple),
+                self.name,
             )
             # Check that the output of the function call produces unique columns / keys
             assert (
@@ -218,8 +220,8 @@ class SeriesProcessor(FrozenClass):
 
     def __repr__(self):
         """Return formal representation of object."""
-        repr_str = self.name + (" " + str(self.kwargs)) 
-        repr_str +=  " :  " + " ".join([str(s) for s in self.series_names]) 
+        repr_str = self.name + (" " + str(self.kwargs))
+        repr_str += " :  " + " ".join([str(s) for s in self.series_names])
         return repr_str
 
     def __str__(self):
@@ -294,8 +296,8 @@ def _handle_seriesprocessor_func_output(
 
     Note
     ----
-    * If `func_output` is a `np.ndarray` or a `pd.Series` without a name, than the given 
-      `requested_dict` must contain just 1 series! That series its name and index are 
+    * If `func_output` is a `np.ndarray` or a `pd.Series` without a name, than the given
+      `requested_dict` must contain just 1 series! That series its name and index are
       used to  transform (i.e., **replace**) that **series with the numpy array**.
       When a user does not want a numpy array to replace its input series, it is his /
       her responsibility to create a new `pd.Series` (or `pd.DataFrame`) of that numpy
@@ -309,7 +311,9 @@ def _handle_seriesprocessor_func_output(
         # Nothing has to be done! A pd.DataFrame can be added to a series_dict using
         # series_dict.update(df)
         # Note: converting this to a dictionary (to_dict()) is **very** inefficient!
-        assert all(func_output.columns.values != [i for i in range(func_output.shape[1])])
+        assert all(
+            func_output.columns.values != [i for i in range(func_output.shape[1])]
+        )
         return func_output
     elif isinstance(func_output, pd.Series):
         # Convert series to series_dict and return
