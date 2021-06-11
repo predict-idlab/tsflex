@@ -315,6 +315,8 @@ def _handle_seriesprocessor_func_output(
         # Nothing has to be done! A pd.DataFrame can be added to a series_dict using
         # series_dict.update(df)
         # Note: converting this to a dictionary (to_dict()) is **very** inefficient!
+        # Assert that the DataFrame has a time-index
+        assert isinstance(func_output.index, pd.DatetimeIndex)
         # Assert that the DataFrame columns are named
         assert all(
             func_output.columns.values != [i for i in range(func_output.shape[1])]
@@ -325,7 +327,9 @@ def _handle_seriesprocessor_func_output(
         # Convert series to series_dict and return
         # => if func_output.name is in the required_dict, than the original series will
         #    be replaced by this new series.
-        # assert (func_output.name is not None) | (len(required_dict) == 1)
+        # Assert that the series has a time-index
+        assert isinstance(func_output.index, pd.DatetimeIndex)
+        # Assert (func_output.name is not None) | (len(required_dict) == 1)
         if func_output.name is None:
             # If a series without a name is returned that is constructed from just 1
             # series => the input series will be replaced by this series
@@ -343,11 +347,13 @@ def _handle_seriesprocessor_func_output(
         input_series = list(required_dict.values())[0]
         return {str(input_series.name): _np_array_to_series(func_output, input_series)}
 
-    elif isinstance(func_output, list):
-        # Convert the list into a series dict, using the same data reference
+    elif isinstance(func_output, list) and all([isinstance(el, pd.Series) for el in func_output]):
+        # Convert the list of series into a series dict, using the same data reference
         # => if for any series in the list, series.name is in the required_dict, than
         #    the the original series will be replaced by this new series.
+        # Assert that all outputs have different names
         assert len(set([s.name for s in func_output])) == len(func_output)
+        assert all([isinstance(s.index, pd.DatetimeIndex) for s in func_output])
         return {s.name: s for s in func_output}
 
     else:

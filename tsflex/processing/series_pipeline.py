@@ -177,12 +177,13 @@ class SeriesPipeline:
         # Convert the data to a series_dict
         series_dict: Dict[str, pd.Series] = {}
         for s in to_series_list(data):
-            assert type(s) == pd.Series, f"Error non pd.Series object passed: {type(s)}"
-            if not return_all_series:
-                # If just the required series have to be returned
-                if s.name in self.get_required_series():
-                    series_dict[str(s.name)] = s.copy() if copy else s
-            else:
+            # Assert the assumptions we make!
+            assert isinstance(s.index, pd.DatetimeIndex)  # TODO: what do you think of this check?
+            # TODO: also check monotonic increasing?
+
+            if s.name in self.get_required_series():
+                series_dict[str(s.name)] = s.copy() if copy else s
+            elif return_all_series:
                 # If all the series have to be returned
                 series_dict[str(s.name)] = s.copy() if copy else s
 
