@@ -82,7 +82,8 @@ class StridedRolling:
         series_list = [s[t_start:t_end] for s in series_list]
 
         # 2. Create the time_index which will be used for DataFrame reconstruction
-        self.index = pd.date_range(t_start, t_end - window, freq=stride, closed='left')
+        # use closed = left to exclued 'end' if it falls on the boundary
+        self.index = pd.date_range(t_start, t_end - window, freq=stride)
 
         # --- and adjust the time_index
         if window_idx == "end":
@@ -98,12 +99,13 @@ class StridedRolling:
         # ---------- Efficient numpy code -------
         # 1. Convert everything to int64
         np_start = t_start.to_datetime64().astype(np.int64)
-        np_stop = t_end.to_datetime64().astype(np.int64)
         np_window = self.window.to_timedelta64().astype(np.int64)
         np_stride = self.stride.to_timedelta64().astype(np.int64)
 
         # 2. Precompute the start & end times (these remain the same for each series)
-        start_times = np.arange(start=np_start, stop=np_stop - np_window, step=np_stride)
+        start_times = np.arange(
+            start=np_start, stop=np_start + len(self.index)*np_stride, step=np_stride
+        )
         end_times = start_times + np_window
 
         self.series_containers: List[StridedRolling._NumpySeriesContainer] = []
