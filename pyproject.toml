@@ -1,7 +1,7 @@
 [tool.poetry]
-name = "time_series"
+name = "tsflex"
 version = "0.1.0"
-description = "Awesome time series tools!"
+description = "Toolkit for flexible operations on time-series data"
 authors = ["Emiel Deprost", "Jeroen Van Der Donckt", "Jonas Van Der Donckt"]
 license = "MIT"
 
@@ -12,6 +12,7 @@ numpy = "^1.19.0"
 pathos = "^0.2.7"
 tqdm = "^4.60.0"
 dill = "^0.3.3"
+scikit-learn = "^0.24.2"
 
 [tool.poetry.dev-dependencies]
 black = "^20.8b1"

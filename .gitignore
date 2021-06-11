@@ -13,6 +13,7 @@ __pycache__/*
 .*.swp
 .ipynb_checkpoints/*
 .DS_Store
+.directory
 
 # Project files
 .ropeproject
@@ -49,6 +50,8 @@ MANIFEST
 
 # Per-project virtualenvs
 .venv*/
+venv
 
 # Jupyter NB Checkpoints
-.ipynb_checkpoints/
+.ipynb_checkpoints
+.virtual_documents
