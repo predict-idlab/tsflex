@@ -1,4 +1,4 @@
-# <div style="text-align: center;"><img alt="tsflex" src="./docs/_static/logo.svg" height="60"></div>
+# <div style="text-align: center;"><img alt="tsflex" src="./docs/_static/logo.svg" height="250"></div>
 
 *tsflex* is an abbreviation for: ***flex**ible **t**ime-**s**eries operations*<br>
 It is a `time-series first` toolkit for **processing & feature extraction**, making few assumptions about input data. 
