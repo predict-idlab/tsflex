@@ -254,6 +254,8 @@ def test_single_signal_series_processor(dummy_data):
     series_processor = SeriesProcessor(
         series_names=["EDA"], function=to_binary, thresh_value=thresh
     )
+    assert series_processor.name == "to_binary"
+    assert series_processor.get_required_series() == ["EDA"]
     series_dict = dataframe_to_series_dict(dummy_data)
     res = series_processor(series_dict)
 
@@ -278,6 +280,9 @@ def test_multi_signal_series_processor(dummy_data):
     series_processor = SeriesProcessor(
         series_names=["EDA", "TMP"], function=percentile_clip, l_perc=lower
     )
+    assert series_processor.name == "percentile_clip"
+    assert len(series_processor.get_required_series()) == 2
+    assert set(series_processor.get_required_series()) == set(["EDA", "TMP"])
     series_dict = dataframe_to_series_dict(dummy_data)
     res = series_processor(series_dict)
 
