@@ -2,7 +2,7 @@
 
 See Also
 --------
-`SeriesPipeline`: its `logging_file_path` of the `process` method.
+SeriesPipeline : its `logging_file_path` of the `process` method.
 
 """
 

@@ -8,9 +8,12 @@ from typing import Callable, Dict, List, Union, Tuple
 import numpy as np
 import pandas as pd
 
+from tsflex import __pdoc__
 from tsflex.utils.classes import FrozenClass
 from .logger import logger
 from ..utils.data import series_dict_to_df, to_list, to_tuple, flatten
+
+__pdoc__['Seriesprocess.__call__'] = True
 
 
 def dataframe_func(func: Callable):

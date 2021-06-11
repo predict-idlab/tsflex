@@ -2,6 +2,10 @@
 
 __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
 
+from tsflex import __pdoc__
+
+__pdoc__['NumpyFuncWrapper.__call__'] = True
+
 
 from typing import Callable, List, Union, Any
 from ..utils.classes import FrozenClass
@@ -54,6 +58,18 @@ class NumpyFuncWrapper(FrozenClass):  # TODO: waarom niet gewoon FuncWrapper?
             f" {self.kwargs})"
         )
 
-    def __call__(self, *data: np.ndarray) -> Any:
-        """Call wrapped function with passed data."""
-        return self.func(*data, **self.kwargs)
+    def __call__(self, *series: np.ndarray) -> Any:
+        """Call wrapped function with passed data.
+
+        Parameters
+        ---------
+        *series : np.ndarray
+            The (multiple) input series for the function.
+
+        Returns
+        -------
+        Any
+            The function its output for the passed series.
+
+        """
+        return self.func(*series, **self.kwargs)

@@ -2,7 +2,7 @@
 
 See Also
 --------
-`FeatureCollection`: its `logging_file_path` of the `calculate` method.
+FeatureCollection: its `logging_file_path` of the `calculate` method.
 
 """
 
