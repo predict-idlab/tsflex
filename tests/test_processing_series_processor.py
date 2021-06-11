@@ -10,6 +10,7 @@ import numpy as np
 from tsflex.processing import dataframe_func
 from tsflex.processing import SeriesProcessor
 
+from typing import List
 from pandas.testing import assert_index_equal, assert_series_equal
 from .utils import dummy_data, dataframe_to_series_dict, series_to_series_dict
 
@@ -48,7 +49,7 @@ def test_dataframe_func_decorator(dummy_data):
     assert not np.any(pd.isna(res))  # Check that there are no NANs present
 
 
-## Various output types for single_series_func = True
+## Various output types
 
 
 def test_dataframe_output(dummy_data):
@@ -116,6 +117,44 @@ def test_series_output(dummy_data):
     assert np.issubdtype(res["TMP"], np.number)
 
 
+def test_series_list_output(dummy_data):
+    # Create series output function
+    def to_numeric_abs(series: pd.Series) -> List[pd.Series]:
+        return [
+            pd.to_numeric(series),
+            pd.Series(np.abs(pd.to_numeric(series)), name=f"{series.name}_abs"),
+        ]
+
+    series_list_f = to_numeric_abs
+
+    inp = dummy_data["TMP"].astype(str)
+    assert isinstance(inp, pd.Series)
+
+    # Undecorated series function
+    assert not np.issubdtype(inp, np.number)
+    res = to_numeric_abs(inp)
+    assert isinstance(res, list)
+    assert len(res) == 2
+    assert [s.name for s in res] == ["TMP", "TMP_abs"]
+    assert all([isinstance(s, pd.Series) for s in res])
+    assert all([s.shape == dummy_data["TMP"].shape for s in res])
+    assert np.issubdtype(res[0], np.number)
+    assert all(res[1] > 0)
+
+    # Decorated series function
+    processor = SeriesProcessor(series_names=["TMP"], function=series_list_f)
+    series_dict = series_to_series_dict(inp)
+    assert not np.issubdtype(series_dict["TMP"], np.number)
+    res = processor(series_dict)
+    assert isinstance(res, dict)
+    assert len(res) == 2
+    assert res.keys() == set(["TMP", "TMP_abs"])
+    assert all([isinstance(s, pd.Series) for s in res.values()])
+    assert all([s.shape == dummy_data["TMP"].shape for s in res.values()])
+    assert np.issubdtype(res["TMP"], np.number)
+    assert all(res["TMP_abs"] > 0)
+
+
 def test_numpy_func(dummy_data):
     # Create numpy function
     def numpy_is_close_med(sig: np.ndarray) -> np.ndarray:
@@ -134,7 +173,7 @@ def test_numpy_func(dummy_data):
     assert res.dtype == np.bool8
     assert sum(res) > 0  # Check if at least 1 value is True
 
-    # # Decorated series function
+    # Decorated series function
     processor = SeriesProcessor(series_names=["TMP"], function=numpy_f)
     series_dict = series_to_series_dict(inp)
     assert isinstance(inp, pd.Series)
@@ -145,6 +184,29 @@ def test_numpy_func(dummy_data):
     assert res["TMP"].shape == dummy_data["TMP"].shape
     assert np.issubdtype(res["TMP"], np.bool8)
     assert sum(res["TMP"]) > 0  # Check if at least 1 value is True
+
+
+def test_raw_numpy_func(dummy_data):
+    numpy_f = np.abs
+    inp = dummy_data["TMP"]
+
+    # Raw numpy function
+    assert isinstance(inp.values, np.ndarray)
+    res = numpy_f(inp.values)
+    assert isinstance(res, np.ndarray)
+    assert res.shape == dummy_data["TMP"].shape
+    assert all(res >= 0)
+
+    # Decorated series function
+    processor = SeriesProcessor(series_names=["TMP"], function=numpy_f)
+    series_dict = series_to_series_dict(inp)
+    assert isinstance(inp, pd.Series)
+    res = processor(series_dict)
+    assert isinstance(res, dict)
+    assert res.keys() == series_dict.keys()
+    assert isinstance(res["TMP"], pd.Series)
+    assert res["TMP"].shape == dummy_data["TMP"].shape
+    assert all(res["TMP"] >= 0)
 
 
 def test_series_numpy_func(dummy_data):
@@ -374,7 +436,7 @@ def test_new_multi_output_series_processor(dummy_data):
 
 def test_error_dataframe_no_time_index_series_processor(dummy_data):
     def absx2(sig):
-        return pd.DataFrame(np.abs(sig.values*2), columns=[sig.name])
+        return pd.DataFrame(np.abs(sig.values * 2), columns=[sig.name])
 
     # Check if abs_diff returns a series without a name
     absx2_tmp = absx2(dummy_data["TMP"])
@@ -396,7 +458,7 @@ def test_error_dataframe_no_name_single_input_series_processor(dummy_data):
     # If you perform multi-series operation on series with different / no names
     # => the output will also have no name
     def absx2(sig):
-        return pd.DataFrame(np.abs(sig**2 - sig.rename('')))
+        return pd.DataFrame(np.abs(sig ** 2 - sig.rename("")))
 
     # Check if abs_diff returns a series without a name
     absx2_tmp = absx2(dummy_data["TMP"])
@@ -436,7 +498,7 @@ def test_error_dataframe_no_name_multi_input_series_processor(dummy_data):
 
 def test_error_series_no_time_index_series_processor(dummy_data):
     def absx2(sig):
-        return pd.Series(np.abs(sig.values*2), name=sig.name)
+        return pd.Series(np.abs(sig.values * 2), name=sig.name)
 
     # Check if abs_diff returns a series without a name
     absx2_tmp = absx2(dummy_data["TMP"])
@@ -496,7 +558,7 @@ def test_error_numpy_array_different_length_single_input_series_processor(dummy_
 
     absx2_tmp = absx2(dummy_data["TMP"])
     assert isinstance(absx2_tmp, np.ndarray)
-    assert len(absx2_tmp) == len(dummy_data) -2
+    assert len(absx2_tmp) == len(dummy_data) - 2
 
     series_processor = SeriesProcessor(
         series_names=["EDA"],
@@ -512,14 +574,17 @@ def test_error_series_list_same_name_series_processor(dummy_data):
     # If you perform multi-series operation on series with different / no names
     # => the output will also have no name
     def abs_diff_sum(sig1, sig2):
-        return [pd.Series(np.abs(sig1 - sig2), name='S1'), pd.Series(np.abs(sig1 + sig2), name='S1')]
+        return [
+            pd.Series(np.abs(sig1 - sig2), name="S1"),
+            pd.Series(np.abs(sig1 + sig2), name="S1"),
+        ]
 
     # Check if abs_diff returns a series without a name
     abs_diff_sum_tmp_eda = abs_diff_sum(dummy_data["TMP"], dummy_data["EDA"])
     assert isinstance(abs_diff_sum_tmp_eda, list)
     assert len(abs_diff_sum_tmp_eda) == 2
     assert [isinstance(el, pd.Series) for el in abs_diff_sum_tmp_eda]
-    assert [el.name == 'S1' for el in abs_diff_sum_tmp_eda]
+    assert [el.name == "S1" for el in abs_diff_sum_tmp_eda]
 
     series_processor = SeriesProcessor(
         series_names=[("EDA", "TMP")],
@@ -533,14 +598,14 @@ def test_error_series_list_same_name_series_processor(dummy_data):
 
 def test_error_series_list_no_time_index_series_processor(dummy_data):
     def absx2(sig):
-        return [pd.Series(np.abs(sig.values * 2), name='S1')]
+        return [pd.Series(np.abs(sig.values * 2), name="S1")]
 
     # Check if abs_diff returns a series without a name
     absx2_eda = absx2(dummy_data["TMP"])
     assert isinstance(absx2_eda, list)
     assert len(absx2_eda) == 1
     assert isinstance(absx2_eda[0], pd.Series)
-    assert absx2_eda[0].name == 'S1'
+    assert absx2_eda[0].name == "S1"
     assert not isinstance(absx2_eda[0].index, pd.DatetimeIndex)
 
     series_processor = SeriesProcessor(
@@ -552,7 +617,8 @@ def test_error_series_list_no_time_index_series_processor(dummy_data):
     with pytest.raises(Exception):
         _ = series_processor(series_dict)
 
-def test_error_series_list_no_time_index_series_processor(dummy_data):
+
+def test_error_series_list_no_valid_output_series_processor(dummy_data):
     def absx2(sig):
         return [i for i in range(len(sig))]
 
@@ -562,10 +628,13 @@ def test_error_series_list_no_time_index_series_processor(dummy_data):
     assert len(absx2_eda) == len(dummy_data)
 
     series_processor = SeriesProcessor(
-        series_names=["EDA" "TMP"],
+        series_names=["EDA", "TMP"],
         function=absx2,
     )
     series_dict = dataframe_to_series_dict(dummy_data)
 
-    with pytest.raises(Exception):
+    with pytest.raises(TypeError):
         _ = series_processor(series_dict)
+
+
+### Test output types (np.float32)
