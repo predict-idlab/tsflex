@@ -1,6 +1,6 @@
 """Utility functions for internal data (representation) operations."""
 
-__author__ = "Jeroen Van Der Donckt"
+__author__ = "Jeroen Van Der Donckt, Jonas Van Der Donckt"
 
 import itertools
 from typing import Any, Dict, Iterable, Iterator, List, Union, Tuple
@@ -28,6 +28,9 @@ def series_dict_to_df(series_dict: Dict[str, pd.Series]) -> pd.DataFrame:
     This internal representation is constructed in the `process` method of the
     `SeriesPipeline`.
 
+    .. todo::
+        @Jeroen - check performance
+
     """
     # 0. Check if the series_dict has only 1 series, to create the df efficiently
     if len(series_dict) == 1:
@@ -48,7 +51,7 @@ def series_dict_to_df(series_dict: Dict[str, pd.Series]) -> pd.DataFrame:
             # checking the full index.
 
             # When the time-indexes are the same we can create df very efficiently
-            return pd.DataFrame(series_dict)
+            return pd.DataFrame(series_dict, copy=False)
     except IndexError:
         # We catch an indexError as we make the assumption that there is data within the
         # series -> we do not make that assumption when constructing the DataFrame the
@@ -59,7 +62,7 @@ def series_dict_to_df(series_dict: Dict[str, pd.Series]) -> pd.DataFrame:
     for key, s in series_dict.items():
         # Check if we deal with a valid series_dict before merging on series.name
         assert key == s.name
-        df = df.merge(s, left_index=True, right_index=True, how="outer")
+        df = df.merge(s, left_index=True, right_index=True, how="outer", copy=False)
     return df
 
 
@@ -114,7 +117,7 @@ def to_list(x: Any) -> List:
     return x
 
 
-def to_tuple(x: Any) -> Tuple:
+def to_tuple(x: Any) -> Tuple[Any]:
     """Convert the input to a tuple if necessary.
 
     Parameters

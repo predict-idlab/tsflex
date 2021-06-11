@@ -29,7 +29,14 @@ from ..utils.timedelta import timedelta_to_str
 
 
 class FeatureCollection:
-    """Collection of features to be calculated."""
+    """Create a FeatureCollection.
+
+    Parameters
+    ----------
+    feature_descriptors : Union[FeatureDescriptor, MultipleFeatureDescriptors, List[Union[FeatureDescriptor, MultipleFeatureDescriptors]]], optional
+        Initial (list of) feature(s) to add to collection, by default None
+
+    """
 
     def __init__(
         self,
@@ -40,14 +47,6 @@ class FeatureCollection:
             ]
         ] = None,
     ):
-        """Create a FeatureCollection.
-
-        Parameters
-        ----------
-        feature_descriptors : Union[FeatureDescriptor, MultipleFeatureDescriptors, List[Union[FeatureDescriptor, MultipleFeatureDescriptors]]], optional
-            Initial (list of) feature(s) to add to collection, by default None
-
-        """
         # The feature collection is a dict with keys of type:
         #   tuple(tuple(str), float OR pd.timedelta, float OR pd.timedelta)
         # The outer tuple's values correspond to (series_key(s), window, stride)
@@ -62,7 +61,8 @@ class FeatureCollection:
         """Return all required series names for this feature collection.
 
         Return the list of series names that are required in order to calculate all the
-        features (defined by the `FeatureDescriptor` objects) of this feature collection.
+        features (defined by the `FeatureDescriptor` objects) of this feature
+        collection.
 
         Returns
         -------

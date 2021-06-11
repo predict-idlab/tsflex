@@ -11,7 +11,7 @@ import pandas as pd
 from .utils.data import to_series_list
 
 
-def chunk_data( # TODO: hernoemen nr chunk_data / chunk_series
+def chunk_data(
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         fs_dict: Dict[str, int],
         chunk_range_margin_s: Optional[float] = None,

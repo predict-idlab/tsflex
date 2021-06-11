@@ -2,14 +2,13 @@
 
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
-from tsflex.utils.classes import FrozenClass
-from typing import Callable, Dict, List, Optional, Union, Tuple
+import time
+from typing import Callable, Dict, List, Union, Tuple
 
 import numpy as np
 import pandas as pd
-import time
-import warnings
 
+from tsflex.utils.classes import FrozenClass
 from .logger import logger
 from ..utils.data import series_dict_to_df, to_list, to_tuple, flatten
 
@@ -28,8 +27,8 @@ def dataframe_func(func: Callable):
 
     So the decorated `func` has to take a DataFrame as first argument.
 
-    Note
-    ----
+    Notes
+    -----
     Only when you want to perform row-based operations, such as `df.dropna(axis=0)`,
     this wrapper is needed.
     Hence, in most cases that `func` requires a `pd.DataFrame`, series arguments would
@@ -50,67 +49,68 @@ def dataframe_func(func: Callable):
 
 
 class SeriesProcessor(FrozenClass):
-    """Class that executes a specific operation on the passed series_dict."""
+    """Class that executes a specific operation on the passed series_dict.
 
+    Parameters
+    ----------
+    function : Callable
+        The function that processes the series (given in the `series_names`).
+        The prototype of the function should match: \n
+
+            function(*series: pd.Series)
+                -> Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]
+
+        .. note::
+            a function that processes a `np.ndarray` instead of `pd.Series`,
+            should work just fine.
+
+    series_names : Union[str, Tuple[str], List[str], List[Tuple[str]]]
+        The names of the series on which the processing function should be applied.
+
+        This argument should match the `function` its input; \n
+        * If `series_names` is a (list of) string (or tuple of a single string),
+          than `function` should require just one series as input.
+        * If `series_names` is a (list of) tuple of strings, than `function` should
+          require `len(tuple)` series as input **and in exactly the same order**.
+
+        A list means multiple series (combinations) to process; \n
+        * If `series_names` is a string or a tuple of strings, than `function` will
+          be called only once for the series of this argument.
+        * If `series_names` is a list of either strings or tuple of strings, than
+          `function` will be called for each entry of this list.
+
+        .. note::
+            when passing a list as `series_names`, all items in this list should
+            have the same type, i.e, either \n
+            * all a `str`
+            * or, all a `tuple` _with same length_. \n
+
+    **kwargs: dict, optional
+        Keyword arguments which will be also passed to the `function`
+
+    Notes
+    -----
+    If the output of `function` is a `np.ndarray` or a `pd.Series` without a name,
+    than (items of) the given `series_names` must have length 1, i.e., the function
+    requires just 1 series! That series its name and index are used to transform
+    (i.e., **replace**) that series.
+
+    If you want to transform (i.e., **replace**) the input series with the
+    processor, than `function` should return either: \n
+    * a `np.ndarray` (see above).
+    * a `pd.Series` with no name or with the same name as the input series.
+    * a `pd.DataFrame` with (one) column name equal to the input series its name.
+    * a list of `pd.Series` in which (exact) one series has the same name as the
+      input series.
+    Series (& columns) with other (column) names will be added to the series dict.
+
+    """
     def __init__(
         self,
         function: Callable,
         series_names: Union[str, Tuple[str], List[str], List[Tuple[str]]],
         **kwargs,
     ):
-        """Init a SeriesProcessor object.
-
-        Parameters
-        ----------
-        function : Callable
-            The function that processes the series (given in the `series_names`).
-            The prototype of the function should match: \n
-
-                function(*series: pd.Series)
-                    -> Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]
-
-            Note: a function that processes a `np.ndarray` instead of `pd.Series`,
-            should work just fine.
-
-        series_names : Union[str, Tuple[str], List[str], List[Tuple[str]]]
-            The names of the series on which the processing function should be applied.
-
-            This argument should match the `function` its input; \n
-            * If `series_names` is a (list of) string (or tuple of a single string),
-              than `function` should require just one series as input.
-            * If `series_names` is a (list of) tuple of strings, than `function` should
-              require `len(tuple)` series as input **and in exactly the same order**.
-
-            A list means multiple series (combinations) to process; \n
-            * If `series_names` is a string or a tuple of strings, than `function` will
-              be called only once for the series of this argument.
-            * If `series_names` is a list of either strings or tuple of strings, than
-              `function` will be called for each entry of this list.
-
-            Note: when passing a list as `series_names`, all items in this list should
-            have the same type, i.e, either \n
-            * all a str
-            * or, all a tuple _with same length_. \n
-        **kwargs
-            Keyword arguments which will be also passed to the `function`
-
-        Notes
-        -----
-        If the output of `function` is a `np.ndarray` or a `pd.Series` without a name,
-        than (items of) the given `series_names` must have length 1, i.e., the function
-        requires just 1 series! That series its name and index are used to transform
-        (i.e., **replace**) that series.
-
-        If you want to transform (i.e., **replace**) the input series with the
-        processor, than `function` should return either: \n
-        * a `np.ndarray` (see above).
-        * a `pd.Series` with no name or with the same name as the input series.
-        * a `pd.DataFrame` with (one) column name equal to the input series its name.
-        * a list of `pd.Series` in which (exact) one series has the same name as the
-          input series.
-        Series (& columns) with other (column) names will be added to the series dict.
-
-        """
         series_names = [to_tuple(names) for names in to_list(series_names)]
         # Assert that function inputs (series) all have the same length
         assert all(
@@ -136,11 +136,10 @@ class SeriesProcessor(FrozenClass):
             List of all the required series names.
 
         """
-        # TODO: dit testen
         return list(set(flatten([name for name in self.series_names])))
 
     def __call__(self, series_dict: Dict[str, pd.Series]) -> Dict[str, pd.Series]:
-        """Cal(l)culates the processed series.
+        """**Call**culates the processed series.
 
         Parameters
         ----------
@@ -189,11 +188,11 @@ class SeriesProcessor(FrozenClass):
         processed_output: Dict[str, pd.Series] = {}
 
         def get_series_list(keys: Tuple[str]):
-            """Get an ordered series list for the given keys."""
+            """Get an ordered series list view for the given keys."""
             return [series_dict[key] for key in keys]
 
         def get_series_dict(keys: Tuple[str]):
-            """Get a series dict for the given keys."""
+            """Get a series dict view for the given keys."""
             return {key: series_dict[key] for key in keys}
 
         for series_name_tuple in self.series_names:
@@ -230,8 +229,7 @@ class SeriesProcessor(FrozenClass):
         return self.__repr__()
 
 
-# --------------------- utility functions for a SeriesProcessor
-
+# ---------------------- utility functions for a SeriesProcessor ----------------------
 
 def _np_array_to_series(np_array: np.ndarray, series: pd.Series) -> pd.Series:
     """Convert the `np_array` into a pandas Series.
@@ -246,22 +244,24 @@ def _np_array_to_series(np_array: np.ndarray, series: pd.Series) -> pd.Series:
     Returns
     -------
     pd.Series
-        The numpy array as a pandas Series with as index the given series its index and
-        as name the series its name.
+        A view of the numpy array as a pandas Series with index the given series
+        its index and name the series its name.
 
-    Note
-    ----
+    Notes
+    -----
+    * The constructed series is a pass-by-reference `view` of the numpy array.
     * The given `np_array` receives the same index and name as the `series`.
       Hence, the `np_array` needs to have the same length as the `series`.
     * Giving the `np_array` the **same name as** the `series`, will **result in**
       transforming (i.e., **replacing**) the `series` in the pipeline.
     * When a user does not want a numpy array to replace its input series, it is
-      his / her responsibility to create a new `pd.Series` (or `pd.DataFrame`) of that
+      his / her responsibility to create a `pd.Series` (or `pd.DataFrame`) of that
       numpy array with a different (column) name.
 
     """
     # The length of the out has to be the same as the series length
     assert len(np_array) == len(series)
+    # Note: pd.Series output holds a view of np_array!
     return pd.Series(data=np_array, index=series.index, name=series.name)
 
 
@@ -295,8 +295,8 @@ def _handle_seriesprocessor_func_output(
     TypeError
         Error raised when function output is invalid.
 
-    Note
-    ----
+    Notes
+    -----
     * If `func_output` is a `np.ndarray` or a `pd.Series` without a name, than the given
       `requested_dict` must contain just 1 series! That series its name and index are
       used to  transform (i.e., **replace**) that **series with the numpy array**.
@@ -312,10 +312,12 @@ def _handle_seriesprocessor_func_output(
         # Nothing has to be done! A pd.DataFrame can be added to a series_dict using
         # series_dict.update(df)
         # Note: converting this to a dictionary (to_dict()) is **very** inefficient!
+        # Assert that the DataFrame columns are named
         assert all(
             func_output.columns.values != [i for i in range(func_output.shape[1])]
         )
         return func_output
+
     elif isinstance(func_output, pd.Series):
         # Convert series to series_dict and return
         # => if func_output.name is in the required_dict, than the original series will
@@ -325,20 +327,25 @@ def _handle_seriesprocessor_func_output(
             # If a series without a name is returned that is constructed from just 1
             # series => the input series will be replaced by this series
             assert len(required_dict) == 1
+            # Rename, but keep the same reference to the data
             input_series = list(required_dict.values())[0]
-            func_output.rename(input_series.name)
+            func_output.rename(input_series.name, inplace=True, copy=False)
         return {str(func_output.name): func_output}
+
     elif isinstance(func_output, np.ndarray):
         # Must be constructed from just 1 series
         # => the input series will be replaced by this array
         assert len(required_dict) == 1
+        # Create a series with the same view
         input_series = list(required_dict.values())[0]
         return {str(input_series.name): _np_array_to_series(func_output, input_series)}
+
     elif isinstance(func_output, list):
-        # Nothing has to be done! A dict can be directly added to the series_dict
-        # => if for any series in the list series.name is in the required_dict, than the
-        #    the original series will be replaced by this new series.
+        # Convert the list into a series dict, using the same data reference
+        # => if for any series in the list, series.name is in the required_dict, than
+        #    the the original series will be replaced by this new series.
         assert len(set([s.name for s in func_output])) == len(func_output)
         return {s.name: s for s in func_output}
+
     else:
         raise TypeError(f"Function output type is invalid for processor {func_name}")

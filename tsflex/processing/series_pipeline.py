@@ -20,20 +20,19 @@ class _ProcessingError(Exception):
 
 
 class SeriesPipeline:
-    """Pipeline for applying `SeriesProcessor` objects sequentially."""
+    """Pipeline for applying `SeriesProcessor` objects sequentially.
+
+    Parameters
+    ----------
+    processors : List[SeriesProcessor], optional
+        List of `SeriesProcessor` objects that will be applied sequentially to the
+        internal series dict, by default None. **The processing steps will be
+        executed in the same order as passed in this list**.
+
+    """
 
     def __init__(self, processors: Optional[List[SeriesProcessor]] = None):
-        """Create a `SeriesPipeline` instance.
-
-        Parameters
-        ----------
-        processors : List[SeriesProcessor], optional
-            List of `SeriesProcessor` objects that will be applied sequentially to the
-            internal series dict, by default None. **The processing steps will be
-            executed in the same order as passed in this list**.
-
-        """
-        self.processing_steps: List[SeriesProcessor] = [] # TODO: dit private of niet?
+        self.processing_steps: List[SeriesProcessor] = []  # TODO: dit private of niet?
         if processors is not None:
             self.processing_steps = processors
 
@@ -50,11 +49,7 @@ class SeriesPipeline:
 
         """
         return list(
-            set(
-                flatten(
-                    [step.get_required_series() for step in self.processing_steps]
-                )
-            )
+            set(flatten([step.get_required_series() for step in self.processing_steps]))
         )
 
     def append(self, processor: SeriesProcessor) -> None:
@@ -89,7 +84,7 @@ class SeriesPipeline:
         return_df: Optional[bool] = False,
         return_all_series: Optional[bool] = True,
         drop_keys: Optional[List[str]] = None,
-        copy : Optional[bool] = False,
+        copy: Optional[bool] = False,
         logging_file_path: Optional[Union[str, Path]] = None,
     ) -> Union[List[pd.Series], pd.DataFrame]:
         """Execute all `SeriesProcessor` objects in pipeline sequentially.

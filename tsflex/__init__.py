@@ -1,7 +1,15 @@
-"""Time Series lib, tool for processing and feature extraction in time series."""
+"""tsflex, a flexible tool for time-series first data manipulation."""
 
 __docformat__ = 'numpy'
 __author__ = "Jonas Van Der Donckt"
+
+__pdoc__ = {
+    'tsflex.utils': False,
+    # show the seriesprocessor it's call method
+    'SeriesProcessor.__call__': True,
+    'processing.SeriesProcessor.__call__': True,
+}
+
 
 from .features import (
     FeatureDescriptor, 
