@@ -82,7 +82,7 @@ class StridedRolling:
         series_list = [s[t_start:t_end] for s in series_list]
 
         # 2. Create the time_index which will be used for DataFrame reconstruction
-        self.index = pd.date_range(t_start, t_end - window, freq=stride)
+        self.index = pd.date_range(t_start, t_end - window, freq=stride, closed='left')
 
         # --- and adjust the time_index
         if window_idx == "end":
