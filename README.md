@@ -1,27 +1,9 @@
-# <div style="text-align: center;"><img alt="tsflex" src="./docs/_static/logo.svg" height="250"></div>
+# <div style="text-align: center;"><img alt="tsflex" src="./docs/_static/logo.png" height="150"></div>
 
-*tsflex* is an abbreviation for: ***flex**ible **t**ime-**s**eries operations*<br>
+*tsflex* stands for: ***flex**ible **t**ime-**s**eries operations*<br>
 It is a `time-series first` toolkit for **processing & feature extraction**, making few assumptions about input data. 
 
 * [example notebooks](examples/)
-
-
-### Table of contents
-
-
-
-## Feature extraction
-
-Using time-series data, the most classical way to extract features is by employing a **strided-window** approach.
-
-* assume `stride of 1`
-* assume `data is fixed frequency`
-* 
-
----
-The only data assumptions made by tsflex are:
-* the data has a `pd.DatetimeIndex` & this index is `monotonically_increasing`
-* the data's series names must be unique
 
 ### Advantages of tsflex
 
@@ -38,6 +20,15 @@ The only data assumptions made by tsflex are:
 * it is field & unit tested
 * it has a comprehensive documentation
 * it is compatible with sklearn (w.i.p. for gridsearch integration), pandas and numpy
+
+
+## Table of contents
+  - [Installation](#installation)
+  - [Usage](#usage)
+    - [Series processing](#series-processing)
+    - [Feature extraction](#feature-extraction-1)
+  - [Documentation](#documentation)
+
 
 ## Installation
 
@@ -61,6 +52,18 @@ from tsflex.processing import SeriesProcessor, SeriesPipeline
 
 
 ### Feature extraction
+
+Using time-series data, the most classical way to extract features is by employing a **strided-window** approach.
+
+* assume `stride of 1`
+* assume `data is fixed frequency`
+* 
+
+---
+The only data assumptions made by tsflex are:
+* the data has a `pd.DatetimeIndex` & this index is `monotonically_increasing`
+* the data's series names must be unique
+
 
 ```python
 import pandas as pd
@@ -107,8 +110,27 @@ which outputs:
 | 2021-07-05 00:00:00 |                      0.726858  |                     0.0011865 |
 
 
----
-👤 _Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost_
+## Documentation
 
+`:WIP:`
+
+Too see the documentation locally, install [pdoc](https://github.com/pdoc3/pdoc) and execute the succeeding command from this folder location.
+
+```sh
+pdoc3 --template-dir docs/pdoc_template/ --http :8181 tsflex
+```
+
+
+
+<br>
+
+
+
+---
+
+<br>
+<div style="text-align: center;">
+👤 <i>Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost</i>
+</div>
 
 
