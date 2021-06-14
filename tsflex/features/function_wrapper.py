@@ -1,14 +1,19 @@
-"""Object-oriented representation of a function."""
+"""NumpyFuncWrapper class for object-oriented representation of a function."""
 
 __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
 
+from tsflex import __pdoc__
 
-from typing import Callable, List, Union
+__pdoc__['NumpyFuncWrapper.__call__'] = True
+
+
+from typing import Callable, List, Union, Any
+from ..utils.classes import FrozenClass
 
 import numpy as np
 
 
-class NumpyFuncWrapper:
+class NumpyFuncWrapper(FrozenClass):  # TODO: waarom niet gewoon FuncWrapper?
     """Numpy function wrapper.
 
     A Numpy function wrapper which takes a numpy array as input and returns a numpy
@@ -44,6 +49,8 @@ class NumpyFuncWrapper:
         else:
             raise TypeError(f"`output_names` is unexpected type {type(output_names)}")
 
+        self._freeze()
+
     def __repr__(self) -> str:
         """Return repr string."""
         return (
@@ -51,6 +58,18 @@ class NumpyFuncWrapper:
             f" {self.kwargs})"
         )
 
-    def __call__(self, data: np.ndarray) -> np.ndarray:
-        """Call wrapped function with passed data."""
-        return self.func(data, **self.kwargs)
+    def __call__(self, *series: np.ndarray) -> Any:
+        """Call wrapped function with passed data.
+
+        Parameters
+        ---------
+        *series : np.ndarray
+            The (multiple) input series for the function.
+
+        Returns
+        -------
+        Any
+            The function its output for the passed series.
+
+        """
+        return self.func(*series, **self.kwargs)
