@@ -9,13 +9,13 @@
     html_lang = 'en'
     show_inherited_members = True
     extract_module_toc_into_sidebar = True
-    list_class_variables_in_index = True
+    list_class_variables_in_index = False
     sort_identifiers = False
     show_type_annotations = False
 
     # Show collapsed source code block next to each item.
     # Disabling this can improve rendering speed of large modules.
-    show_source_code = True
+    show_source_code = False
 
     # If set, format links to objects in online source code repository
     # according to this template. Supported keywords for interpolation
@@ -36,7 +36,9 @@
     # Set the style keyword such as 'atom-one-light' or 'github-gist'
     #     Options: https://github.com/highlightjs/highlight.js/tree/master/src/styles
     #     Demo: https://highlightjs.org/static/demo/
-    hljs_style = 'github'
+    # hljs_style = 'docco'
+    hljs_style = 'foundation'
+    # hljs_style = 'idea'
 
     # If set, insert Google Analytics tracking code. Value is GA
     # tracking id (UA-XXXXXX-Y).
