@@ -37,16 +37,20 @@ class FeatureDescriptor(FrozenClass):
             require `len(tuple)` series as input **and in exactly the same order**
     window : Union[float, str, pd.Timedelta]
         The window size, this argument supports multiple types: \n
-        * If the type is an `float`, it represents the series its window-size in
+        * If the type is an `float`, it represents the series its window size in
             **seconds**.
         * If the window's type is a `pd.Timedelta`, the window size represents
             the window-time.
-        * If a `str`, it represents a window-time-string.
+        * If a `str`, it represents a window-time-string. 
+          Note: When no time-unit is present in the string, it represents the window 
+          size in **seconds**.
     stride : Union[int, str, pd.Timedelta]
         The stride of the window rolling process, supports multiple types: \n
-        * If the type is `float`, it represents the window size in **seconds**
+        * If the type is `float`, it represents the stride size in **seconds**
         * If the type is `pd.Timedelta`, it represents the stride-roll timedelta.
-        * If a type is `str`, it represents a stride-roll-time-string.
+        * If a type is `str`, it represents a stride-roll-time-string. 
+          Note: When no time-unit is present in the string, it represents the stride 
+          size in **seconds**.
 
     Notes
     -----
@@ -104,12 +108,9 @@ class FeatureDescriptor(FrozenClass):
                 f" {type(function)}."
             )
 
-        # construct a function-string
-        if isinstance(self.function, NumpyFuncWrapper):
-            f_name = self.function
-        else:
-            f_name = self.function.__name__
-        self._func_str: str = f"{self.__class__.__name__} - func: {str(f_name)}"
+        # Construct a function-string
+        f_name = str(self.function)
+        self._func_str: str = f"{self.__class__.__name__} - func: {f_name}"
 
         self._freeze()
 
@@ -126,6 +127,8 @@ class FeatureDescriptor(FrozenClass):
             * If the type is a `pd.Timedelta`, nothing will happen.
             * If the type is a `str`, `arg` should represent a time-string, and will be
               converted to a `pd.Timedelta`.
+              Note: if there is no time-unit in the string, it should represent the
+              timedelta in **seconds**.
 
         Returns
         -------
@@ -139,7 +142,13 @@ class FeatureDescriptor(FrozenClass):
             `pd.Timedelta`.
 
         """
-        if isinstance(arg, int) or isinstance(arg, float):
+        try:
+            # Cast a string without time units or an int to float
+            arg = float(arg)
+        except:
+            pass
+
+        if isinstance(arg, float):
             return pd.Timedelta(seconds=arg)
         elif isinstance(arg, str):
             return pd.Timedelta(arg)
