@@ -1,13 +1,32 @@
-# <div style="text-align: center;"><img alt="tsflex" src="./docs/_static/logo.png" height="150"></div>
+# <p align="center"><img alt="tsflex" src="./docs/_static/logo.png" height="100"></p>
 
-*tsflex* stands for: ***flex**ible **t**ime-**s**eries operations*<br>
+*tsflex* stands for: _**flex**ible **t**ime-**s**eries operations_<br>
+
 It is a `time-series first` toolkit for **processing & feature extraction**, making few assumptions about input data. 
 
 * [example notebooks](examples/)
 
-### Advantages of tsflex
+## Table of contents
+  - [Installation](#installation)
+  - [Usage](#usage)
+    - [Series processing](#series-processing)
+    - [Feature extraction](#feature-extraction-1)
+  - [Documentation](#documentation)
 
-*fslex* has multiple selling points, for example
+
+## Installation
+
+`:WIP: - not yet published to pypi`
+
+```sh
+pip install tsflex
+```
+
+## Advantages of tsflex
+
+*tsflex* has multiple selling points, for example
+
+`todo: create links to example benchmarking notebooks`
 
 * it is efficient
   * execution time -> multiprocessing / vectorized
@@ -20,21 +39,6 @@ It is a `time-series first` toolkit for **processing & feature extraction**, mak
 * it is field & unit tested
 * it has a comprehensive documentation
 * it is compatible with sklearn (w.i.p. for gridsearch integration), pandas and numpy
-
-
-## Table of contents
-  - [Installation](#installation)
-  - [Usage](#usage)
-    - [Series processing](#series-processing)
-    - [Feature extraction](#feature-extraction-1)
-  - [Documentation](#documentation)
-
-
-## Installation
-
-```sh
-pip install tsflex
-```
 
 ## Usage
 
@@ -53,13 +57,6 @@ from tsflex.processing import SeriesProcessor, SeriesPipeline
 
 ### Feature extraction
 
-Using time-series data, the most classical way to extract features is by employing a **strided-window** approach.
-
-* assume `stride of 1`
-* assume `data is fixed frequency`
-* 
-
----
 The only data assumptions made by tsflex are:
 * the data has a `pd.DatetimeIndex` & this index is `monotonically_increasing`
 * the data's series names must be unique
@@ -77,29 +74,28 @@ fc = FeatureCollection(
     feature_descriptors=[
         FeatureDescriptor(
             function=scipy.stats.skew,
-            series_name='random_series',
-            window='1day',
-            stride='6hours'
+            series_name="myseries",
+            window="1day",
+            stride="6hours"
         )
     ]
 )
-# Add another feature to the feature collection
-fc.add(FeatureDescriptor(np.min, 'series_key', '2days', '1day'))
+# -- 1.1 Add another feature to the feature collection
+fc.add(FeatureDescriptor(np.min, 'myseries', '2days', '1day'))
 
 # 2. Get your time-indexed data
 data = pd.Series(
-    data=np.random.random(1000),
-    index=pd.date_range("2021-07-01", freq="1h", periods=1000),
-).rename('random_series')
-# drop some data, as we don't make frequency assumptions
+    data=np.random.random(10_000), 
+    index=pd.date_range("2021-07-01", freq="1h", periods=10_000),
+).rename('myseries')
+# -- 2.1 drop some data, as we don't make frequency assumptions
 data = data.drop(np.random.choice(data.index, 200, replace=False))
 
 # 3. Calculate the feature on some data
 fc.calculate(data=data, n_jobs=1, return_df=True)
+# which outputs: a pd.DataFrame with content:
 ```
-which outputs:
-
-|                     |   **series_key__skew__w=1D_s=12h** |   **series_key__amin__w=2D_s=1D** |
+|      index               |   **myseries__skew__w=1D_s=12h**  |    **myseries__amin__w=2D_s=1D** |
 |:--------------------|-------------------------------:|------------------------------:|
 | 2021-07-02 00:00:00 |                     -0.0607221 |                   nan         |
 | 2021-07-02 12:00:00 |                     -0.142407  |                   nan         |
@@ -108,6 +104,7 @@ which outputs:
 | 2021-07-04 00:00:00 |                     -0.188953  |                     0.0011865 |
 | 2021-07-04 12:00:00 |                      0.259685  |                   nan         |
 | 2021-07-05 00:00:00 |                      0.726858  |                     0.0011865 |
+| ... |                      ...  |                     ... |
 
 
 ## Documentation
@@ -120,17 +117,13 @@ Too see the documentation locally, install [pdoc](https://github.com/pdoc3/pdoc)
 pdoc3 --template-dir docs/pdoc_template/ --http :8181 tsflex
 ```
 
-
-
 <br>
 
 
 
 ---
-
-<br>
-<div style="text-align: center;">
+<p align="center">
 👤 <i>Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost</i>
-</div>
+</p>
 
 
