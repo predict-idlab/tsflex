@@ -20,12 +20,12 @@ class _ProcessingError(Exception):
 
 
 class SeriesPipeline:
-    """Pipeline for applying `SeriesProcessor` objects sequentially.
+    """Pipeline for applying ``SeriesProcessor`` objects sequentially.
 
     Parameters
     ----------
     processors : List[SeriesProcessor], optional
-        List of `SeriesProcessor` objects that will be applied sequentially to the
+        List of ``SeriesProcessor`` objects that will be applied sequentially to the
         internal series dict, by default None. **The processing steps will be
         executed in the same order as passed in this list**.
 
@@ -40,7 +40,7 @@ class SeriesPipeline:
         """Return all required series names for this pipeline.
 
         Return the list of series names that are required in order to execute all the
-        `SeriesProcessor` objects of this processing pipeline.
+        ``SeriesProcessor`` objects of this processing pipeline.
 
         Returns
         -------
@@ -53,27 +53,27 @@ class SeriesPipeline:
         )
 
     def append(self, processor: SeriesProcessor) -> None:
-        """Append a `SeriesProcessor` at the end of the pipeline.
+        """Append a ``SeriesProcessor`` at the end of the pipeline.
 
         Parameters
         ----------
         processor : SeriesProcessor
-            The `SeriesProcessor` that will be added to the end of the pipeline
+            The ``SeriesProcessor`` that will be added to the end of the pipeline
 
         """
         self.processing_steps.append(processor)
 
     def insert(self, idx: int, processor: SeriesProcessor) -> None:
-        """Insert a `SeriesProcessor` at the given index in the pipeline.
+        """Insert a ``SeriesProcessor`` at the given index in the pipeline.
 
         Parameters
         ----------
         idx : int
             The index where the given processor should be inserted in the pipeline.
             Index 0 will insert the given processor at the front of the pipeline,
-            and index `len(pipeline)` is equivalent to appending the processor.
+            and index ``len(pipeline)`` is equivalent to appending the processor.
         processor : SeriesProcessor
-            The `SeriesProcessor` that will be added to the end of the pipeline
+            The ``SeriesProcessor`` that will be added to the end of the pipeline
 
         """
         self.processing_steps.insert(idx, processor)
@@ -87,7 +87,7 @@ class SeriesPipeline:
         copy: Optional[bool] = False,
         logging_file_path: Optional[Union[str, Path]] = None,
     ) -> Union[List[pd.Series], pd.DataFrame]:
-        """Execute all `SeriesProcessor` objects in pipeline sequentially.
+        """Execute all ``SeriesProcessor`` objects in pipeline sequentially.
 
         Apply all the processing steps on passed Series list or DataFrame and return the
         preprocessed Series list or DataFrame.
@@ -97,26 +97,27 @@ class SeriesPipeline:
         data : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
             Dataframe or Series or list thereof, with all the required data for the
             processing steps. \n
-            **Remark**: each Series / DataFrame must have a `pd.DatetimeIndex`.
+            **Remark**: each Series / DataFrame must have a ``pd.DatetimeIndex``.
             **Remark**: we assume that each name / column is unique.
         return_df : bool, optional
             Whether the output needs to be a series list or a DataFrame, by default 
             False.
-            If `True` the output series will be combined to a DataFrame with an outer
+            If True the output series will be combined to a DataFrame with an outer
             merge.
         return_all_series : bool, optional
             Whether the output needs to return all the series, by default True.
-            If `True` the output will contain all series that were passed to this
-            method. If `False` the output will contain just the required series (see
-            `get_required_series`).
+            * If True the output will contain all series that were passed to this
+            method.
+            * If False the output will contain just the required series (see
+            ``get_required_series``).
         drop_keys : List[str], optional
             Which keys should be dropped when returning the output, by default None.
         copy : bool, optional
-            Whether the series in `data` should be copied, by default False.
+            Whether the series in ``data`` should be copied, by default False.
         logging_file_path : Union[str, Path], optional
             The file path where the logged messages are stored, by default None.
-            If `None`, then no logging `FileHandler` will be used and the logging
-            messages are only pushed to stdout. Otherwise, a logging `FileHandler` will
+            If ``None``, then no logging ``FileHandler`` will be used and the logging
+            messages are only pushed to stdout. Otherwise, a logging ``FileHandler`` will
             write the logged messages to the given file path.
 
         Returns
@@ -126,19 +127,19 @@ class SeriesPipeline:
 
         Notes
         -----
-        * If a `logging_file_path` is provided, the execution (time) info can be
-          retrieved by calling `logger.get_processor_logs(logging_file_path)`. <br>
-          Be aware that the `logging_file_path` gets cleared before the logger pushes
+        * If a ``logging_file_path`` is provided, the execution (time) info can be
+          retrieved by calling ``logger.get_processor_logs(logging_file_path)``. <br>
+          Be aware that the ``logging_file_path`` gets cleared before the logger pushes
           logged messages. Hence, one should use a separate logging file for each
           constructed processing and feature instance with this library.
-        * If a series processor its function output is a `np.ndarray`, the input series
+        * If a series processor its function output is a ``np.ndarray``, the input series
           dict (required dict for that function) must contain just 1 series! That series
           its name and index are used to return a series dict. When a user does not want
           a numpy array to replace its input series, it is his / her responsibility to
-          create a new `pd.Series` (or `pd.DataFrame`) of that numpy array with a
+          create a new ``pd.Series`` (or ``pd.DataFrame``) of that numpy array with a
           different (column) name.
-        * If `func_output` is a `pd.Series`, keep in mind that the input series gets
-          transformed (i.e., replaced) in the pipeline with the `func_output` when the
+        * If ``func_output`` is a ``pd.Series``, keep in mind that the input series gets
+          transformed (i.e., replaced) in the pipeline with the ``func_output`` when the
           series name is  equal.
 
         Raises
@@ -220,18 +221,18 @@ class SeriesPipeline:
             return [s for s in series_dict.values()]
 
     def serialize(self, file_path: Union[str, Path]):
-        """Serialize this `SeriesPipeline` instance.
+        """Serialize this ``SeriesPipeline`` instance.
 
         Notes
         ------
-        As we use `Dill <https://github.com/uqfoundation/dill>`_ to serialize, we can
-        also serialize (decorator)functions which are defined in the local scope,
-        like lambdas.
+        As we use [Dill](https://github.com/uqfoundation/dill){:target="_blank"} to
+        serialize, we can also serialize (decorator)functions which are defined in the
+        local scope, like lambdas.
 
         Parameters
         ----------
         file_path : Union[str, Path]
-            The path where the `SeriesProcessor` will be serialized.
+            The path where the ``SeriesProcessor`` will be serialized.
 
         """
         with open(file_path, "wb") as f:

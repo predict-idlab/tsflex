@@ -20,7 +20,7 @@ from .series_processor import SeriesProcessor
 from .series_pipeline import SeriesPipeline
 
 
-## Future work
+# --- Future work ---
 # * BaseEstimator support: it is not really useful right now to support this.
 #   As for example sklearn GridSearchCV requires X and y to have the same length,
 #   but SeriesPipeline (sometimes) transforms the length of X in your pipeline.
@@ -43,6 +43,40 @@ class SKSeriesPipeline(TransformerMixin):
     3. The `SeriesPipeline` its `process` method is wrapped in this class its
        `transform` method,
 
+    This constructor wraps the `SeriesPipeline` constructor arguments and the
+    relevant parameters of its `process` method.
+
+    Parameters
+    ----------
+    processors : List[SeriesProcessor]
+        List of `SeriesProcessor` objects that will be applied sequentially to the
+        given data. The processing steps will be executed in the  same order as
+        passed with this list.
+    return_all_series : bool, optional
+        Whether the output needs to return all the series, by default True. \n
+        * If `True` the output will contain all series that were passed to this
+          method.
+        * If `False` the output will contain just the required series (see
+          `SeriesPipeline.get_required_series`).
+    drop_keys : List[str], optional
+        Which keys should be dropped when returning the output, by default None.
+    logging_file_path : Union[str, Path], optional
+        The file path where the logged messages are stored, by default None. \n
+        * If `None`, then no logging `FileHandler` will be used and the logging
+          messages are only pushed to stdout.
+        * Otherwise, a logging `FileHandler` will write the logged messages to
+          the given file path.
+
+    Notes
+    -----
+    * If a `logging_file_path` is provided, the execution (time) statistics can be
+      retrieved by calling `logger.get_processor_logs(logging_file_path)`. <br>
+      Be aware that the `logging_file_path` gets cleared before the logger pushes
+      logged messages. Hence, one should use a separate logging file for each
+      constructed processing and feature instance with this library.
+    * It is not possible to pass the `return_df` argument from the `process`
+      method, because this should always be True (in order to output a valid
+      iterable in the `transform` method)
     """
 
     def __init__(
@@ -52,44 +86,6 @@ class SKSeriesPipeline(TransformerMixin):
         drop_keys: Optional[List[str]] = None,
         logging_file_path: Optional[Union[str, Path]] = None,
     ):
-        """Create a `SKSeriesPipeline`, which is a sklearn-compatible transformer.
-
-        This constructor wraps the `SeriesPipeline` constructor arguments and the
-        relevant parameters of its `process` method.
-
-        Parameters
-        ----------
-        processors : List[SeriesProcessor]
-            List of `SeriesProcessor` objects that will be applied sequentially to the
-            given data. The processing steps will be executed in the  same order as
-            passed with this list.
-        return_all_series : bool, optional
-            Whether the output needs to return all the series, by default True. \n
-            * If `True` the output will contain all series that were passed to this
-              method.
-            * If `False` the output will contain just the required series (see
-              `SeriesPipeline.get_required_series`).
-        drop_keys : List[str], optional
-            Which keys should be dropped when returning the output, by default None.
-        logging_file_path : Union[str, Path], optional
-            The file path where the logged messages are stored, by default None. \n
-            * If `None`, then no logging `FileHandler` will be used and the logging
-              messages are only pushed to stdout.
-            * Otherwise, a logging `FileHandler` will write the logged messages to
-              the given file path.
-
-        Notes
-        -----
-        * If a `logging_file_path` is provided, the execution (time) statistics can be
-          retrieved by calling `logger.get_processor_logs(logging_file_path)`. <br>
-          Be aware that the `logging_file_path` gets cleared before the logger pushes
-          logged messages. Hence, one should use a separate logging file for each
-          constructed processing and feature instance with this library.
-        * It is not possible to pass the `return_df` argument from the `process`
-          method, because this should always be True (in order to output a valid
-          iterable in the `transform` method)
-
-        """
         self.processors = processors
         self.return_all_series = return_all_series
         self.drop_keys = drop_keys

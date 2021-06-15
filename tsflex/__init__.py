@@ -1,12 +1,15 @@
-"""tsflex, a flexible tool for time-series first data manipulation."""
+"""tsflex,  _**flex**ible **t**ime-**s**eries operations_.
+
+.. include:: ../docs/pdoc_include/root_documentation.md
+"""
 
 __docformat__ = 'numpy'
 __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
 __pdoc__ = {
-    'tsflex.utils': False,
-    # show the seriesprocessor its call method
+    # do not show tue utils module
+    # 'tsflex.utils': False,
+    # show the seriesprocessor & numpyfuncwrapper their call method
     'SeriesProcessor.__call__': True,
-    # show the numpyfuncwrapper its call method
     'NumpyFuncWrapper.__call__': True,
 }
 
@@ -48,4 +51,7 @@ __all__ = [
 
     # Chunking
     "chunk_data",
+
+    # documentation
+    "__pdoc__"
 ]

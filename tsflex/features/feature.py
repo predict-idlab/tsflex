@@ -41,16 +41,19 @@ class FeatureDescriptor(FrozenClass):
             **seconds**.
         * If the window's type is a `pd.Timedelta`, the window size represents
             the window-time.
-        * If a `str`, it represents a window-time-string. 
-          Note: When no time-unit is present in the string, it represents the window 
-          size in **seconds**.
+        * If a `str`, it represents a window-time-string. \n
+            .. Note::
+                When no time-unit is present in the string, it represents the stride
+                size in **seconds**.
+
     stride : Union[int, str, pd.Timedelta]
         The stride of the window rolling process, supports multiple types: \n
         * If the type is `float`, it represents the stride size in **seconds**
         * If the type is `pd.Timedelta`, it represents the stride-roll timedelta.
-        * If a type is `str`, it represents a stride-roll-time-string. 
-          Note: When no time-unit is present in the string, it represents the stride 
-          size in **seconds**.
+        * If a type is `str`, it represents a stride-roll-time-string. \n
+            .. Note::
+                When no time-unit is present in the string, it represents the stride
+                size in **seconds**.
 
     Notes
     -----
@@ -64,14 +67,12 @@ class FeatureDescriptor(FrozenClass):
       exactly the same length! Hence,  make sure that the `function` can deal with
       this!
     * For more information about the str-based time args, look into:
-      https://pandas.pydata.org/pandas-docs/stable/user_guide/timedeltas.html#parsing
-    *
-     .. todo::
-
-        Add documentation of how the index/slicing takes place / which
-        assumptions we make.
-
-        raise error function tries to change values of view ...
+      [pandas time delta](https://pandas.pydata.org/pandas-docs/stable/user_guide/timedeltas.html#parsing){:target="_blank"}
+    <br><br>
+    .. todo::
+        * Add documentation of how the index/slicing takes place / which
+          assumptions we make.
+        * Raise error function tries to change values of view due to flag
 
 
     Raises
@@ -94,14 +95,14 @@ class FeatureDescriptor(FrozenClass):
         stride: Union[float, str, pd.Timedelta],
     ):
         self.series_name: Tuple[str] = to_tuple(series_name)
-        self.window = FeatureDescriptor._parse_time_arg(window)
-        self.stride = FeatureDescriptor._parse_time_arg(stride)
+        self.window: pd.Timedelta = FeatureDescriptor._parse_time_arg(window)
+        self.stride: pd.Timedelta = FeatureDescriptor._parse_time_arg(stride)
 
         # Order of if statements is important (as NumpyFuncWrapper also is a Callable)!
         if isinstance(function, NumpyFuncWrapper):
-            self.function = function
+            self.function: NumpyFuncWrapper = function
         elif isinstance(function, Callable):
-            self.function = NumpyFuncWrapper(function) # TODO: doen we dit niet nog op een andere plek?
+            self.function: NumpyFuncWrapper = NumpyFuncWrapper(function)
         else:
             raise TypeError(
                 "Expected feature function to be a `NumpyFuncWrapper` but is a"

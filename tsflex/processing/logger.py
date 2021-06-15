@@ -42,7 +42,7 @@ def _parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
     ----------
     logging_file_path: str
         The file path where the logged messages are stored. This is the file path that
-        is passed to the `SeriesPipeline` its process method.
+        is passed to the ``SeriesPipeline`` its process method.
 
     Returns
     -------
@@ -52,8 +52,8 @@ def _parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
 
     Note
     ----
-    This function only works when the `logging_file_path` used in a
-    `SeriesPipeline` its `process` method is passed.
+    This function only works when the ``logging_file_path`` used in a
+    ``SeriesPipeline`` its ``process`` method is passed.
 
     """
     df = logging_file_to_df(logging_file_path)
@@ -63,19 +63,19 @@ def _parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
 
 
 def get_processor_logs(logging_file_path: str) -> pd.DataFrame:
-    """Get execution (time) info for each processor of a `SeriesPipeline`.
+    """Get execution (time) info for each processor of a ``SeriesPipeline``.
 
     Parameters
     ----------
     logging_file_path: str
         The file path where the logged messages are stored. This is the file path that
-        is passed to the `SeriesPipeline` its `process` method.
+        is passed to the ``SeriesPipeline`` its ``process`` method.
 
     Returns
     -------
     pd.DataFrame
         A DataFrame containing each processor its duration, required keys, and whether it 
-        is a `single_series_func` .
+        is a ``single_series_func`` .
 
     """
     df = _parse_logging_execution_to_df(logging_file_path)
