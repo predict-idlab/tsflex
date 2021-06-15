@@ -2,7 +2,6 @@
 
 __author__ = "Jeroen Van Der Donckt, Emiel Deprost, Jonas Van Der Donckt"
 
-from logging import error
 import pytest
 import pandas as pd
 import numpy as np
