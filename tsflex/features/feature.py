@@ -143,7 +143,7 @@ class FeatureDescriptor(FrozenClass):
 
         """
         try:
-            # Cast a string without time units or an int to float
+            # Cast a string without time units to float (or cast an int to float)
             arg = float(arg)
         except:
             pass
@@ -218,6 +218,12 @@ class MultipleFeatureDescriptors:
         windows: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
         strides: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
     ):
+        # Cast functions to NumpyFuncWrapper, this avoids creating multiple
+        # NumpyFuncWrapper objects for the same function in the FeatureDescriptor
+        def to_np_func_wrapper(f: Callable): 
+            return f if isinstance(f, NumpyFuncWrapper) else NumpyFuncWrapper(f)
+        functions = [to_np_func_wrapper(f) for f in functions]
+        # Convert the series names to list of tuples
         series_names = [to_tuple(names) for names in to_list(series_names)]
         # Assert that function inputs (series) all have the same length
         assert all(
@@ -229,7 +235,7 @@ class MultipleFeatureDescriptors:
         strides = to_list(strides)
 
         self.feature_descriptions: List[FeatureDescriptor] = []
-        # iterate over all combinations
+        # Iterate over all combinations
         combinations = [functions, series_names, windows, strides]
         for function, series_name, window, stride in itertools.product(*combinations):
             self.feature_descriptions.append(

@@ -10,11 +10,10 @@ from tsflex.processing import dataframe_func
 from tsflex.processing import SeriesProcessor, SeriesPipeline
 from tsflex.processing.series_pipeline import _ProcessingError
 
-from .utils import dummy_data, dataframe_to_series_dict, series_to_series_dict
+from .utils import dummy_data
 
 
 ## SeriesPipeline
-
 
 def test_single_signal_series_pipeline(dummy_data):
     def interpolate(series: pd.Series) -> pd.Series:
@@ -300,8 +299,5 @@ def test_error_output_dataframe_no_time_index_series_pipeline(dummy_data):
 
 
 
-
 # TODO: test serialize
-
-# TODO: exception lijn 196
-# TODO: Test skseries_processing_pipeline
+# TODO: test logging
