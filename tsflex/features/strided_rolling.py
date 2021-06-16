@@ -83,7 +83,10 @@ class StridedRolling:
         # 2. Create the time_index which will be used for DataFrame reconstruction
         # use closed = left to exclude 'end' if it falls on the boundary
         # note: the index automatically takes the timezone of `t_start` & `t_end`
-        self.index = pd.date_range(t_start, t_end - window, freq=stride)
+        # note: the index-name of the first passed series will be used
+        self.index = pd.date_range(
+            t_start, t_end - window, freq=stride, name=series_list[0].index.name
+        )
 
         # --- and adjust the time_index
         # note: this code can also be place in the `apply_func` method (if we want to
