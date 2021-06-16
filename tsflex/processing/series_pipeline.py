@@ -179,7 +179,8 @@ class SeriesPipeline:
         series_dict: Dict[str, pd.Series] = {}
         for s in to_series_list(data):
             # Assert the assumptions we make!
-            assert isinstance(s.index, pd.DatetimeIndex)  # TODO: what do you think of this check?
+            if len(s):
+                assert isinstance(s.index, pd.DatetimeIndex)  # TODO: what do you think of this check?
             # TODO: also check monotonic increasing?
 
             if s.name in self.get_required_series():

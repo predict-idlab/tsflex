@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 
 from .. import __pdoc__
-from tsflex.utils.classes import FrozenClass
+from ..utils.classes import FrozenClass
 from .logger import logger
 from ..utils.data import series_dict_to_df, to_list, to_tuple, flatten
 
