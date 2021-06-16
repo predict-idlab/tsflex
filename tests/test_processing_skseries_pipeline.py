@@ -6,7 +6,7 @@ import pytest
 import pandas as pd
 import numpy as np
 
-from sklearn.pipeline import Pipeline
+from tsflex.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
@@ -99,7 +99,7 @@ def test_simple_learning_pipeline_start(dummy_data):
     pipeline = Pipeline(
         steps=[
             ("processing", series_pipeline),
-            ("impute", SimpleImputer(strategy="median")),
+            ("impute", SimpleImputer(strategy="constant")),
             ("scale", StandardScaler()),
             ("lin_reg", LinearRegression())
         ]
@@ -110,7 +110,7 @@ def test_simple_learning_pipeline_start(dummy_data):
     y_pred = pipeline.predict(dummy_data.drop(columns=["EDA"]))
     assert len(y_pred) == len(dummy_data)
     # Assert that the pipeline learned something (with data leakage ofc)
-    assert pipeline.score(dummy_data.drop(columns=["EDA"]), dummy_data["EDA"]) > 0.01
+    assert pipeline.score(dummy_data.drop(columns=["EDA"]), dummy_data["EDA"]) > 0
 
     transformed = pipe_transform(pipeline, dummy_data.drop(columns=["EDA"]))
     assert transformed.shape == (len(dummy_data), 2)
@@ -118,40 +118,38 @@ def test_simple_learning_pipeline_start(dummy_data):
     assert all(np.isclose(np.mean(transformed, axis=0), 0))
     assert all(np.isclose(np.std(transformed, axis=0), 1))
 
-# TODO: uncomment when this is supported
-# def testsimple_learning_pipeline_middle(dummy_data):
-#     def acc_sum(acc1, acc2, acc3) -> pd.Series:
-#         abs_sum = np.abs(acc1) + np.abs(acc2) + np.abs(acc3)
-#         return pd.Series(abs_sum, name="ACC_abs_sum")
 
-#     processors = [
-#         SeriesProcessor(series_names=("ACC_x", "ACC_y", "ACC_z"), function=acc_sum),
-#     ]
-#     series_pipeline = SKSeriesPipeline(
-#         processors, return_all_series=True, drop_keys=["ACC_x", "ACC_y", "ACC_z"]
-#     )
+def test_simple_learning_pipeline_middle(dummy_data):
+    def acc_sum(acc1, acc2, acc3) -> pd.Series:
+        abs_sum = np.abs(acc1) + np.abs(acc2) + np.abs(acc3)
+        return pd.Series(abs_sum, name="ACC_abs_sum")
 
-#     pipeline = Pipeline(
-#         steps=[
-#             ("impute", SimpleImputer(strategy="median")),
-#             ("processing", series_pipeline),
-#             ("scale", StandardScaler()),
-#             ("lin_reg", LinearRegression())
-#         ]
-#     )
+    processors = [
+        SeriesProcessor(series_names=("ACC_x", "ACC_y", "ACC_z"), function=acc_sum),
+    ]
+    series_pipeline = SKSeriesPipeline(
+        processors, return_all_series=True, drop_keys=["ACC_x", "ACC_y", "ACC_z"]
+    )
 
-#     # Check if TypeError is raised when non-dataf
-#     with pytest.raises(TypeError):
-#         pipeline.fit(dummy_data.drop(columns=["EDA"]), dummy_data["EDA"])
+    pipeline = Pipeline(
+        steps=[
+            ("impute", SimpleImputer(strategy="median")),
+            ("processing", series_pipeline),
+            ("scale", StandardScaler()),
+            ("lin_reg", LinearRegression())
+        ]
+    )
 
-#     # Lovely data leakage :)
-#     y_pred = pipeline.predict(dummy_data.drop(columns=["EDA"]))
-#     assert len(y_pred) == len(dummy_data)
-#     # Assert that the pipeline learned something (with data leakage ofc)
-#     assert pipeline.score(dummy_data.drop(columns=["EDA"]), dummy_data["EDA"]) > 0.01
+    pipeline.fit(dummy_data.drop(columns=["EDA"]), dummy_data["EDA"])
 
-#     transformed = pipe_transform(pipeline, dummy_data.drop(columns=["EDA"]))
-#     assert transformed.shape == (len(dummy_data), 2)
-#     assert len(np.mean(transformed, axis=0)) == 2
-#     assert all(np.isclose(np.mean(transformed, axis=0), 0))
-#     assert all(np.isclose(np.std(transformed, axis=0), 1))
+    # Lovely data leakage :)
+    y_pred = pipeline.predict(dummy_data.drop(columns=["EDA"]))
+    assert len(y_pred) == len(dummy_data)
+    # Assert that the pipeline learned something (with data leakage ofc)
+    assert pipeline.score(dummy_data.drop(columns=["EDA"]), dummy_data["EDA"]) > 0
+
+    transformed = pipe_transform(pipeline, dummy_data.drop(columns=["EDA"]))
+    assert transformed.shape == (len(dummy_data), 2)
+    assert len(np.mean(transformed, axis=0)) == 2
+    assert all(np.isclose(np.mean(transformed, axis=0), 0))
+    assert all(np.isclose(np.std(transformed, axis=0), 1))
