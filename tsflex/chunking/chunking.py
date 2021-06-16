@@ -8,7 +8,7 @@ from typing import Dict, List, Union, Tuple, Optional
 
 import pandas as pd
 
-from .utils.data import to_series_list
+from ..utils.data import to_series_list
 
 
 def chunk_data(
@@ -28,6 +28,10 @@ def chunk_data(
     1. Detecting gaps in the `data`(-list) time series.
     2. Divides the `data` into chunks, according to the parameter
         configuration and the detected gaps.
+
+    .. todo::
+        The (int/float) time-based chunk argument could also support
+        time-strings or even pd.timedelta.
 
     Notes
     -----
