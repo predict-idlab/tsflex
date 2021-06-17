@@ -142,7 +142,7 @@ class FeatureCollection:
         return stroll.apply_func(function)
 
     def _stroll_feature_generator(
-        self, series_dict: Dict[str, pd.Series], window_idx: str
+        self, series_dict: Dict[str, pd.Series], window_idx: str, approve_sparsity: bool
     ) -> Iterator[Tuple[StridedRolling, NumpyFuncWrapper]]:
         # --- Future work ---
         # We could also make the StridedRolling creation multithreaded
@@ -153,7 +153,8 @@ class FeatureCollection:
                     data=[series_dict[k] for k in key],
                     window=win,
                     stride=stride,
-                    window_idx=window_idx
+                    window_idx=window_idx,
+                    approve_sparsity=approve_sparsity,
                 )
             except KeyError:
                 raise KeyError(f"Key {key} not found in series dict.")
@@ -166,6 +167,7 @@ class FeatureCollection:
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         return_df: Optional[bool] = False,
         window_idx: Optional[str] = 'end',
+        approve_sparsity: Optional[bool] = False,
         show_progress: Optional[bool] = False,
         logging_file_path: Optional[Union[str, Path]] = None,
         n_jobs: Optional[int] = None,
@@ -198,6 +200,10 @@ class FeatureCollection:
             feature_window aggregation. Must be either of: ['begin', 'middle', 'end'],
             by default 'end'. All features in this collection will use the same
             window_idx.
+        approve_sparsity: bool, optional
+            Bool indicating whether the user acknowledges that there may be sparsity 
+            (i.e., irregularly sampled data), by default False.
+            If False and sparsity is observed, a warning is raised.
         show_progress: bool, optional
             If True, the progress will be shown with a progressbar, by default False.
         logging_file_path : Union[str, Path], optional
@@ -272,14 +278,18 @@ class FeatureCollection:
 
         if n_jobs in [0, 1]:
             # print('Executing feature extraction sequentially')
-            for stroll, func in self._stroll_feature_generator(series_dict, window_idx):
+            for stroll, func in self._stroll_feature_generator(
+                series_dict, window_idx, approve_sparsity
+            ):
                 calculated_feature_list.append(stroll.apply_func(func))
         else:
             # https://pathos.readthedocs.io/en/latest/pathos.html#usage
             with ProcessPool(nodes=n_jobs, source=True) as pool:
                 results = pool.uimap(
                     self._executor,
-                    self._stroll_feature_generator(series_dict, window_idx)
+                    self._stroll_feature_generator(
+                        series_dict, window_idx, approve_sparsity
+                    )
                 )
                 if show_progress:
                     results = tqdm(results, total=len(self._feature_desc_dict))
