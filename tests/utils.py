@@ -2,6 +2,7 @@
 
 __author__ = "Jeroen Van Der Donckt, Emiel Deprost, Jonas Van Der Donckt"
 
+import os
 import pytest
 import pandas as pd
 import numpy as np
@@ -10,13 +11,16 @@ from sklearn.pipeline import Pipeline
 from typing import Union, Dict
 
 
+# Get the project direcory
+proj_dir = "/".join(os.path.dirname(__file__).split("/")[:-1])
+
 @pytest.fixture
 def dummy_data() -> pd.DataFrame:
-    df1 = pd.read_parquet("../examples/data/empatica/gsr.parquet")
-    df2 = pd.read_parquet("../examples/data/empatica/tmp.parquet")
-    df3 = pd.read_parquet("../examples/data/empatica/acc.parquet")
-    df = pd.merge(df1, df2, how='inner', on='timestamp')
-    df = pd.merge(df, df3, how='inner', on='timestamp')
+    df1 = pd.read_parquet(proj_dir + "/examples/data/empatica/gsr.parquet")
+    df2 = pd.read_parquet(proj_dir + "/examples/data/empatica/tmp.parquet")
+    df3 = pd.read_parquet(proj_dir + "/examples/data/empatica/acc.parquet")
+    df = pd.merge(df1, df2, how="inner", on="timestamp")
+    df = pd.merge(df, df3, how="inner", on="timestamp")
     df.set_index("timestamp", inplace=True)
     return df
 
