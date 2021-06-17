@@ -142,7 +142,7 @@ class FeatureCollection:
         return stroll.apply_func(function)
 
     def _stroll_feature_generator(
-        self, series_dict: Dict[str, pd.Series], window_idx
+        self, series_dict: Dict[str, pd.Series], window_idx: str
     ) -> Iterator[Tuple[StridedRolling, NumpyFuncWrapper]]:
         # --- Future work ---
         # We could also make the StridedRolling creation multithreaded
