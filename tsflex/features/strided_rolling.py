@@ -89,7 +89,7 @@ class StridedRolling:
         )
 
         # --- and adjust the time_index
-        # note: this code can also be place in the `apply_func` method (if we want to
+        # note: this code can also be placed in the `apply_func` method (if we want to
         #  make the bound window-idx setting feature specific).
         if window_idx == "end":
             self.index += window
@@ -128,10 +128,10 @@ class StridedRolling:
                 StridedRolling._NumpySeriesContainer(
                     values=np_series,
                     # the slicing will be performed on [ t_start, t_end [
-                    # todo this can mabye be optimized -> further look into this
+                    # TODO: this can mabye be optimized -> further look into this
                     # np_idx_times, np_start_times, & np_end_times are all sorted!
                     # as we assume & check that the time index is monotonically
-                    # increasing) & the latter 2 are created using `np.arange()`
+                    # increasing & the latter 2 are created using `np.arange()`
                     start_indexes=np.searchsorted(np_idx_times, np_start_times, 'left'),
                     end_indexes=np.searchsorted(np_idx_times, np_end_times, 'left')
                 )
