@@ -26,13 +26,17 @@ jobs:
         python-version: ${{ matrix.python-version }}
     - name: Setup Poetry
       uses: Gr1N/setup-poetry@v4
+#       with:
+#         poetry-version: ${{ matrix.poetry-version }}
+    - uses: actions/cache@v2
       with:
-        poetry-version: ${{ matrix.poetry-version }}
+        path: ~/.cache/pypoetry/virtualenvs
+        key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
+    - run: poetry --version
 
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip
-        python -m pip install flake8 pytest
+        python pip install --upgrade pip
         poetry install
 #     - name: Lint with flake8
 #       run: |
