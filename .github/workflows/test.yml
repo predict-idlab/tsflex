@@ -27,17 +27,18 @@ jobs:
     - name: Setup Poetry
       uses: Gr1N/setup-poetry@v4
       with:
-        poetry-version: ${{ matrix.poetry-version }}
-    - uses: actions/cache@v2
-      with:
-        path: ~/.cache/pypoetry/virtualenvs
-        key: ${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
+        virtualenvs-create: true
+        virtualenvs-in-project: true
     - run: poetry --version
+    - name: Load cached venv
+      uses: actions/cache@v2
+      with:
+        path: .venv
+        key: venv-${{ runner.os }}-poetry-${{ hashFiles('poetry.lock') }}
 
     - name: Install dependencies
-      run: |
-        python pip install --upgrade pip
-        poetry install
+      run: poetry install
+      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
 #     - name: Lint with flake8
 #       run: |
 #         # stop the build if there are Python syntax errors or undefined names
@@ -46,6 +47,7 @@ jobs:
 #         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
+        source ./venv/bin/activate
         pytest tests
 #     - name: Upload pytest test results
 #       uses: actions/upload-artifact@v1
