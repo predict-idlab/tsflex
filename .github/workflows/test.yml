@@ -24,8 +24,8 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
-    - name: Python Poetry Action
-      uses: abatilo/actions-poetry@v2.1.0
+    - name: Setup Poetry
+      uses: Gr1N/setup-poetry@v4
       with:
         poetry-version: ${{ matrix.poetry-version }}
 
