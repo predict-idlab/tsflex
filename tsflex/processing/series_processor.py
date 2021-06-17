@@ -317,7 +317,8 @@ def _handle_seriesprocessor_func_output(
         # series_dict.update(df)
         # Note: converting this to a dictionary (to_dict()) is **very** inefficient!
         # Assert that the DataFrame has a time-index
-        assert isinstance(func_output.index, pd.DatetimeIndex)
+        if len(func_output):
+            assert isinstance(func_output.index, pd.DatetimeIndex)
         # Assert that the DataFrame columns are named
         assert all(
             func_output.columns.values != [i for i in range(func_output.shape[1])]
