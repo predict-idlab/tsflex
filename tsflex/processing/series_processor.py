@@ -8,12 +8,12 @@ from typing import Callable, Dict, List, Union, Tuple
 import numpy as np
 import pandas as pd
 
-from tsflex import __pdoc__
-from tsflex.utils.classes import FrozenClass
+from .. import __pdoc__
+from ..utils.classes import FrozenClass
 from .logger import logger
 from ..utils.data import series_dict_to_df, to_list, to_tuple, flatten
 
-__pdoc__['Seriesprocess.__call__'] = True
+__pdoc__['SeriesProcessor.__call__'] = True
 
 
 def dataframe_func(func: Callable):
@@ -64,7 +64,7 @@ class SeriesProcessor(FrozenClass):
                 -> Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]
 
         .. note::
-            a function that processes a `np.ndarray` instead of `pd.Series`,
+            a function that processes a ``np.ndarray`` instead of ``pd.Series``
             should work just fine.
 
     series_names : Union[str, Tuple[str], List[str], List[Tuple[str]]]
@@ -105,6 +105,7 @@ class SeriesProcessor(FrozenClass):
     * a `pd.DataFrame` with (one) column name equal to the input series its name.
     * a list of `pd.Series` in which (exact) one series has the same name as the
       input series.
+
     Series (& columns) with other (column) names will be added to the series dict.
 
     """
@@ -316,7 +317,8 @@ def _handle_seriesprocessor_func_output(
         # series_dict.update(df)
         # Note: converting this to a dictionary (to_dict()) is **very** inefficient!
         # Assert that the DataFrame has a time-index
-        assert isinstance(func_output.index, pd.DatetimeIndex)
+        if len(func_output):
+            assert isinstance(func_output.index, pd.DatetimeIndex)
         # Assert that the DataFrame columns are named
         assert all(
             func_output.columns.values != [i for i in range(func_output.shape[1])]

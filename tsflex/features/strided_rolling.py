@@ -51,8 +51,7 @@ class StridedRolling:
     <br>
 
     .. todo::
-        The `window_idx` and `bound_method` must still be propagated to the
-        `FeatureCollection`-class.
+        The `bound_method` must still be propagated to the `FeatureCollection`-class.
 
     """
     _NumpySeriesContainer = namedtuple(
@@ -82,10 +81,16 @@ class StridedRolling:
         series_list = [s[t_start:t_end] for s in series_list]
 
         # 2. Create the time_index which will be used for DataFrame reconstruction
-        # use closed = left to exclued 'end' if it falls on the boundary
-        self.index = pd.date_range(t_start, t_end - window, freq=stride)
+        # use closed = left to exclude 'end' if it falls on the boundary
+        # note: the index automatically takes the timezone of `t_start` & `t_end`
+        # note: the index-name of the first passed series will be used
+        self.index = pd.date_range(
+            t_start, t_end - window, freq=stride, name=series_list[0].index.name
+        )
 
         # --- and adjust the time_index
+        # note: this code can also be placed in the `apply_func` method (if we want to
+        #  make the bound window-idx setting feature specific).
         if window_idx == "end":
             self.index += window
         elif window_idx == "middle":
@@ -103,10 +108,14 @@ class StridedRolling:
         np_stride = self.stride.to_timedelta64().astype(np.int64)
 
         # 2. Precompute the start & end times (these remain the same for each series)
-        start_times = np.arange(
-            start=np_start, stop=np_start + len(self.index)*np_stride, step=np_stride
+        # note: this if equivalent to:
+        #   if `window` == 'begin":
+        #       start_times = self.index.values.astype(np.int64)
+        np_start_times = np.arange(
+            start=np_start, stop=np_start + len(self.index)*np_stride, step=np_stride,
+            dtype=np.int64
         )
-        end_times = start_times + np_window
+        np_end_times = np_start_times + np_window
 
         self.series_containers: List[StridedRolling._NumpySeriesContainer] = []
         for series in series_list:
@@ -114,14 +123,17 @@ class StridedRolling:
             np_series = series.values
             np_series.flags.writeable = False
 
-            np_timestamps = series.index.values.astype(np.int64)
+            np_idx_times = series.index.values.astype(np.int64)
             self.series_containers.append(
                 StridedRolling._NumpySeriesContainer(
                     values=np_series,
                     # the slicing will be performed on [ t_start, t_end [
-                    start_indexes=np.searchsorted(np_timestamps, start_times, 'left'),
-                    end_indexes=np.searchsorted(np_timestamps, end_times, 'left')
-                    # TODO: maybe hyper param for end_boundary, e.g., open or closed
+                    # TODO: this can mabye be optimized -> further look into this
+                    # np_idx_times, np_start_times, & np_end_times are all sorted!
+                    # as we assume & check that the time index is monotonically
+                    # increasing & the latter 2 are created using `np.arange()`
+                    start_indexes=np.searchsorted(np_idx_times, np_start_times, 'left'),
+                    end_indexes=np.searchsorted(np_idx_times, np_end_times, 'left')
                 )
             )
 
@@ -217,6 +229,7 @@ class StridedRolling:
                 for sc in self.series_containers
             ]
 
+        # --- Future work ---
         # would be nice if we could optimize this double for loop with something
         # more vectorized
         out = np.array([np_func(*get_slices(idx)) for idx in range(len(self.index))])

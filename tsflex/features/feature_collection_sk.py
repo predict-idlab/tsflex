@@ -3,9 +3,9 @@
 .. todo::
     * **BaseEstimator support**: it is not really useful right now to support this.
     As for example sklearn GridSearchCV requires X and y to have the same length,
-    but `FeatureCollection`.`calulcate` (almost always) transforms the length of X in
+    but `FeatureCollection`.`calculate` (almost always) transforms the length of X in
     your pipeline.<br>
-    Possible solution; look into sklearn-contrib imblearn how they handle this
+    _Possible solution_: look into sklearn-contrib imblearn how they handle this
 
 See Also
 --------
@@ -19,7 +19,7 @@ __author__ = "Jeroen Van Der Donckt"
 
 import pandas as pd
 
-from typing import List, Optional, Union
+from typing import List, Optional, Union, Any
 from pathlib import Path
 from sklearn.base import TransformerMixin
 
@@ -78,7 +78,7 @@ class SKFeatureCollection(TransformerMixin):
         logging_file_path: Optional[Union[str, Path]] = None,
         n_jobs: Optional[int] = None,
     ):
-        self.feature_descriptors = feature_descriptors
+        self.feature_descriptors: Any = feature_descriptors
         self.logging_file_path = logging_file_path
         self.n_jobs = n_jobs
 

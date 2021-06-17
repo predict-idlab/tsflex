@@ -142,14 +142,19 @@ class FeatureCollection:
         return stroll.apply_func(function)
 
     def _stroll_feature_generator(
-        self, series_dict: Dict[str, pd.Series]
+        self, series_dict: Dict[str, pd.Series], window_idx: str
     ) -> Iterator[Tuple[StridedRolling, NumpyFuncWrapper]]:
-        ## Future work
+        # --- Future work ---
         # We could also make the StridedRolling creation multithreaded
         # Very low priority because the STROLL __init__ is rather efficient!
         for key, win, stride in self._feature_desc_dict.keys():
             try:
-                stroll = StridedRolling([series_dict[k] for k in key], win, stride)
+                stroll = StridedRolling(
+                    data=[series_dict[k] for k in key],
+                    window=win,
+                    stride=stride,
+                    window_idx=window_idx
+                )
             except KeyError:
                 raise KeyError(f"Key {key} not found in series dict.")
 
@@ -160,6 +165,7 @@ class FeatureCollection:
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         return_df: Optional[bool] = False,
+        window_idx: Optional[str] = 'end',
         show_progress: Optional[bool] = False,
         logging_file_path: Optional[Union[str, Path]] = None,
         n_jobs: Optional[int] = None,
@@ -187,6 +193,11 @@ class FeatureCollection:
             False.
             If `True` the output dataframes will be merged to a DataFrame with an outer
             merge.
+        window_idx : str, optional
+            The window's index position which will be used as index for the
+            feature_window aggregation. Must be either of: ['begin', 'middle', 'end'],
+            by default 'end'. All features in this collection will use the same
+            window_idx.
         show_progress: bool, optional
             If True, the progress will be shown with a progressbar, by default False.
         logging_file_path : Union[str, Path], optional
@@ -200,6 +211,14 @@ class FeatureCollection:
             If n_jobs is either 0 or 1, the code will be executed sequentially without
             creating a process pool. This is very useful when debugging, as the stack
             trace will be more comprehensible.
+
+            .. tip::
+                * It takes on avg. _300ms_ to schedule everything with
+                  multiprocessing. So if your feature extraction code runs faster than
+                  ~1.5s, it might not be worth it to parallelize the process
+                  (and thus better set the `n_jobs` to 0-1).
+                * This method its memory peaks are significantly lower when executed
+                  sequentially. Set the `n_jobs` to 0-1 if this matters.
 
         Returns
         -------
@@ -253,13 +272,14 @@ class FeatureCollection:
 
         if n_jobs in [0, 1]:
             # print('Executing feature extraction sequentially')
-            for stroll, func in self._stroll_feature_generator(series_dict):
+            for stroll, func in self._stroll_feature_generator(series_dict, window_idx):
                 calculated_feature_list.append(stroll.apply_func(func))
         else:
             # https://pathos.readthedocs.io/en/latest/pathos.html#usage
             with ProcessPool(nodes=n_jobs, source=True) as pool:
                 results = pool.uimap(
-                    self._executor, self._stroll_feature_generator(series_dict)
+                    self._executor,
+                    self._stroll_feature_generator(series_dict, window_idx)
                 )
                 if show_progress:
                     results = tqdm(results, total=len(self._feature_desc_dict))
@@ -295,9 +315,9 @@ class FeatureCollection:
 
         Notes
         -----
-        * As we use `Dill <https://github.com/uqfoundation/dill>`_ to serialize the
-          files, we can **also serialize functions which are defined in the local scope,
-          like lambdas.**
+        * As we use [Dill](https://github.com/uqfoundation/dill){:target="_blank"} to
+          serialize the files, we can **also serialize functions which are defined in
+          the local scope, like lambdas.**
 
         """
         with open(file_path, "wb") as f:

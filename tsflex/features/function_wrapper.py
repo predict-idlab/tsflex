@@ -2,15 +2,14 @@
 
 __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
 
-from tsflex import __pdoc__
-
-__pdoc__['NumpyFuncWrapper.__call__'] = True
-
-
 from typing import Callable, List, Union, Any
-from ..utils.classes import FrozenClass
 
 import numpy as np
+
+from .. import __pdoc__
+from ..utils.classes import FrozenClass
+
+__pdoc__['NumpyFuncWrapper.__call__'] = True
 
 
 class NumpyFuncWrapper(FrozenClass):  # TODO: waarom niet gewoon FuncWrapper?
