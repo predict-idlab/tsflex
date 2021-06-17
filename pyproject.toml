@@ -22,6 +22,7 @@ Sphinx = "^3.5.2"
 jupyterlab = "^3.0.12"
 memory-profiler = "^0.58.0"
 pytest = "^6.2.3"
+pytest-cov = "^2.12.1"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
