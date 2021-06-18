@@ -6,37 +6,33 @@ _tsflex_ is built to be intuitive, so we encourage you to copy-paste this code a
 ```python
 import pandas as pd; import scipy.stats as ss; import numpy as np
 from tsflex.features import FeatureDescriptor, FeatureCollection, NumpyFuncWrapper
-from tsflex.features import MultipleFeatureDescriptors
 
-# 1. Construct the collection in which you add all your features
+# 1. -------- Get your time-indexed data --------
+series_size = 10_000
+series_name="lux"
+
+data = pd.Series(
+    data=np.random.random(series_size), 
+    index=pd.date_range("2021-07-01", freq="1h", periods=series_size)
+).rename(series_name)
+# -- 1.1 drop some data, as we don't make frequency assumptions
+data = data.drop(np.random.choice(data.index, 200, replace=False))
+
+
+# 2 -------- Construct your feature collection --------
 fc = FeatureCollection(
     feature_descriptors=[
         FeatureDescriptor(
-            function=NumpyFuncWrapper(func=ss.skew,output_names="skew"),
-            series_name="lux", window="1day", stride="6hours"
+            function=NumpyFuncWrapper(func=ss.skew, output_names="skew"),
+            series_name=series_name, 
+            window="1day", stride="6hours"
         )
     ]
 )
+# -- 2.1. Add multiple features to your feature collection
+fc.add(FeatureDescriptor(np.min, series_name, '2days', '1day'))
 
-# -- 1.1. Add multiple features to your feature collection
-fc.add(FeatureDescriptor(np.min, 'lux', '2days', '1day'))
-fc.add(MultipleFeatureDescriptors(
-    functions=[ 
-        np.mean, np.std,
-        NumpyFuncWrapper(func=lambda x: np.sum(np.abs(x)), output_names="abssum") 
-    ],
-    series_names="lux", windows=["1day", "2days", "3hours"],
-    strides=["3hours"]
-))
-
-# 2. Get your time-indexed data
-## TODO -> look into wget time series public
-data = pd.Series(data=np.random.random(10_000), 
-    index=pd.date_range("2021-07-01", freq="1h", periods=10_000)).rename('lux')
-# -- 2.1 drop some data, as we don't make frequency assumptions
-data = data.drop(np.random.choice(data.index, 200, replace=False))
-
-# 3. Calculate the feature on some data
+# 3 -------- Calculate features --------
 fc.calculate(data=data, n_jobs=1, return_df=True)
 # which outputs:
 ```
