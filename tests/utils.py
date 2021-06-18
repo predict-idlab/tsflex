@@ -12,7 +12,7 @@ from typing import Union, Dict
 
 
 # Get the project direcory
-proj_dir = "/".join(os.path.dirname(__file__).split("/")[:-1])
+proj_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..'))
 
 @pytest.fixture
 def dummy_data() -> pd.DataFrame:
