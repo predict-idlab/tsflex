@@ -1,5 +1,10 @@
 # <p align="center"><img alt="tsflex" src="https://github.com/tsflex/tsflex/blob/main/docs/_static/logo.png" height="100"></p>
 
+[![PyPI Latest Release](https://img.shields.io/pypi/v/tsflex.svg)](https://pypi.org/project/tsflex/)
+[![Testing](https://github.com/tsflex/tsflex/actions/workflows/test.yml/badge.svg)](https://github.com/tsflex/tsflex/actions/workflows/test.yml)
+[![codecov](https://codecov.io/gh/tsflex/tsflex/branch/main/graph/badge.svg)](https://codecov.io/gh/tsflex/tsflex)
+[![Downloads](https://pepy.tech/badge/tsflex)](https://pepy.tech/project/tsflex)
+
 *tsflex* stands for: _**flex**ible **t**ime-**s**eries operations_<br>
 
 It is a `time-series first` toolkit for **processing & feature extraction**, making few assumptions about input data. 

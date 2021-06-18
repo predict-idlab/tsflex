@@ -20,9 +20,9 @@ The following sections will explain the tsflex package in detail
 
 <br>
 
-## Installation ⚙️
+## Installation ✨
 
-Installing tsflex is as straightforward as any other Python package. If you are using **pip**, just execute the following command in your environment.
+If you are using [**pip**](https://pypi.org/project/tsflex/), just execute the following command:
 
 ```shell
 pip install tsflex
@@ -30,11 +30,11 @@ pip install tsflex
 
 <br>
 
-## Getting started
+## Getting started 🚀
 
-*tsflex* serves 2 main functionalities; _signal processing_ and _feature extraction_:
+*tsflex* serves two main functionalities; time-series _processing_ and _feature extraction_:
 
-* The [processing](/tsflex/processing) module withholds a `SeriesPipeline` in which uni- and multivariate signal processing operations can be defined.
+* The [processing](/tsflex/processing) module withholds a `SeriesPipeline` in which uni- and multivariate data processing operations can be defined.
 * The [feature extraction](/tsflex/features) module defines a `FeatureCollection` which does the bookkeeping of the defined features for the data.
 
 <br>
@@ -50,12 +50,10 @@ data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
 
 For brevity, we call an item from `data`, i.e., series or dataframe-colum, a time-series (`ts`). 
 
-> tsflex was mainly intended to work on flat data such as a list of series or a wide-dataframe.
-
-For more infromation, read the secion below. 
+> _tsflex_ was mainly intended to work on _flat data_ such as a **list of series** or a **wide-dataframe**.
 
 ### Wide vs. Long Data
-![image](../_static/long_wide.png)
+![image](https://raw.githubusercontent.com/tsflex/tsflex/main/docs/_static/long_wide.png)
 
 Time series data is often stored in 2 data-types:
 
@@ -66,12 +64,12 @@ Time series data is often stored in 2 data-types:
       * A `kind` column, defining the `ts` its name.
       * A `value` column, withholding the value for the corresponding _kind-time_ combination
 
-> **_tsflex_ was built to support `wide` & `series-list`data**
+> **_tsflex_ was built to support `wide-dataframes` & `series-list`data**
 
 !!!tip
     If you use long data, you might want to convert this to other modalities.<br>
-    Remark that it is not recommended to transform `long->wide` as this might introduce `NaN`s, which may cause uwanted processing or feature-extraction behavior.<br>
-    The snippet below serves the functionality for the `long->series-list` transformation.
+    Remark that it is not recommended to transform `long -> wide` as this might introduce `NaN`s, potentially resulting in unwanted processing or feature-extraction behavior.<br></br>
+    The snippet below provides the functionality for the `long -> series-list` transformation.
 
 ```python
 import pandas as pd; from typing import List
@@ -93,4 +91,8 @@ def long_dataframe_to_series_list(
 ```
 ### Supported data-types
 
-`Todo`
+_tsflex_  is rather versatile regarding the `ts`-data its types (e.g. np.float32, string-data, time-based data).
+
+`TODO: add examples`
+
+**Note**: it is the end-users responsibility to use a function which interplays nicely with the data's format.

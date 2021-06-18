@@ -1,4 +1,4 @@
-"""_**flex**ible **t**ime-**s**eries operations_
+"""<i><b>flex</b>ible <b>t</b>ime-<b>s</b>eries operations</i>
 
 .. include:: ../docs/pdoc_include/root_documentation.md
 """
