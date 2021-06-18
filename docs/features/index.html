@@ -25,8 +25,13 @@
 <section id="section-intro">
 <p>Feature extraction submodule.</p>
 <h1 id="feature-extraction-guide">Feature extraction guide</h1>
-<h2 id="working-example">Working Example ✅</h2>
-<p><em>tsflex</em> is built to be intuitive, so we encourage you to copy-paste this code and toy with some parameters!</p>
+<p>The following sections will explain the feature extraction module in detail.</p>
+<p><a href="#header-submodules">Jump to API reference</a></p>
+<p><br></p>
+<h2 id="working-example">Working example ✅</h2>
+<p><em>tsflex</em> is built to be intuitive, so we encourage you to copy-paste this code and toy with some parameters! <br></p>
+<p>This executable example creates a feature-collection that contains 2 features (skewness and minimum). <br>
+<strong>Note</strong>: we do not make any assumptions about the sampling rate of the time-series data.</p>
 <pre><code class="language-python">import pandas as pd; import scipy.stats as ss; import numpy as np
 from tsflex.features import FeatureDescriptor, FeatureCollection, NumpyFuncWrapper
 
@@ -122,13 +127,12 @@ fc.calculate(data=data, n_jobs=1, return_df=True)
 <p><br></p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>More advanced feature-extraction examples can be found <a href="">in these example notebooks</a>
-<br>TODO: fix link</p>
+<p>More advanced feature-extraction examples can be found <a href="https://github.com/tsflex/tsflex/tree/main/examples">in these example notebooks</a></p>
 </div>
 <p><br></p>
-<h2 id="getting-started">Getting started 🧐</h2>
+<h2 id="getting-started">Getting started 🚀</h2>
 <h3 id="classes-feature-output">Classes &amp; feature-output</h3>
-<p><img alt="features uml" src="../_static/features_uml.png"></p>
+<p><img alt="features uml" src="https://raw.githubusercontent.com/tsflex/tsflex/main/docs/_static/features_uml.png"></p>
 <p>As shown above, there are 3 relevant classes for feature-extraction.</p>
 <ol>
 <li><a href="/tsflex/features/#tsflex.features.FeatureCollection">FeatureCollection</a>: serves as a registry, withholding the to-be-calculated <em>features</em></li>
@@ -164,34 +168,38 @@ fc.calculate(...)
 </code></pre>
 <p><br></p>
 <h3 id="output-format">Output format</h3>
-<p>The last line in this snippet above will calculate the features on the passed data. You can find more information about the data-formats in the section below. However, already want to describe the output of this <code>calculate</code> method; which is a <code>time-indexed pd.DataFrame</code> with column names<br></p>
+<p>The output the <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> its <code>calculate</code> method is a (list of) <strong><code>time-indexed pd.DataFrame</code></strong> with column names<br></p>
 <blockquote>
-<p><code>&lt;SERIES-NAME&gt;__&lt;FEAT-NAME&gt;__w=&lt;WINDOW&gt;__s=&lt;STRIDE&gt;</code>.</p>
+<p><strong><code>&lt;SERIES-NAME&gt;__&lt;FEAT-NAME&gt;__w=&lt;WINDOW&gt;__s=&lt;STRIDE&gt;</code></strong>.</p>
 </blockquote>
-<p>The column-name for the feature defined on the penultimate line will thus be <code>series_a__std__w=1h__s=15m</code>.</p>
+<p>The column-name for the feature defined on the penultimate line in the snipped above will thus be <code>series_a__std__w=1h__s=15m</code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You can find more information about the <strong>input data-formats</strong> in <a href="/tsflex/#data-formats">this section</a> and read more about the (obvious) <strong>limitations</strong> in the next section.</p>
+</div>
 <p><br></p>
 <h2 id="limitations">Limitations 📢</h2>
-<p>It is important to note that there a still some, albeit logical, <strong>limitations</strong> regarding the supported <a href="/tsflex/#data-formats">data format</a>.<br>
-These limitations are:</p>
+<p>It is important to note that there a still some, albeit logical, <strong>limitations</strong> regarding the supported <a href="/tsflex/#data-formats">data format</a>.<br>These limitations are:</p>
 <ol>
-<li>Each <code>ts</code> must have a <code>pd.DatetimeIndex</code> that <strong>increases monotonically</strong><ul>
+<li>Each <a href="/tsflex/#data-formats"><code>ts</code></a> must have a <b style="color:red"><code>pd.DatetimeIndex</code> that increases monotonically</b><ul>
 <li><strong>Countermeasure</strong>: Apply <em><a href="https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.sort_index.html">sort_index()</a></em> on your not-monotonically increasing data</li>
 </ul>
 </li>
-<li>No duplicate <code>ts</code> names are allowed<ul>
-<li><strong>countermeasure</strong>: rename your <code>ts</code></li>
+<li><b style="color:red">No duplicate</b> <code>ts</code> <b style="color:red">names</b> are allowed<ul>
+<li><strong>Countermeasure</strong>: rename your <code>ts</code></li>
 </ul>
 </li>
 <li>We support various data-types. e.g. (np.float32, string-data, time-based data). However, it is the end-users responsibility to use a function which interplays nicely with the data's format.</li>
 </ol>
 <p><br></p>
-<h2 id="advanced-usage">Advanced usage</h2>
+<h2 id="advanced-usage">Advanced usage 👀</h2>
+<!-- TODO: tot hier geraakt -->
 <h3 id="multivariate-data">Multivariate-data</h3>
 <p>There are no assumptions made about the <code>data</code> its <code>time-ranges</code>.<br>
 However, the end-user must take some things in consideration.</p>
 <h3 id="multiple-time-series">Multiple time series</h3>
 <ul>
-<li>function's that work on <strong>multiple time-series</strong>: see the <code><a title="tsflex.chunking" href="../chunking/index.html">tsflex.chunking</a></code> module for more info.</li>
+<li>functions that work on <strong>multiple time-series</strong>: see the <code><a title="tsflex.chunking" href="../chunking/index.html">tsflex.chunking</a></code> module for more info.</li>
 </ul>
 <h3 id="irregularly-sampled-data">Irregularly sampled data</h3>
 <p>This case may cause that not all windows on which features are calculated have the same amount of samples.<br>
@@ -750,14 +758,14 @@ alt="logo should be displayed here" style="width: 100%;"></a>
 <div class="toc">
 <ul>
 <li><a href="#feature-extraction-guide">Feature extraction guide</a><ul>
-<li><a href="#working-example">Working Example ✅</a></li>
-<li><a href="#getting-started">Getting started 🧐</a><ul>
+<li><a href="#working-example">Working example ✅</a></li>
+<li><a href="#getting-started">Getting started 🚀</a><ul>
 <li><a href="#classes-feature-output">Classes &amp; feature-output</a></li>
 <li><a href="#output-format">Output format</a></li>
 </ul>
 </li>
 <li><a href="#limitations">Limitations 📢</a></li>
-<li><a href="#advanced-usage">Advanced usage</a><ul>
+<li><a href="#advanced-usage">Advanced usage 👀</a><ul>
 <li><a href="#multivariate-data">Multivariate-data</a></li>
 <li><a href="#multiple-time-series">Multiple time series</a></li>
 <li><a href="#irregularly-sampled-data">Irregularly sampled data</a></li>
