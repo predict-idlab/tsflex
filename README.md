@@ -9,8 +9,8 @@ It is a `time-series first` toolkit for **processing & feature extraction**, mak
   - [Usage](#usage)
     - [Series processing](#series-processing)
     - [Feature extraction](#feature-extraction)
-  - [Documentation](#documentation)
-  <!-- - [Example notebooks](examples/) -->
+  - [Documentation](https://tsflex.github.io/tsflex/)
+  - [Example notebooks](https://github.com/tsflex/tsflex/tree/jeroen/docs/examples)
 
 
 ## Installation
@@ -65,16 +65,6 @@ fc.add(FeatureDescriptor(np.min, series_name, '2days', '1day'))
 # 3 -------- Calculate features --------
 fc.calculate(data=data)
 ```
-
-## Documentation
-
-The documentation is hosted [here](https://tsflex.github.io/tsflex/)!
-
-<!-- To see the documentation locally, install [pdoc](https://github.com/pdoc3/pdoc) and execute the succeeding command from this folder location.
-
-```sh
-pdoc3 --template-dir docs/pdoc_template/ --http :8181 tsflex
-``` -->
 
 <br>
 
