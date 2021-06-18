@@ -1,0 +1,542 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.9.2" />
+<title>tsflex.processing API documentation</title>
+<meta name="description" content="init.py for processing module." />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/foundation.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#ebf3ff}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#edfcf4}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+<link rel="icon" href="https://media.discordapp.net/attachments/372491075153166338/852906324417445908/icon.png">
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>tsflex.processing</code></h1>
+</header>
+<section id="section-intro">
+<p>init.py for processing module.</p>
+</section>
+<section>
+<h2 class="section-title" id="header-submodules">Sub-modules</h2>
+<dl>
+<dt><code class="name"><a title="tsflex.processing.logger" href="logger.html">tsflex.processing.logger</a></code></dt>
+<dd>
+<div class="desc"><p>Contains the used variables and functions to provide logging functionality …</p></div>
+</dd>
+<dt><code class="name"><a title="tsflex.processing.series_pipeline" href="series_pipeline.html">tsflex.processing.series_pipeline</a></code></dt>
+<dd>
+<div class="desc"><p>SeriesPipeline class for time-series data (pre-)processing pipeline.</p></div>
+</dd>
+<dt><code class="name"><a title="tsflex.processing.series_pipeline_sk" href="series_pipeline_sk.html">tsflex.processing.series_pipeline_sk</a></code></dt>
+<dd>
+<div class="desc"><p>SKSeriesPipeline class for wrapped sklearn-compatible <code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code> …</p></div>
+</dd>
+<dt><code class="name"><a title="tsflex.processing.series_processor" href="series_processor.html">tsflex.processing.series_processor</a></code></dt>
+<dd>
+<div class="desc"><p>Code for time-series data (pre-)processing.</p></div>
+</dd>
+<dt><code class="name"><a title="tsflex.processing.utils" href="utils.html">tsflex.processing.utils</a></code></dt>
+<dd>
+<div class="desc"><p>(Advanced) utilities for the processing pipelines.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="tsflex.processing.dataframe_func"><code class="name flex">
+<span>def <span class="ident">dataframe_func</span></span>(<span>func)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Decorate function to use a DataFrame instead of multiple series (as argument).</p>
+<p>This decorator can be used for functions that need to work on a whole
+<code>pd.DataFrame</code>. It will convert the required series into a DataFrame using an
+<strong>outer merge</strong>.</p>
+<p>The function's prototype should be:</p>
+<pre><code>func(df : pd.DataFrame, **kwargs)
+    -&gt; Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]
+</code></pre>
+<p>So the decorated <code>func</code> has to take a DataFrame as first argument.</p>
+<h2 id="notes">Notes</h2>
+<p>Only when you want to perform row-based operations, such as <code>df.dropna(axis=0)</code>,
+this wrapper is needed.
+Hence, in most cases that <code>func</code> requires a <code>pd.DataFrame</code>, series arguments would
+be sufficient; as you can perform column-based operations on multiple <code>pd.Series</code>
+(e.g., subtract 2 series) and most dataframe operations are also available for a
+<code>pd.Series</code>.</p></div>
+</dd>
+<dt id="tsflex.processing.get_processor_logs"><code class="name flex">
+<span>def <span class="ident">get_processor_logs</span></span>(<span>logging_file_path)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get execution (time) info for each processor of a <code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code>.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>logging_file_path</code></strong> :&ensp;<code>str</code></dt>
+<dd>The file path where the logged messages are stored. This is the file path that
+is passed to the <code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code> its <code>process</code> method.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>pd.DataFrame</code></dt>
+<dd>A DataFrame containing each processor its duration, required keys, and whether it
+is a <code>single_series_func</code> .</dd>
+</dl></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="tsflex.processing.SeriesProcessor"><code class="flex name class">
+<span>class <span class="ident">SeriesProcessor</span></span>
+<span>(</span><span>function, series_names, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Class that executes a specific operation on the passed series_dict.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>function</code></strong> :&ensp;<code>Callable</code></dt>
+<dd>
+<p>The function that processes the series (given in the <code>series_names</code>).
+The prototype of the function should match: </p>
+<pre><code>function(*series: pd.Series)
+    -&gt; Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]
+</code></pre>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>a function that processes a <code>np.ndarray</code> instead of <code>pd.Series</code>
+should work just fine.</p>
+</div>
+</dd>
+<dt><strong><code>series_names</code></strong> :&ensp;<code>Union[str, Tuple[str], List[str], List[Tuple[str]]]</code></dt>
+<dd>
+<p>The names of the series on which the processing function should be applied.</p>
+<p>This argument should match the <code>function</code> its input; </p>
+<ul>
+<li>If <code>series_names</code> is a (list of) string (or tuple of a single string),
+than <code>function</code> should require just one series as input.</li>
+<li>If <code>series_names</code> is a (list of) tuple of strings, than <code>function</code> should
+require <code>len(tuple)</code> series as input <strong>and in exactly the same order</strong>.</li>
+</ul>
+<p>A list means multiple series (combinations) to process; </p>
+<ul>
+<li>If <code>series_names</code> is a string or a tuple of strings, than <code>function</code> will
+be called only once for the series of this argument.</li>
+<li>If <code>series_names</code> is a list of either strings or tuple of strings, than
+<code>function</code> will be called for each entry of this list.</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>when passing a list as <code>series_names</code>, all items in this list should
+have the same type, i.e, either </p>
+<ul>
+<li>all a <code>str</code></li>
+<li>or, all a <code>tuple</code> <em>with same length</em>.</li>
+</ul>
+</div>
+</dd>
+<dt><strong><code>**kwargs</code></strong> :&ensp;<code>dict</code>, optional</dt>
+<dd>Keyword arguments which will be also passed to the <code>function</code></dd>
+</dl>
+<h2 id="notes">Notes</h2>
+<p>If the output of <code>function</code> is a <code>np.ndarray</code> or a <code>pd.Series</code> without a name,
+than (items of) the given <code>series_names</code> must have length 1, i.e., the function
+requires just 1 series! That series its name and index are used to transform
+(i.e., <strong>replace</strong>) that series.</p>
+<p>If you want to transform (i.e., <strong>replace</strong>) the input series with the
+processor, than <code>function</code> should return either: </p>
+<ul>
+<li>a <code>np.ndarray</code> (see above).</li>
+<li>a <code>pd.Series</code> with no name or with the same name as the input series.</li>
+<li>a <code>pd.DataFrame</code> with (one) column name equal to the input series its name.</li>
+<li>a list of <code>pd.Series</code> in which (exact) one series has the same name as the
+input series.</li>
+</ul>
+<p>Series (&amp; columns) with other (column) names will be added to the series dict.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>tsflex.utils.classes.FrozenClass</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="tsflex.processing.SeriesProcessor.get_required_series"><code class="name flex">
+<span>def <span class="ident">get_required_series</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return all required series names for this processor.</p>
+<p>Return the list of series names that are required in order to execute the
+processing function.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>List[str]</code></dt>
+<dd>List of all the required series names.</dd>
+</dl></div>
+</dd>
+<dt id="tsflex.processing.SeriesProcessor.__call__"><code class="name flex">
+<span>def <span class="ident">__call__</span></span>(<span>self, series_dict)</span>
+</code></dt>
+<dd>
+<div class="desc"><p><strong>Call</strong>culates the processed series.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>series_dict</code></strong> :&ensp;<code>Dict[str, pd.Series]</code></dt>
+<dd>A dict of <code>pd.Series</code> containing the data that need to be processed.
+The key should always be the accompanying series its name.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Dict[str, pd.Series]</code></dt>
+<dd>The processed <code>series_dict</code>.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>KeyError</code></dt>
+<dd>Raised when a key is not present in the <code>series_dict</code> but required for the
+processing.</dd>
+<dt><code>TypeError</code></dt>
+<dd>Raised when the output of the <code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code> is not of the correct type.</dd>
+</dl>
+<h2 id="notes">Notes</h2>
+<ul>
+<li>The <code>series_dict</code> is an internal representation of the time-series data .
+This internal representation is constructed in the <code>process</code> method of the
+<code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code>.</li>
+<li>If you want to test or debug your <code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code> object, just encapsulate
+your instance of this class in a <code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code>. The latter allows more
+versatile input for its <code>process</code> method.</li>
+</ul></div>
+</dd>
+</dl>
+</dd>
+<dt id="tsflex.processing.SeriesPipeline"><code class="flex name class">
+<span>class <span class="ident">SeriesPipeline</span></span>
+<span>(</span><span>processors=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Pipeline for applying <code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code> objects sequentially.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>processors</code></strong> :&ensp;<code>List[<a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a>]</code>, optional</dt>
+<dd>List of <code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code> objects that will be applied sequentially to the
+internal series dict, by default None. <strong>The processing steps will be
+executed in the same order as passed in this list</strong>.</dd>
+</dl></div>
+<h3>Methods</h3>
+<dl>
+<dt id="tsflex.processing.SeriesPipeline.get_required_series"><code class="name flex">
+<span>def <span class="ident">get_required_series</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return all required series names for this pipeline.</p>
+<p>Return the list of series names that are required in order to execute all the
+<code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code> objects of this processing pipeline.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>List[str]</code></dt>
+<dd>List of all the required series names.</dd>
+</dl></div>
+</dd>
+<dt id="tsflex.processing.SeriesPipeline.append"><code class="name flex">
+<span>def <span class="ident">append</span></span>(<span>self, processor)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Append a <code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code> at the end of the pipeline.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>processor</code></strong> :&ensp;<code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code></dt>
+<dd>The <code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code> that will be added to the end of the pipeline</dd>
+</dl></div>
+</dd>
+<dt id="tsflex.processing.SeriesPipeline.insert"><code class="name flex">
+<span>def <span class="ident">insert</span></span>(<span>self, idx, processor)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Insert a <code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code> at the given index in the pipeline.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>idx</code></strong> :&ensp;<code>int</code></dt>
+<dd>The index where the given processor should be inserted in the pipeline.
+Index 0 will insert the given processor at the front of the pipeline,
+and index <code>len(pipeline)</code> is equivalent to appending the processor.</dd>
+<dt><strong><code>processor</code></strong> :&ensp;<code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code></dt>
+<dd>The <code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code> that will be added to the end of the pipeline</dd>
+</dl></div>
+</dd>
+<dt id="tsflex.processing.SeriesPipeline.process"><code class="name flex">
+<span>def <span class="ident">process</span></span>(<span>self, data, return_df=False, return_all_series=True, drop_keys=None, copy=False, logging_file_path=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Execute all <code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code> objects in pipeline sequentially.</p>
+<p>Apply all the processing steps on passed Series list or DataFrame and return the
+preprocessed Series list or DataFrame.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>data</code></strong> :&ensp;<code>Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]</code></dt>
+<dd>
+<p>Dataframe or Series or list thereof, with all the required data for the
+processing steps. </p>
+<p><strong>Remark</strong>: each Series / DataFrame must have a <code>pd.DatetimeIndex</code>.
+<strong>Remark</strong>: we assume that each name / column is unique.</p>
+</dd>
+<dt><strong><code>return_df</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Whether the output needs to be a series list or a DataFrame, by default
+False.
+If True the output series will be combined to a DataFrame with an outer
+merge.</dd>
+<dt><strong><code>return_all_series</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Whether the output needs to return all the series, by default True.
+* If True the output will contain all series that were passed to this
+method.
+* If False the output will contain just the required series (see
+<code>get_required_series</code>).</dd>
+<dt><strong><code>drop_keys</code></strong> :&ensp;<code>List[str]</code>, optional</dt>
+<dd>Which keys should be dropped when returning the output, by default None.</dd>
+<dt><strong><code>copy</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Whether the series in <code>data</code> should be copied, by default False.</dd>
+<dt><strong><code>logging_file_path</code></strong> :&ensp;<code>Union[str, Path]</code>, optional</dt>
+<dd>The file path where the logged messages are stored, by default None.
+If <code>None</code>, then no logging <code>FileHandler</code> will be used and the logging
+messages are only pushed to stdout. Otherwise, a logging <code>FileHandler</code> will
+write the logged messages to the given file path.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Union[List[pd.Series], pd.DataFrame]</code></dt>
+<dd>The preprocessed series.</dd>
+</dl>
+<h2 id="notes">Notes</h2>
+<ul>
+<li>If a <code>logging_file_path</code> is provided, the execution (time) info can be
+retrieved by calling <code><a title="tsflex.processing.logger.get_processor_logs" href="logger.html#tsflex.processing.logger.get_processor_logs">get_processor_logs()</a>(logging_file_path)</code>. <br>
+Be aware that the <code>logging_file_path</code> gets cleared before the logger pushes
+logged messages. Hence, one should use a separate logging file for each
+constructed processing and feature instance with this library.</li>
+<li>If a series processor its function output is a <code>np.ndarray</code>, the input series
+dict (required dict for that function) must contain just 1 series! That series
+its name and index are used to return a series dict. When a user does not want
+a numpy array to replace its input series, it is his / her responsibility to
+create a new <code>pd.Series</code> (or <code>pd.DataFrame</code>) of that numpy array with a
+different (column) name.</li>
+<li>If <code>func_output</code> is a <code>pd.Series</code>, keep in mind that the input series gets
+transformed (i.e., replaced) in the pipeline with the <code>func_output</code> when the
+series name is
+equal.</li>
+</ul>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>_ProcessingError</code></dt>
+<dd>Error raised when a processing step fails.</dd>
+</dl></div>
+</dd>
+<dt id="tsflex.processing.SeriesPipeline.serialize"><code class="name flex">
+<span>def <span class="ident">serialize</span></span>(<span>self, file_path)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Serialize this <code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code> instance.</p>
+<h2 id="notes">Notes</h2>
+<p>As we use <a href="https://github.com/uqfoundation/dill" target="_blank">Dill</a> to
+serialize, we can also serialize (decorator)functions which are defined in the
+local scope, like lambdas.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>file_path</code></strong> :&ensp;<code>Union[str, Path]</code></dt>
+<dd>The path where the <code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code> will be serialized.</dd>
+</dl></div>
+</dd>
+</dl>
+</dd>
+<dt id="tsflex.processing.SKSeriesPipeline"><code class="flex name class">
+<span>class <span class="ident">SKSeriesPipeline</span></span>
+<span>(</span><span>processors, return_all_series=True, drop_keys=None, logging_file_path=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Sklearn-compatible transformer for processing data using a <code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code>.</p>
+<p>This class is basically a wrapper around <code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code> and its <code>process</code>
+method, enabling sklearn compatibility, e.g. including an instance of this class
+in <code>sklearn.pipeline.Pipeline</code>.</p>
+<p>Concretely three changes were necessary to enable this sklearn-compatibility</p>
+<ol>
+<li>The parameters of the <code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code> its constructor are logged in this
+class.</li>
+<li>The relevant parameters of the <code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code> its <code>process</code> method have
+been moved to the constructor and are also logged.</li>
+<li>The <code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code> its <code>process</code> method is wrapped in this class its
+<code>transform</code> method,</li>
+</ol>
+<p>This constructor wraps the <code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code> constructor arguments and the
+relevant parameters of its <code>process</code> method.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>processors</code></strong> :&ensp;<code>List[<a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a>]</code></dt>
+<dd>List of <code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code> objects that will be applied sequentially to the
+given data. The processing steps will be executed in the
+same order as
+passed with this list.</dd>
+<dt><strong><code>return_all_series</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>
+<p>Whether the output needs to return all the series, by default True. </p>
+<ul>
+<li>If <code>True</code> the output will contain all series that were passed to this
+method.</li>
+<li>If <code>False</code> the output will contain just the required series (see
+<code><a title="tsflex.processing.SeriesPipeline.get_required_series" href="#tsflex.processing.SeriesPipeline.get_required_series">SeriesPipeline.get_required_series()</a></code>).</li>
+</ul>
+</dd>
+<dt><strong><code>drop_keys</code></strong> :&ensp;<code>List[str]</code>, optional</dt>
+<dd>Which keys should be dropped when returning the output, by default None.</dd>
+<dt><strong><code>logging_file_path</code></strong> :&ensp;<code>Union[str, Path]</code>, optional</dt>
+<dd>
+<p>The file path where the logged messages are stored, by default None. </p>
+<ul>
+<li>If <code>None</code>, then no logging <code>FileHandler</code> will be used and the logging
+messages are only pushed to stdout.</li>
+<li>Otherwise, a logging <code>FileHandler</code> will write the logged messages to
+the given file path.</li>
+</ul>
+</dd>
+</dl>
+<h2 id="notes">Notes</h2>
+<ul>
+<li>If a <code>logging_file_path</code> is provided, the execution (time) statistics can be
+retrieved by calling <code><a title="tsflex.processing.logger.get_processor_logs" href="logger.html#tsflex.processing.logger.get_processor_logs">get_processor_logs()</a>(logging_file_path)</code>. <br>
+Be aware that the <code>logging_file_path</code> gets cleared before the logger pushes
+logged messages. Hence, one should use a separate logging file for each
+constructed processing and feature instance with this library.</li>
+<li>It is not possible to pass the <code>return_df</code> argument from the <code>process</code>
+method, because this should always be True (in order to output a valid
+iterable in the <code>transform</code> method)</li>
+</ul></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>sklearn.base.TransformerMixin</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="tsflex.processing.SKSeriesPipeline.fit"><code class="name flex">
+<span>def <span class="ident">fit</span></span>(<span>self, X=None, y=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Fit function that is not needed for this transformer.</p>
+<h2 id="note">Note</h2>
+<p>This function does nothing and is here for compatibility reasons.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>X</code></strong> :&ensp;<code>Any</code></dt>
+<dd>Unneeded.</dd>
+<dt><strong><code>y</code></strong> :&ensp;<code>Any</code></dt>
+<dd>Unneeded.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code><a title="tsflex.processing.SKSeriesPipeline" href="#tsflex.processing.SKSeriesPipeline">SKSeriesPipeline</a></code></dt>
+<dd>The transformer instance itself is returned.</dd>
+</dl></div>
+</dd>
+<dt id="tsflex.processing.SKSeriesPipeline.transform"><code class="name flex">
+<span>def <span class="ident">transform</span></span>(<span>self, X)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Process the data.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>X</code></strong> :&ensp;<code>Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]</code></dt>
+<dd>
+<p>Dataframe or Series or list thereof, with all the required data for the
+processing steps. </p>
+<p><strong>Remark</strong>: each Series/DataFrame must have a <code>pd.DatetimeIndex</code>. </p>
+<p>Note that this parameter corresponds to the <code>data</code> parameter of the
+<code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code> its <code>process</code> method.</p>
+</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>pd.DataFrame</code></dt>
+<dd>A DataFrame, containing the processed data.</dd>
+</dl></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<header>
+<div style="text-align: center">
+<a class="homelink" rel="home" title="tsflex home" href="/">
+<img src="https://cdn.discordapp.com/attachments/372491075153166338/852904976560554094/logo.png"
+alt="logo should be displayed here" style="width: 100%;"></a>
+</div>
+</header>
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="tsflex" href="../index.html">tsflex</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<ul>
+<li><code><a title="tsflex.processing.logger" href="logger.html">tsflex.processing.logger</a></code></li>
+<li><code><a title="tsflex.processing.series_pipeline" href="series_pipeline.html">tsflex.processing.series_pipeline</a></code></li>
+<li><code><a title="tsflex.processing.series_pipeline_sk" href="series_pipeline_sk.html">tsflex.processing.series_pipeline_sk</a></code></li>
+<li><code><a title="tsflex.processing.series_processor" href="series_processor.html">tsflex.processing.series_processor</a></code></li>
+<li><code><a title="tsflex.processing.utils" href="utils.html">tsflex.processing.utils</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="tsflex.processing.dataframe_func" href="#tsflex.processing.dataframe_func">dataframe_func</a></code></li>
+<li><code><a title="tsflex.processing.get_processor_logs" href="#tsflex.processing.get_processor_logs">get_processor_logs</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code></h4>
+<ul class="">
+<li><code><a title="tsflex.processing.SeriesProcessor.get_required_series" href="#tsflex.processing.SeriesProcessor.get_required_series">get_required_series</a></code></li>
+<li><code><a title="tsflex.processing.SeriesProcessor.__call__" href="#tsflex.processing.SeriesProcessor.__call__">__call__</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code></h4>
+<ul class="">
+<li><code><a title="tsflex.processing.SeriesPipeline.get_required_series" href="#tsflex.processing.SeriesPipeline.get_required_series">get_required_series</a></code></li>
+<li><code><a title="tsflex.processing.SeriesPipeline.append" href="#tsflex.processing.SeriesPipeline.append">append</a></code></li>
+<li><code><a title="tsflex.processing.SeriesPipeline.insert" href="#tsflex.processing.SeriesPipeline.insert">insert</a></code></li>
+<li><code><a title="tsflex.processing.SeriesPipeline.process" href="#tsflex.processing.SeriesPipeline.process">process</a></code></li>
+<li><code><a title="tsflex.processing.SeriesPipeline.serialize" href="#tsflex.processing.SeriesPipeline.serialize">serialize</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="tsflex.processing.SKSeriesPipeline" href="#tsflex.processing.SKSeriesPipeline">SKSeriesPipeline</a></code></h4>
+<ul class="">
+<li><code><a title="tsflex.processing.SKSeriesPipeline.fit" href="#tsflex.processing.SKSeriesPipeline.fit">fit</a></code></li>
+<li><code><a title="tsflex.processing.SKSeriesPipeline.transform" href="#tsflex.processing.SKSeriesPipeline.transform">transform</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+</footer>
+</body>
+</html>

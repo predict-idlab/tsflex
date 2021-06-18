@@ -1,0 +1,835 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.9.2" />
+<title>tsflex.features API documentation</title>
+<meta name="description" content="Feature extraction submodule …" />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/foundation.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#ebf3ff}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#edfcf4}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+<link rel="icon" href="https://media.discordapp.net/attachments/372491075153166338/852906324417445908/icon.png">
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>tsflex.features</code></h1>
+</header>
+<section id="section-intro">
+<p>Feature extraction submodule.</p>
+<h1 id="feature-extraction-guide">Feature extraction guide</h1>
+<h2 id="working-example">Working Example ✅</h2>
+<p><em>tsflex</em> is built to be intuitive, so we encourage you to copy-paste this code and toy with some parameters!</p>
+<pre><code class="language-python">import pandas as pd; import scipy.stats as ss; import numpy as np
+from tsflex.features import FeatureDescriptor, FeatureCollection, NumpyFuncWrapper
+
+# 1. -------- Get your time-indexed data --------
+series_size = 10_000
+series_name=&quot;lux&quot;
+
+data = pd.Series(
+    data=np.random.random(series_size), 
+    index=pd.date_range(&quot;2021-07-01&quot;, freq=&quot;1h&quot;, periods=series_size)
+).rename(series_name)
+# -- 1.1 drop some data, as we don't make frequency assumptions
+data = data.drop(np.random.choice(data.index, 200, replace=False))
+
+
+# 2 -------- Construct your feature collection --------
+fc = FeatureCollection(
+    feature_descriptors=[
+        FeatureDescriptor(
+            function=NumpyFuncWrapper(func=ss.skew, output_names=&quot;skew&quot;),
+            series_name=series_name, 
+            window=&quot;1day&quot;, stride=&quot;6hours&quot;
+        )
+    ]
+)
+# -- 2.1. Add multiple features to your feature collection
+fc.add(FeatureDescriptor(np.min, series_name, '2days', '1day'))
+
+# 3 -------- Calculate features --------
+fc.calculate(data=data, n_jobs=1, return_df=True)
+# which outputs:
+</code></pre>
+<table>
+<thead>
+<tr>
+<th align="center">index</th>
+<th align="left"><strong>lux__skew__w=1D_s=12h</strong></th>
+<th align="left"><strong>lux__amin__w=2D_s=1D</strong></th>
+<th align="left"><strong>lux__&hellip;</strong></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="center">2021-07-02 00:00:00</td>
+<td align="left">-0.0607221</td>
+<td align="left">nan</td>
+<td align="left">&hellip;</td>
+</tr>
+<tr>
+<td align="center">2021-07-02 12:00:00</td>
+<td align="left">-0.142407</td>
+<td align="left">nan</td>
+<td align="left">&hellip;</td>
+</tr>
+<tr>
+<td align="center">2021-07-03 00:00:00</td>
+<td align="left">-0.283447</td>
+<td align="left">0.042413</td>
+<td align="left">&hellip;</td>
+</tr>
+<tr>
+<td align="center">2021-07-03 12:00:00</td>
+<td align="left">-0.353314</td>
+<td align="left">nan</td>
+<td align="left">&hellip;</td>
+</tr>
+<tr>
+<td align="center">2021-07-04 00:00:00</td>
+<td align="left">-0.188953</td>
+<td align="left">0.0011865</td>
+<td align="left">&hellip;</td>
+</tr>
+<tr>
+<td align="center">2021-07-04 12:00:00</td>
+<td align="left">0.259685</td>
+<td align="left">nan</td>
+<td align="left">&hellip;</td>
+</tr>
+<tr>
+<td align="center">2021-07-05 00:00:00</td>
+<td align="left">0.726858</td>
+<td align="left">0.0011865</td>
+<td align="left">&hellip;</td>
+</tr>
+<tr>
+<td align="center">&hellip;</td>
+<td align="left">&hellip;</td>
+<td align="left">&hellip;</td>
+<td align="left">&hellip;</td>
+</tr>
+</tbody>
+</table>
+<p><br></p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>More advanced feature-extraction examples can be found <a href="">in these example notebooks</a>
+<br>TODO: fix link</p>
+</div>
+<p><br></p>
+<h2 id="getting-started">Getting started 🧐</h2>
+<h3 id="classes-feature-output">Classes &amp; feature-output</h3>
+<p><img alt="features uml" src="../_static/features_uml.png"></p>
+<p>As shown above, there are 3 relevant classes for feature-extraction.</p>
+<ol>
+<li><a href="/tsflex/features/#tsflex.features.FeatureCollection">FeatureCollection</a>: serves as a registry, withholding the to-be-calculated <em>features</em></li>
+<li><a href="/tsflex/features/#tsflex.features.FeatureDescriptor">FeatureDescriptor</a>: an instance of this class describes a <em>feature</em>. <br>Features are defined by:<ul>
+<li><code>series_name</code>: the names of the signal(s) which this feature will use. </li>
+<li><code>function</code>: the <em>Callable</em> feature-function - e.g. <em>np.mean</em></li>
+<li><code>window</code>: the <em>time-based</em> window -
+e.g. <em>"1hour"</em></li>
+<li><code>stride</code>: the <em>time-based</em> stride - e.g. <em>"2days"</em></li>
+</ul>
+</li>
+<li><a href="/tsflex/features/#tsflex.features.NumpyFuncWrapper">NumpyFuncWrapper</a>: a wrapper around <em>Callable</em> functions, intended for advanced feature function definitions, such as:<ul>
+<li>features with multiple output columns</li>
+<li>passing <em>**kwargs</em> to feature functions</li>
+</ul>
+</li>
+</ol>
+<p>The snippet below shows how the <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> &amp; <code><a title="tsflex.features.FeatureDescriptor" href="#tsflex.features.FeatureDescriptor">FeatureDescriptor</a></code> class interplay:</p>
+<pre><code class="language-python">import numpy as np; import scipy.stats as ss
+from tsflex.features import FeatureDescriptor, FeatureCollection
+
+# The FeatureCollection takes a List[FeatureDescriptors] as input
+fc = FeatureCollection(feature_descriptors=[
+        # There is no need for NumpyFuncWrapper when using &quot;simple&quot; features
+        FeatureDescriptor(np.mean, &quot;series_a&quot;, &quot;1hour&quot;, &quot;15min&quot;),
+        FeatureDescriptor(ss.skew, &quot;series_b&quot;, &quot;3hours&quot;, &quot;5min&quot;)
+    ]
+)
+
+# We can still add features after instantiating.
+fc.add(features=[FeatureDescriptor(np.std, &quot;series_a&quot;, &quot;1hour&quot;, &quot;15min&quot;)])
+fc.calculate(...)
+</code></pre>
+<p><br></p>
+<h3 id="output-format">Output format</h3>
+<p>The last line in this snippet above will calculate the features on the passed data. You can find more information about the data-formats in the section below. However, already want to describe the output of this <code>calculate</code> method; which is a <code>time-indexed pd.DataFrame</code> with column names<br></p>
+<blockquote>
+<p><code>&lt;SERIES-NAME&gt;__&lt;FEAT-NAME&gt;__w=&lt;WINDOW&gt;__s=&lt;STRIDE&gt;</code>.</p>
+</blockquote>
+<p>The column-name for the feature defined on the penultimate line will thus be <code>series_a__std__w=1h__s=15m</code>.</p>
+<p><br></p>
+<h2 id="limitations">Limitations 📢</h2>
+<p>It is important to note that there a still some, albeit logical, <strong>limitations</strong> regarding the supported <a href="/tsflex/#data-formats">data format</a>.<br>
+These limitations are:</p>
+<ol>
+<li>Each <code>ts</code> must have a <code>pd.DatetimeIndex</code> that <strong>increases monotonically</strong><ul>
+<li><strong>Countermeasure</strong>: Apply <em><a href="https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.sort_index.html">sort_index()</a></em> on your not-monotonically increasing data</li>
+</ul>
+</li>
+<li>No duplicate <code>ts</code> names are allowed<ul>
+<li><strong>countermeasure</strong>: rename your <code>ts</code></li>
+</ul>
+</li>
+<li>We support various data-types. e.g. (np.float32, string-data, time-based data). However, it is the end-users responsibility to use a function which interplays nicely with the data's format.</li>
+</ol>
+<p><br></p>
+<h2 id="advanced-usage">Advanced usage</h2>
+<h3 id="multivariate-data">Multivariate-data</h3>
+<p>There are no assumptions made about the <code>data</code> its <code>time-ranges</code>.<br>
+However, the end-user must take some things in consideration.</p>
+<h3 id="multiple-time-series">Multiple time series</h3>
+<ul>
+<li>function's that work on <strong>multiple time-series</strong>: see the <code><a title="tsflex.chunking" href="../chunking/index.html">tsflex.chunking</a></code> module for more info.</li>
+</ul>
+<h3 id="irregularly-sampled-data">Irregularly sampled data</h3>
+<p>This case may cause that not all windows on which features are calculated have the same amount of samples.<br>
+When using multivariate data, with either different sample rates or with an irregular data-rate, you cannot make the assumption that all windows will have the same length. Your feature extraction method will thus
+* will the s </p>
+<p><br></p>
+<hr>
+</section>
+<section>
+<h2 class="section-title" id="header-submodules">Sub-modules</h2>
+<dl>
+<dt><code class="name"><a title="tsflex.features.feature" href="feature.html">tsflex.features.feature</a></code></dt>
+<dd>
+<div class="desc"><p>FeatureDescriptor and MultipleFeatureDescriptors class for creating time-series
+features.</p></div>
+</dd>
+<dt><code class="name"><a title="tsflex.features.feature_collection" href="feature_collection.html">tsflex.features.feature_collection</a></code></dt>
+<dd>
+<div class="desc"><p>FeatureCollection class for bookkeeping and calculation of time-series features …</p></div>
+</dd>
+<dt><code class="name"><a title="tsflex.features.feature_collection_sk" href="feature_collection_sk.html">tsflex.features.feature_collection_sk</a></code></dt>
+<dd>
+<div class="desc"><p>SKFeatureCollection class for wrapped sklearn-compatible <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> …</p></div>
+</dd>
+<dt><code class="name"><a title="tsflex.features.function_wrapper" href="function_wrapper.html">tsflex.features.function_wrapper</a></code></dt>
+<dd>
+<div class="desc"><p>NumpyFuncWrapper class for object-oriented representation of a function.</p></div>
+</dd>
+<dt><code class="name"><a title="tsflex.features.logger" href="logger.html">tsflex.features.logger</a></code></dt>
+<dd>
+<div class="desc"><p>Contains the used variables and functions to provide logging functionality …</p></div>
+</dd>
+<dt><code class="name"><a title="tsflex.features.strided_rolling" href="strided_rolling.html">tsflex.features.strided_rolling</a></code></dt>
+<dd>
+<div class="desc"><p>Contains a (rather) fast implementation of a <strong>time-based</strong> strided rolling window.</p></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="tsflex.features.get_feature_logs"><code class="name flex">
+<span>def <span class="ident">get_feature_logs</span></span>(<span>logging_file_path)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get execution (time) info for each feature of a <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code>.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>logging_file_path</code></strong> :&ensp;<code>str</code></dt>
+<dd>The file path where the logged messages are stored. This is the file path that
+is passed to the <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> its <code>calculate</code> method.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>pd.DataFrame</code></dt>
+<dd>A DataFrame with the features its function, input keys and calculation duration.</dd>
+</dl></div>
+</dd>
+<dt id="tsflex.features.get_function_stats"><code class="name flex">
+<span>def <span class="ident">get_function_stats</span></span>(<span>logging_file_path)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get execution (time) statistics for each function.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>logging_file_path</code></strong> :&ensp;<code>str</code></dt>
+<dd>The file path where the logged messages are stored. This is the file path that
+is passed to the <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> its <code>calculate</code> method.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>pd.DataFrame</code></dt>
+<dd>A DataFrame with for each function (i.e., <code>function-(window,stride)</code>)
+combination the mean (time), std (time), sum (time), and number of executions.</dd>
+</dl></div>
+</dd>
+<dt id="tsflex.features.get_key_stats"><code class="name flex">
+<span>def <span class="ident">get_key_stats</span></span>(<span>logging_file_path)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Get execution (time) statistics for each <code>key-(window,stride)</code> combination.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>logging_file_path</code></strong> :&ensp;<code>str</code></dt>
+<dd>The file path where the logged messages are stored. This is the file path that
+is passed to the <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> its <code>calculate</code> method.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>pd.DataFrame</code></dt>
+<dd>A DataFrame with for each function the mean (time), std (time), sum (time), and
+number of executions.</dd>
+</dl></div>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="tsflex.features.FeatureDescriptor"><code class="flex name class">
+<span>class <span class="ident">FeatureDescriptor</span></span>
+<span>(</span><span>function, series_name, window, stride)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>A FeatureDescriptor object, containing all feature information.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>function</code></strong> :&ensp;<code>Union[<a title="tsflex.features.NumpyFuncWrapper" href="#tsflex.features.NumpyFuncWrapper">NumpyFuncWrapper</a>, Callable]</code></dt>
+<dd>The function that calculates this feature.
+The prototype of the function should match: <pre><code>function(*series: pd.Series)
+    -&gt; Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]
+</code></pre>
+</dd>
+<dt><strong><code>series_name</code></strong> :&ensp;<code>Union[str, Tuple[str]]</code></dt>
+<dd>
+<p>The names of the series on which the feature function should be applied.
+This argument should match the <code>function</code> its input; </p>
+<ul>
+<li>If <code>series_name</code> is a string (or tuple of a single string), than
+<code>function</code> should require just one series as input.</li>
+<li>If <code>series_name</code> is a tuple of strings, than <code>function</code> should
+require <code>len(tuple)</code> series as input <strong>and in exactly the same order</strong></li>
+</ul>
+</dd>
+<dt><strong><code>window</code></strong> :&ensp;<code>Union[float, str, pd.Timedelta]</code></dt>
+<dd>
+<p>The window size, this argument supports multiple types: </p>
+<ul>
+<li>If the type is an <code>float</code>, it represents the series its window size in
+<strong>seconds</strong>.</li>
+<li>If the window's type is a <code>pd.Timedelta</code>, the window size represents
+the window-time.</li>
+<li>
+<p>If a <code>str</code>, it represents a window-time-string. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When no time-unit is present in the string, it represents the stride
+size in <strong>seconds</strong>.</p>
+</div>
+</li>
+</ul>
+</dd>
+<dt><strong><code>stride</code></strong> :&ensp;<code>Union[int, str, pd.Timedelta]</code></dt>
+<dd>
+<p>The stride of the window rolling process, supports multiple types: </p>
+<ul>
+<li>If the type is <code>float</code>, it represents the stride size in <strong>seconds</strong></li>
+<li>If the type is <code>pd.Timedelta</code>, it represents the stride-roll timedelta.</li>
+<li>
+<p>If a type is <code>str</code>, it represents a stride-roll-time-string. </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When no time-unit is present in the string, it represents the stride
+size in <strong>seconds</strong>.</p>
+</div>
+</li>
+</ul>
+</dd>
+</dl>
+<h2 id="notes">Notes</h2>
+<ul>
+<li>For each <code>function</code> - <code>input</code>(-series) - <code>window</code> - stride combination, one needs
+to create a distinct <code><a title="tsflex.features.FeatureDescriptor" href="#tsflex.features.FeatureDescriptor">FeatureDescriptor</a></code>. Hence it is more convenient to
+create a <code><a title="tsflex.features.MultipleFeatureDescriptors" href="#tsflex.features.MultipleFeatureDescriptors">MultipleFeatureDescriptors</a></code> when <code>function</code> - <code>window</code> - <code>stride</code>
+<em>combinations</em> should be applied on various input-series (combinations).</li>
+<li>When <code>function</code> takes multiple series (i.e., arguments) as input, these are
+joined (based on the index) before applying the function. If the indexes of
+these series are not exactly the same, it might occur that not all series have
+exactly the same length! Hence,
+make sure that the <code>function</code> can deal with
+this!</li>
+<li>For more information about the str-based time args, look into:
+<a href="https://pandas.pydata.org/pandas-docs/stable/user_guide/timedeltas.html#parsing" target="_blank">pandas time delta</a>
+<br><br></li>
+</ul>
+<div class="admonition todo">
+<p class="admonition-title">TODO</p>
+<ul>
+<li>Add documentation of how the index/slicing takes place / which
+assumptions we make.</li>
+<li>Raise error function tries to change values of view due to flag</li>
+</ul>
+</div>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>TypeError</code></dt>
+<dd>Raised when the <code>function</code> is not an instance of Callable or
+NumpyFuncWrapper.</dd>
+</dl>
+<h2 id="see-also">See Also</h2>
+<dl>
+<dt><code>StridedRolling</code></dt>
+<dd>As the window-stride (time) conversion takes place there.</dd>
+</dl></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>tsflex.utils.classes.FrozenClass</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="tsflex.features.FeatureDescriptor.get_required_series"><code class="name flex">
+<span>def <span class="ident">get_required_series</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return all required series names for this feature descriptor.</p>
+<p>Return the list of series names that are required in order to execute the
+feature function.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>List[str]</code></dt>
+<dd>List of all the required series names.</dd>
+</dl></div>
+</dd>
+</dl>
+</dd>
+<dt id="tsflex.features.MultipleFeatureDescriptors"><code class="flex name class">
+<span>class <span class="ident">MultipleFeatureDescriptors</span></span>
+<span>(</span><span>functions, series_names, windows, strides)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Create a MultipleFeatureDescriptors object.</p>
+<p>Create a list of features from <strong>all</strong> combinations of the given parameter
+lists. Total number of created Features will be:</p>
+<pre><code>len(func_inputs)*len(functions)*len(windows)*len(strides).
+</code></pre>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>functions</code></strong> :&ensp;<code>List[Union[<a title="tsflex.features.NumpyFuncWrapper" href="#tsflex.features.NumpyFuncWrapper">NumpyFuncWrapper</a>, Callable]]</code></dt>
+<dd>The functions, can be either of both types (even in a single array).</dd>
+<dt><strong><code>series_names</code></strong> :&ensp;<code>Union[str, Tuple[str], List[str], List[Tuple[str]]]</code></dt>
+<dd>
+<p>The names of the series on which the feature function should be applied.</p>
+<p>This argument should match the <code>function</code> its input; </p>
+<ul>
+<li>If <code>series_names</code> is a (list of) string (or tuple of a single string),
+than <code>function</code> should require just one series as input.</li>
+<li>If <code>series_names</code> is a (list of) tuple of strings, than <code>function</code> should
+require <code>len(tuple)</code> series as input.</li>
+</ul>
+<p>A list means multiple series (combinations) to extract feature from; </p>
+<ul>
+<li>If <code>series_names</code> is a string or a tuple of strings, than <code>function</code> will
+be called only once for the series of this argument.</li>
+<li>If <code>series_names</code> is a list of either strings or tuple of strings, than
+<code>function</code> will be called for each entry of this list.</li>
+</ul>
+<p>Note: when passing a list as <code>series_names</code>, all items in this list should
+have the same type, i.e, either </p>
+<ul>
+<li>all a str</li>
+<li>or, all a tuple <em>with same length</em>.</li>
+</ul>
+</dd>
+<dt><strong><code>windows</code></strong> :&ensp;<code>Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],</code></dt>
+<dd>All the window sizes.</dd>
+<dt><strong><code>strides</code></strong> :&ensp;<code>Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],</code></dt>
+<dd>All the strides.</dd>
+</dl></div>
+</dd>
+<dt id="tsflex.features.FeatureCollection"><code class="flex name class">
+<span>class <span class="ident">FeatureCollection</span></span>
+<span>(</span><span>feature_descriptors=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Create a FeatureCollection.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>feature_descriptors</code></strong> :&ensp;<code>Union[<a title="tsflex.features.FeatureDescriptor" href="#tsflex.features.FeatureDescriptor">FeatureDescriptor</a>, <a title="tsflex.features.MultipleFeatureDescriptors" href="#tsflex.features.MultipleFeatureDescriptors">MultipleFeatureDescriptors</a>, List[Union[<a title="tsflex.features.FeatureDescriptor" href="#tsflex.features.FeatureDescriptor">FeatureDescriptor</a>, <a title="tsflex.features.MultipleFeatureDescriptors" href="#tsflex.features.MultipleFeatureDescriptors">MultipleFeatureDescriptors</a>]]]</code>, optional</dt>
+<dd>Initial (list of) feature(s) to add to collection, by default None</dd>
+</dl></div>
+<h3>Methods</h3>
+<dl>
+<dt id="tsflex.features.FeatureCollection.get_required_series"><code class="name flex">
+<span>def <span class="ident">get_required_series</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Return all required series names for this feature collection.</p>
+<p>Return the list of series names that are required in order to calculate all the
+features (defined by the <code><a title="tsflex.features.FeatureDescriptor" href="#tsflex.features.FeatureDescriptor">FeatureDescriptor</a></code> objects) of this feature
+collection.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>List[str]</code></dt>
+<dd>List of all the required series names.</dd>
+</dl></div>
+</dd>
+<dt id="tsflex.features.FeatureCollection.add"><code class="name flex">
+<span>def <span class="ident">add</span></span>(<span>self, features)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Add feature(s) to the FeatureCollection.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>features</code></strong> :&ensp;<code>Union[<a title="tsflex.features.FeatureDescriptor" href="#tsflex.features.FeatureDescriptor">FeatureDescriptor</a>, <a title="tsflex.features.MultipleFeatureDescriptors" href="#tsflex.features.MultipleFeatureDescriptors">MultipleFeatureDescriptors</a>, <a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a>, List[Union[<a title="tsflex.features.FeatureDescriptor" href="#tsflex.features.FeatureDescriptor">FeatureDescriptor</a>, <a title="tsflex.features.MultipleFeatureDescriptors" href="#tsflex.features.MultipleFeatureDescriptors">MultipleFeatureDescriptors</a>, <a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a>]]]</code></dt>
+<dd>Feature(s) (containers) whose contained features will be added.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>TypeError</code></dt>
+<dd>Raised when an item within <code>features</code> is not an instance of
+[<code>MultipleFeatureDescriptors</code>, <code>FeatureDescriptors</code>, <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code>].</dd>
+</dl></div>
+</dd>
+<dt id="tsflex.features.FeatureCollection.calculate"><code class="name flex">
+<span>def <span class="ident">calculate</span></span>(<span>self, data, return_df=False, window_idx='end', approve_sparsity=False, show_progress=False, logging_file_path=None, n_jobs=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Calculate features on the passed data.</p>
+<h2 id="notes">Notes</h2>
+<ul>
+<li>The (column-)names of the series in <code>data</code> represent the names in the keys.</li>
+<li>If a <code>logging_file_path</code> is provided, the execution (time) info can be
+retrieved by calling <code><a title="tsflex.features.logger.get_feature_logs" href="logger.html#tsflex.features.logger.get_feature_logs">get_feature_logs()</a>(logging_file_path)</code>.
+Be aware that the <code>logging_file_path</code> gets cleared before the logger pushes
+logged messages. Hence, one should use a separate logging file for each
+constructed processing and feature instance with this library.</li>
+</ul>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>data</code></strong> :&ensp;<code>Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]</code></dt>
+<dd>
+<p>Dataframe or Series or list thereof, with all the required data for the
+feature calculation. </p>
+<p><strong>Remark</strong>: each Series / DataFrame must have a <code>pd.DatetimeIndex</code>.
+<strong>Remark</strong>: we assume that each name / column is unique.</p>
+</dd>
+<dt><strong><code>return_df</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Whether the output needs to be a dataframe list or a DataFrame, by default
+False.
+If <code>True</code> the output dataframes will be merged to a DataFrame with an outer
+merge.</dd>
+<dt><strong><code>window_idx</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>The window's index position which will be used as index for the
+feature_window aggregation. Must be either of: ['begin', 'middle', 'end'],
+by default 'end'. All features in this collection will use the same
+window_idx.</dd>
+<dt><strong><code>approve_sparsity</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Bool indicating whether the user acknowledges that there may be sparsity
+(i.e., irregularly sampled data), by default False.
+If False and sparsity is observed, a warning is raised.</dd>
+<dt><strong><code>show_progress</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>If True, the progress will be shown with a progressbar, by default False.</dd>
+<dt><strong><code>logging_file_path</code></strong> :&ensp;<code>Union[str, Path]</code>, optional</dt>
+<dd>The file path where the logged messages are stored. If <code>None</code>, then no
+logging <code>FileHandler</code> will be used and the logging messages are only pushed
+to stdout. Otherwise, a logging <code>FileHandler</code> will write the logged messages
+to the given file path.</dd>
+<dt><strong><code>n_jobs</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>
+<p>The number of processes used for the feature calculation. If <code>None</code>, then
+the number returned by <code>os.cpu_count()</code> is used, by default None. </p>
+<p>If n_jobs is either 0 or 1, the code will be executed sequentially without
+creating a process pool. This is very useful when debugging, as the stack
+trace will be more comprehensible.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<ul>
+<li>It takes on avg. <em>300ms</em> to schedule everything with
+multiprocessing. So if your feature extraction code runs faster than
+~1.5s, it might not be worth it to parallelize the process
+(and thus better set the <code>n_jobs</code> to 0-1).</li>
+<li>This method its memory peaks are significantly lower when executed
+sequentially. Set the <code>n_jobs</code> to 0-1 if this matters.</li>
+</ul>
+</div>
+</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Union[List[pd.DataFrame], pd.DataFrame]</code></dt>
+<dd>The calculated features.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>KeyError</code></dt>
+<dd>Raised when a required key is not found in <code>data</code>.</dd>
+</dl></div>
+</dd>
+<dt id="tsflex.features.FeatureCollection.serialize"><code class="name flex">
+<span>def <span class="ident">serialize</span></span>(<span>self, file_path)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Serialize this <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> instance.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>file_path</code></strong> :&ensp;<code>Union[str, Path]</code></dt>
+<dd>The path where the <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> will be serialized.</dd>
+</dl>
+<h2 id="notes">Notes</h2>
+<ul>
+<li>As we use <a href="https://github.com/uqfoundation/dill" target="_blank">Dill</a> to
+serialize the files, we can <strong>also serialize functions which are defined in
+the local scope, like lambdas.</strong></li>
+</ul></div>
+</dd>
+</dl>
+</dd>
+<dt id="tsflex.features.SKFeatureCollection"><code class="flex name class">
+<span>class <span class="ident">SKFeatureCollection</span></span>
+<span>(</span><span>feature_descriptors, logging_file_path=None, n_jobs=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Sklearn-compatible transformer for extracting features using <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code>.</p>
+<p>This class is basically a wrapper around <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> and its <code>calculate</code>
+method, enabling sklearn compatibility, e.g. including an instance of this class
+in <code>sklearn.pipeline.Pipeline</code>. The constructor wraps the <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> its
+constructor arguments and the
+relevant parameters of its <code>calculate</code> method.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>feature_descriptors</code></strong> :&ensp;<code>Union[<a title="tsflex.features.FeatureDescriptor" href="#tsflex.features.FeatureDescriptor">FeatureDescriptor</a>, <a title="tsflex.features.MultipleFeatureDescriptors" href="#tsflex.features.MultipleFeatureDescriptors">MultipleFeatureDescriptors</a>, List[Union[<a title="tsflex.features.FeatureDescriptor" href="#tsflex.features.FeatureDescriptor">FeatureDescriptor</a>, <a title="tsflex.features.MultipleFeatureDescriptors" href="#tsflex.features.MultipleFeatureDescriptors">MultipleFeatureDescriptors</a>]]]</code></dt>
+<dd>Features to include in the collection.</dd>
+<dt><strong><code>logging_file_path</code></strong> :&ensp;<code>Union[str, Path]</code>, optional</dt>
+<dd>The file path where the logged messages are stored. If <code>None</code>, then no
+logging <code>FileHandler</code> will be used and the logging messages are only pushed
+to stdout. Otherwise, a logging <code>FileHandler</code> will write the logged messages
+to the given file path.</dd>
+<dt><strong><code>n_jobs</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>
+<p>The number of processes used for the feature calculation. If <code>None</code>, then
+the number returned by <code>os.cpu_count()</code> is used, by default None. </p>
+<p>If n_jobs is either 0 or 1, the code will be executed sequentially without
+creating a process pool. This is very useful when debugging, as the stack
+trace will be more comprehensible.</p>
+</dd>
+</dl>
+<h2 id="notes">Notes</h2>
+<ul>
+<li>If a <code>logging_file_path</code> is provided, the execution (time) info can be
+retrieved by calling <code><a title="tsflex.features.logger.get_feature_logs" href="logger.html#tsflex.features.logger.get_feature_logs">get_feature_logs()</a>(logging_file_path)</code>. <br>
+Be aware that the <code>logging_file_path</code> gets cleared before the logger pushes
+logged messages. Hence, one should use a separate logging file for each
+constructed processing and feature instance with this library.</li>
+<li>It is not possible to pass the <code>merge_dfs</code> argument from the <code>calculate</code>
+method, because this should always be True (in order to output a valid
+iterable in the <code>transform</code> method)</li>
+</ul>
+<p>The following three changes were necessary to enable this sklearn-compatibility: </p>
+<ol>
+<li>The parameters of the <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> its constructor are logged in this
+class.</li>
+<li>The relevant parameters of the <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> its <code>calculate</code> method have
+been moved to the constructor and are also logged.</li>
+<li>The <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> its <code>calculate</code> method is wrapped in this class its
+<code>transform</code> method,</li>
+</ol></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>sklearn.base.TransformerMixin</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="tsflex.features.SKFeatureCollection.fit"><code class="name flex">
+<span>def <span class="ident">fit</span></span>(<span>self, X=None, y=None)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Fit function that is not needed for this transformer.</p>
+<h2 id="note">Note</h2>
+<p>This function does nothing and is here for compatibility reasons.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>X</code></strong> :&ensp;<code>Any</code></dt>
+<dd>Unneeded.</dd>
+<dt><strong><code>y</code></strong> :&ensp;<code>Any</code></dt>
+<dd>Unneeded.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code><a title="tsflex.features.SKFeatureCollection" href="#tsflex.features.SKFeatureCollection">SKFeatureCollection</a></code></dt>
+<dd>The transformer instance itself is returned.</dd>
+</dl></div>
+</dd>
+<dt id="tsflex.features.SKFeatureCollection.transform"><code class="name flex">
+<span>def <span class="ident">transform</span></span>(<span>self, X)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Calculate features on the data.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>X</code></strong> :&ensp;<code>Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]</code></dt>
+<dd>
+<p>Dataframe or Series or list thereof, with all the required data for the
+feature calculation.</p>
+<p><strong>Remark</strong>: each Series/DataFrame must have a <code>pd.DatetimeIndex</code>. </p>
+<p>Also note that this parameter corresponds to the <code>data</code> parameter of the
+<code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> its <code>calculate</code> method.</p>
+</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>pd.DataFrame</code></dt>
+<dd>A DataFrame, containing the calculated features.</dd>
+</dl></div>
+</dd>
+</dl>
+</dd>
+<dt id="tsflex.features.NumpyFuncWrapper"><code class="flex name class">
+<span>class <span class="ident">NumpyFuncWrapper</span></span>
+<span>(</span><span>func, output_names=None, **kwargs)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Numpy function wrapper.</p>
+<p>A Numpy function wrapper which takes a numpy array as input and returns a numpy
+array. It also defines the names of the function outputs.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>func</code></strong> :&ensp;<code>Callable</code></dt>
+<dd>The wrapped function.</dd>
+<dt><strong><code>output_names</code></strong> :&ensp;<code>Union[List[str], str]</code>, optional</dt>
+<dd>The name of the outputs of the function, by default None.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>TypeError</code></dt>
+<dd>Raised when the <code>output_names</code> cannot be set.</dd>
+</dl>
+<p>Create NumpyFuncWrapper instance.</p></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>tsflex.utils.classes.FrozenClass</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="tsflex.features.NumpyFuncWrapper.__call__"><code class="name flex">
+<span>def <span class="ident">__call__</span></span>(<span>self, *series)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Call wrapped function with passed data.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>*series</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>The (multiple) input series for the function.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>Any</code></dt>
+<dd>The function its output for the passed series.</dd>
+</dl></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<header>
+<div style="text-align: center">
+<a class="homelink" rel="home" title="tsflex home" href="/">
+<img src="https://cdn.discordapp.com/attachments/372491075153166338/852904976560554094/logo.png"
+alt="logo should be displayed here" style="width: 100%;"></a>
+</div>
+</header>
+<h1>Index</h1>
+<div class="toc">
+<ul>
+<li><a href="#feature-extraction-guide">Feature extraction guide</a><ul>
+<li><a href="#working-example">Working Example ✅</a></li>
+<li><a href="#getting-started">Getting started 🧐</a><ul>
+<li><a href="#classes-feature-output">Classes &amp; feature-output</a></li>
+<li><a href="#output-format">Output format</a></li>
+</ul>
+</li>
+<li><a href="#limitations">Limitations 📢</a></li>
+<li><a href="#advanced-usage">Advanced usage</a><ul>
+<li><a href="#multivariate-data">Multivariate-data</a></li>
+<li><a href="#multiple-time-series">Multiple time series</a></li>
+<li><a href="#irregularly-sampled-data">Irregularly sampled data</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="tsflex" href="../index.html">tsflex</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-submodules">Sub-modules</a></h3>
+<ul>
+<li><code><a title="tsflex.features.feature" href="feature.html">tsflex.features.feature</a></code></li>
+<li><code><a title="tsflex.features.feature_collection" href="feature_collection.html">tsflex.features.feature_collection</a></code></li>
+<li><code><a title="tsflex.features.feature_collection_sk" href="feature_collection_sk.html">tsflex.features.feature_collection_sk</a></code></li>
+<li><code><a title="tsflex.features.function_wrapper" href="function_wrapper.html">tsflex.features.function_wrapper</a></code></li>
+<li><code><a title="tsflex.features.logger" href="logger.html">tsflex.features.logger</a></code></li>
+<li><code><a title="tsflex.features.strided_rolling" href="strided_rolling.html">tsflex.features.strided_rolling</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="tsflex.features.get_feature_logs" href="#tsflex.features.get_feature_logs">get_feature_logs</a></code></li>
+<li><code><a title="tsflex.features.get_function_stats" href="#tsflex.features.get_function_stats">get_function_stats</a></code></li>
+<li><code><a title="tsflex.features.get_key_stats" href="#tsflex.features.get_key_stats">get_key_stats</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="tsflex.features.FeatureDescriptor" href="#tsflex.features.FeatureDescriptor">FeatureDescriptor</a></code></h4>
+<ul class="">
+<li><code><a title="tsflex.features.FeatureDescriptor.get_required_series" href="#tsflex.features.FeatureDescriptor.get_required_series">get_required_series</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="tsflex.features.MultipleFeatureDescriptors" href="#tsflex.features.MultipleFeatureDescriptors">MultipleFeatureDescriptors</a></code></h4>
+</li>
+<li>
+<h4><code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code></h4>
+<ul class="">
+<li><code><a title="tsflex.features.FeatureCollection.get_required_series" href="#tsflex.features.FeatureCollection.get_required_series">get_required_series</a></code></li>
+<li><code><a title="tsflex.features.FeatureCollection.add" href="#tsflex.features.FeatureCollection.add">add</a></code></li>
+<li><code><a title="tsflex.features.FeatureCollection.calculate" href="#tsflex.features.FeatureCollection.calculate">calculate</a></code></li>
+<li><code><a title="tsflex.features.FeatureCollection.serialize" href="#tsflex.features.FeatureCollection.serialize">serialize</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="tsflex.features.SKFeatureCollection" href="#tsflex.features.SKFeatureCollection">SKFeatureCollection</a></code></h4>
+<ul class="">
+<li><code><a title="tsflex.features.SKFeatureCollection.fit" href="#tsflex.features.SKFeatureCollection.fit">fit</a></code></li>
+<li><code><a title="tsflex.features.SKFeatureCollection.transform" href="#tsflex.features.SKFeatureCollection.transform">transform</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="tsflex.features.NumpyFuncWrapper" href="#tsflex.features.NumpyFuncWrapper">NumpyFuncWrapper</a></code></h4>
+<ul class="">
+<li><code><a title="tsflex.features.NumpyFuncWrapper.__call__" href="#tsflex.features.NumpyFuncWrapper.__call__">__call__</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.9.2</a>.</p>
+</footer>
+</body>
+</html>
