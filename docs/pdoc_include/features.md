@@ -34,7 +34,7 @@ fc.add(MultipleFeatureDescriptors(
 data = pd.Series(data=np.random.random(10_000), 
     index=pd.date_range("2021-07-01", freq="1h", periods=10_000)).rename('lux')
 # -- 2.1 drop some data, as we don't make frequency assumptions
-data = data.drop(np.random.choice(data.index * 120, 200, replace=False))
+data = data.drop(np.random.choice(data.index, 200, replace=False))
 
 # 3. Calculate the feature on some data
 fc.calculate(data=data, n_jobs=1, return_df=True)
@@ -52,12 +52,13 @@ fc.calculate(data=data, n_jobs=1, return_df=True)
 | ... |                      ...  |                     ... | ... |
 
 
-
 <br>
 
 !!!tip 
     More advanced feature-extraction examples can be found [in these example notebooks]()
     <br>TODO: fix link
+
+<br>
 
 ## Getting started 🧐
 ### Classes & feature-output
@@ -93,63 +94,47 @@ fc = FeatureCollection(feature_descriptors=[
 fc.add(features=[FeatureDescriptor(np.std, "series_a", "1hour", "15min")])
 fc.calculate(...)
 ```
-The last line in this snippet will calculate the features on the passed data. You can find more information about the data-formats in the section below. However, already want to descripe the output of this `calculate` method; which is a `time-indexed pd.DataFrame` with column names<br>
+<br>
+
+### Output format
+The last line in this snippet above will calculate the features on the passed data. You can find more information about the data-formats in the section below. However, already want to describe the output of this `calculate` method; which is a `time-indexed pd.DataFrame` with column names<br>
 
 > `<SERIES-NAME>__<FEAT-NAME>__w=<WINDOW>__s=<STRIDE>`.
 
 The column-name for the feature defined on the penultimate line will thus be `series_a__std__w=1h__s=15m`.
 
-## Data formats 🗄️
+<br>
 
-*tsflex* leverages the flexibility and convenience that [Pandas](https://pandas.pydata.org/docs/index.html) delivers. This has the consequence that your input should always be either one or more `pd.Series/pd.DataFrame`. Using type-hinting, the input-data can be defined as:
+## Limitations 📢
 
-```python
-import pandas as pd; from typing import Union, List
-data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
-```
-
-From now on, we call an item from `data` a time-series (`ts`). 
-
-!!!tip
-    If you use `DataFrames`, please carefully read the section below.  
-
-### Wide vs. Long Data
-![image](../_static/long_wide.png)
-
-Time series data is often stored in 2 data-types:
-
-1. `Wide` time-series data, also known as flat data, is the most common variant. Each column represents a data-modality and the **index** is the **shared time**.<br>
-    **Note**: As shown in the example above, not all data-modalities might have values for the shared (~union) index. This circumstance introduces Not a Number (`NaN`) entries.
-2. `Long` time-series data, which consists of 3 columns:
-      * A _non-index_ `time`-column, which thus can withhold duplicates - _time_
-      * A `kind` column, defining the time-data-modality its name.
-      * A `value` column, withholding the value for the corresponding kind-time combination
-
-
-
-**Countermeasure**: `TODO`
-
-### Limitations
-
-It is important to note that there a still some, albeit logical, **limitations** regarding the above-defined data format.<br>
+It is important to note that there a still some, albeit logical, **limitations** regarding the supported [data format](/tsflex/#data-formats).<br>
 These limitations are:
 
-1. Each pandas-input must have a `pd.DatetimeIndex` that **increases monotonically**
+1. Each `ts` must have a `pd.DatetimeIndex` that **increases monotonically**
       - **Countermeasure**: Apply _[sort_index()](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.sort_index.html)_ on your not-monotonically increasing data
 2. No duplicate `ts` names are allowed
       - **countermeasure**: rename your `ts`
-3. We support various data-types. e.g. (np.float32, string-data, time-based data). However, it is the end-users responsibility to use the correct function.
-`todo`: supported data-types (np.float32, np.float64)
+3. We support various data-types. e.g. (np.float32, string-data, time-based data). However, it is the end-users responsibility to use a function which interplays nicely with the data's format.
 
-!!!info
-      There are no assumptions made about the data its time-ranges.<br> However, the end-user must take some things in consideration:
-      
-      * function's that work on `multiple time-series`:<br>
-        - see the `Chunking` module for more info
-      * irregularly sampled data:
-         - a
-      * will the s 
+<br>
 
-      `TODO`: add flag documentation
+## Advanced usage
+
+### Multivariate-data
+There are no assumptions made about the `data` its `time-ranges`.<br>
+However, the end-user must take some things in consideration.
+
+### Multiple time series
+
+* function's that work on **multiple time-series**: see the `tsflex.chunking` module for more info.
+
+
+### Irregularly sampled data
+
+This case may cause that not all windows on which features are calculated have the same amount of samples.<br>
+When using multivariate data, with either different sample rates or with an irregular data-rate, you cannot make the assumption that all windows will have the same length. Your feature extraction method will thus 
+  * will the s 
+
+<br>
 
 ---

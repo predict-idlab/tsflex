@@ -16,7 +16,7 @@ It is a `time-series first` toolkit for **processing & feature extraction**, mak
 
 ## Installation
 
-`:WIP: - not yet published to pypi`
+Installing tsflex is as straightforward as any other Python package. If you are using **pip**, just execute the following command in your environment.
 
 ```sh
 pip install tsflex
@@ -26,7 +26,7 @@ pip install tsflex
 
 *tsflex* has multiple selling points, for example
 
-`todo: create links to example benchmarking notebooks`
+`todo`: create links to example benchmarking notebooks
 
 * it is efficient
   * execution time -> multiprocessing / vectorized
@@ -44,17 +44,6 @@ pip install tsflex
 
 ### Series processing
 
-```python
-import pandas as pd
-import scipy.stats
-import numpy as np
-
-from tsflex.processing import SeriesProcessor, SeriesPipeline
-
-
-```
-
-
 ### Feature extraction
 
 The only data assumptions made by tsflex are:
@@ -63,53 +52,55 @@ The only data assumptions made by tsflex are:
 
 
 ```python
-import pandas as pd
-import scipy.stats
-import numpy as np
-
-from tsflex.features import FeatureDescriptor, FeatureCollection
+import pandas as pd; import scipy.stats as ss; import numpy as np
+from tsflex.features import FeatureDescriptor, FeatureCollection, NumpyFuncWrapper
+from tsflex.features import MultipleFeatureDescriptors
 
 # 1. Construct the collection in which you add all your features
 fc = FeatureCollection(
     feature_descriptors=[
         FeatureDescriptor(
-            function=scipy.stats.skew,
-            series_name="myseries",
-            window="1day",
-            stride="6hours"
+            function=NumpyFuncWrapper(func=ss.skew,output_names="skew"),
+            series_name="lux", window="1day", stride="6hours"
         )
     ]
 )
-# -- 1.1 Add another feature to the feature collection
-fc.add(FeatureDescriptor(np.min, 'myseries', '2days', '1day'))
+
+# -- 1.1. Add multiple features to your feature collection
+fc.add(FeatureDescriptor(np.min, 'lux', '2days', '1day'))
+fc.add(MultipleFeatureDescriptors(
+    functions=[ 
+        np.mean, np.std,
+        NumpyFuncWrapper(func=lambda x: np.sum(np.abs(x)), output_names="abssum") 
+    ],
+    series_names="lux", windows=["1day", "2days", "3hours"],
+    strides=["3hours"]
+))
 
 # 2. Get your time-indexed data
-data = pd.Series(
-    data=np.random.random(10_000), 
-    index=pd.date_range("2021-07-01", freq="1h", periods=10_000),
-).rename('myseries')
+## TODO -> look into wget time series public
+data = pd.Series(data=np.random.random(10_000), 
+    index=pd.date_range("2021-07-01", freq="1h", periods=10_000)).rename('lux')
 # -- 2.1 drop some data, as we don't make frequency assumptions
 data = data.drop(np.random.choice(data.index, 200, replace=False))
 
 # 3. Calculate the feature on some data
 fc.calculate(data=data, n_jobs=1, return_df=True)
-# which outputs: a pd.DataFrame with content:
+# which outputs an outer merged dataframe with content
 ```
-|      index               |   **myseries__skew__w=1D_s=12h**  |    **myseries__amin__w=2D_s=1D** |
-|:--------------------|-------------------------------:|------------------------------:|
-| 2021-07-02 00:00:00 |                     -0.0607221 |                   nan         |
-| 2021-07-02 12:00:00 |                     -0.142407  |                   nan         |
-| 2021-07-03 00:00:00 |                     -0.283447  |                     0.042413  |
-| 2021-07-03 12:00:00 |                     -0.353314  |                   nan         |
-| 2021-07-04 00:00:00 |                     -0.188953  |                     0.0011865 |
-| 2021-07-04 12:00:00 |                      0.259685  |                   nan         |
-| 2021-07-05 00:00:00 |                      0.726858  |                     0.0011865 |
-| ... |                      ...  |                     ... |
+|      index          |  **lux__skew__w=1D_s=12h**  |   **lux__amin__w=2D_s=1D** |  **lux__...** |
+|:-------------------:|:-------------------------------|:------------------------------|:---|
+| 2021-07-02 00:00:00 |                     -0.0607221 |                   nan         |   ... |
+| 2021-07-02 12:00:00 |                     -0.142407  |                   nan         |  ... |
+| 2021-07-03 00:00:00 |                     -0.283447  |                     0.042413  | ... |
+| 2021-07-03 12:00:00 |                     -0.353314  |                   nan         | ... |
+| 2021-07-04 00:00:00 |                     -0.188953  |                     0.0011865 | ... |
+| 2021-07-04 12:00:00 |                      0.259685  |                   nan         | ... |
+| 2021-07-05 00:00:00 |                      0.726858  |                     0.0011865 | ... |
+| ... |                      ...  |                     ... | ... |
 
 
 ## Documentation
-
-`:WIP:`
 
 Too see the documentation locally, install [pdoc](https://github.com/pdoc3/pdoc) and execute the succeeding command from this folder location.
 
