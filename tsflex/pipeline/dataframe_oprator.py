@@ -16,7 +16,7 @@ def to_dataframe_operator(operator: Any, operator_cols: Optional[List[str]] = No
     ----------
     operator: Any
         The operator that should be transformed to a `DataFrameOperator`.
-    operator: List[str], optional
+    operator_cols: List[str], optional
         The list of column names on which the operator should operate, by default None.
 
     Returns
