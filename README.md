@@ -4,7 +4,7 @@
 
 It is a `time-series first` toolkit for **processing & feature extraction**, making few assumptions about input data. 
 
-##### Useful links:
+#### Useful links
 
 - [Documentation](https://tsflex.github.io/tsflex/)
 - [Example notebooks](https://github.com/tsflex/tsflex/tree/main/examples)
