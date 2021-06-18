@@ -27,6 +27,7 @@ jobs:
     - name: Install poetry
       uses: Gr1N/setup-poetry@v4
     - name: Cache poetry
+      id: cached-poetry-dependencies
       uses: actions/cache@v2
       with:
         path: ~/.cache/pypoetry/virtualenvs
@@ -34,8 +35,9 @@ jobs:
     - run: poetry --version
 
     - name: Install dependencies
-      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
       run: poetry install
+      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+
 #     - name: Lint with flake8
 #       run: |
 #         # stop the build if there are Python syntax errors or undefined names
@@ -44,14 +46,17 @@ jobs:
 #         flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
     - name: Test with pytest
       run: |
-        poetry run pytest --cov=tsflex --junitxml=junit/test-results.xml --cov-report=xml tests
-#     - name: Upload pytest test results
-#       uses: actions/upload-artifact@v1
-#       with:
-#         name: pytest-results-${{ matrix.python-version }}-${{ matrix.installation }}
-#         path: junit/test-results-${{ matrix.python-version }}-${{ matrix.installation }}.xml
-#         # Use always() to always run this step to publish test results when there are test failures
-#       if: ${{ always() }}
+        poetry run pytest --cov=tsflex --junitxml=junit/test-results-${{ matrix.python-version }}.xml --cov-report=xml tests
+
+    - name: Upload pytest test results
+      uses: actions/upload-artifact@v2
+      with:
+        name: pytest-results-${{ matrix.python-version }}
+        path: junit/test-results-${{ matrix.python-version }}.xml
+        # Use always() to always run this step to publish test results when there are test failures
+      if: ${{ always() }}
 
 #     - name: Upload coverage to Codecov
 #       uses: codecov/codecov-action@v1
+#       with:
+#         token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
