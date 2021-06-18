@@ -1,4 +1,4 @@
-"""tsflex,  _**flex**ible **t**ime-**s**eries operations_.
+"""_**flex**ible **t**ime-**s**eries operations_
 
 .. include:: ../docs/pdoc_include/root_documentation.md
 """
