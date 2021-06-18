@@ -32,7 +32,7 @@ pip install tsflex
 
 ## Getting started 🚀
 
-*tsflex* serves 2 main functionalities; time-series _processing_ and _feature extraction_:
+*tsflex* serves two main functionalities; time-series _processing_ and _feature extraction_:
 
 * The [processing](/tsflex/processing) module withholds a `SeriesPipeline` in which uni- and multivariate data processing operations can be defined.
 * The [feature extraction](/tsflex/features) module defines a `FeatureCollection` which does the bookkeeping of the defined features for the data.

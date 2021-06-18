@@ -1,7 +1,17 @@
 # Feature extraction guide
-## Working Example ✅
 
-_tsflex_ is built to be intuitive, so we encourage you to copy-paste this code and toy with some parameters!
+The following sections will explain the feature extraction module in detail.
+
+[Jump to API reference](#header-submodules)
+
+<br>
+
+## Working example ✅
+
+_tsflex_ is built to be intuitive, so we encourage you to copy-paste this code and toy with some parameters! <br>
+
+This executable example creates a feature-collection that contains 2 features (skewness and minimum). <br>
+**Note**: we do not make any assumptions about the sampling rate of the time-series data.
 
 ```python
 import pandas as pd; import scipy.stats as ss; import numpy as np
@@ -47,18 +57,17 @@ fc.calculate(data=data, n_jobs=1, return_df=True)
 | 2021-07-05 00:00:00 |                      0.726858  |                     0.0011865 | ... |
 | ... |                      ...  |                     ... | ... |
 
-
 <br>
 
 !!!tip 
-    More advanced feature-extraction examples can be found [in these example notebooks]()
-    <br>TODO: fix link
+    More advanced feature-extraction examples can be found [in these example notebooks](https://github.com/tsflex/tsflex/tree/main/examples)
 
 <br>
 
 ## Getting started 🚀
+
 ### Classes & feature-output
-![features uml](../_static/features_uml.png)
+![features uml](https://raw.githubusercontent.com/tsflex/tsflex/main/docs/_static/features_uml.png)
 
 As shown above, there are 3 relevant classes for feature-extraction.
 
@@ -93,28 +102,32 @@ fc.calculate(...)
 <br>
 
 ### Output format
-The last line in this snippet above will calculate the features on the passed data. You can find more information about the data-formats in the section below. However, already want to describe the output of this `calculate` method; which is a `time-indexed pd.DataFrame` with column names<br>
+The output the `FeatureCollection` its `calculate` method is a (list of) **`time-indexed pd.DataFrame`** with column names<br>
 
-> `<SERIES-NAME>__<FEAT-NAME>__w=<WINDOW>__s=<STRIDE>`.
+> **`<SERIES-NAME>__<FEAT-NAME>__w=<WINDOW>__s=<STRIDE>`**.
 
-The column-name for the feature defined on the penultimate line will thus be `series_a__std__w=1h__s=15m`.
+The column-name for the feature defined on the penultimate line in the snipped above will thus be `series_a__std__w=1h__s=15m`.
+
+!!!note
+    You can find more information about the **input data-formats** in [this section](/tsflex/#data-formats) and read more about the (obvious) **limitations** in the next section.
 
 <br>
 
 ## Limitations 📢
 
-It is important to note that there a still some, albeit logical, **limitations** regarding the supported [data format](/tsflex/#data-formats).<br>
-These limitations are:
+It is important to note that there a still some, albeit logical, **limitations** regarding the supported [data format](/tsflex/#data-formats).<br>These limitations are:
 
-1. Each `ts` must have a `pd.DatetimeIndex` that **increases monotonically**
+1. Each [`ts`](/tsflex/#data-formats) must have a <b style="color:red">`pd.DatetimeIndex` that increases monotonically</b>
       - **Countermeasure**: Apply _[sort_index()](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.sort_index.html)_ on your not-monotonically increasing data
-2. No duplicate `ts` names are allowed
-      - **countermeasure**: rename your `ts`
+2. <b style="color:red">No duplicate</b> `ts` <b style="color:red">names</b> are allowed
+      - **Countermeasure**: rename your `ts`
 3. We support various data-types. e.g. (np.float32, string-data, time-based data). However, it is the end-users responsibility to use a function which interplays nicely with the data's format.
 
 <br>
 
-## Advanced usage
+## Advanced usage 👀
+
+<!-- TODO: tot hier geraakt -->
 
 ### Multivariate-data
 There are no assumptions made about the `data` its `time-ranges`.<br>
@@ -122,7 +135,7 @@ However, the end-user must take some things in consideration.
 
 ### Multiple time series
 
-* function's that work on **multiple time-series**: see the `tsflex.chunking` module for more info.
+* functions that work on **multiple time-series**: see the `tsflex.chunking` module for more info.
 
 
 ### Irregularly sampled data
