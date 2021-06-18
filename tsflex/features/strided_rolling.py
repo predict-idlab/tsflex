@@ -5,11 +5,12 @@
 __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
 
 import time
-from typing import Callable, Union, List, Tuple
-from collections import namedtuple
-
+import warnings
 import numpy as np
 import pandas as pd
+
+from typing import Callable, Union, List, Tuple, Optional
+from collections import namedtuple
 
 from .function_wrapper import NumpyFuncWrapper
 from .logger import logger
@@ -43,6 +44,10 @@ class StridedRolling:
         * if ``inner``, the inner-bounds of the series are used, the
         * if ``outer``, the inner-bounds of the series are used
         * if ``first``, the first-series it's bound will be used
+    approve_sparsity: bool, optional
+        Bool indicating whether the user acknowledges that there may be sparsity (i.e.,
+        irregularly sampled data), by default False.
+        If False and sparsity is observed, a warning is raised.
 
     Notes
     -----
@@ -54,6 +59,8 @@ class StridedRolling:
         The `bound_method` must still be propagated to the `FeatureCollection`-class.
 
     """
+
+    # Create the named tuple
     _NumpySeriesContainer = namedtuple(
         "SeriesContainer", ["values", "start_indexes", "end_indexes"]
     )
@@ -63,8 +70,9 @@ class StridedRolling:
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         window: pd.Timedelta,
         stride: pd.Timedelta,
-        window_idx: str = 'end',
-        bound_method: str = 'inner'
+        window_idx: Optional[str] = "end",
+        bound_method: Optional[str] = "inner",
+        approve_sparsity: Optional[bool] = False,
     ):
         self.window: pd.Timedelta = window
         self.stride: pd.Timedelta = stride
@@ -94,12 +102,14 @@ class StridedRolling:
         if window_idx == "end":
             self.index += window
         elif window_idx == "middle":
-            self.index += window/2
+            self.index += window / 2
         elif window_idx == "begin":
             pass
         else:
-            raise ValueError(f"window index {window_idx} must be either of: "
-                             "['end', 'middle', 'begin']")
+            raise ValueError(
+                f"window index {window_idx} must be either of: "
+                "['end', 'middle', 'begin']"
+            )
 
         # ---------- Efficient numpy code -------
         # 1. Convert everything to int64
@@ -113,7 +123,7 @@ class StridedRolling:
         #       start_times = self.index.values.astype(np.int64)
         np_start_times = np.arange(
             start=np_start, stop=np_start + len(self.index)*np_stride, step=np_stride,
-            dtype=np.int64
+            dtype=np.int64,
         )
         np_end_times = np_start_times + np_window
 
@@ -132,14 +142,28 @@ class StridedRolling:
                     # np_idx_times, np_start_times, & np_end_times are all sorted!
                     # as we assume & check that the time index is monotonically
                     # increasing & the latter 2 are created using `np.arange()`
-                    start_indexes=np.searchsorted(np_idx_times, np_start_times, 'left'),
-                    end_indexes=np.searchsorted(np_idx_times, np_end_times, 'left')
+                    start_indexes=np.searchsorted(np_idx_times, np_start_times, "left"),
+                    end_indexes=np.searchsorted(np_idx_times, np_end_times, "left"),
                 )
             )
 
+            if not approve_sparsity:
+                last_container = self.series_containers[-1]
+                qs = [0, 0.1, 0.5, 0.9, 1]
+                series_idx_stats = np.quantile(
+                    last_container.end_indexes - last_container.start_indexes, q=qs
+                )
+                q_str = ", ".join([f"q={q}: {v}" for q, v in zip(qs, series_idx_stats)])
+                if series_idx_stats[0] != series_idx_stats[1]:  # min != max
+                    warnings.warn(
+                        f"There are gaps in the time-series {series.name}; "
+                        + f"\n \t quantiles: {q_str}"
+                    )
+
     @staticmethod
-    def _determine_bounds(series_list: List[pd.Series], bound_method: str)\
-            -> Tuple[pd.Timestamp, pd.Timestamp]:
+    def _determine_bounds(
+        series_list: List[pd.Series], bound_method: str
+    ) -> Tuple[pd.Timestamp, pd.Timestamp]:
         """Determine the bounds of the passed series.
 
         Parameters
@@ -156,7 +180,7 @@ class StridedRolling:
             The start & end timestamp, respectively.
 
         """
-        if bound_method == 'inner':
+        if bound_method == "inner":
             latest_start = series_list[0].index[0]
             earliest_stop = series_list[0].index[-1]
             for series in series_list[1:]:
@@ -164,7 +188,7 @@ class StridedRolling:
                 earliest_stop = min(earliest_stop, series.index[-1])
             return latest_start, earliest_stop
 
-        if bound_method == 'outer':
+        if bound_method == "outer":
             earliest_start = series_list[0].index[0]
             latest_stop = series_list[0].index[-1]
             for series in series_list[1:]:
@@ -172,7 +196,7 @@ class StridedRolling:
                 latest_stop = max(latest_stop, series.index[-1])
             return earliest_start, latest_stop
 
-        elif bound_method == 'first':
+        elif bound_method == "first":
             return series_list[0].index[0], series_list[0].index[-1]
 
         else:
@@ -225,7 +249,7 @@ class StridedRolling:
         def get_slices(idx):
             # get the slice of each series for the given index
             return [
-                sc.values[sc.start_indexes[idx]:sc.end_indexes[idx]]
+                sc.values[sc.start_indexes[idx] : sc.end_indexes[idx]]
                 for sc in self.series_containers
             ]
 
