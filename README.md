@@ -1,10 +1,8 @@
-# <p align="center"><img alt="tsflex" src="./docs/_static/logo.png" height="100"></p>
+# <p align="center"><img alt="tsflex" src="https://github.com/tsflex/tsflex/blob/main/docs/_static/logo.png" height="100"></p>
 
 *tsflex* stands for: _**flex**ible **t**ime-**s**eries operations_<br>
 
 It is a `time-series first` toolkit for **processing & feature extraction**, making few assumptions about input data. 
-
-* [example notebooks](examples/)
 
 ## Table of contents
   - [Installation](#installation)
@@ -12,6 +10,7 @@ It is a `time-series first` toolkit for **processing & feature extraction**, mak
     - [Series processing](#series-processing)
     - [Feature extraction](#feature-extraction)
   - [Documentation](#documentation)
+  <!-- - [Example notebooks](examples/) -->
 
 
 ## Installation
@@ -29,7 +28,7 @@ _tsflex_ is built to be intuitive, so we encourage you to copy-paste this code a
 
 ### Series processing
 
-`:WIP:`
+`WIP`
 
 ### Feature extraction
 
@@ -69,11 +68,13 @@ fc.calculate(data=data)
 
 ## Documentation
 
-To see the documentation locally, install [pdoc](https://github.com/pdoc3/pdoc) and execute the succeeding command from this folder location.
+The documentation is hosted [here](https://tsflex.github.io/tsflex/)!
+
+<!-- To see the documentation locally, install [pdoc](https://github.com/pdoc3/pdoc) and execute the succeeding command from this folder location.
 
 ```sh
 pdoc3 --template-dir docs/pdoc_template/ --http :8181 tsflex
-```
+``` -->
 
 <br>
 
