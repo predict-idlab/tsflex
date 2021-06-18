@@ -4,14 +4,15 @@
 
 It is a `time-series first` toolkit for **processing & feature extraction**, making few assumptions about input data. 
 
+Useful links:
+- [Documentation](https://tsflex.github.io/tsflex/)
+- [Example notebooks](https://github.com/tsflex/tsflex/tree/main/examples)
+
 ## Table of contents
   - [Installation](#installation)
   - [Usage](#usage)
     - [Series processing](#series-processing)
     - [Feature extraction](#feature-extraction)
-  - [Documentation](https://tsflex.github.io/tsflex/)
-  - [Example notebooks](https://github.com/tsflex/tsflex/tree/jeroen/docs/examples)
-
 
 ## Installation
 
