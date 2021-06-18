@@ -8,12 +8,6 @@ Useful links:
 - [Documentation](https://tsflex.github.io/tsflex/)
 - [Example notebooks](https://github.com/tsflex/tsflex/tree/main/examples)
 
-## Table of contents
-  - [Installation](#installation)
-  - [Usage](#usage)
-    - [Series processing](#series-processing)
-    - [Feature extraction](#feature-extraction)
-
 ## Installation
 
 If you are using **pip**, just execute the following command:
