@@ -132,7 +132,7 @@ def to_tuple(x: Any) -> Tuple[Any]:
 
     """
     if not isinstance(x, tuple):
-        return tuple([x])
+        return (x,)
     return x
 
 
