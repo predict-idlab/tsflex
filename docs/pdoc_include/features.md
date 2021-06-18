@@ -56,7 +56,7 @@ fc.calculate(data=data, n_jobs=1, return_df=True)
 
 <br>
 
-## Getting started 🧐
+## Getting started 🚀
 ### Classes & feature-output
 ![features uml](../_static/features_uml.png)
 
