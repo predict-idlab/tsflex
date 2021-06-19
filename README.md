@@ -4,6 +4,7 @@
 [![Documentation](https://github.com/tsflex/tsflex/actions/workflows/deploy-docs.yml/badge.svg)](https://github.com/tsflex/tsflex/actions/workflows/deploy-docs.yml)
 [![Testing](https://github.com/tsflex/tsflex/actions/workflows/test.yml/badge.svg)](https://github.com/tsflex/tsflex/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/tsflex/tsflex/branch/main/graph/badge.svg)](https://codecov.io/gh/tsflex/tsflex)
+[![Code quality](https://img.shields.io/lgtm/grade/python/g/tsflex/tsflex.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/tsflex/tsflex/context:python)
 [![Downloads](https://pepy.tech/badge/tsflex)](https://pepy.tech/project/tsflex)
 
 *tsflex* stands for: _**flex**ible **t**ime-**s**eries operations_<br>
