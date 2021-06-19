@@ -78,6 +78,9 @@ def test_simple_feature_descriptor_func_wrapper():
     assert fd.get_required_series() == ["EDA"]
     assert isinstance(fd.function, NumpyFuncWrapper)
 
+
+### Test 'error' use-cases
+
 def test_error_function_simple_feature_descriptor():
     invalid_func = []  # Something that is not callable
 
