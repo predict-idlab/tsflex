@@ -14,36 +14,30 @@ This executable example creates a feature-collection that contains 2 features (s
 **Note**: we do not make any assumptions about the sampling rate of the time-series data.
 
 ```python
-import pandas as pd; import scipy.stats as ss; import numpy as np
+import pandas as pd; import scipy.stats as sstats; import numpy as np
 from tsflex.features import FeatureDescriptor, FeatureCollection, NumpyFuncWrapper
 
 # 1. -------- Get your time-indexed data --------
-series_size = 10_000
-series_name="lux"
-
-data = pd.Series(
-    data=np.random.random(series_size), 
-    index=pd.date_range("2021-07-01", freq="1h", periods=series_size)
-).rename(series_name)
-# -- 1.1 drop some data, as we don't make frequency assumptions
-data = data.drop(np.random.choice(data.index, 200, replace=False))
-
+# Data contains 1 column; ["TMP"]
+data = pd.read_parquet(
+    "https://github.com/tsflex/tsflex/raw/main/docs/examples/data/empatica/tmp.parquet"
+    ).set_index('timestamp')
 
 # 2 -------- Construct your feature collection --------
 fc = FeatureCollection(
     feature_descriptors=[
         FeatureDescriptor(
-            function=NumpyFuncWrapper(func=ss.skew, output_names="skew"),
-            series_name=series_name, 
-            window="1day", stride="6hours"
+            function=NumpyFuncWrapper(func=sstats.skew, output_names="skew"),
+            series_name="TMP", 
+            window="1day", stride="6hours",
         )
     ]
 )
 # -- 2.1. Add multiple features to your feature collection
-fc.add(FeatureDescriptor(np.min, series_name, '2days', '1day'))
+fc.add(FeatureDescriptor(np.min, "TMP", '2days', '1day'))
 
 # 3 -------- Calculate features --------
-fc.calculate(data=data, n_jobs=1, return_df=True)
+fc.calculate(data=data)
 # which outputs:
 ```
 |      index          |  **lux__skew__w=1D_s=12h**  |   **lux__amin__w=2D_s=1D** |  **lux__...** |
@@ -66,6 +60,8 @@ fc.calculate(data=data, n_jobs=1, return_df=True)
 
 ## Getting started 🚀
 
+The feature-extraction functionality of _tsflex_ is provided by a `FeatureCollection` that contains `FeatureDescriptor`s. The features are calculated (in a parallel manner) on the data that is passed to the feature collection.
+
 ### Classes & feature-output
 ![features uml](https://raw.githubusercontent.com/tsflex/tsflex/main/docs/_static/features_uml.png)
 
@@ -87,7 +83,7 @@ The snippet below shows how the `FeatureCollection` & `FeatureDescriptor` class 
 import numpy as np; import scipy.stats as ss
 from tsflex.features import FeatureDescriptor, FeatureCollection
 
-# The FeatureCollection takes a List[FeatureDescriptors] as input
+# The FeatureCollection takes a List[FeatureDescriptor] as input
 fc = FeatureCollection(feature_descriptors=[
         # There is no need for NumpyFuncWrapper when using "simple" features
         FeatureDescriptor(np.mean, "series_a", "1hour", "15min"),
@@ -97,12 +93,20 @@ fc = FeatureCollection(feature_descriptors=[
 
 # We can still add features after instantiating.
 fc.add(features=[FeatureDescriptor(np.std, "series_a", "1hour", "15min")])
+
+# Calculate the feature
 fc.calculate(...)
 ```
 <br>
 
+### Feature functions
+`TODO`
+
+### Multiple feature descriptors
+`TODO`
+
 ### Output format
-The output the `FeatureCollection` its `calculate` method is a (list of) **`time-indexed pd.DataFrame`** with column names<br>
+The output of the `FeatureCollection` its `calculate` method is a (list of) **`time-indexed pd.DataFrame`** with column names<br>
 
 > **`<SERIES-NAME>__<FEAT-NAME>__w=<WINDOW>__s=<STRIDE>`**.
 

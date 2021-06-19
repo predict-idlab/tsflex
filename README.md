@@ -28,67 +28,55 @@ pip install tsflex
 _tsflex_ is built to be intuitive, so we encourage you to copy-paste this code and toy with some parameters!
 
 
-### Series processing
+### <a href="https://tsflex.github.io/tsflex/processing/#getting-started">Series processing</a>
 
 ```python
 import pandas as pd; import scipy.signal as ssig; import numpy as np
 from tsflex.processing import SeriesProcessor, SeriesPipeline
 
 # 1. -------- Get your time-indexed data --------
-series_size = 10_000
-series_name="lux"
-
-data = pd.Series(
-    data=np.random.random(series_size), 
-    index=pd.date_range("2021-07-01", freq="1h", periods=series_size)
-).rename(series_name)
-
+# Data contains 3 columns; ["ACC_x", "ACC_y", "ACC_z"]
+url = "https://github.com/tsflex/tsflex/raw/main/examples/data/empatica/"
+data = pd.read_parquet(url + "acc.parquet").set_index("timestamp")
 
 # 2 -------- Construct your processing pipeline --------
 processing_pipe = SeriesPipeline(
     processors=[
-        SeriesProcessor(np.abs, series_names=series_name),
-        SeriesProcessor(ssig.medfilt, series_name, kernel_size=5)  # (with kwargs!)
+        SeriesProcessor(function=np.abs, series_names=["ACC_x", "ACC_y", "ACC_z"]),
+        SeriesProcessor(ssig.medfilt, ["ACC_x", "ACC_y", "ACC_z"], kernel_size=5)  # (with kwargs!)
     ]
 )
 # -- 2.1. Append processing steps to your processing pipeline
-processing_pipe.append(SeriesProcessor(ssig.detrend, series_name))
+processing_pipe.append(SeriesProcessor(ssig.detrend, ["ACC_x", "ACC_y", "ACC_z"]))
 
-# 3 -------- Calculate features --------
+# 3 -------- Process the data --------
 processing_pipe.process(data=data)
 ```
 
-### Feature extraction
+### <a href="https://tsflex.github.io/tsflex/features/#getting-started">Feature extraction</a>
 
 ```python
 import pandas as pd; import scipy.stats as sstats; import numpy as np
 from tsflex.features import FeatureDescriptor, FeatureCollection, NumpyFuncWrapper
 
 # 1. -------- Get your time-indexed data --------
-series_size = 10_000
-series_name="lux"
-
-data = pd.Series(
-    data=np.random.random(series_size), 
-    index=pd.date_range("2021-07-01", freq="1h", periods=series_size)
-).rename(series_name)
-# -- 1.1 drop some data, as we don't make frequency assumptions
-data = data.drop(np.random.choice(data.index, 200, replace=False))
-
+# Data contains 1 column; ["TMP"]
+data = pd.read_parquet(
+    "https://github.com/tsflex/tsflex/raw/main/docs/examples/data/empatica/tmp.parquet"
+    ).set_index('timestamp')
 
 # 2 -------- Construct your feature collection --------
 fc = FeatureCollection(
     feature_descriptors=[
         FeatureDescriptor(
             function=NumpyFuncWrapper(func=sstats.skew, output_names="skew"),
-            series_name=series_name, 
-            window="1day", stride="6hours"
+            series_name="TMP", 
+            window="1day", stride="6hours",
         )
     ]
 )
 # -- 2.1. Add multiple features to your feature collection
-fc.add(FeatureDescriptor(np.min, series_name, '2days', '1day'))
-
+fc.add(FeatureDescriptor(np.min, "TMP", '2days', '1day'))
 
 # 3 -------- Calculate features --------
 fc.calculate(data=data)

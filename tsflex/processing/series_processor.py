@@ -60,11 +60,11 @@ class SeriesProcessor(FrozenClass):
         The function that processes the series (given in the `series_names`).
         The prototype of the function should match: \n
 
-            function(*series: pd.Series)
+            function(*series: pd.Series, **kwargs)
                 -> Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]
 
         .. note::
-            a function that processes a ``np.ndarray`` instead of ``pd.Series``
+            A function that processes a ``np.ndarray`` instead of ``pd.Series``
             should work just fine.
 
     series_names : Union[str, Tuple[str], List[str], List[Tuple[str]]]
