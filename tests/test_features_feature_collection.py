@@ -12,6 +12,7 @@ from tsflex.features import FeatureDescriptor, MultipleFeatureDescriptors
 from tsflex.features import FeatureCollection
 
 from pandas.testing import assert_index_equal, assert_frame_equal
+from typing import Tuple
 from .utils import dummy_data
 
 
@@ -222,7 +223,93 @@ def test_featurecollection_feature_collection(dummy_data):
     assert all(res_df.index[1:] - res_df.index[:-1] == pd.to_timedelta(2.5, unit="s"))
 
 
+### Test various feature descriptor functions
+
+
+def test_one_to_many_feature_collection(dummy_data):
+    def quantiles(sig: pd.Series) -> Tuple[float, float, float]:
+        return np.quantile(sig, q=[0.1, 0.5, 0.9])
+
+    q_func = NumpyFuncWrapper(quantiles, output_names=["q_0.1", "q_0.5", "q_0.9"])
+    fd = FeatureDescriptor(q_func, series_name="EDA", window="5s", stride="2.5s")
+    fc = FeatureCollection(fd)
+
+    res_df = fc.calculate(dummy_data, return_df=True)
+    assert res_df.shape[1] == 3
+    freq = pd.to_timedelta(pd.infer_freq(dummy_data.index)) / np.timedelta64(1, "s")
+    stride_s = 2.5
+    window_s = 5
+    assert len(res_df) == (int(len(dummy_data) / (1 / freq)) - window_s) // stride_s
+
+    expected_output_names = [
+        "EDA__q_0.1__w=5s_s=2.5s",
+        "EDA__q_0.5__w=5s_s=2.5s",
+        "EDA__q_0.9__w=5s_s=2.5s",
+    ]
+    assert set(res_df.columns.values) == set(expected_output_names)
+    assert (res_df[expected_output_names[0]] != res_df[expected_output_names[1]]).any()
+    assert (res_df[expected_output_names[0]] != res_df[expected_output_names[2]]).any()
+
+
+def test_many_to_one_feature_collection(dummy_data):
+    def abs_mean_diff(sig1: pd.Series, sig2: pd.Series) -> float:
+        # Note that this func only works when sig1 and sig2 have the same length
+        return np.mean(np.abs(sig1 - sig2))
+
+    fd = FeatureDescriptor(
+        abs_mean_diff, series_name=("EDA", "TMP"), window="5s", stride="2.5s"
+    )
+    fc = FeatureCollection(fd)
+
+    assert set(fc.get_required_series()) == set(["EDA", "TMP"])
+
+    res_df = fc.calculate(dummy_data, return_df=True)
+    assert res_df.shape[1] == 1
+    freq = pd.to_timedelta(pd.infer_freq(dummy_data.index)) / np.timedelta64(1, "s")
+    stride_s = 2.5
+    window_s = 5
+    assert len(res_df) == (int(len(dummy_data) / (1 / freq)) - window_s) // stride_s
+
+    expected_output_name = "EDA|TMP__abs_mean_diff__w=5s_s=2.5s"
+    assert res_df.columns.values[0] == expected_output_name
+
+
+def test_many_to_many_feature_collection(dummy_data):
+    def quantiles_abs_diff(
+        sig1: pd.Series, sig2: pd.Series
+    ) -> Tuple[float, float, float]:
+        return np.quantile(np.abs(sig1 - sig2), q=[0.1, 0.5, 0.9])
+
+    q_func = NumpyFuncWrapper(
+        quantiles_abs_diff,
+        output_names=["q_0.1_abs_diff", "q_0.5_abs_diff", "q_0.9_abs_diff"],
+    )
+    fd = FeatureDescriptor(
+        q_func, series_name=("EDA", "TMP"), window="5s", stride="2.5s"
+    )
+    fc = FeatureCollection(fd)
+
+    assert set(fc.get_required_series()) == set(["EDA", "TMP"])
+
+    res_df = fc.calculate(dummy_data, return_df=True)
+    assert res_df.shape[1] == 3
+    freq = pd.to_timedelta(pd.infer_freq(dummy_data.index)) / np.timedelta64(1, "s")
+    stride_s = 2.5
+    window_s = 5
+    assert len(res_df) == (int(len(dummy_data) / (1 / freq)) - window_s) // stride_s
+
+    expected_output_names = [
+        "EDA|TMP__q_0.1_abs_diff__w=5s_s=2.5s",
+        "EDA|TMP__q_0.5_abs_diff__w=5s_s=2.5s",
+        "EDA|TMP__q_0.9_abs_diff__w=5s_s=2.5s",
+    ]
+    assert set(res_df.columns.values) == set(expected_output_names)
+    assert (res_df[expected_output_names[0]] != res_df[expected_output_names[1]]).any()
+    assert (res_df[expected_output_names[0]] != res_df[expected_output_names[2]]).any()
+
+
 ### Test 'error' use-cases
+
 
 def test_type_error_add_feature_collection(dummy_data):
     fd = FeatureDescriptor(
@@ -235,3 +322,43 @@ def test_type_error_add_feature_collection(dummy_data):
 
     with pytest.raises(TypeError):
         fc.add(np.sum)
+
+
+def test_one_to_many_error_feature_collection(dummy_data):
+    def quantiles(sig: pd.Series) -> Tuple[float, float, float]:
+        return np.quantile(sig, q=[0.1, 0.5, 0.9])
+
+    # quantiles should be wrapped in a NumpyFuncWrapper
+    fd = FeatureDescriptor(quantiles, series_name="EDA", window="5s", stride="2.5s")
+    fc = FeatureCollection(fd)
+
+    with pytest.raises(Exception):
+        fc.calculate(dummy_data)
+
+
+def test_one_to_many_wrong_np_funcwrapper_error_feature_collection(dummy_data):
+    def quantiles(sig: pd.Series) -> Tuple[float, float, float]:
+        return np.quantile(sig, q=[0.1, 0.5, 0.9])
+
+    # Wrong number of output_names in func wrapper
+    q_func = NumpyFuncWrapper(quantiles, output_names=["q_0.1", "q_0.5"])
+    fd = FeatureDescriptor(q_func, series_name="EDA", window="5s", stride="2.5s")
+    fc = FeatureCollection(fd)
+
+    with pytest.raises(Exception):
+        fc.calculate(dummy_data)
+
+
+def test_one_to_many_error_feature_collection(dummy_data):
+    def abs_mean_diff(sig1: pd.Series, sig2: pd.Series) -> float:
+        # Note that this func only works when sig1 and sig2 have the same length
+        return np.mean(np.abs(sig1 - sig2))
+
+    # Give wrong nb of series names in tuple
+    fd = FeatureDescriptor(
+        abs_mean_diff, series_name=("EDA", "TMP", "ACC_x"), window="5s", stride="2.5s"
+    )
+    fc = FeatureCollection(fd)
+
+    with pytest.raises(Exception):
+        fc.calculate(dummy_data)

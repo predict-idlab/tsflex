@@ -11,8 +11,6 @@ from tsflex.features import FeatureDescriptor, MultipleFeatureDescriptors
 
 ### FeatureDescriptor
 
-# TODO: test many to one etc ? => not sure bc already tested in feature_descriptor?
-
 def test_simple_feature_descriptor():
     def sum_func(sig: np.ndarray) -> float:
         return sum(sig)
@@ -79,6 +77,9 @@ def test_simple_feature_descriptor_func_wrapper():
     assert fd.stride == pd.Timedelta(2.5, unit='seconds')
     assert fd.get_required_series() == ["EDA"]
     assert isinstance(fd.function, NumpyFuncWrapper)
+
+
+### Test 'error' use-cases
 
 def test_error_function_simple_feature_descriptor():
     invalid_func = []  # Something that is not callable
