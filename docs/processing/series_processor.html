@@ -70,12 +70,12 @@ be sufficient; as you can perform column-based operations on multiple <code>pd.S
 <dd>
 <p>The function that processes the series (given in the <code>series_names</code>).
 The prototype of the function should match: </p>
-<pre><code>function(*series: pd.Series)
+<pre><code>function(*series: pd.Series, **kwargs)
     -&gt; Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]
 </code></pre>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>a function that processes a <code>np.ndarray</code> instead of <code>pd.Series</code>
+<p>A function that processes a <code>np.ndarray</code> instead of <code>pd.Series</code>
 should work just fine.</p>
 </div>
 </dd>

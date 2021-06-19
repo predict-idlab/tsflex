@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.9.2" />
 <title>tsflex.processing API documentation</title>
-<meta name="description" content="init.py for processing module." />
+<meta name="description" content="Processing module …" />
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
 <link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/foundation.min.css" crossorigin>
@@ -23,7 +23,210 @@
 <h1 class="title">Module <code>tsflex.processing</code></h1>
 </header>
 <section id="section-intro">
-<p>init.py for processing module.</p>
+<p>Processing module.</p>
+<h1 id="processing-guide">Processing guide</h1>
+<p>The following sections will explain the processing module in detail.</p>
+<p><a href="#header-submodules">Jump to API reference</a></p>
+<p><br></p>
+<h2 id="working-example">Working example ✅</h2>
+<p><em>tsflex</em> is built to be intuitive, so we encourage you to copy-paste this code and toy with some parameters! <br></p>
+<p>This executable example creates a processing pipeline that contains 3 processing steps (abs, median filter, and detreding, each applied on a different subset of series). <br></p>
+<pre><code class="language-python">import pandas as pd; import scipy.signal as ss; import numpy as np
+from tsflex.processing import SeriesProcessor, SeriesPipeline
+
+# 1. -------- Get your time-indexed data --------
+# Data contains 3 columns; [&quot;ACC_x&quot;, &quot;ACC_y&quot;, &quot;ACC_z&quot;]
+url = &quot;https://github.com/tsflex/tsflex/raw/main/examples/data/empatica/&quot;
+data = pd.read_parquet(url + &quot;acc.parquet&quot;).set_index(&quot;timestamp&quot;)
+
+# 2 -------- Construct your processing pipeline --------
+processing_pipe = SeriesPipeline(
+    processors=[
+        SeriesProcessor(function=np.abs, series_names=[&quot;ACC_x&quot;, &quot;ACC_y&quot;]),
+        SeriesProcessor(ss.medfilt, [&quot;ACC_y&quot;, &quot;ACC_z&quot;], kernel_size=5) 
+    ]
+)
+# -- 2.1. Append processing steps to your processing pipeline
+processing_pipe.append(SeriesProcessor(ss.detrend, [&quot;ACC_x&quot;, &quot;ACC_z&quot;]))
+
+# 3 -------- Process the data --------
+processing_pipe.process(data=data, return_df=True)
+# which outputs:
+</code></pre>
+<table>
+<thead>
+<tr>
+<th align="left">timestamp</th>
+<th align="right">ACC_x</th>
+<th align="right">ACC_y</th>
+<th align="right">ACC_z</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td align="left">2017-06-13 14:22:13+02:00</td>
+<td align="right">-32.8736</td>
+<td align="right">5.0000</td>
+<td align="right">51.1051</td>
+</tr>
+<tr>
+<td align="left">2017-06-13 14:22:13.031250+02:00</td>
+<td align="right">-32.8737</td>
+<td align="right">5.0000</td>
+<td align="right">51.1051</td>
+</tr>
+<tr>
+<td align="left">2017-06-13 14:22:13.062500+02:00</td>
+<td align="right">-32.8738</td>
+<td align="right">5.0000</td>
+<td align="right">51.105</td>
+</tr>
+<tr>
+<td align="left">2017-06-13 14:22:13.093750+02:00</td>
+<td align="right">-32.8739</td>
+<td align="right">5.0000</td>
+<td align="right">51.105</td>
+</tr>
+<tr>
+<td align="left">2017-06-13 14:22:13.125000+02:00</td>
+<td align="right">-32.8740</td>
+<td align="right">5.0000</td>
+<td align="right">51.1049</td>
+</tr>
+<tr>
+<td align="left">&hellip;</td>
+<td align="right">&hellip;</td>
+<td align="right">&hellip;</td>
+<td align="right">&hellip;</td>
+</tr>
+<tr>
+<td align="left"><br></td>
+<td align="right"></td>
+<td align="right"></td>
+<td align="right"></td>
+</tr>
+</tbody>
+</table>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>More advanced processing examples can be found <a href="https://github.com/tsflex/tsflex/tree/main/examples">in these example notebooks</a></p>
+</div>
+<p><br></p>
+<h2 id="getting-started">Getting started 🚀</h2>
+<p>The processing functionality of <em>tsflex</em> is provided by a <code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code> that contains <code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code> steps. The processing steps are applied sequentially on the data that is passed to the processing pipeline.</p>
+<h3 id="components">Components</h3>
+<p><img alt="processing uml" src="https://raw.githubusercontent.com/tsflex/tsflex/main/docs/_static/series_uml.png"></p>
+<p>As shown above, there are 2 relevant classes for processing.</p>
+<ol>
+<li><a href="/tsflex/processing/#tsflex.processing.SeriesPipeline">SeriesPipeline</a>: serves as a pipeline, withholding the to-be-applied <em>processing steps</em></li>
+<li><a href="/tsflex/processing/#tsflex.processing.SeriesProcessor">SeriesProcessor</a>: an instance of this class describes a <em>processing step</em>. <br>Processors are defined by:<ul>
+<li><code>function</code>: the <em>Callable</em> processing-function - e.g. <em>scipy.signal.detrend</em></li>
+<li><code>series_names</code>: the <em>name(s)</em> of the series on which the processing function should be applied</li>
+<li><code>**kwargs</code>: the <em>keyword agruments</em> for the <code>function</code>.</li>
+</ul>
+</li>
+</ol>
+<p>The snippet below shows how the <code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code> &amp; <code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code> components work:</p>
+<pre><code class="language-python">import numpy as np; import scipy.signal as ss
+from tsflex.processing import SeriesProcessor, SeriesPipeline
+
+# The SeriesPipeline takes a List[SeriesProcessor] as input
+processing_pipe = SeriesPipeline(processors=[
+        SeriesProcessor(np.abs, [&quot;series_a&quot;, &quot;series_b&quot;]),
+        SeriesProcessor(ss.medfilt, &quot;series_b&quot;, kernel_size=5) # (with kwargs)
+    ]
+)
+# We can still append processing steps after instantiating.
+processing_pipe.append(processor=SeriesProcessor(ss.detrend, &quot;series_a&quot;))
+
+# Apply the processing steps
+processing_pipe.process(...)
+</code></pre>
+<h3 id="processing-functions">Processing functions</h3>
+<p>The function that processes the series should match this prototype:</p>
+<pre><code>function(*series: pd.Series, **kwargs)
+    -&gt; Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]
+</code></pre>
+<p>Hence, the processing function should take one (or multiple) series as input, these may be followed by some keyword arguments. The output of a processing function can be rather versatile.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>A function that processes a <code>np.ndarray</code> instead of <code>pd.Series</code>
+should work just fine.</p>
+</div>
+<p>In <a href="#advanced-usage">this section</a> you can find more info on advanced usage of processing functions.</p>
+<p><br></p>
+<h2 id="important-notes">Important notes 📢</h2>
+<!-- As processing steps (<code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code>s) are applied sequentially in the processing pipeline (<code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code>), the order of these steps (might) affect the output. -->
+<p>In a <code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code> it is common behavior that series are <strong>transformed</strong> (i.e., replaced).
+Hence, it is important to keep the following principles in mind when:</p>
+<ul>
+<li>Applying processing functions that take 1 series as input will (generally) <b style="color:red">transform (i.e., replace) the input series</b> .<ul>
+<li><strong>Countermeassure</strong>: this behavior does not occur when the processing function returns a <code>pd.Series</code> <em>with a different name</em>.</li>
+</ul>
+</li>
+<li>The order of steps (<code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code>s) in the processing pipeline (<code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code>) might affect the output.</li>
+</ul>
+<p><br></p>
+<h2 id="advanced-usage">Advanced usage 👀</h2>
+<h3 id="versatile-processing-functions">Versatile processing functions</h3>
+<p>As <a href="#processing-function">explained above</a> <em>tsflex</em> is rather versatile in terms of function input and output.</p>
+<p><em>tsflex</em> does not just allow <code>one-to-one</code> processing functions, but also <code>many-to-one</code>, <code>one-to-many</code>, and <code>many-to-many</code> functions are supported in a convenient way:</p>
+<ul>
+<li>
+<p><code>many-to-one</code>; the <strong>processing function</strong> should </p>
+<ul>
+<li>take multiple series as input </li>
+<li>outpus a single array or (named!) series / dataframe with 1 column</li>
+</ul>
+<p>Example</p>
+</li>
+</ul>
+<pre><code class="language-python">def abs_diff(s1: pd.Series, s2: pd.Series) -&gt; pd.Series:
+    return pd.Series(np.abs(s1-s2), name=f&quot;abs_diff_{s1.name}-{s2.name}&quot;)
+</code></pre>
+<ul>
+<li>
+<p><code>one-to-many</code>; the <strong>processing function</strong> should</p>
+<ul>
+<li>take a single series as input
+</li>
+<li>output a list of (named!) series or a dataframe with multiple columns</li>
+</ul>
+<p>Example</p>
+</li>
+</ul>
+<pre><code class="language-python">def abs_square(s1: pd.Series) -&gt; List[pd.Series]:
+    s1_abs = pd.Series(np.abs(s1), name=f&quot;abs_{s1.name}&quot;)
+    s1_square = pd.Series(np.square(s1), name=f&quot;square_{s1.name}&quot;)
+    return [s1_abs, s1_square]
+</code></pre>
+<ul>
+<li>
+<p><code>many-to-many</code>; <em>(combination of the above)</em> the <strong>processing function</strong> should</p>
+<ul>
+<li>take multiple series as input</li>
+<li>output a list of (named!) series or a dataframe with multiple columns</li>
+</ul>
+<p>Example</p>
+</li>
+</ul>
+<pre><code class="language-python">def abs_square_diff(s1: pd.Series, s2: pd.Series) -&gt; List[pd.Series]:
+    s_abs = pd.Series(np.abs(s1-s2), name=f&quot;abs_{s1.name}-{s2.name}&quot;)
+    s_square = pd.Series(np.square(s1-s2), name=f&quot;square_{s1.name}-{s2.name}&quot;)
+    return [s_abs, s_square]
+</code></pre>
+<h3 id="dataframe-decorator">DataFrame decorator</h3>
+<p>In some (rare) cases a processing function requires a <code>pd.DataFrame</code> as input.
+For these cases we provide the <a href="#tsflex.processing.dataframe_func">dataframe_func decorator</a>. This decorator wraps the processing function in the <code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code>, provided a <code>pd.DataFrame</code> as input instead of multiple <code>pd.Series</code>.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>In most cases series arguments are sufficient; you can perform column-based operations on multiple <code>pd.Series</code> (e.g., subtract 2 series). Only when row-based operations are required (e.g., <code>df.dropna(axis=0)</code>), a <code>pd.DataFrame</code> is unavoidable.</p>
+</div>
+<h3 id="logging">Logging</h3>
+<p>When a <code>logging_file_path</code> is passed to the <code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code> its <code>process</code> method, the execution times of the processing steps will be logged.</p>
+<p><a href="#tsflex.processing.get_processor_logs">More info</a></p>
+<p><br></p>
+<hr>
 </section>
 <section>
 <h2 class="section-title" id="header-submodules">Sub-modules</h2>
@@ -111,12 +314,12 @@ is a <code>single_series_func</code> .</dd>
 <dd>
 <p>The function that processes the series (given in the <code>series_names</code>).
 The prototype of the function should match: </p>
-<pre><code>function(*series: pd.Series)
+<pre><code>function(*series: pd.Series, **kwargs)
     -&gt; Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]
 </code></pre>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>a function that processes a <code>np.ndarray</code> instead of <code>pd.Series</code>
+<p>A function that processes a <code>np.ndarray</code> instead of <code>pd.Series</code>
 should work just fine.</p>
 </div>
 </dd>
@@ -481,7 +684,24 @@ alt="logo should be displayed here" style="width: 100%;"></a>
 </header>
 <h1>Index</h1>
 <div class="toc">
-<ul></ul>
+<ul>
+<li><a href="#processing-guide">Processing guide</a><ul>
+<li><a href="#working-example">Working example ✅</a></li>
+<li><a href="#getting-started">Getting started 🚀</a><ul>
+<li><a href="#components">Components</a></li>
+<li><a href="#processing-functions">Processing functions</a></li>
+</ul>
+</li>
+<li><a href="#important-notes">Important notes 📢</a></li>
+<li><a href="#advanced-usage">Advanced usage 👀</a><ul>
+<li><a href="#versatile-processing-functions">Versatile processing functions</a></li>
+<li><a href="#dataframe-decorator">DataFrame decorator</a></li>
+<li><a href="#logging">Logging</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
 </div>
 <ul id="index">
 <li><h3>Super-module</h3>

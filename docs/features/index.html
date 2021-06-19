@@ -36,102 +36,81 @@
 from tsflex.features import FeatureDescriptor, FeatureCollection, NumpyFuncWrapper
 
 # 1. -------- Get your time-indexed data --------
-series_size = 10_000
-series_name=&quot;lux&quot;
-
-data = pd.Series(
-    data=np.random.random(series_size), 
-    index=pd.date_range(&quot;2021-07-01&quot;, freq=&quot;1h&quot;, periods=series_size)
-).rename(series_name)
-# -- 1.1 drop some data, as we don't make frequency assumptions
-data = data.drop(np.random.choice(data.index, 200, replace=False))
-
+# Data contains 1 column; [&quot;TMP&quot;]
+url = &quot;https://github.com/tsflex/tsflex/raw/main/examples/data/empatica/&quot;
+data = pd.read_parquet(url + &quot;tmp.parquet&quot;).set_index(&quot;timestamp&quot;)
 
 # 2 -------- Construct your feature collection --------
 fc = FeatureCollection(
     feature_descriptors=[
         FeatureDescriptor(
             function=NumpyFuncWrapper(func=ss.skew, output_names=&quot;skew&quot;),
-            series_name=series_name, 
-            window=&quot;1day&quot;, stride=&quot;6hours&quot;
+            series_name=&quot;TMP&quot;, 
+            window=&quot;5min&quot;, stride=&quot;2.5min&quot;,
         )
     ]
 )
-# -- 2.1. Add multiple features to your feature collection
-fc.add(FeatureDescriptor(np.min, series_name, '2days', '1day'))
+# -- 2.1. Add features to your feature collection
+fc.add(FeatureDescriptor(np.min, &quot;TMP&quot;, '2.5min', '2.5min'))
 
 # 3 -------- Calculate features --------
-fc.calculate(data=data, n_jobs=1, return_df=True)
+fc.calculate(data=data, return_df=True)
 # which outputs:
 </code></pre>
 <table>
 <thead>
 <tr>
-<th align="center">index</th>
-<th align="left"><strong>lux__skew__w=1D_s=12h</strong></th>
-<th align="left"><strong>lux__amin__w=2D_s=1D</strong></th>
-<th align="left"><strong>lux__&hellip;</strong></th>
+<th align="left">timestamp</th>
+<th align="right">TMP__amin__w=1m_s=30s</th>
+<th align="right">TMP__skew__w=2m_s=1m</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td align="center">2021-07-02 00:00:00</td>
-<td align="left">-0.0607221</td>
-<td align="left">nan</td>
-<td align="left">&hellip;</td>
+<td align="left">2017-06-13 14:23:13+02:00</td>
+<td align="right">27.37</td>
+<td align="right">nan</td>
 </tr>
 <tr>
-<td align="center">2021-07-02 12:00:00</td>
-<td align="left">-0.142407</td>
-<td align="left">nan</td>
-<td align="left">&hellip;</td>
+<td align="left">2017-06-13 14:23:43+02:00</td>
+<td align="right">27.37</td>
+<td align="right">nan</td>
 </tr>
 <tr>
-<td align="center">2021-07-03 00:00:00</td>
-<td align="left">-0.283447</td>
-<td align="left">0.042413</td>
-<td align="left">&hellip;</td>
+<td align="left">2017-06-13 14:24:13+02:00</td>
+<td align="right">27.43</td>
+<td align="right">10.8159</td>
 </tr>
 <tr>
-<td align="center">2021-07-03 12:00:00</td>
-<td align="left">-0.353314</td>
-<td align="left">nan</td>
-<td align="left">&hellip;</td>
+<td align="left">2017-06-13 14:24:43+02:00</td>
+<td align="right">27.81</td>
+<td align="right">nan</td>
 </tr>
 <tr>
-<td align="center">2021-07-04 00:00:00</td>
-<td align="left">-0.188953</td>
-<td align="left">0.0011865</td>
-<td align="left">&hellip;</td>
+<td align="left">2017-06-13 14:25:13+02:00</td>
+<td align="right">28.23</td>
+<td align="right">-0.0327893</td>
 </tr>
 <tr>
-<td align="center">2021-07-04 12:00:00</td>
-<td align="left">0.259685</td>
-<td align="left">nan</td>
 <td align="left">&hellip;</td>
+<td align="right">&hellip;</td>
+<td align="right">&hellip;</td>
 </tr>
 <tr>
-<td align="center">2021-07-05 00:00:00</td>
-<td align="left">0.726858</td>
-<td align="left">0.0011865</td>
-<td align="left">&hellip;</td>
-</tr>
-<tr>
-<td align="center">&hellip;</td>
-<td align="left">&hellip;</td>
-<td align="left">&hellip;</td>
-<td align="left">&hellip;</td>
+<td align="left"><br></td>
+<td align="right"></td>
+<td align="right"></td>
 </tr>
 </tbody>
 </table>
-<p><br></p>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>More advanced feature-extraction examples can be found <a href="https://github.com/tsflex/tsflex/tree/main/examples">in these example notebooks</a></p>
 </div>
 <p><br></p>
 <h2 id="getting-started">Getting started 🚀</h2>
-<h3 id="classes-feature-output">Classes &amp; feature-output</h3>
+<p>The feature-extraction functionality of <em>tsflex</em> is provided by a <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> that contains <code><a title="tsflex.features.FeatureDescriptor" href="#tsflex.features.FeatureDescriptor">FeatureDescriptor</a></code>s. The features are calculated (in a parallel manner) on the data that is passed to the feature collection.</p>
+<h3 id="components">Components</h3>
 <p><img alt="features uml" src="https://raw.githubusercontent.com/tsflex/tsflex/main/docs/_static/features_uml.png"></p>
 <p>As shown above, there are 3 relevant classes for feature-extraction.</p>
 <ol>
@@ -150,11 +129,11 @@ e.g. <em>"1hour"</em></li>
 </ul>
 </li>
 </ol>
-<p>The snippet below shows how the <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> &amp; <code><a title="tsflex.features.FeatureDescriptor" href="#tsflex.features.FeatureDescriptor">FeatureDescriptor</a></code> class interplay:</p>
+<p>The snippet below shows how the <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> &amp; <code><a title="tsflex.features.FeatureDescriptor" href="#tsflex.features.FeatureDescriptor">FeatureDescriptor</a></code> components work together:</p>
 <pre><code class="language-python">import numpy as np; import scipy.stats as ss
 from tsflex.features import FeatureDescriptor, FeatureCollection
 
-# The FeatureCollection takes a List[FeatureDescriptors] as input
+# The FeatureCollection takes a List[FeatureDescriptor] as input
 fc = FeatureCollection(feature_descriptors=[
         # There is no need for NumpyFuncWrapper when using &quot;simple&quot; features
         FeatureDescriptor(np.mean, &quot;series_a&quot;, &quot;1hour&quot;, &quot;15min&quot;),
@@ -164,11 +143,45 @@ fc = FeatureCollection(feature_descriptors=[
 
 # We can still add features after instantiating.
 fc.add(features=[FeatureDescriptor(np.std, &quot;series_a&quot;, &quot;1hour&quot;, &quot;15min&quot;)])
+
+# Calculate the features
 fc.calculate(...)
 </code></pre>
-<p><br></p>
+<h3 id="feature-functions">Feature functions</h3>
+<p>The function that processes the series should match this prototype:</p>
+<pre><code>function(*series: np.ndarray, **kwargs)
+    -&gt; Union[Any, List[Any]]
+</code></pre>
+<!-- TODO: waarom geen pd.Series?? -->
+<p>Hence, the feature function should take one (or multiple) arrays as input, these may be followed by some keyword arguments. The output of a feature function can be rather versatile (e.g., a float, an integer, a string, a bool, &hellip; or a list thereof).</p>
+<p>In <a href="#advanced-usage">this section</a> you can find more info on advanced usage of feature functions.</p>
+<h3 id="multiple-feature-descriptors">Multiple feature descriptors</h3>
+<p>Sometimes it can get overly verbose when the same feature is shared over multiple series, windows and/or strides. To solve this proble, we introduce the <code><a title="tsflex.features.MultipleFeatureDescriptors" href="#tsflex.features.MultipleFeatureDescriptors">MultipleFeatureDescriptors</a></code>, this component allows to <strong>create multiple feature descriptors for all</strong> the <code>function - series_name(s) - window - stride</code> <strong>combinations</strong>.</p>
+<p>A <code><a title="tsflex.features.MultipleFeatureDescriptors" href="#tsflex.features.MultipleFeatureDescriptors">MultipleFeatureDescriptors</a></code> instance can be added a <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code>.</p>
+<p>Example</p>
+<pre><code class="language-python">import numpy as np; import scipy.stats as ss
+from tsflex.features import FeatureDescriptor, FeatureCollection
+from tsflex.features import MultipleFeatureDescriptors
+
+# The FeatureCollection takes a List[FeatureDescriptor] as input
+fc = FeatureCollection(feature_descriptors=[
+        # There is no need for NumpyFuncWrapper when using &quot;simple&quot; features
+        FeatureDescriptor(np.mean, &quot;series_a&quot;, &quot;1hour&quot;, &quot;15min&quot;),
+        FeatureDescriptor(ss.skew, &quot;series_b&quot;, &quot;3hours&quot;, &quot;5min&quot;),
+        MultipleFeatureDescriptors(
+            functions=[np.min, np.max, np.std, ss.skew],
+            series_names=[&quot;series_a&quot;, &quot;series_b&quot;, &quot;series_c&quot;],
+            windows=[&quot;5min&quot;, &quot;15min&quot;],
+            strides=[&quot;1min&quot;,&quot;2min&quot;,&quot;3min&quot;]
+        )
+    ]
+)
+
+# Calculate the features
+fc.calculate(...)
+</code></pre>
 <h3 id="output-format">Output format</h3>
-<p>The output the <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> its <code>calculate</code> method is a (list of) <strong><code>time-indexed pd.DataFrame</code></strong> with column names<br></p>
+<p>The output of the <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> its <code>calculate</code> method is a (list of) <strong><code>time-indexed pd.DataFrame</code></strong> with column names<br></p>
 <blockquote>
 <p><strong><code>&lt;SERIES-NAME&gt;__&lt;FEAT-NAME&gt;__w=&lt;WINDOW&gt;__s=&lt;STRIDE&gt;</code></strong>.</p>
 </blockquote>
@@ -178,8 +191,9 @@ fc.calculate(...)
 <p>You can find more information about the <strong>input data-formats</strong> in <a href="/tsflex/#data-formats">this section</a> and read more about the (obvious) <strong>limitations</strong> in the next section.</p>
 </div>
 <p><br></p>
-<h2 id="limitations">Limitations 📢</h2>
-<p>It is important to note that there a still some, albeit logical, <strong>limitations</strong> regarding the supported <a href="/tsflex/#data-formats">data format</a>.<br>These limitations are:</p>
+<h2 id="limitations">Limitations ⚠️</h2>
+<p>It is important to note that there a still some, albeit logical, <strong>limitations</strong> regarding the supported <a href="/tsflex/#data-formats">data format</a>.</p>
+<p>These limitations are:</p>
 <ol>
 <li>Each <a href="/tsflex/#data-formats"><code>ts</code></a> must have a <b style="color:red"><code>pd.DatetimeIndex</code> that increases monotonically</b><ul>
 <li><strong>Countermeasure</strong>: Apply <em><a href="https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.sort_index.html">sort_index()</a></em> on your not-monotonically increasing data</li>
@@ -189,10 +203,17 @@ fc.calculate(...)
 <li><strong>Countermeasure</strong>: rename your <code>ts</code></li>
 </ul>
 </li>
-<li>We support various data-types. e.g. (np.float32, string-data, time-based data). However, it is the end-users responsibility to use a function which interplays nicely with the data's format.</li>
 </ol>
 <p><br></p>
+<h2 id="important-notes">Important notes 📢</h2>
+<ul>
+<li>We support various data-types. e.g. (np.float32, string-data, time-based data). However, it is the end-users responsibility to use a function which interplays nicely with the data its format.</li>
+</ul>
+<p><br></p>
 <h2 id="advanced-usage">Advanced usage 👀</h2>
+<h3 id="versatile-functions">Versatile functions</h3>
+<p><code>TODO</code> </p>
+<!-- hier NumpyFuncWrapper shillen -->
 <!-- TODO: tot hier geraakt -->
 <h3 id="multivariate-data">Multivariate-data</h3>
 <p>There are no assumptions made about the <code>data</code> its <code>time-ranges</code>.<br>
@@ -205,6 +226,9 @@ However, the end-user must take some things in consideration.</p>
 <p>This case may cause that not all windows on which features are calculated have the same amount of samples.<br>
 When using multivariate data, with either different sample rates or with an irregular data-rate, you cannot make the assumption that all windows will have the same length. Your feature extraction method will thus
 * will the s </p>
+<h3 id="logging">Logging</h3>
+<p>When a <code>logging_file_path</code> is passed to the <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> its <code>calculate</code> method, the execution times of the feature functions will be logged.</p>
+<p><a href="#tsflex.features.get_feature_logs">More info</a></p>
 <p><br></p>
 <hr>
 </section>
@@ -311,8 +335,8 @@ number of executions.</dd>
 <dl>
 <dt><strong><code>function</code></strong> :&ensp;<code>Union[<a title="tsflex.features.NumpyFuncWrapper" href="#tsflex.features.NumpyFuncWrapper">NumpyFuncWrapper</a>, Callable]</code></dt>
 <dd>The function that calculates this feature.
-The prototype of the function should match: <pre><code>function(*series: pd.Series)
-    -&gt; Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]
+The prototype of the function should match: <pre><code>function(*series: np.ndarray)
+    -&gt; Union[Any, List[Any]]
 </code></pre>
 </dd>
 <dt><strong><code>series_name</code></strong> :&ensp;<code>Union[str, Tuple[str]]</code></dt>
@@ -760,15 +784,20 @@ alt="logo should be displayed here" style="width: 100%;"></a>
 <li><a href="#feature-extraction-guide">Feature extraction guide</a><ul>
 <li><a href="#working-example">Working example ✅</a></li>
 <li><a href="#getting-started">Getting started 🚀</a><ul>
-<li><a href="#classes-feature-output">Classes &amp; feature-output</a></li>
+<li><a href="#components">Components</a></li>
+<li><a href="#feature-functions">Feature functions</a></li>
+<li><a href="#multiple-feature-descriptors">Multiple feature descriptors</a></li>
 <li><a href="#output-format">Output format</a></li>
 </ul>
 </li>
-<li><a href="#limitations">Limitations 📢</a></li>
+<li><a href="#limitations">Limitations ⚠️</a></li>
+<li><a href="#important-notes">Important notes 📢</a></li>
 <li><a href="#advanced-usage">Advanced usage 👀</a><ul>
+<li><a href="#versatile-functions">Versatile functions</a></li>
 <li><a href="#multivariate-data">Multivariate-data</a></li>
 <li><a href="#multiple-time-series">Multiple time series</a></li>
 <li><a href="#irregularly-sampled-data">Irregularly sampled data</a></li>
+<li><a href="#logging">Logging</a></li>
 </ul>
 </li>
 </ul>
