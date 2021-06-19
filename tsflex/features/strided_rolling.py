@@ -157,7 +157,8 @@ class StridedRolling:
                 if series_idx_stats[0] != series_idx_stats[1]:  # min != max
                     warnings.warn(
                         f"There are gaps in the time-series {series.name}; "
-                        + f"\n \t quantiles: {q_str}"
+                        + f"\n \t Quantiles of nb values in window: {q_str}",
+                        RuntimeWarning,
                     )
 
     @staticmethod
