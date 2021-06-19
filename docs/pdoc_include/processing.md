@@ -8,6 +8,10 @@ The following sections will explain the processing module in detail.
 
 ## Working example ✅
 
+_tsflex_ is built to be intuitive, so we encourage you to copy-paste this code and toy with some parameters! <br>
+
+This executable example creates a processing pipeline that contains 3 processing steps (abs, median filter, and detreding, each applied on a different subset of series). <br>
+
 ```python
 import pandas as pd; import scipy.signal as ss; import numpy as np
 from tsflex.processing import SeriesProcessor, SeriesPipeline
@@ -29,7 +33,7 @@ processing_pipe.append(SeriesProcessor(ss.detrend, ["ACC_x", "ACC_z"]))
 
 # 3 -------- Process the data --------
 processing_pipe.process(data=data, return_df=True)
-# which outputs
+# which outputs:
 ```
 | timestamp                        |    ACC_x |   ACC_y |   ACC_z |
 |:---------------------------------|---------:|--------:|--------:|
@@ -41,11 +45,16 @@ processing_pipe.process(data=data, return_df=True)
 | ...                              | ...      | ...     | ...     |
 <br>
 
+!!!tip 
+    More advanced processing examples can be found [in these example notebooks](https://github.com/tsflex/tsflex/tree/main/examples)
+
+<br>
+
 ## Getting started 🚀
 
 The processing functionality of _tsflex_ is provided by a `SeriesPipeline` that contains `SeriesProcessor` steps. The processing steps are applied sequentially on the data that is passed to the processing pipeline.
 
-### Classes & processing-output
+### Components
 ![processing uml](https://raw.githubusercontent.com/tsflex/tsflex/main/docs/_static/series_uml.png)
 
 As shown above, there are 2 relevant classes for processing.
@@ -56,7 +65,7 @@ As shown above, there are 2 relevant classes for processing.
       * `series_names`: the _name(s)_ of the series on which the processing function should be applied
       * `**kwargs`: the _keyword agruments_ for the `function`.
 
-The snippet below shows how the `SeriesPipeline` & `SeriesProcessor` class interplay:
+The snippet below shows how the `SeriesPipeline` & `SeriesProcessor` components work:
 
 ```python
 import numpy as np; import scipy.signal as ss
@@ -151,9 +160,17 @@ def abs_square_diff(s1: pd.Series, s2: pd.Series) -> List[pd.Series]:
 ### DataFrame decorator
 
 In some (rare) cases a processing function requires a ``pd.DataFrame`` as input. 
-For these cases we provide the [dataframe_func decorator](/tsflex/processing/#tsflex.processing.dataframe_func). This decorator wraps the processing function in the `SeriesPipeline`, provided a ``pd.DataFrame`` as input instead of multiple ``pd.Series``.
+For these cases we provide the [dataframe_func decorator](#tsflex.processing.dataframe_func). This decorator wraps the processing function in the `SeriesPipeline`, provided a ``pd.DataFrame`` as input instead of multiple ``pd.Series``.
 
 !!!note
     In most cases series arguments are sufficient; you can perform column-based operations on multiple `pd.Series` (e.g., subtract 2 series). Only when row-based operations are required (e.g., `df.dropna(axis=0)`), a `pd.DataFrame` is unavoidable.
+
+### Logging
+
+When a `logging_file_path` is passed to the `SeriesPipeline` its `process` method, the execution times of the processing steps will be logged.
+
+[More info](#tsflex.processing.get_processor_logs)
+
+<br>
 
 ---

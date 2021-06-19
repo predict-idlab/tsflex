@@ -14,43 +14,39 @@ This executable example creates a feature-collection that contains 2 features (s
 **Note**: we do not make any assumptions about the sampling rate of the time-series data.
 
 ```python
-import pandas as pd; import scipy.stats as sstats; import numpy as np
+import pandas as pd; import scipy.stats as ss; import numpy as np
 from tsflex.features import FeatureDescriptor, FeatureCollection, NumpyFuncWrapper
 
 # 1. -------- Get your time-indexed data --------
 # Data contains 1 column; ["TMP"]
-data = pd.read_parquet(
-    "https://github.com/tsflex/tsflex/raw/main/docs/examples/data/empatica/tmp.parquet"
-    ).set_index('timestamp')
+url = "https://github.com/tsflex/tsflex/raw/main/examples/data/empatica/"
+data = pd.read_parquet(url + "tmp.parquet").set_index("timestamp")
 
 # 2 -------- Construct your feature collection --------
 fc = FeatureCollection(
     feature_descriptors=[
         FeatureDescriptor(
-            function=NumpyFuncWrapper(func=sstats.skew, output_names="skew"),
+            function=NumpyFuncWrapper(func=ss.skew, output_names="skew"),
             series_name="TMP", 
-            window="1day", stride="6hours",
+            window="5min", stride="2.5min",
         )
     ]
 )
-# -- 2.1. Add multiple features to your feature collection
-fc.add(FeatureDescriptor(np.min, "TMP", '2days', '1day'))
+# -- 2.1. Add features to your feature collection
+fc.add(FeatureDescriptor(np.min, "TMP", '2.5min', '2.5min'))
 
 # 3 -------- Calculate features --------
-fc.calculate(data=data)
+fc.calculate(data=data, return_df=True)
 # which outputs:
 ```
-|      index          |  **lux__skew__w=1D_s=12h**  |   **lux__amin__w=2D_s=1D** |  **lux__...** |
-|:-------------------:|:-------------------------------|:------------------------------|:---|
-| 2021-07-02 00:00:00 |                     -0.0607221 |                   nan         |   ... |
-| 2021-07-02 12:00:00 |                     -0.142407  |                   nan         |  ... |
-| 2021-07-03 00:00:00 |                     -0.283447  |                     0.042413  | ... |
-| 2021-07-03 12:00:00 |                     -0.353314  |                   nan         | ... |
-| 2021-07-04 00:00:00 |                     -0.188953  |                     0.0011865 | ... |
-| 2021-07-04 12:00:00 |                      0.259685  |                   nan         | ... |
-| 2021-07-05 00:00:00 |                      0.726858  |                     0.0011865 | ... |
-| ... |                      ...  |                     ... | ... |
-
+| timestamp                 |   TMP__amin__w=1m_s=30s |   TMP__skew__w=2m_s=1m |
+|:--------------------------|------------------------:|-----------------------:|
+| 2017-06-13 14:23:13+02:00 |                   27.37 |            nan         |
+| 2017-06-13 14:23:43+02:00 |                   27.37 |            nan         |
+| 2017-06-13 14:24:13+02:00 |                   27.43 |             10.8159    |
+| 2017-06-13 14:24:43+02:00 |                   27.81 |            nan         |
+| 2017-06-13 14:25:13+02:00 |                   28.23 |             -0.0327893 |
+|                       ... |                     ... |                    ... |
 <br>
 
 !!!tip 
@@ -62,7 +58,7 @@ fc.calculate(data=data)
 
 The feature-extraction functionality of _tsflex_ is provided by a `FeatureCollection` that contains `FeatureDescriptor`s. The features are calculated (in a parallel manner) on the data that is passed to the feature collection.
 
-### Classes & feature-output
+### Components
 ![features uml](https://raw.githubusercontent.com/tsflex/tsflex/main/docs/_static/features_uml.png)
 
 As shown above, there are 3 relevant classes for feature-extraction.
@@ -77,7 +73,7 @@ As shown above, there are 3 relevant classes for feature-extraction.
     * features with multiple output columns
     * passing _**kwargs_ to feature functions
 
-The snippet below shows how the `FeatureCollection` & `FeatureDescriptor` class interplay:
+The snippet below shows how the `FeatureCollection` & `FeatureDescriptor` components work together:
 
 ```python
 import numpy as np; import scipy.stats as ss
@@ -94,16 +90,52 @@ fc = FeatureCollection(feature_descriptors=[
 # We can still add features after instantiating.
 fc.add(features=[FeatureDescriptor(np.std, "series_a", "1hour", "15min")])
 
-# Calculate the feature
+# Calculate the features
 fc.calculate(...)
 ```
-<br>
 
 ### Feature functions
-`TODO`
+
+The function that processes the series should match this prototype:
+
+    function(*series: np.ndarray, **kwargs)
+        -> Union[Any, List[Any]]
+
+<!-- TODO: waarom geen pd.Series?? -->
+
+Hence, the feature function should take one (or multiple) arrays as input, these may be followed by some keyword arguments. The output of a feature function can be rather versatile (e.g., a float, an integer, a string, a bool, ... or a list thereof).
+
+In [this section](#advanced-usage) you can find more info on advanced usage of feature functions.
 
 ### Multiple feature descriptors
-`TODO`
+
+Sometimes it can get overly verbose when the same feature is shared over multiple series, windows and/or strides. To solve this proble, we introduce the `MultipleFeatureDescriptors`, this component allows to **create multiple feature descriptors for all** the ``function - series_name(s) - window - stride`` **combinations**.
+
+A `MultipleFeatureDescriptors` instance can be added a `FeatureCollection`.
+
+Example
+```python
+import numpy as np; import scipy.stats as ss
+from tsflex.features import FeatureDescriptor, FeatureCollection
+from tsflex.features import MultipleFeatureDescriptors
+
+# The FeatureCollection takes a List[FeatureDescriptor] as input
+fc = FeatureCollection(feature_descriptors=[
+        # There is no need for NumpyFuncWrapper when using "simple" features
+        FeatureDescriptor(np.mean, "series_a", "1hour", "15min"),
+        FeatureDescriptor(ss.skew, "series_b", "3hours", "5min"),
+        MultipleFeatureDescriptors(
+            functions=[np.min, np.max, np.std, ss.skew],
+            series_names=["series_a", "series_b", "series_c"],
+            windows=["5min", "15min"],
+            strides=["1min","2min","3min"]
+        )
+    ]
+)
+
+# Calculate the features
+fc.calculate(...)
+```
 
 ### Output format
 The output of the `FeatureCollection` its `calculate` method is a (list of) **`time-indexed pd.DataFrame`** with column names<br>
@@ -117,19 +149,34 @@ The column-name for the feature defined on the penultimate line in the snipped a
 
 <br>
 
-## Limitations 📢
+## Limitations ⚠️
 
-It is important to note that there a still some, albeit logical, **limitations** regarding the supported [data format](/tsflex/#data-formats).<br>These limitations are:
+It is important to note that there a still some, albeit logical, **limitations** regarding the supported [data format](/tsflex/#data-formats).
+
+These limitations are:
 
 1. Each [`ts`](/tsflex/#data-formats) must have a <b style="color:red">`pd.DatetimeIndex` that increases monotonically</b>
       - **Countermeasure**: Apply _[sort_index()](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.sort_index.html)_ on your not-monotonically increasing data
 2. <b style="color:red">No duplicate</b> `ts` <b style="color:red">names</b> are allowed
       - **Countermeasure**: rename your `ts`
-3. We support various data-types. e.g. (np.float32, string-data, time-based data). However, it is the end-users responsibility to use a function which interplays nicely with the data's format.
+
+<br>
+
+
+## Important notes 📢
+
+- We support various data-types. e.g. (np.float32, string-data, time-based data). However, it is the end-users responsibility to use a function which interplays nicely with the data its format.
+
 
 <br>
 
 ## Advanced usage 👀
+
+### Versatile functions
+
+`TODO` 
+
+<!-- hier NumpyFuncWrapper shillen -->
 
 <!-- TODO: tot hier geraakt -->
 
@@ -147,6 +194,14 @@ However, the end-user must take some things in consideration.
 This case may cause that not all windows on which features are calculated have the same amount of samples.<br>
 When using multivariate data, with either different sample rates or with an irregular data-rate, you cannot make the assumption that all windows will have the same length. Your feature extraction method will thus 
   * will the s 
+
+### Logging
+
+When a `logging_file_path` is passed to the `FeatureCollection` its `calculate` method, the execution times of the feature functions will be logged.
+
+[More info](#tsflex.features.get_feature_logs)
+
+
 
 <br>
 

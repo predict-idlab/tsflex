@@ -25,8 +25,8 @@ class FeatureDescriptor(FrozenClass):
         The function that calculates this feature.
         The prototype of the function should match: \n
 
-            function(*series: pd.Series)
-                -> Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]
+            function(*series: np.ndarray)
+                -> Union[Any, List[Any]]
 
     series_name : Union[str, Tuple[str]]
         The names of the series on which the feature function should be applied.

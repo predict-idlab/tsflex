@@ -36,8 +36,8 @@ from tsflex.processing import SeriesProcessor, SeriesPipeline
 
 # 1. -------- Get your time-indexed data --------
 # Data contains 3 columns; ["ACC_x", "ACC_y", "ACC_z"]
-url = "https://github.com/tsflex/tsflex/raw/main/examples/data/empatica/"
-data = pd.read_parquet(url + "acc.parquet").set_index("timestamp")
+url = "https://github.com/tsflex/tsflex/raw/main/examples/data/empatica/acc.parquet"
+data = pd.read_parquet(url).set_index("timestamp")
 
 # 2 -------- Construct your processing pipeline --------
 processing_pipe = SeriesPipeline(
@@ -56,27 +56,27 @@ processing_pipe.process(data=data)
 ### <a href="https://tsflex.github.io/tsflex/features/#getting-started">Feature extraction</a>
 
 ```python
-import pandas as pd; import scipy.stats as sstats; import numpy as np
+import pandas as pd; import scipy.stats as ssig; import numpy as np
 from tsflex.features import FeatureDescriptor, FeatureCollection, NumpyFuncWrapper
 
 # 1. -------- Get your time-indexed data --------
 # Data contains 1 column; ["TMP"]
-data = pd.read_parquet(
-    "https://github.com/tsflex/tsflex/raw/main/docs/examples/data/empatica/tmp.parquet"
-    ).set_index('timestamp')
+url = "https://github.com/tsflex/tsflex/raw/main/examples/data/empatica/tmp.parquet"
+data = pd.read_parquet(url).set_index("timestamp")
 
 # 2 -------- Construct your feature collection --------
 fc = FeatureCollection(
     feature_descriptors=[
         FeatureDescriptor(
-            function=NumpyFuncWrapper(func=sstats.skew, output_names="skew"),
+            function=NumpyFuncWrapper(func=ssig.skew, output_names="skew"),
             series_name="TMP", 
-            window="1day", stride="6hours",
+            window="5min",  # Use 5 minutes 
+            stride="2.5min",  # With steps of 2.5 minutes
         )
     ]
 )
-# -- 2.1. Add multiple features to your feature collection
-fc.add(FeatureDescriptor(np.min, "TMP", '2days', '1day'))
+# -- 2.1. Add features to your feature collection
+fc.add(FeatureDescriptor(np.min, "TMP", '2.5min', '2.5min'))
 
 # 3 -------- Calculate features --------
 fc.calculate(data=data)
