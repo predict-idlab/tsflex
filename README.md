@@ -1,4 +1,4 @@
-# <p align="center" href="https://tsflex.github.io/tsflex"><img alt="tsflex" src="https://raw.githubusercontent.com/tsflex/tsflex/main/docs/_static/logo.png" height="100"></p>
+# <p align="center"> <a href="https://tsflex.github.io/tsflex"><img alt="tsflex" src="https://raw.githubusercontent.com/tsflex/tsflex/main/docs/_static/logo.png" height="100"></a></p>
 
 [![PyPI Latest Release](https://img.shields.io/pypi/v/tsflex.svg)](https://pypi.org/project/tsflex/)
 [![Documentation](https://github.com/tsflex/tsflex/actions/workflows/deploy-docs.yml/badge.svg)](https://github.com/tsflex/tsflex/actions/workflows/deploy-docs.yml)

@@ -1,4 +1,8 @@
-"""init.py for processing module."""
+"""Processing module.
+
+.. include:: ../../docs/pdoc_include/processing.md
+
+"""
 
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
