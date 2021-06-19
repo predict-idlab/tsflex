@@ -1,6 +1,7 @@
 # <p align="center"><img alt="tsflex" src="https://raw.githubusercontent.com/tsflex/tsflex/main/docs/_static/logo.png" height="100"></p>
 
 [![PyPI Latest Release](https://img.shields.io/pypi/v/tsflex.svg)](https://pypi.org/project/tsflex/)
+[![Documentation](https://github.com/tsflex/tsflex/actions/workflows/deploy-docs.yml/badge.svg)](https://github.com/tsflex/tsflex/actions/workflows/deploy-docs.yml)
 [![Testing](https://github.com/tsflex/tsflex/actions/workflows/test.yml/badge.svg)](https://github.com/tsflex/tsflex/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/tsflex/tsflex/branch/main/graph/badge.svg)](https://codecov.io/gh/tsflex/tsflex)
 [![Downloads](https://pepy.tech/badge/tsflex)](https://pepy.tech/project/tsflex)
