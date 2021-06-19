@@ -11,6 +11,8 @@ from tsflex.features import FeatureDescriptor, MultipleFeatureDescriptors
 
 ### FeatureDescriptor
 
+# TODO: test many to one etc ? => not sure bc already tested in feature_descriptor?
+
 def test_simple_feature_descriptor():
     def sum_func(sig: np.ndarray) -> float:
         return sum(sig)
