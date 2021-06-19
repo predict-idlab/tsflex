@@ -2,7 +2,6 @@
 __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt"
 
 from sklearn.base import BaseEstimator, TransformerMixin
-import numpy as np
 import pandas as pd
 
 

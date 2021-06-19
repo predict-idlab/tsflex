@@ -2,7 +2,7 @@
 
 The following sections will explain the processing module in detail.
 
-[Jump to API reference](#header-submodules)
+[**Jump to API reference**](#header-submodules)
 
 <br>
 
