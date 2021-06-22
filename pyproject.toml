@@ -1,12 +1,12 @@
 [tool.poetry]
 name = "tsflex"
-version = "0.1.1.2"
-description = "Toolkit for flexible operations on time-series data"
+version = "0.1.1.5"
+description = "Toolkit for flexible processing & feature extraction on time-series data"
 authors = ["Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"]
 readme = "README.md"
 license = "MIT"
-repository = "https://github.com/tsflex/tsflex"
-documentation = "https://tsflex.github.io/tsflex"
+repository = "https://github.com/predict-idlab/tsflex"
+documentation = "https://predict-idlab.github.io/tsflex"
 keywords = ["time-series", "processing", "feature-extraction", "data-science"]
 
 [tool.poetry.dependencies]
