@@ -19,7 +19,7 @@ from tsflex.features import FeatureDescriptor, FeatureCollection, NumpyFuncWrapp
 
 # 1. -------- Get your time-indexed data --------
 # Data contains 1 column; ["TMP"]
-url = "https://github.com/tsflex/tsflex/raw/main/examples/data/empatica/"
+url = "https://github.com/predict-idlab/tsflex/raw/main/examples/data/empatica/"
 data = pd.read_parquet(url + "tmp.parquet").set_index("timestamp")
 
 # 2 -------- Construct your feature collection --------
@@ -50,7 +50,7 @@ fc.calculate(data=data, return_df=True)
 <br>
 
 !!!tip 
-    More advanced feature-extraction examples can be found [in these example notebooks](https://github.com/tsflex/tsflex/tree/main/examples)
+    More advanced feature-extraction examples can be found [in these example notebooks](https://github.com/predict-idlab/tsflex/tree/main/examples)
 
 <br>
 
@@ -59,7 +59,7 @@ fc.calculate(data=data, return_df=True)
 The feature-extraction functionality of _tsflex_ is provided by a `FeatureCollection` that contains `FeatureDescriptor`s. The features are calculated (in a parallel manner) on the data that is passed to the feature collection.
 
 ### Components
-![features uml](https://raw.githubusercontent.com/tsflex/tsflex/main/docs/_static/features_uml.png)
+![features uml](https://raw.githubusercontent.com/predict-idlab/tsflex/main/docs/_static/features_uml.png)
 
 As shown above, there are 3 relevant classes for feature-extraction.
 

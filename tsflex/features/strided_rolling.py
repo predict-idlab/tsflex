@@ -1,5 +1,13 @@
 """Contains a (rather) fast implementation of a **time-based** strided rolling window.
 
+.. todo::
+    look into **series-based** stroll, instead of np.ndarray based stroll.<br>
+    advantages:\n
+    * a series is a wrapper around a 1D np.ndarray, so all np-based operations should
+      work
+    * the end-user can always use the time-index for advanced feature calculation e.g.
+      window-based delayed correlation or something like that.
+
 """
 
 __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
@@ -56,7 +64,7 @@ class StridedRolling:
     <br>
 
     .. todo::
-        The `bound_method` must still be propagated to the `FeatureCollection`-class.
+        The `bound_method`-argument must still be propagated to `FeatureCollection`
 
     """
 
@@ -136,6 +144,7 @@ class StridedRolling:
             np_idx_times = series.index.values.astype(np.int64)
             self.series_containers.append(
                 StridedRolling._NumpySeriesContainer(
+                    # TODO: maybe save the pd.Series instead of the np.series
                     values=np_series,
                     # the slicing will be performed on [ t_start, t_end [
                     # TODO: this can mabye be optimized -> further look into this
@@ -222,7 +231,6 @@ class StridedRolling:
         ------
         ValueError
             If the passed ``np_func`` tries to adjust the data its read-only view.
-
 
         Notes
         -----
