@@ -36,7 +36,7 @@ from tsflex.processing import SeriesProcessor, SeriesPipeline
 
 # 1. -------- Get your time-indexed data --------
 # Data contains 3 columns; [&quot;ACC_x&quot;, &quot;ACC_y&quot;, &quot;ACC_z&quot;]
-url = &quot;https://github.com/tsflex/tsflex/raw/main/examples/data/empatica/&quot;
+url = &quot;https://github.com/predict-idlab/tsflex/raw/main/examples/data/empatica/&quot;
 data = pd.read_parquet(url + &quot;acc.parquet&quot;).set_index(&quot;timestamp&quot;)
 
 # 2 -------- Construct your processing pipeline --------
@@ -109,13 +109,13 @@ processing_pipe.process(data=data, return_df=True)
 </table>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>More advanced processing examples can be found <a href="https://github.com/tsflex/tsflex/tree/main/examples">in these example notebooks</a></p>
+<p>More advanced processing examples can be found <a href="https://github.com/predict-idlab/tsflex/tree/main/examples">in these example notebooks</a></p>
 </div>
 <p><br></p>
 <h2 id="getting-started">Getting started 🚀</h2>
 <p>The processing functionality of <em>tsflex</em> is provided by a <code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code> that contains <code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code> steps. The processing steps are applied sequentially on the data that is passed to the processing pipeline.</p>
 <h3 id="components">Components</h3>
-<p><img alt="processing uml" src="https://raw.githubusercontent.com/tsflex/tsflex/main/docs/_static/series_uml.png"></p>
+<p><img alt="processing uml" src="https://raw.githubusercontent.com/predict-idlab/tsflex/main/docs/_static/series_uml.png"></p>
 <p>As shown above, there are 2 relevant classes for processing.</p>
 <ol>
 <li><a href="/tsflex/processing/#tsflex.processing.SeriesPipeline">SeriesPipeline</a>: serves as a pipeline, withholding the to-be-applied <em>processing steps</em></li>

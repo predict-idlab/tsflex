@@ -37,7 +37,7 @@ from tsflex.features import FeatureDescriptor, FeatureCollection, NumpyFuncWrapp
 
 # 1. -------- Get your time-indexed data --------
 # Data contains 1 column; [&quot;TMP&quot;]
-url = &quot;https://github.com/tsflex/tsflex/raw/main/examples/data/empatica/&quot;
+url = &quot;https://github.com/predict-idlab/tsflex/raw/main/examples/data/empatica/&quot;
 data = pd.read_parquet(url + &quot;tmp.parquet&quot;).set_index(&quot;timestamp&quot;)
 
 # 2 -------- Construct your feature collection --------
@@ -105,13 +105,13 @@ fc.calculate(data=data, return_df=True)
 </table>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
-<p>More advanced feature-extraction examples can be found <a href="https://github.com/tsflex/tsflex/tree/main/examples">in these example notebooks</a></p>
+<p>More advanced feature-extraction examples can be found <a href="https://github.com/predict-idlab/tsflex/tree/main/examples">in these example notebooks</a></p>
 </div>
 <p><br></p>
 <h2 id="getting-started">Getting started 🚀</h2>
 <p>The feature-extraction functionality of <em>tsflex</em> is provided by a <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> that contains <code><a title="tsflex.features.FeatureDescriptor" href="#tsflex.features.FeatureDescriptor">FeatureDescriptor</a></code>s. The features are calculated (in a parallel manner) on the data that is passed to the feature collection.</p>
 <h3 id="components">Components</h3>
-<p><img alt="features uml" src="https://raw.githubusercontent.com/tsflex/tsflex/main/docs/_static/features_uml.png"></p>
+<p><img alt="features uml" src="https://raw.githubusercontent.com/predict-idlab/tsflex/main/docs/_static/features_uml.png"></p>
 <p>As shown above, there are 3 relevant classes for feature-extraction.</p>
 <ol>
 <li><a href="/tsflex/features/#tsflex.features.FeatureCollection">FeatureCollection</a>: serves as a registry, withholding the to-be-calculated <em>features</em></li>
@@ -258,7 +258,7 @@ features.</p></div>
 </dd>
 <dt><code class="name"><a title="tsflex.features.strided_rolling" href="strided_rolling.html">tsflex.features.strided_rolling</a></code></dt>
 <dd>
-<div class="desc"><p>Contains a (rather) fast implementation of a <strong>time-based</strong> strided rolling window.</p></div>
+<div class="desc"><p>Contains a (rather) fast implementation of a <strong>time-based</strong> strided rolling window …</p></div>
 </dd>
 </dl>
 </section>
