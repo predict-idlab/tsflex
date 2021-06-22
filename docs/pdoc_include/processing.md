@@ -18,7 +18,7 @@ from tsflex.processing import SeriesProcessor, SeriesPipeline
 
 # 1. -------- Get your time-indexed data --------
 # Data contains 3 columns; ["ACC_x", "ACC_y", "ACC_z"]
-url = "https://github.com/tsflex/tsflex/raw/main/examples/data/empatica/"
+url = "https://github.com/predict-idlab/tsflex/raw/main/examples/data/empatica/"
 data = pd.read_parquet(url + "acc.parquet").set_index("timestamp")
 
 # 2 -------- Construct your processing pipeline --------
@@ -46,7 +46,7 @@ processing_pipe.process(data=data, return_df=True)
 <br>
 
 !!!tip 
-    More advanced processing examples can be found [in these example notebooks](https://github.com/tsflex/tsflex/tree/main/examples)
+    More advanced processing examples can be found [in these example notebooks](https://github.com/predict-idlab/tsflex/tree/main/examples)
 
 <br>
 
@@ -55,7 +55,7 @@ processing_pipe.process(data=data, return_df=True)
 The processing functionality of _tsflex_ is provided by a `SeriesPipeline` that contains `SeriesProcessor` steps. The processing steps are applied sequentially on the data that is passed to the processing pipeline.
 
 ### Components
-![processing uml](https://raw.githubusercontent.com/tsflex/tsflex/main/docs/_static/series_uml.png)
+![processing uml](https://raw.githubusercontent.com/predict-idlab/tsflex/main/docs/_static/series_uml.png)
 
 As shown above, there are 2 relevant classes for processing.
 

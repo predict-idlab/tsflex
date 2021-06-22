@@ -53,7 +53,7 @@ For brevity, we call an item from `data`, i.e., series or dataframe-colum, a tim
 > _tsflex_ was mainly intended to work on _flat data_ such as a **list of series** or a **wide-dataframe**.
 
 ### Wide vs. Long Data
-![image](https://raw.githubusercontent.com/tsflex/tsflex/main/docs/_static/long_wide.png)
+![image](https://raw.githubusercontent.com/predict-idlab/tsflex/main/docs/_static/long_wide.png)
 
 Time series data is often stored in 2 data-types:
 
