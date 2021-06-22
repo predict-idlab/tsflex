@@ -1,10 +1,10 @@
-# <p align="center"> <a href="https://tsflex.github.io/tsflex"><img alt="tsflex" src="https://raw.githubusercontent.com/tsflex/tsflex/main/docs/_static/logo.png" height="100"></a></p>
+# <p align="center"> <a href="https://predict-idlab.github.io/tsflex"><img alt="tsflex" src="https://raw.githubusercontent.com/predict-idlab/tsflex/main/docs/_static/logo.png" height="100"></a></p>
 
 [![PyPI Latest Release](https://img.shields.io/pypi/v/tsflex.svg)](https://pypi.org/project/tsflex/)
-[![Documentation](https://github.com/tsflex/tsflex/actions/workflows/deploy-docs.yml/badge.svg)](https://github.com/tsflex/tsflex/actions/workflows/deploy-docs.yml)
-[![Testing](https://github.com/tsflex/tsflex/actions/workflows/test.yml/badge.svg)](https://github.com/tsflex/tsflex/actions/workflows/test.yml)
-[![codecov](https://codecov.io/gh/tsflex/tsflex/branch/main/graph/badge.svg)](https://codecov.io/gh/tsflex/tsflex)
-[![Code quality](https://img.shields.io/lgtm/grade/python/g/tsflex/tsflex.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/tsflex/tsflex/context:python)
+[![Documentation](https://github.com/predict-idlab/tsflex/actions/workflows/deploy-docs.yml/badge.svg)](https://github.com/predict-idlab/tsflex/actions/workflows/deploy-docs.yml)
+[![Testing](https://github.com/predict-idlab/tsflex/actions/workflows/test.yml/badge.svg)](https://github.com/predict-idlab/tsflex/actions/workflows/test.yml)
+[![codecov](https://codecov.io/gh/predict-idlab/tsflex/branch/main/graph/badge.svg)](https://codecov.io/gh/predict-idlab/tsflex)
+[![Code quality](https://img.shields.io/lgtm/grade/python/g/predict-idlab/tsflex.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/predict-idlab/tsflex/context:python)
 [![Downloads](https://pepy.tech/badge/tsflex)](https://pepy.tech/project/tsflex)
 
 *tsflex* stands for: _**flex**ible **t**ime-**s**eries operations_<br>
@@ -13,8 +13,8 @@ It is a `time-series first` toolkit for **processing & feature extraction**, mak
 
 #### Useful links
 
-- [Documentation](https://tsflex.github.io/tsflex/)
-- [Example notebooks](https://github.com/tsflex/tsflex/tree/main/examples)
+- [Documentation](https://predict-idlab.github.io/tsflex/)
+- [Example notebooks](https://github.com/predict-idlab/tsflex/tree/main/examples)
 
 ## Installation
 
@@ -29,7 +29,7 @@ pip install tsflex
 _tsflex_ is built to be intuitive, so we encourage you to copy-paste this code and toy with some parameters!
 
 
-### <a href="https://tsflex.github.io/tsflex/processing/#getting-started">Series processing</a>
+### <a href="https://predict-idlab.github.io/tsflex/processing/#getting-started">Series processing</a>
 
 ```python
 import pandas as pd; import scipy.signal as ssig; import numpy as np
@@ -37,7 +37,7 @@ from tsflex.processing import SeriesProcessor, SeriesPipeline
 
 # 1. -------- Get your time-indexed data --------
 # Data contains 3 columns; ["ACC_x", "ACC_y", "ACC_z"]
-url = "https://github.com/tsflex/tsflex/raw/main/examples/data/empatica/acc.parquet"
+url = "https://github.com/predict-idlab/tsflex/raw/main/examples/data/empatica/acc.parquet"
 data = pd.read_parquet(url).set_index("timestamp")
 
 # 2 -------- Construct your processing pipeline --------
@@ -54,7 +54,7 @@ processing_pipe.append(SeriesProcessor(ssig.detrend, ["ACC_x", "ACC_y", "ACC_z"]
 processing_pipe.process(data=data)
 ```
 
-### <a href="https://tsflex.github.io/tsflex/features/#getting-started">Feature extraction</a>
+### <a href="https://predict-idlab.github.io/tsflex/features/#getting-started">Feature extraction</a>
 
 ```python
 import pandas as pd; import scipy.stats as ssig; import numpy as np
@@ -62,7 +62,7 @@ from tsflex.features import FeatureDescriptor, FeatureCollection, NumpyFuncWrapp
 
 # 1. -------- Get your time-indexed data --------
 # Data contains 1 column; ["TMP"]
-url = "https://github.com/tsflex/tsflex/raw/main/examples/data/empatica/tmp.parquet"
+url = "https://github.com/predict-idlab/tsflex/raw/main/examples/data/empatica/tmp.parquet"
 data = pd.read_parquet(url).set_index("timestamp")
 
 # 2 -------- Construct your feature collection --------
