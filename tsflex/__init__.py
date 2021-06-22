@@ -5,6 +5,7 @@
 
 __docformat__ = 'numpy'
 __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
+__version__ = '0.1.1.6'
 __pdoc__ = {
     # do not show tue utils module
     'tsflex.utils': False,
@@ -13,45 +14,4 @@ __pdoc__ = {
     'NumpyFuncWrapper.__call__': True,
 }
 
-
-# from .processing import (
-#     SeriesProcessor,
-#     SeriesPipeline,
-#     SKSeriesPipeline,
-#     dataframe_func,
-#     get_processor_logs,
-# )
-#
-# from .features import (
-#     FeatureDescriptor,
-#     MultipleFeatureDescriptors,
-#     FeatureCollection,
-#     SKFeatureCollection,
-#     NumpyFuncWrapper,
-#     get_feature_logs,
-# )
-#
-# from .chunking import chunk_data
-
-__all__ = [
-    # # Processing
-    # "SeriesProcessor",
-    # "dataframe_func",
-    # "SeriesPipeline",
-    # "SKSeriesPipeline",
-    # "get_processor_logs",
-    #
-    # # Features
-    # "NumpyFuncWrapper",
-    # "FeatureDescriptor",
-    # "MultipleFeatureDescriptors",
-    # "FeatureCollection",
-    # "SKFeatureCollection",
-    # "get_feature_logs",
-
-    # Chunking
-    # "chunk_data",
-
-    # documentation
-    "__pdoc__"
-]
+__all__ = ["__version__", "__pdoc__"]
