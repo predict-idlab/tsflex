@@ -1,4 +1,4 @@
-"""Tests for the utils (and the fixtures)."""  # Kinda feels like meta testing
+"""Tests for the tsflex.utils submodule."""
 
 __author__ = "Jeroen Van Der Donckt, Emiel Deprost, Jonas Van Der Donckt"
 
