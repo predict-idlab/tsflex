@@ -136,8 +136,8 @@ class FeatureCollection:
                 raise TypeError(f"type: {type(feature)} is not supported - {feature}")
 
     @staticmethod
-    def _executor(dummy: int):
-        stroll, function = next(stroll_feat_generator)
+    def _executor(idx: int):
+        stroll, function = stroll_feat_list[idx]
         return stroll.apply_func(function)
 
     def _stroll_feature_generator(
@@ -279,7 +279,6 @@ class FeatureCollection:
 
         calculated_feature_list: List[pd.DataFrame] = []
 
-        global stroll_feat_generator
         stroll_feat_generator = self._stroll_feature_generator(
             series_dict, window_idx, approve_sparsity
         )
@@ -289,6 +288,11 @@ class FeatureCollection:
             for stroll, func in stroll_feat_generator:
                 calculated_feature_list.append(stroll.apply_func(func))
         else:
+            # ---- Future work -----
+            # Try locking inside the executer when calling next() on a global generator
+            # Create global (precomputed) stroll-feature list 
+            global stroll_feat_list
+            stroll_feat_list = [stroll_feat for stroll_feat in stroll_feat_generator]
             # https://pathos.readthedocs.io/en/latest/pathos.html#usage
             with ProcessPool(nodes=n_jobs, source=True) as pool:
                 results = pool.uimap(
