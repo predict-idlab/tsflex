@@ -24,6 +24,27 @@ If you are using [**pip**](https://pypi.org/project/tsflex/), just execute the f
 pip install tsflex
 ```
 
+## Why tsflex?
+
+### What it does 💪
+
+* [processing](https://predict-idlab.github.io/tsflex/processing) of time-series data
+* [feature-extraction](https://predict-idlab.github.io/tsflex/features) from (multi-variate) time-series data in a **strided-window** manner
+
+### Advantages ✅
+
+* maintains **time-index** of the data
+* *flexible*;
+    * versatile processing / feature calculation function input and output  
+      => **integrates natively** with many existing packages for processing (e.g., [scipy.signal](https://docs.scipy.org/doc/scipy/reference/tutorial/signal.html)) & feature (e.g., [numpy](https://numpy.org/doc/stable/reference/routines.html), [scipy.stats](https://docs.scipy.org/doc/scipy/reference/tutorial/stats.html))
+    * handles **multi-variate** time-series
+    * feature extraction handles **multiple strides & window sizes**
+* efficient view-based operations
+    * extremely low memory peak & very fast execution times ([see benchmarks]())
+    <!-- * faster than any existing library (single- & multi-core)
+    * lower memory peak than any existing library (single- & multi-core) -->
+* while making **little to no assumptions** about the time-series data
+
 ## Usage
 
 _tsflex_ is built to be intuitive, so we encourage you to copy-paste this code and toy with some parameters!
