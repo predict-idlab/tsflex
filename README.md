@@ -7,9 +7,7 @@
 [![Code quality](https://img.shields.io/lgtm/grade/python/g/predict-idlab/tsflex.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/predict-idlab/tsflex/context:python)
 [![Downloads](https://pepy.tech/badge/tsflex)](https://pepy.tech/project/tsflex)
 
-*tsflex* stands for: _**flex**ible **t**ime-**s**eries operations_<br>
-
-It is a `time-series first` toolkit for **processing & feature extraction**, making few assumptions about input data. 
+*tsflex* is a toolkit for _**flex**ible **t**ime-**s**eries_ **[processing](https://predict-idlab.github.io/tsflex/processing) & [feature extraction](https://predict-idlab.github.io/tsflex/features)**, making few assumptions about input data. 
 
 #### Useful links
 
@@ -23,6 +21,20 @@ If you are using [**pip**](https://pypi.org/project/tsflex/), just execute the f
 ```sh
 pip install tsflex
 ```
+
+## Why tsflex? ✨
+
+* flexible;
+    * handles multi-variate time-series
+    * versatile function support  
+      => **integrates natively** with many packages for processing (e.g., [scipy.signal](https://docs.scipy.org/doc/scipy/reference/tutorial/signal.html)) & feature extraction (e.g., [numpy](https://numpy.org/doc/stable/reference/routines.html), [scipy.stats](https://docs.scipy.org/doc/scipy/reference/tutorial/stats.html))
+    * feature-extraction handles **multiple strides & window sizes**
+* efficient view-based operations  
+  => extremely **low memory peak & fast execution** times ([see benchmarks]())
+    <!-- * faster than any existing library (single- & multi-core)
+    * lower memory peak than any existing library (single- & multi-core) -->
+* maintains the **time-index** of the data
+* makes **little to no assumptions** about the time-series data
 
 ## Usage
 
