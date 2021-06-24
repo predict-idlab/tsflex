@@ -136,9 +136,8 @@ class FeatureCollection:
                 raise TypeError(f"type: {type(feature)} is not supported - {feature}")
 
     @staticmethod
-    def _executor(t: Tuple[StridedRolling, NumpyFuncWrapper]):
-        stroll: StridedRolling = t[0]
-        function: NumpyFuncWrapper = t[1]
+    def _executor(idx: int):
+        stroll, function = stroll_feat_list[idx]
         return stroll.apply_func(function)
 
     def _stroll_feature_generator(
@@ -161,6 +160,10 @@ class FeatureCollection:
 
             for feature in self._feature_desc_dict[(key, win, stride)]:
                 yield stroll, feature.function
+
+    def _get_nb_generators(self) -> int:
+        # Get the number of yielded stroll - feature function combinations
+        return sum(len(val) for val in self._feature_desc_dict.values())
 
     def calculate(
         self,
@@ -276,20 +279,25 @@ class FeatureCollection:
 
         calculated_feature_list: List[pd.DataFrame] = []
 
+        stroll_feat_generator = self._stroll_feature_generator(
+            series_dict, window_idx, approve_sparsity
+        )
+
         if n_jobs in [0, 1]:
             # print('Executing feature extraction sequentially')
-            for stroll, func in self._stroll_feature_generator(
-                series_dict, window_idx, approve_sparsity
-            ):
+            for stroll, func in stroll_feat_generator:
                 calculated_feature_list.append(stroll.apply_func(func))
         else:
+            # ---- Future work -----
+            # Try locking inside the executer when calling next() on a global generator
+            # Create global (precomputed) stroll-feature list 
+            global stroll_feat_list
+            stroll_feat_list = [stroll_feat for stroll_feat in stroll_feat_generator]
             # https://pathos.readthedocs.io/en/latest/pathos.html#usage
             with ProcessPool(nodes=n_jobs, source=True) as pool:
                 results = pool.uimap(
                     self._executor,
-                    self._stroll_feature_generator(
-                        series_dict, window_idx, approve_sparsity
-                    )
+                    range(self._get_nb_generators()),
                 )
                 if show_progress:
                     results = tqdm(results, total=len(self._feature_desc_dict))
