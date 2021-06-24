@@ -13,7 +13,7 @@ __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 import logging
 import warnings
 from pathlib import Path
-from typing import Dict, Iterator, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import dill
 import pandas as pd
@@ -140,12 +140,13 @@ class FeatureCollection:
         stroll, function = stroll_feat_list[idx]
         return stroll.apply_func(function)
 
-    def _stroll_feature_generator(
+    def _construct_stroll_feat_list(
         self, series_dict: Dict[str, pd.Series], window_idx: str, approve_sparsity: bool
-    ) -> Iterator[Tuple[StridedRolling, NumpyFuncWrapper]]:
+    ) -> List[Tuple[StridedRolling, NumpyFuncWrapper]]:
         # --- Future work ---
         # We could also make the StridedRolling creation multithreaded
         # Very low priority because the STROLL __init__ is rather efficient!
+        stroll_feat_list: List[Tuple[StridedRolling, NumpyFuncWrapper]] = []
         for key, win, stride in self._feature_desc_dict.keys():
             try:
                 stroll = StridedRolling(
@@ -159,11 +160,8 @@ class FeatureCollection:
                 raise KeyError(f"Key {key} not found in series dict.")
 
             for feature in self._feature_desc_dict[(key, win, stride)]:
-                yield stroll, feature.function
-
-    def _get_nb_generators(self) -> int:
-        # Get the number of yielded stroll - feature function combinations
-        return sum(len(val) for val in self._feature_desc_dict.values())
+                stroll_feat_list.append((stroll, feature.function))
+        return stroll_feat_list
 
     def calculate(
         self,
@@ -278,29 +276,32 @@ class FeatureCollection:
                 series_dict[str(s.name)] = s
 
         calculated_feature_list: List[pd.DataFrame] = []
-
-        stroll_feat_generator = self._stroll_feature_generator(
+        # Note: this variable has a global scope so this is shared in multiprocessing
+        global stroll_feat_list
+        stroll_feat_list = self._construct_stroll_feat_list(
             series_dict, window_idx, approve_sparsity
         )
 
         if n_jobs in [0, 1]:
             # print('Executing feature extraction sequentially')
-            for stroll, func in stroll_feat_generator:
+            if show_progress:
+                stroll_feat_list = tqdm(stroll_feat_list)
+            for stroll, func in stroll_feat_list:
                 calculated_feature_list.append(stroll.apply_func(func))
         else:
             # ---- Future work -----
             # Try locking inside the executer when calling next() on a global generator
             # Create global (precomputed) stroll-feature list 
-            global stroll_feat_list
-            stroll_feat_list = [stroll_feat for stroll_feat in stroll_feat_generator]
+            # global stroll_feat_list
+            # stroll_feat_list = [stroll_feat for stroll_feat in stroll_feat_generator]
             # https://pathos.readthedocs.io/en/latest/pathos.html#usage
             with ProcessPool(nodes=n_jobs, source=True) as pool:
                 results = pool.uimap(
                     self._executor,
-                    range(self._get_nb_generators()),
+                    range(len(stroll_feat_list)),
                 )
                 if show_progress:
-                    results = tqdm(results, total=len(self._feature_desc_dict))
+                    results = tqdm(results, total=len(stroll_feat_list))
                 for f in results:
                     calculated_feature_list.append(f)
                 # Close & join - see: https://github.com/uqfoundation/pathos/issues/131
