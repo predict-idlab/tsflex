@@ -24,16 +24,16 @@ pip install tsflex
 
 ## Why tsflex? ✨
 
-* maintains **time-index** of the data
-* *flexible*;
-    * versatile processing / feature calculation function input and output  
-      => **integrates natively** with many packages for processing (e.g., [scipy.signal](https://docs.scipy.org/doc/scipy/reference/tutorial/signal.html)) & feature-extraction (e.g., [numpy](https://numpy.org/doc/stable/reference/routines.html), [scipy.stats](https://docs.scipy.org/doc/scipy/reference/tutorial/stats.html))
-    * handles **multi-variate** time-series
+* flexible;
+    * handles multi-variate time-series
+    * versatile function support  
+      => **integrates natively** with many packages for processing (e.g., [scipy.signal](https://docs.scipy.org/doc/scipy/reference/tutorial/signal.html)) & feature extraction (e.g., [numpy](https://numpy.org/doc/stable/reference/routines.html), [scipy.stats](https://docs.scipy.org/doc/scipy/reference/tutorial/stats.html))
     * feature-extraction handles **multiple strides & window sizes**
-* efficient view-based operations
-    * extremely low memory peak & fast execution times ([see benchmarks]())
+* efficient view-based operations  
+  => extremely **low memory peak & fast execution** times ([see benchmarks]())
     <!-- * faster than any existing library (single- & multi-core)
     * lower memory peak than any existing library (single- & multi-core) -->
+* maintains the **time-index** of the data
 * makes **little to no assumptions** about the time-series data
 
 ## Usage
