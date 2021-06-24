@@ -172,7 +172,12 @@ def chunk_data(
         for (t_begin_c, t_end_c) in zip(gaps, gaps[1:]):
             # The t_end is the t_start of the new time range -> hence [:-1]
             # => cut on [t_start_c(hunk), t_end_c(hunk)[
-            sig_chunk = series[t_begin_c:t_end_c][:-1]
+            sig_chunk = series[t_begin_c:t_end_c]
+            if t_end_c < gaps[-1]:
+                # Note: we doe not adjust when t_end_c = gaps[-1]
+                #   (as gaps-[-1] is not really a gap)
+                sig_chunk = sig_chunk[:-1]
+
             if len(sig_chunk) > 2:  # re-adjust the t_end
                 t_end_c = sig_chunk.index[-1]
             else:

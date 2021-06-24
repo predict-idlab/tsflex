@@ -74,13 +74,13 @@ class StridedRolling:
     )
 
     def __init__(
-        self,
-        data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
-        window: pd.Timedelta,
-        stride: pd.Timedelta,
-        window_idx: Optional[str] = "end",
-        bound_method: Optional[str] = "inner",
-        approve_sparsity: Optional[bool] = False,
+            self,
+            data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
+            window: pd.Timedelta,
+            stride: pd.Timedelta,
+            window_idx: Optional[str] = "end",
+            bound_method: Optional[str] = "inner",
+            approve_sparsity: Optional[bool] = False,
     ):
         self.window: pd.Timedelta = window
         self.stride: pd.Timedelta = stride
@@ -121,17 +121,18 @@ class StridedRolling:
 
         # ---------- Efficient numpy code -------
         # 1. Convert everything to int64
-        np_start = t_start.to_datetime64().astype(np.int64)
-        np_window = self.window.to_timedelta64().astype(np.int64)
-        np_stride = self.stride.to_timedelta64().astype(np.int64)
+        np_start = t_start.to_datetime64()
+        np_window = self.window.to_timedelta64()
+        np_stride = self.stride.to_timedelta64()
 
         # 2. Precompute the start & end times (these remain the same for each series)
         # note: this if equivalent to:
         #   if `window` == 'begin":
-        #       start_times = self.index.values.astype(np.int64)
+        #       start_times = self.index.values
         np_start_times = np.arange(
-            start=np_start, stop=np_start + len(self.index)*np_stride, step=np_stride,
-            dtype=np.int64,
+            start=np_start, stop=np_start + (len(self.index) * np_stride),
+            step=np_stride,
+            dtype=np.datetime64,
         )
         np_end_times = np_start_times + np_window
 
@@ -141,13 +142,13 @@ class StridedRolling:
             np_series = series.values
             np_series.flags.writeable = False
 
-            np_idx_times = series.index.values.astype(np.int64)
+            np_idx_times = series.index.values
             self.series_containers.append(
                 StridedRolling._NumpySeriesContainer(
                     # TODO: maybe save the pd.Series instead of the np.series
                     values=np_series,
                     # the slicing will be performed on [ t_start, t_end [
-                    # TODO: this can mabye be optimized -> further look into this
+                    # TODO: this can maybe be optimized -> further look into this
                     # np_idx_times, np_start_times, & np_end_times are all sorted!
                     # as we assume & check that the time index is monotonically
                     # increasing & the latter 2 are created using `np.arange()`
@@ -172,7 +173,7 @@ class StridedRolling:
 
     @staticmethod
     def _determine_bounds(
-        series_list: List[pd.Series], bound_method: str
+            series_list: List[pd.Series], bound_method: str
     ) -> Tuple[pd.Timestamp, pd.Timestamp]:
         """Determine the bounds of the passed series.
 
@@ -242,6 +243,7 @@ class StridedRolling:
           the ``output_names`` attributes of its constructor.
 
         """
+
         # Convert win & stride to time-string if available :)
         def create_feat_col_name(feat_name) -> str:
             win_str = timedelta_to_str(self.window)
@@ -258,7 +260,7 @@ class StridedRolling:
         def get_slices(idx):
             # get the slice of each series for the given index
             return [
-                sc.values[sc.start_indexes[idx] : sc.end_indexes[idx]]
+                sc.values[sc.start_indexes[idx]: sc.end_indexes[idx]]
                 for sc in self.series_containers
             ]
 
