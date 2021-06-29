@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "tsflex"
-version = "0.1.1.5"
-description = "Toolkit for flexible processing & feature extraction on time-series data"
+version = "0.1.1.6"
+description = "Toolkit for flexible time-series processing & feature extraction"
 authors = ["Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"]
 readme = "README.md"
 license = "MIT"
