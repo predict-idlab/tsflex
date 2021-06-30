@@ -26,4 +26,6 @@ def logging_file_to_df(logging_file_path: str) -> pd.DataFrame:
             line = line.split(" - ")
             for idx, col in enumerate(column_names):
                 data[col].append(line[idx].strip())
-    return pd.DataFrame(data)
+    df = pd.DataFrame(data)
+    df["log_time"] = pd.to_datetime(df["log_time"])
+    return df

@@ -161,7 +161,8 @@ class SeriesPipeline:
             if logging_file_path.exists():
                 warnings.warn(
                     f"Logging file ({logging_file_path}) already exists. "
-                    "This file will be overwritten!"
+                    "This file will be overwritten!",
+                    RuntimeWarning,
                 )
                 # Clear the file
                 #  -> because same FileHandler is used when calling this method twice
