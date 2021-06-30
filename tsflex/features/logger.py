@@ -31,7 +31,7 @@ def _parse_message(message: str) -> list:
     matches = re.findall(regex, message)
     assert len(matches) == 4
     func = matches[0]
-    key = matches[1].replace("'", "")  # TODO: check if this support multiple keys?
+    key = matches[1].replace("'", "") 
     window, stride = matches[2].split(",")[0], matches[2].split(",")[1]
     duration_s = float(matches[3].rstrip(" seconds"))
     return [func, key, window, stride, duration_s]
@@ -54,14 +54,14 @@ def _parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
     Returns
     -------
     pd.DataFrame
-        A DataFrame with the features its function, input keys and calculation duration.
+        A DataFrame with the features its function, input series names and 
+        calculation duration.
 
     """
     df = logging_file_to_df(logging_file_path)
     df[["function", "series_names", "window", "stride", "duration"]] = list(
         df["message"].apply(_parse_message)
     )
-    df["duration"] = pd.to_timedelta(df["duration"], unit="s")
     df["window"] = pd.to_timedelta(df["window"]).apply(timedelta_to_str)
     df["stride"] = pd.to_timedelta(df["stride"]).apply(timedelta_to_str)
     return df.drop(columns=["name", "log_level", "message"])
@@ -79,10 +79,12 @@ def get_feature_logs(logging_file_path: str) -> pd.DataFrame:
     Returns
     -------
     pd.DataFrame
-        A DataFrame with the features its function, input keys and calculation duration.
+        A DataFrame with the features its function, input series names and 
+        calculation duration.
 
     """
     df = _parse_logging_execution_to_df(logging_file_path)
+    df["duration"] = pd.to_timedelta(df["duration"], unit="s")
     return df
 
 

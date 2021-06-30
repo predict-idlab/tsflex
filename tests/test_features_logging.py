@@ -11,7 +11,7 @@ import numpy as np
 from tsflex.features import NumpyFuncWrapper
 from tsflex.features import FeatureDescriptor, MultipleFeatureDescriptors
 from tsflex.features import FeatureCollection
-from tsflex.features import get_feature_logs
+from tsflex.features import get_feature_logs, get_function_stats, get_series_names_stats
 
 from .utils import dummy_data, logging_file_path
 
@@ -51,6 +51,18 @@ def test_simple_features_logging(dummy_data, logging_file_path):
     assert set(logging_df["series_names"].values) == set(["(EDA,)", "(ACC_x,)", "(TMP,)"])
     assert all(logging_df["window"] == "5s")
     assert all(logging_df["stride"] == "2.5s")
+
+    function_stats_df = get_function_stats(logging_file_path)
+    assert len(function_stats_df) == 2
+    assert set(function_stats_df.index) == set([(s, "5s", "2.5s") for s in ["sum", "amin"]])
+    assert all(function_stats_df["duration"]["mean"] > 0)
+    assert function_stats_df["duration"]["count"].sum() == 4
+
+    series_names_df = get_series_names_stats(logging_file_path)
+    assert len(series_names_df) == 3
+    assert set(series_names_df.index) == set([(s, "5s", "2.5s") for s in ["(EDA,)", "(TMP,)", "(ACC_x,)"]])
+    assert all(series_names_df["duration"]["mean"] > 0)
+    assert series_names_df["duration"]["count"].sum() == 4
 
 
 def test_file_warning_features_logging(dummy_data, logging_file_path):
