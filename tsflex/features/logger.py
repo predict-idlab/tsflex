@@ -58,9 +58,10 @@ def _parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
 
     """
     df = logging_file_to_df(logging_file_path)
-    df[["function", "key", "window", "stride", "duration"]] = list(
+    df[["function", "series_names", "window", "stride", "duration"]] = list(
         df["message"].apply(_parse_message)
     )
+    df["duration"] = pd.to_timedelta(df["duration"], unit="s")
     df["window"] = pd.to_timedelta(df["window"]).apply(timedelta_to_str)
     df["stride"] = pd.to_timedelta(df["stride"]).apply(timedelta_to_str)
     return df.drop(columns=["name", "log_level", "message"])
@@ -109,7 +110,7 @@ def get_function_stats(logging_file_path: str) -> pd.DataFrame:
     )
 
 
-def get_key_stats(logging_file_path: str) -> pd.DataFrame:
+def get_series_names_stats(logging_file_path: str) -> pd.DataFrame:
     """Get execution (time) statistics for each `key-(window,stride)` combination.
 
     Parameters
@@ -127,7 +128,7 @@ def get_key_stats(logging_file_path: str) -> pd.DataFrame:
     """
     df = _parse_logging_execution_to_df(logging_file_path)
     return (
-        df.groupby(["key", "window", "stride"])
+        df.groupby(["series_names", "window", "stride"])
         .agg({"duration": ["sum", "mean", "std", "count"]})
         .sort_values(by=("duration", "sum"), ascending=False)
     )

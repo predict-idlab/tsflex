@@ -13,12 +13,12 @@ from tsflex.processing import SeriesProcessor, SeriesPipeline
 from tsflex.processing.series_pipeline import _ProcessingError
 from tsflex.processing import get_processor_logs
 
-from .utils import dummy_data
+from .utils import dummy_data, logging_file_path
 
 
 test_path = os.path.abspath(os.path.dirname( __file__ ))
 
-def test_simple_processing_logging(dummy_data):
+def test_simple_processing_logging(dummy_data, logging_file_path):
     def interpolate(series: pd.Series) -> pd.Series:
         return series.interpolate()
 
@@ -26,7 +26,6 @@ def test_simple_processing_logging(dummy_data):
     def drop_nans(df: pd.DataFrame) -> pd.DataFrame:
         return df.dropna()
 
-    logging_file_path = os.path.join(test_path, 'logging.log')
     assert not os.path.exists(logging_file_path)
 
     inp = dummy_data.copy()
@@ -53,11 +52,8 @@ def test_simple_processing_logging(dummy_data):
     assert all(logging_df["function"].values == [step.name for step in series_pipeline.processing_steps])
     assert all(logging_df["series_names"].values == ["(TMP,), (ACC_x,)", "(TMP,)"])
 
-    # CLEANUP
-    os.remove(logging_file_path)
 
-
-def test_file_warning_processing_logging(dummy_data):
+def test_file_warning_processing_logging(dummy_data, logging_file_path):
     def interpolate(series: pd.Series) -> pd.Series:
         return series.interpolate()
 
@@ -65,7 +61,6 @@ def test_file_warning_processing_logging(dummy_data):
     def drop_nans(df: pd.DataFrame) -> pd.DataFrame:
         return df.dropna()
 
-    logging_file_path = os.path.join(test_path, 'logging.log')
     assert not os.path.exists(logging_file_path)
 
     inp = dummy_data.copy()
@@ -87,5 +82,3 @@ def test_file_warning_processing_logging(dummy_data):
         assert len(w) == 1
         assert all([issubclass(warn.category, RuntimeWarning) for warn in w])
         assert "already exists" in str(w[0])
-        # CLEANUP
-        os.remove(logging_file_path)
