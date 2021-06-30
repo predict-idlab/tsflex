@@ -2,17 +2,16 @@
 
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
+import dill
+import pandas as pd
+
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
-import pandas as pd
-import dill
-import logging
-import warnings
-
-from ..utils.data import series_dict_to_df, to_series_list, flatten
 from .series_processor import SeriesProcessor
 from .logger import logger
+from ..utils.data import series_dict_to_df, to_series_list, flatten
+from ..utils.logging import delete_logging_handlers, add_logging_handler
 
 
 class _ProcessingError(Exception):
@@ -149,32 +148,10 @@ class SeriesPipeline:
 
         """
         # Delete other logging handlers
-        if len(logger.handlers) > 1:
-            logger.handlers = [
-                h for h in logger.handlers if type(h) == logging.StreamHandler
-            ]
-        assert len(logger.handlers) == 1, "Multiple logging StreamHandlers present!!"
-
+        delete_logging_handlers(logger)
+        # Add logging handler (if path provided)
         if logging_file_path:
-            if not isinstance(logging_file_path, Path):
-                logging_file_path = Path(logging_file_path)
-            if logging_file_path.exists():
-                warnings.warn(
-                    f"Logging file ({logging_file_path}) already exists. "
-                    "This file will be overwritten!",
-                    RuntimeWarning,
-                )
-                # Clear the file
-                #  -> because same FileHandler is used when calling this method twice
-                open(logging_file_path, "w").close()
-            f_handler = logging.FileHandler(logging_file_path, mode="w")
-            f_handler.setFormatter(
-                logging.Formatter(
-                    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-                )
-            )
-            f_handler.setLevel(logging.INFO)
-            logger.addHandler(f_handler)
+            add_logging_handler(logger, logging_file_path)
 
         # Convert the data to a series_dict
         series_dict: Dict[str, pd.Series] = {}
