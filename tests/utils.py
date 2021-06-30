@@ -24,6 +24,14 @@ def dummy_data() -> pd.DataFrame:
     df.set_index("timestamp", inplace=True)
     return df
 
+@pytest.fixture
+def logging_file_path() -> str:
+    logging_path = proj_dir + "/tests/logging.log"
+    yield logging_path
+    # Cleanup after test
+    if os.path.exists(logging_path):
+        os.remove(logging_path)
+
 
 def dataframe_to_series_dict(df: pd.DataFrame) -> Dict[str, pd.Series]:
     return {col: df[col].copy() for col in df.columns}

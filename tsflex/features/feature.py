@@ -185,7 +185,7 @@ class MultipleFeatureDescriptors:
 
     Parameters
     ----------
-    functions : List[Union[NumpyFuncWrapper, Callable]]
+    functions : Union[NumpyFuncWrapper, Callable, List[Union[NumpyFuncWrapper, Callable]]]
         The functions, can be either of both types (even in a single array).
     series_names : Union[str, Tuple[str], List[str], List[Tuple[str]]]
         The names of the series on which the feature function should be applied.
@@ -214,7 +214,7 @@ class MultipleFeatureDescriptors:
     """
     def __init__(
         self,
-        functions: List[Union[NumpyFuncWrapper, Callable]],
+        functions: Union[NumpyFuncWrapper, Callable, List[Union[NumpyFuncWrapper, Callable]]],
         series_names: Union[str, Tuple[str], List[str], List[Tuple[str]]],
         windows: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
         strides: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
@@ -223,7 +223,7 @@ class MultipleFeatureDescriptors:
         # NumpyFuncWrapper objects for the same function in the FeatureDescriptor
         def to_np_func_wrapper(f: Callable): 
             return f if isinstance(f, NumpyFuncWrapper) else NumpyFuncWrapper(f)
-        functions = [to_np_func_wrapper(f) for f in functions]
+        functions = [to_np_func_wrapper(f) for f in to_list(functions)]
         # Convert the series names to list of tuples
         series_names = [to_tuple(names) for names in to_list(series_names)]
         # Assert that function inputs (series) all have the same length

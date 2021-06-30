@@ -251,7 +251,8 @@ class FeatureCollection:
             if logging_file_path.exists():
                 warnings.warn(
                     f"Logging file ({logging_file_path}) already exists. "
-                    f"This file will be overwritten!"
+                    f"This file will be overwritten!",
+                    RuntimeWarning,
                 )
                 # Clear the file
                 #  -> because same FileHandler is used when calling this method twice

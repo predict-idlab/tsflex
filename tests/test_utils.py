@@ -2,11 +2,18 @@
 
 __author__ = "Jeroen Van Der Donckt, Emiel Deprost, Jonas Van Der Donckt"
 
+import os
 import pandas as pd
 import numpy as np
 
 from pandas.testing import assert_index_equal, assert_series_equal
-from .utils import dummy_data, dataframe_to_series_dict, pipe_transform, series_to_series_dict
+from .utils import (
+    dummy_data,
+    logging_file_path,
+    dataframe_to_series_dict,
+    pipe_transform,
+    series_to_series_dict,
+)
 
 
 def test_load_dummy_data(dummy_data):
@@ -18,6 +25,25 @@ def test_load_dummy_data(dummy_data):
     assert isinstance(dummy_data["ACC_x"], pd.Series)
     assert isinstance(dummy_data["ACC_y"], pd.Series)
     assert isinstance(dummy_data["ACC_z"], pd.Series)
+
+
+# 2 tests for the logging file path, as 1 should fail because the file created by the
+# other doesn't get cleaned up properly
+
+def test_get_logging_path1(logging_file_path):
+    assert not os.path.exists(logging_file_path)
+    # Create a file
+    with open(logging_file_path, "w"):
+        pass
+    assert os.path.exists(logging_file_path)
+
+def test_get_logging_path2(logging_file_path):
+    assert not os.path.exists(logging_file_path)
+    # Create a file
+    with open(logging_file_path, "w"):
+        pass
+    assert os.path.exists(logging_file_path)
+
 
 def test_to_series_dict(dummy_data):
     # dataframe to series dict
@@ -35,22 +61,24 @@ def test_to_series_dict(dummy_data):
     assert_index_equal(series_dict["TMP"].index, dummy_data.index)
     assert_series_equal(series_dict["TMP"], dummy_data["TMP"])
 
+
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.linear_model import LinearRegression
 
+
 def test_pipe_transform(dummy_data):
     pipe = Pipeline(
         steps=[
-            ('impute', SimpleImputer(strategy='median')),
-            ('scale', MinMaxScaler()),
-            ('regr', LinearRegression()),
+            ("impute", SimpleImputer(strategy="median")),
+            ("scale", MinMaxScaler()),
+            ("regr", LinearRegression()),
         ]
     )
 
-    inp = dummy_data[['EDA', 'TMP', 'ACC_x']].copy()
-    outp = dummy_data['ACC_y']
+    inp = dummy_data[["EDA", "TMP", "ACC_x"]].copy()
+    outp = dummy_data["ACC_y"]
     inp.iloc[:10] = np.nan
 
     pipe.fit(inp, outp)
@@ -58,5 +86,5 @@ def test_pipe_transform(dummy_data):
     inp_transformed = pipe_transform(pipe, inp)
     assert inp_transformed.shape == inp.shape
     assert not np.any(np.isnan(inp_transformed))
-    assert np.isclose(np.max(inp_transformed, axis=0), [1]*3).all()
-    assert np.isclose(np.min(inp_transformed, axis=0), [0]*3).all()
+    assert np.isclose(np.max(inp_transformed, axis=0), [1] * 3).all()
+    assert np.isclose(np.min(inp_transformed, axis=0), [0] * 3).all()

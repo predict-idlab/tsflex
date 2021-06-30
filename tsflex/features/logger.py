@@ -31,7 +31,7 @@ def _parse_message(message: str) -> list:
     matches = re.findall(regex, message)
     assert len(matches) == 4
     func = matches[0]
-    key = matches[1].replace("'", "")  # TODO: check if this support multiple keys?
+    key = matches[1].replace("'", "") 
     window, stride = matches[2].split(",")[0], matches[2].split(",")[1]
     duration_s = float(matches[3].rstrip(" seconds"))
     return [func, key, window, stride, duration_s]
@@ -54,11 +54,12 @@ def _parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
     Returns
     -------
     pd.DataFrame
-        A DataFrame with the features its function, input keys and calculation duration.
+        A DataFrame with the features its function, input series names and 
+        calculation duration.
 
     """
     df = logging_file_to_df(logging_file_path)
-    df[["function", "key", "window", "stride", "duration"]] = list(
+    df[["function", "series_names", "window", "stride", "duration"]] = list(
         df["message"].apply(_parse_message)
     )
     df["window"] = pd.to_timedelta(df["window"]).apply(timedelta_to_str)
@@ -78,10 +79,12 @@ def get_feature_logs(logging_file_path: str) -> pd.DataFrame:
     Returns
     -------
     pd.DataFrame
-        A DataFrame with the features its function, input keys and calculation duration.
+        A DataFrame with the features its function, input series names and 
+        calculation duration.
 
     """
     df = _parse_logging_execution_to_df(logging_file_path)
+    df["duration"] = pd.to_timedelta(df["duration"], unit="s")
     return df
 
 
@@ -109,7 +112,7 @@ def get_function_stats(logging_file_path: str) -> pd.DataFrame:
     )
 
 
-def get_key_stats(logging_file_path: str) -> pd.DataFrame:
+def get_series_names_stats(logging_file_path: str) -> pd.DataFrame:
     """Get execution (time) statistics for each `key-(window,stride)` combination.
 
     Parameters
@@ -127,7 +130,7 @@ def get_key_stats(logging_file_path: str) -> pd.DataFrame:
     """
     df = _parse_logging_execution_to_df(logging_file_path)
     return (
-        df.groupby(["key", "window", "stride"])
+        df.groupby(["series_names", "window", "stride"])
         .agg({"duration": ["sum", "mean", "std", "count"]})
         .sort_values(by=("duration", "sum"), ascending=False)
     )

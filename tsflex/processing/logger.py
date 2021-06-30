@@ -74,9 +74,9 @@ def get_processor_logs(logging_file_path: str) -> pd.DataFrame:
     Returns
     -------
     pd.DataFrame
-        A DataFrame containing each processor its duration, required keys, and whether it 
-        is a ``single_series_func`` .
-
+        A DataFrame containing each processor its duration and its series names.
+    
     """
     df = _parse_logging_execution_to_df(logging_file_path)
+    df["duration"] = pd.to_timedelta(df["duration"], unit="s")
     return df
