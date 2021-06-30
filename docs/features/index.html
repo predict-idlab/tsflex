@@ -281,7 +281,8 @@ is passed to the <code><a title="tsflex.features.FeatureCollection" href="#tsfle
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><code>pd.DataFrame</code></dt>
-<dd>A DataFrame with the features its function, input keys and calculation duration.</dd>
+<dd>A DataFrame with the features its function, input series names and
+calculation duration.</dd>
 </dl></div>
 </dd>
 <dt id="tsflex.features.get_function_stats"><code class="name flex">
@@ -302,8 +303,8 @@ is passed to the <code><a title="tsflex.features.FeatureCollection" href="#tsfle
 combination the mean (time), std (time), sum (time), and number of executions.</dd>
 </dl></div>
 </dd>
-<dt id="tsflex.features.get_key_stats"><code class="name flex">
-<span>def <span class="ident">get_key_stats</span></span>(<span>logging_file_path)</span>
+<dt id="tsflex.features.get_series_names_stats"><code class="name flex">
+<span>def <span class="ident">get_series_names_stats</span></span>(<span>logging_file_path)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Get execution (time) statistics for each <code>key-(window,stride)</code> combination.</p>
@@ -453,7 +454,7 @@ lists. Total number of created Features will be:</p>
 </code></pre>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>functions</code></strong> :&ensp;<code>List[Union[<a title="tsflex.features.NumpyFuncWrapper" href="#tsflex.features.NumpyFuncWrapper">NumpyFuncWrapper</a>, Callable]]</code></dt>
+<dt><strong><code>functions</code></strong> :&ensp;<code>Union[<a title="tsflex.features.NumpyFuncWrapper" href="#tsflex.features.NumpyFuncWrapper">NumpyFuncWrapper</a>, Callable, List[Union[<a title="tsflex.features.NumpyFuncWrapper" href="#tsflex.features.NumpyFuncWrapper">NumpyFuncWrapper</a>, Callable]]]</code></dt>
 <dd>The functions, can be either of both types (even in a single array).</dd>
 <dt><strong><code>series_names</code></strong> :&ensp;<code>Union[str, Tuple[str], List[str], List[Tuple[str]]]</code></dt>
 <dd>
@@ -824,7 +825,7 @@ alt="logo should be displayed here" style="width: 100%;"></a>
 <ul class="">
 <li><code><a title="tsflex.features.get_feature_logs" href="#tsflex.features.get_feature_logs">get_feature_logs</a></code></li>
 <li><code><a title="tsflex.features.get_function_stats" href="#tsflex.features.get_function_stats">get_function_stats</a></code></li>
-<li><code><a title="tsflex.features.get_key_stats" href="#tsflex.features.get_key_stats">get_key_stats</a></code></li>
+<li><code><a title="tsflex.features.get_series_names_stats" href="#tsflex.features.get_series_names_stats">get_series_names_stats</a></code></li>
 </ul>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
