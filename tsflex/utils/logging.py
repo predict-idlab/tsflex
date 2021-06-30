@@ -2,7 +2,59 @@
 
 __author__ = 'Jeroen Van Der Donckt'
 
+import logging
+import warnings
 import pandas as pd
+
+from pathlib import Path
+from typing import Union
+
+
+def delete_logging_handlers(logger: logging.Logger):
+    """Delete all logging handlers that are not stream-handlers.
+
+    Parameters
+    ----------
+    logger : logging.Logger
+        The logger.
+    
+    """
+    if len(logger.handlers) > 1:
+        logger.handlers = [
+            h for h in logger.handlers if type(h) == logging.StreamHandler
+        ]
+    assert len(logger.handlers) == 1, "Multiple logging StreamHandlers present!!"
+
+def add_logging_handler(logger: logging.Logger, logging_file_path: Union[str, Path]):
+    """Add a logging file-handler to the logger.
+
+    Parameters
+    ----------
+    logger : logging.Logger
+        The logger.
+     logging_file_path : Union[str, Path]
+        The file path for the file handler.
+    
+    """
+    if not isinstance(logging_file_path, Path):
+        logging_file_path = Path(logging_file_path)
+    if logging_file_path.exists():
+        warnings.warn(
+            f"Logging file ({logging_file_path}) already exists. "
+            f"This file will be overwritten!",
+            RuntimeWarning,
+        )
+        # Clear the file
+        #  -> because same FileHandler is used when calling this method twice
+        open(logging_file_path, "w").close()
+    f_handler = logging.FileHandler(logging_file_path, mode="w")
+    f_handler.setFormatter(
+        logging.Formatter(
+            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        )
+    )
+    f_handler.setLevel(logging.INFO)
+    logger.addHandler(f_handler)
 
 
 def logging_file_to_df(logging_file_path: str) -> pd.DataFrame:
