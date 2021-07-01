@@ -15,7 +15,7 @@
 
     # Show collapsed source code block next to each item.
     # Disabling this can improve rendering speed of large modules.
-    show_source_code = False
+    show_source_code = True
 
     # If set, format links to objects in online source code repository
     # according to this template. Supported keywords for interpolation
@@ -42,7 +42,7 @@
 
     # If set, insert Google Analytics tracking code. Value is GA
     # tracking id (UA-XXXXXX-Y).
-    google_analytics = ''
+    google_analytics = 'G-C88NHWRRP8'
 
     # If set, insert Google Custom Search search bar widget above the sidebar index.
     # The whitespace-separated tokens represent arbitrary extra queries (at least one
