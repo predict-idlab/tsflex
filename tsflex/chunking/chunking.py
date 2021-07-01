@@ -9,15 +9,16 @@ from typing import Dict, List, Union, Tuple, Optional
 import pandas as pd
 
 from ..utils.data import to_series_list
+from ..utils.time import parse_time_arg
 
 
 def chunk_data(
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         fs_dict: Dict[str, int],
-        chunk_range_margin_s: Optional[float] = None,
-        min_chunk_dur_s: Optional[float] = None,
-        max_chunk_dur_s: Optional[float] = None,
-        sub_chunk_overlap_s: Optional[float] = 0,
+        chunk_range_margin: Optional[Union[float, str, pd.Timedelta]] = None,
+        min_chunk_dur: Optional[Union[float, str, pd.Timedelta]] = None,
+        max_chunk_dur: Optional[Union[float, str, pd.Timedelta]] = None,
+        sub_chunk_overlap: Optional[Union[float, str, pd.Timedelta]] = "0s",
         copy=True,
         verbose=False,
 ) -> List[List[pd.Series]]:
@@ -28,10 +29,6 @@ def chunk_data(
     1. Detecting gaps in the `data`(-list) time series.
     2. Divides the `data` into chunks, according to the parameter
         configuration and the detected gaps.
-
-    .. todo::
-        The (int/float) time-based chunk argument could also support
-        time-strings or even pd.timedelta.
 
     Notes
     -----
@@ -54,24 +51,24 @@ def chunk_data(
     fs_dict: Dict[str, int]
         The sample frequency dict. This dict must at least withhold all the keys
         from the items in `data`.
-    chunk_range_margin_s: float, optional
-        The allowed margin (in seconds) between same time-range chunks their start
-        and end time. If `None` the margin will be set as:
+    chunk_range_margin: Union[float, str, pd.Timedelta], optional
+        The allowed margin (in seconds if a flaot) between same time-range chunks their
+        start and end time. If `None` the margin will be set as:
 
             2 / min(fs_dict.intersection(data.names).values())
 
          Which is equivalent to twice the min-fs (= max-period) of the passed `data`,
          by default None.
-    min_chunk_dur_s : float, optional
-        The minimal duration of a chunk in seconds, by default None
+    min_chunk_dur : Union[float, str, pd.Timedelta], optional
+        The minimal duration of a chunk (in seconds if a float), by default None
         Chunks with durations smaller than this will be discarded (and not returned).
-    max_chunk_dur_s : float, optional
-        The maximal duration of a chunk in seconds, by default None
+    max_chunk_dur : Union[float, str, pd.Timedelta], optional
+        The maximal duration of a chunk (in seconds if a float), by default None
         Chunks with durations larger than this will be chunked in smaller `sub_chunks`
         where each sub-chunk has a maximal duration of `max_chunk_dur_s`.
-    sub_chunk_overlap_s: float, optional
-        The sub-chunk boundary overlap in seconds. If available, this margin will be
-        added to either side of the `sub_chunk`. \n
+    sub_chunk_overlap: Union[float, str, pd.Timedelta], optional
+        The sub-chunk boundary overlap (in seconds if a float). If available, this
+        margin will be added to either side of the `sub_chunk`. \n
         This is especially useful to not lose inter-`sub_chunk` data (as each
         `sub_chunk` is in fact a continuous chunk) when window-based aggregations
         are performed on these same time range output (sub_)chunks. \n
@@ -91,20 +88,27 @@ def chunk_data(
     # Convert the input data
     series_list = to_series_list(data)
 
+    if min_chunk_dur is not None:
+        min_chunk_dur = parse_time_arg(min_chunk_dur)
+    if max_chunk_dur is not None:
+        max_chunk_dur = parse_time_arg(max_chunk_dur)
+    sub_chunk_overlap = parse_time_arg(sub_chunk_overlap)
+
     # Assert that there are no duplicate series names and the names reside in fs_dict
     assert len(series_list) == len(set([s.name for s in series_list]))
     assert all([str(s.name) in fs_dict for s in series_list])
 
     # Default arg -> set the chunk range margin to 2x the min-freq its period
-    if chunk_range_margin_s is None:
-        chunk_range_margin_s = 2 / min([fs_dict[str(s.name)] for s in series_list])
-    assert chunk_range_margin_s > 0, "chunk_range_margin_s must be > 0"
-    chunk_range_margin_s = pd.Timedelta(seconds=chunk_range_margin_s)
+    if chunk_range_margin is None:
+        chunk_range_margin = 2 / min([fs_dict[str(s.name)] for s in series_list])
+
+    chunk_range_margin = parse_time_arg(chunk_range_margin)
+    assert chunk_range_margin.total_seconds() > 0, "chunk_range_margin must be > 0"
 
     # Some range asserts
-    assert sub_chunk_overlap_s >= 0, f"sub_chunk_overlap_s must be > 0"
-    if max_chunk_dur_s is not None:
-        assert max_chunk_dur_s > 0, f"max_chunk_dur_s must be > 0"
+    assert sub_chunk_overlap.total_seconds() >= 0, f"sub_chunk_overlap_s must be > 0"
+    if max_chunk_dur is not None:
+        assert max_chunk_dur.total_seconds() > 0, f"max_chunk_dur_s must be > 0"
 
     # Variable in which the same time-range chunks are stored
     # Each list item can be seen as (t_start_chunk, t_end_chunk, chunk_list)
@@ -136,8 +140,8 @@ def chunk_data(
         # Iterate over the same-(time)range-chunk (src) collection
         for src_start, src_end, src_chunks in same_range_chunks:
             # Check for overlap
-            if (abs(src_start - t_chunk_start) <= chunk_range_margin_s and
-                    abs(src_end - t_chunk_end) <= chunk_range_margin_s):
+            if (abs(src_start - t_chunk_start) <= chunk_range_margin and
+                    abs(src_end - t_chunk_end) <= chunk_range_margin):
                 # Check series name not in src_chunks
                 if chunk.name not in [src_c.name for src_c in src_chunks]:
                     src_chunks.append(chunk)
@@ -186,30 +190,32 @@ def chunk_data(
 
             # Check for min duration
             chunk_range_s = int(len(sig_chunk) / fs_sig)
-            if isinstance(min_chunk_dur_s, int) and chunk_range_s < min_chunk_dur_s:
+            if min_chunk_dur is not None and chunk_range_s < \
+                    min_chunk_dur.total_seconds():
                 print_verbose_time(
                     sig_chunk,
                     t_begin_c,
                     t_end_c,
-                    f"Too small chunk min_dur {min_chunk_dur_s} > {sig_chunk.shape}",
+                    f"Too small chunk min_dur {min_chunk_dur} > {sig_chunk.shape}",
                 )
                 continue
 
             # Divide the chunk into sub_chunks (sc's)
-            if max_chunk_dur_s is not None and chunk_range_s > max_chunk_dur_s:
+            if max_chunk_dur is not None and chunk_range_s > \
+                    max_chunk_dur.total_seconds():
                 print_verbose_time(
                     sig_chunk, t_begin_c, t_end_c, "Dividing in sub-chunks"
                 )
                 t_begin_sc = t_begin_c
                 while t_begin_sc < t_end_c:
                     # Calculate the end sub-chunk time
-                    t_end_sc = t_begin_sc + timedelta(seconds=max_chunk_dur_s)
+                    t_end_sc = t_begin_sc + max_chunk_dur
 
                     # Get the end and begin sub-chunk margin
-                    t_end_sc_m = t_end_sc + timedelta(seconds=sub_chunk_overlap_s)
+                    t_end_sc_m = t_end_sc + sub_chunk_overlap
                     t_end_sc_m = min(t_end_c, t_end_sc_m)
 
-                    t_begin_sc_m = t_begin_sc - timedelta(seconds=sub_chunk_overlap_s)
+                    t_begin_sc_m = t_begin_sc - sub_chunk_overlap
                     t_begin_sc_m = max(t_begin_c, t_begin_sc_m)
 
                     # Slice & add the sub-chunk to the list
