@@ -30,96 +30,40 @@
 <section>
 </section>
 <section>
-</section>
-<section>
-<h2 class="section-title" id="header-classes">Classes</h2>
+<h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="tsflex.pipeline.pipeline.Pipeline"><code class="flex name class">
-<span>class <span class="ident">Pipeline</span></span>
-<span>(</span><span>steps, *, memory=None, verbose=False)</span>
+<dt id="tsflex.pipeline.pipeline.make_pipeline"><code class="name flex">
+<span>def <span class="ident">make_pipeline</span></span>(<span>steps, memory=None, verbose=False)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Pipeline of transforms with a final estimator.</p>
-<p>Sequentially apply a list of transforms and a final estimator.
-Intermediate steps of the pipeline must be 'transforms', that is, they
-must implement fit and transform methods.
-The final estimator only needs to implement fit.
-The transformers in the pipeline can be cached using <code>memory</code> argument.</p>
-<p>The purpose of the pipeline is to assemble several steps that can be
-cross-validated together while setting different parameters.
-For this, it enables setting parameters of the various steps using their
-names and the parameter name separated by a '__', as in the example below.
-A step's estimator may be replaced entirely by setting the parameter
-with its name to another estimator, or a transformer removed by setting
-it to 'passthrough' or <code>None</code>.</p>
-<p>Read more in the :ref:<code>User Guide &lt;pipeline&gt;</code>.</p>
-<div class="admonition versionadded">
-<p class="admonition-title">Added in version:&ensp;0.5</p>
-</div>
+<div class="desc"><p>Make a sklearn-<code>Pipeline</code> of given (named) steps containing tsflex components.</p>
+<p>This method creates a pipeline that may contain <code>SKSeriesPipeline</code> and
+<code>SKFeatureCollection</code> steps. Concretely, the pipeline wraps all operators in a
+<code>DataFrameOperator</code>, in order to retain the data its column names.</p>
+<h2 id="note">Note</h2>
+<p>When calling the methods of the returned pipeline, the <code>X</code> argument should always
+be a pandas DataFrame.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>steps</code></strong> :&ensp;<code>list</code></dt>
-<dd>List of (name, transform) tuples (implementing fit/transform) that are
-chained, in the order in which they are chained, with the last object
-an estimator.</dd>
-<dt><strong><code>memory</code></strong> :&ensp;<code>str</code> or <code>object with the joblib.Memory interface</code>, default=<code>None</code></dt>
-<dd>Used to cache the fitted transformers of the pipeline. By default,
-no caching is performed. If a string is given, it is the path to
-the caching directory. Enabling caching triggers a clone of
-the transformers before fitting. Therefore, the transformer
-instance given to the pipeline cannot be inspected
-directly. Use the attribute <code>named_steps</code> or <code>steps</code> to
-inspect estimators within the pipeline. Caching the
-transformers is advantageous when fitting is time consuming.</dd>
-<dt><strong><code>verbose</code></strong> :&ensp;<code>bool</code>, default=<code>False</code></dt>
-<dd>If True, the time elapsed while fitting each step will be printed as it
-is completed.</dd>
-</dl>
-<h2 id="attributes">Attributes</h2>
-<dl>
-<dt><strong><code>named_steps</code></strong> :&ensp;<code>:class:</code>~sklearn.utils.Bunch``</dt>
-<dd>Dictionary-like object, with the following attributes.
-Read-only attribute to access any step parameter by user given name.
-Keys are step names and values are steps parameters.</dd>
-</dl>
-<h2 id="see-also">See Also</h2>
-<dl>
-<dt><code>make_pipeline</code></dt>
-<dd>Convenience function for simplified pipeline construction.</dd>
-</dl>
-<h2 id="examples">Examples</h2>
-<pre><code class="language-python-repl">&gt;&gt;&gt; from sklearn.svm import SVC
-&gt;&gt;&gt; from sklearn.preprocessing import StandardScaler
-&gt;&gt;&gt; from sklearn.datasets import make_classification
-&gt;&gt;&gt; from sklearn.model_selection import train_test_split
-&gt;&gt;&gt; from sklearn.pipeline import Pipeline
-&gt;&gt;&gt; X, y = make_classification(random_state=0)
-&gt;&gt;&gt; X_train, X_test, y_train, y_test = train_test_split(X, y,
-...                                                     random_state=0)
-&gt;&gt;&gt; pipe = Pipeline([('scaler', StandardScaler()), ('svc', SVC())])
-&gt;&gt;&gt; # The pipeline can be used as any other estimator
-&gt;&gt;&gt; # and avoids leaking the test set into the train set
-&gt;&gt;&gt; pipe.fit(X_train, y_train)
-Pipeline(steps=[('scaler', StandardScaler()), ('svc', SVC())])
-&gt;&gt;&gt; pipe.score(X_test, y_test)
-0.88
-</code></pre>
-<p>Create a pipeline.</p></div>
-<h3>Ancestors</h3>
-<ul class="hlist">
-<li>sklearn.pipeline.Pipeline</li>
-<li>sklearn.utils.metaestimators._BaseComposition</li>
-<li>sklearn.base.BaseEstimator</li>
-</ul>
-<h3>Class variables</h3>
-<dl>
-<dt id="tsflex.pipeline.pipeline.Pipeline.steps"><code class="name">var <span class="ident">steps</span></code></dt>
-<dd>
-<div class="desc"></div>
+<dt><strong><code>steps</code></strong> :&ensp;<code>List[Tuple[str, Union[TransformerMixin, BaseEstimator]]]</code></dt>
+<dd>List of (name, transform) tuples (implementing fit/transform) that are chained,
+in the order in which they are chained, with the last object an estimator.</dd>
+<dt><strong><code>memory</code></strong> :&ensp;<code>Union[str, joblib.Memory]</code>, optional</dt>
+<dd>Used to cache the fitted transformers of the pipeline, by default None.
+If None, no caching is performed. If a string is given, it is the path to the
+caching directory. Enabling caching triggers a clone of the transformers before
+fitting. Therefore, the transformer instance given to the pipeline cannot be
+inspected directly. Use the attribute <code>named_steps</code> or <code>steps</code> to inspect
+estimators within the pipeline. Caching the transformers is advantageous when
+fitting is time consuming.</dd>
+<dt><strong><code>verbose</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Whether the time elapsed while fitting each step should be printed, by default
+False.</dd>
+</dl></div>
 </dd>
 </dl>
-</dd>
-</dl>
+</section>
+<section>
 </section>
 </article>
 <nav id="sidebar">
@@ -140,11 +84,9 @@ alt="logo should be displayed here" style="width: 100%;"></a>
 <li><code><a title="tsflex.pipeline" href="index.html">tsflex.pipeline</a></code></li>
 </ul>
 </li>
-<li><h3><a href="#header-classes">Classes</a></h3>
-<ul>
-<li>
-<h4><code><a title="tsflex.pipeline.pipeline.Pipeline" href="#tsflex.pipeline.pipeline.Pipeline">Pipeline</a></code></h4>
-</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="tsflex.pipeline.pipeline.make_pipeline" href="#tsflex.pipeline.pipeline.make_pipeline">make_pipeline</a></code></li>
 </ul>
 </li>
 </ul>
