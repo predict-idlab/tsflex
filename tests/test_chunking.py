@@ -78,8 +78,8 @@ def test_chunking_multivariate_continuous():
         data=[hz_series, twohz_series],
         fs_dict={"1hz_series": 1, "2hz_series": 2},
         copy=True,
-        max_chunk_dur_s=60 * 60,
-        sub_chunk_overlap_s=30,
+        max_chunk_dur=60 * 60,
+        sub_chunk_overlap=30,
         verbose=True
     )
 
@@ -87,7 +87,7 @@ def test_chunking_multivariate_continuous():
     assert len(out) == 3
     # assert that, for the middle part -> the sub-chunk time-range ~= 30
     assert (
-            out[1][1].index[-1] - out[1][1].index[0] - pd.Timedelta('1hour 1min') < \
+            out[1][1].index[-1] - out[1][1].index[0] - pd.Timedelta('1hour 1min') <
             pd.Timedelta('1second')
     )
     # last start minus earliest stop must be ~= 2 times sub_chunk_overlap_s i.e. 1 min
@@ -101,9 +101,9 @@ def test_chunking_multivariate_continuous():
         data=[hz_series, twohz_series],
         fs_dict={"1hz_series": 1, "2hz_series": 2},
         copy=True,
-        max_chunk_dur_s=60 * 60,
-        sub_chunk_overlap_s=30,
-        min_chunk_dur_s=30,
+        max_chunk_dur=60 * 60,
+        sub_chunk_overlap=30,
+        min_chunk_dur=30,
         verbose=True
     )
 
@@ -111,7 +111,7 @@ def test_chunking_multivariate_continuous():
     assert len(out) == 3
     # assert that, for the middle part -> the sub-chunk time-range ~= 30
     assert (
-            out[1][1].index[-1] - out[1][1].index[0] - pd.Timedelta('1hour 1min') < \
+            out[1][1].index[-1] - out[1][1].index[0] - pd.Timedelta('1hour 1min') <
             pd.Timedelta('1second')
     )
     # last start minus earliest stop must be ~= 2 times sub_chunk_overlap_s i.e. 1 min
@@ -137,7 +137,7 @@ def test_chunking_univariate_gaps():
 
     # min chunk duration -> will now disregard the first chunk
     out = chunk_data(data=series, fs_dict={"1hz_series": 1}, copy=True, verbose=True,
-                     min_chunk_dur_s=30)
+                     min_chunk_dur=30)
     assert len(out) == 2
 
     # drop an additional chunk, making the first and chunk which orignates from 0:10 and

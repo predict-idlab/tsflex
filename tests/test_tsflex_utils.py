@@ -4,7 +4,7 @@ __author__ = "Jeroen Van Der Donckt, Emiel Deprost, Jonas Van Der Donckt"
 
 import pandas as pd
 
-from tsflex.utils.timedelta import timedelta_to_str
+from tsflex.utils.time import timedelta_to_str
 
 
 def test_timedelta_to_str():

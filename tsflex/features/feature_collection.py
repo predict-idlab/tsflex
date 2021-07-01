@@ -23,7 +23,7 @@ from .logger import logger
 from .strided_rolling import StridedRolling
 from ..features.function_wrapper import NumpyFuncWrapper
 from ..utils.data import to_list, to_series_list, flatten
-from ..utils.timedelta import timedelta_to_str
+from ..utils.time import timedelta_to_str
 from ..utils.logging import delete_logging_handlers, add_logging_handler
 
 
