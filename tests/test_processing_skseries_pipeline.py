@@ -6,7 +6,7 @@ import pytest
 import pandas as pd
 import numpy as np
 
-from tsflex.pipeline import Pipeline
+from tsflex.pipeline import make_pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import StandardScaler
 from sklearn.linear_model import LinearRegression
@@ -96,7 +96,7 @@ def test_simple_learning_pipeline_start(dummy_data):
         processors, return_all_series=True, drop_keys=["ACC_x", "ACC_y", "ACC_z"]
     )
 
-    pipeline = Pipeline(
+    pipeline = make_pipeline(
         steps=[
             ("processing", series_pipeline),
             ("impute", SimpleImputer(strategy="constant")),
@@ -131,7 +131,7 @@ def test_simple_learning_pipeline_middle(dummy_data):
         processors, return_all_series=True, drop_keys=["ACC_x", "ACC_y", "ACC_z"]
     )
 
-    pipeline = Pipeline(
+    pipeline = make_pipeline(
         steps=[
             ("impute", SimpleImputer(strategy="median")),
             ("processing", series_pipeline),

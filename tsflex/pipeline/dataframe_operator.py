@@ -64,12 +64,25 @@ class DataFrameOperator(BaseEstimator, TransformerMixin):
         operator_cols = (
             X.columns.values if self.operator_cols is None else self.operator_cols
         )
-        print(self.wrapped_operator, operator_cols)
         self.wrapped_operator.fit(X[operator_cols], y)
         return self
 
     def transform(self, X: pd.DataFrame) -> pd.DataFrame:
-        # TODO: document?
+        """Transform the data while retaining the column names.
+
+        This method returns a pandas DataFrame, in order to maintain the column names.
+
+        Parameters
+        ----------
+        X : pd.DataFrame  # TODO: kan een pd.Series ook als input?
+            Dataframe containing the data that has to be transformed by the 
+            `wrapped_operator` function.
+
+        Returns
+        -------
+        pd.DataFrame
+            A DataFrame, containing the transformed data.
+        """
         assert isinstance(X, pd.DataFrame)
         operator_cols = (
             X.columns.values if self.operator_cols is None else self.operator_cols

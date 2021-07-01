@@ -1,5 +1,5 @@
 """init.py for pipeline module."""
 
-from .pipeline import Pipeline
+from .pipeline import make_pipeline
 
-__all__ = ["Pipeline"]
+__all__ = ["make_pipeline"]
