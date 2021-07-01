@@ -12,6 +12,10 @@
 <style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#ebf3ff}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#edfcf4}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
 <style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
 <style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script>
+window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+ga('create', 'G-C88NHWRRP8', 'auto'); ga('send', 'pageview');
+</script><script async src='https://www.google-analytics.com/analytics.js'></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
 <script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
 <link rel="icon" href="https://media.discordapp.net/attachments/372491075153166338/852906324417445908/icon.png">
@@ -227,6 +231,32 @@ For these cases we provide the <a href="#tsflex.processing.dataframe_func">dataf
 <p><a href="#tsflex.processing.get_processor_logs">More info</a></p>
 <p><br></p>
 <hr>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#34;&#34;&#34;Processing module.
+
+.. include:: ../../docs/pdoc_include/processing.md
+
+&#34;&#34;&#34;
+
+__author__ = &#34;Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt&#34;
+
+from .logger import get_processor_logs
+from .series_pipeline import SeriesPipeline
+from .series_processor import SeriesProcessor, dataframe_func
+from .. import __pdoc__
+
+__pdoc__[&#39;SeriesProcessor.__call__&#39;] = True
+
+__all__ = [
+    &#34;dataframe_func&#34;,
+    &#34;SeriesProcessor&#34;,
+    &#34;SeriesPipeline&#34;,
+    &#34;get_processor_logs&#34;,
+]</code></pre>
+</details>
 </section>
 <section>
 <h2 class="section-title" id="header-submodules">Sub-modules</h2>
@@ -274,6 +304,44 @@ Hence, in most cases that <code>func</code> requires a <code>pd.DataFrame</code>
 be sufficient; as you can perform column-based operations on multiple <code>pd.Series</code>
 (e.g., subtract 2 series) and most dataframe operations are also available for a
 <code>pd.Series</code>.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def dataframe_func(func: Callable):
+    &#34;&#34;&#34;Decorate function to use a DataFrame instead of multiple series (as argument).
+
+    This decorator can be used for functions that need to work on a whole
+    `pd.DataFrame`. It will convert the required series into a DataFrame using an
+    **outer merge**.
+
+    The function&#39;s prototype should be:
+
+        func(df : pd.DataFrame, **kwargs)
+            -&gt; Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]
+
+    So the decorated `func` has to take a DataFrame as first argument.
+
+    Notes
+    -----
+    Only when you want to perform row-based operations, such as `df.dropna(axis=0)`,
+    this wrapper is needed.
+    Hence, in most cases that `func` requires a `pd.DataFrame`, series arguments would
+    be sufficient; as you can perform column-based operations on multiple `pd.Series`
+    (e.g., subtract 2 series) and most dataframe operations are also available for a
+    `pd.Series`.
+
+    &#34;&#34;&#34;
+
+    def wrapper(*series: pd.Series, **kwargs):
+        series_dict = {s.name: s for s in series}
+        df = series_dict_to_df(series_dict)
+        res = func(df, **kwargs)
+        return res
+
+    wrapper.__name__ = &#34;dataframe_func: &#34; + func.__name__
+    return wrapper</code></pre>
+</details>
 </dd>
 <dt id="tsflex.processing.get_processor_logs"><code class="name flex">
 <span>def <span class="ident">get_processor_logs</span></span>(<span>logging_file_path)</span>
@@ -291,6 +359,29 @@ is passed to the <code><a title="tsflex.processing.SeriesPipeline" href="#tsflex
 <dt><code>pd.DataFrame</code></dt>
 <dd>A DataFrame containing each processor its duration and its series names.</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_processor_logs(logging_file_path: str) -&gt; pd.DataFrame:
+    &#34;&#34;&#34;Get execution (time) info for each processor of a ``SeriesPipeline``.
+
+    Parameters
+    ----------
+    logging_file_path: str
+        The file path where the logged messages are stored. This is the file path that
+        is passed to the ``SeriesPipeline`` its ``process`` method.
+
+    Returns
+    -------
+    pd.DataFrame
+        A DataFrame containing each processor its duration and its series names.
+    
+    &#34;&#34;&#34;
+    df = _parse_logging_execution_to_df(logging_file_path)
+    df[&#34;duration&#34;] = pd.to_timedelta(df[&#34;duration&#34;], unit=&#34;s&#34;)
+    return df</code></pre>
+</details>
 </dd>
 </dl>
 </section>
@@ -363,6 +454,191 @@ processor, than <code>function</code> should return either: </p>
 input series.</li>
 </ul>
 <p>Series (&amp; columns) with other (column) names will be added to the series dict.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class SeriesProcessor(FrozenClass):
+    &#34;&#34;&#34;Class that executes a specific operation on the passed series_dict.
+
+    Parameters
+    ----------
+    function : Callable
+        The function that processes the series (given in the `series_names`).
+        The prototype of the function should match: \n
+
+            function(*series: pd.Series, **kwargs)
+                -&gt; Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]
+
+        .. note::
+            A function that processes a ``np.ndarray`` instead of ``pd.Series``
+            should work just fine.
+
+    series_names : Union[str, Tuple[str], List[str], List[Tuple[str]]]
+        The names of the series on which the processing function should be applied.
+
+        This argument should match the `function` its input; \n
+        * If `series_names` is a (list of) string (or tuple of a single string),
+          than `function` should require just one series as input.
+        * If `series_names` is a (list of) tuple of strings, than `function` should
+          require `len(tuple)` series as input **and in exactly the same order**.
+
+        A list means multiple series (combinations) to process; \n
+        * If `series_names` is a string or a tuple of strings, than `function` will
+          be called only once for the series of this argument.
+        * If `series_names` is a list of either strings or tuple of strings, than
+          `function` will be called for each entry of this list.
+
+        .. note::
+            when passing a list as `series_names`, all items in this list should
+            have the same type, i.e, either \n
+            * all a `str`
+            * or, all a `tuple` _with same length_. \n
+
+    **kwargs: dict, optional
+        Keyword arguments which will be also passed to the `function`
+
+    Notes
+    -----
+    If the output of `function` is a `np.ndarray` or a `pd.Series` without a name,
+    than (items of) the given `series_names` must have length 1, i.e., the function
+    requires just 1 series! That series its name and index are used to transform
+    (i.e., **replace**) that series.
+
+    If you want to transform (i.e., **replace**) the input series with the
+    processor, than `function` should return either: \n
+    * a `np.ndarray` (see above).
+    * a `pd.Series` with no name or with the same name as the input series.
+    * a `pd.DataFrame` with (one) column name equal to the input series its name.
+    * a list of `pd.Series` in which (exact) one series has the same name as the
+      input series.
+
+    Series (&amp; columns) with other (column) names will be added to the series dict.
+
+    &#34;&#34;&#34;
+    def __init__(
+        self,
+        function: Callable,
+        series_names: Union[str, Tuple[str], List[str], List[Tuple[str]]],
+        **kwargs,
+    ):
+        series_names = [to_tuple(names) for names in to_list(series_names)]
+        # Assert that function inputs (series) all have the same length
+        assert all(
+            len(series_names[0]) == len(series_name_tuple)
+            for series_name_tuple in series_names
+        )
+        self.series_names: List[Tuple[str]] = series_names
+        self.function = function
+        self.name = self.function.__name__
+
+        self.kwargs = kwargs
+        self._freeze()
+
+    def get_required_series(self) -&gt; List[str]:
+        &#34;&#34;&#34;Return all required series names for this processor.
+
+        Return the list of series names that are required in order to execute the
+        processing function.
+
+        Returns
+        -------
+        List[str]
+            List of all the required series names.
+
+        &#34;&#34;&#34;
+        return list(set(flatten([name for name in self.series_names])))
+
+    def __call__(self, series_dict: Dict[str, pd.Series]) -&gt; Dict[str, pd.Series]:
+        &#34;&#34;&#34;**Call**culates the processed series.
+
+        Parameters
+        ----------
+        series_dict : Dict[str, pd.Series]
+            A dict of `pd.Series` containing the data that need to be processed.
+            The key should always be the accompanying series its name.
+
+        Returns
+        -------
+        Dict[str, pd.Series]
+            The processed `series_dict`.
+
+        Raises
+        ------
+        KeyError
+            Raised when a key is not present in the `series_dict` but required for the
+            processing.
+        TypeError
+            Raised when the output of the `SeriesProcessor` is not of the correct type.
+
+        Notes
+        -----
+        * The `series_dict` is an internal representation of the time-series data .
+          This internal representation is constructed in the `process` method of the
+          `SeriesPipeline`.
+        * If you want to test or debug your `SeriesProcessor` object, just encapsulate
+          your instance of this class in a `SeriesPipeline`. The latter allows more
+          versatile input for its `process` method.
+
+        &#34;&#34;&#34;
+        t_start = time.time()
+
+        # Only selecting the series that are needed for this processing step
+        # requested_dict = {}
+        # try:
+        #     for sig in self.get_required_series():
+        #         requested_dict[sig] = series_dict[sig]
+        # except KeyError as key:
+        #     # Re raise error as we can&#39;t continue
+        #     raise KeyError(
+        #         &#34;Key %s is not present in the input dict and needed for processor %s&#34;
+        #         % (key, self.name)
+        #     )
+
+        # Variable that will contain the final output of this method
+        processed_output: Dict[str, pd.Series] = {}
+
+        def get_series_list(keys: Tuple[str]):
+            &#34;&#34;&#34;Get an ordered series list view for the given keys.&#34;&#34;&#34;
+            return [series_dict[key] for key in keys]
+
+        def get_series_dict(keys: Tuple[str]):
+            &#34;&#34;&#34;Get a series dict view for the given keys.&#34;&#34;&#34;
+            return {key: series_dict[key] for key in keys}
+
+        for series_name_tuple in self.series_names:
+            func_output = self.function(
+                *get_series_list(series_name_tuple), **self.kwargs
+            )
+            func_output = _handle_seriesprocessor_func_output(
+                func_output,
+                get_series_dict(series_name_tuple),
+                self.name,
+            )
+            # Check that the output of the function call produces unique columns / keys
+            assert (
+                len(set(processed_output.keys()).intersection(func_output.keys())) == 0
+            )
+            processed_output.update(func_output)
+
+        elapsed = time.time() - t_start
+        logger.info(
+            f&#34;Finished function [{self.name}] on {self.series_names} in &#34;
+            f&#34;[{elapsed} seconds]!&#34;
+        )
+
+        return processed_output
+
+    def __repr__(self):
+        &#34;&#34;&#34;Return formal representation of object.&#34;&#34;&#34;
+        repr_str = self.name + (&#34; &#34; + str(self.kwargs))
+        repr_str += &#34; :  &#34; + &#34; &#34;.join([str(s) for s in self.series_names])
+        return repr_str
+
+    def __str__(self):
+        &#34;&#34;&#34;Return informal representation of object.&#34;&#34;&#34;
+        return self.__repr__()</code></pre>
+</details>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li>tsflex.utils.classes.FrozenClass</li>
@@ -381,6 +657,24 @@ processing function.</p>
 <dt><code>List[str]</code></dt>
 <dd>List of all the required series names.</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_required_series(self) -&gt; List[str]:
+    &#34;&#34;&#34;Return all required series names for this processor.
+
+    Return the list of series names that are required in order to execute the
+    processing function.
+
+    Returns
+    -------
+    List[str]
+        List of all the required series names.
+
+    &#34;&#34;&#34;
+    return list(set(flatten([name for name in self.series_names])))</code></pre>
+</details>
 </dd>
 <dt id="tsflex.processing.SeriesProcessor.__call__"><code class="name flex">
 <span>def <span class="ident">__call__</span></span>(<span>self, series_dict)</span>
@@ -415,6 +709,90 @@ This internal representation is constructed in the <code>process</code> method o
 your instance of this class in a <code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code>. The latter allows more
 versatile input for its <code>process</code> method.</li>
 </ul></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __call__(self, series_dict: Dict[str, pd.Series]) -&gt; Dict[str, pd.Series]:
+    &#34;&#34;&#34;**Call**culates the processed series.
+
+    Parameters
+    ----------
+    series_dict : Dict[str, pd.Series]
+        A dict of `pd.Series` containing the data that need to be processed.
+        The key should always be the accompanying series its name.
+
+    Returns
+    -------
+    Dict[str, pd.Series]
+        The processed `series_dict`.
+
+    Raises
+    ------
+    KeyError
+        Raised when a key is not present in the `series_dict` but required for the
+        processing.
+    TypeError
+        Raised when the output of the `SeriesProcessor` is not of the correct type.
+
+    Notes
+    -----
+    * The `series_dict` is an internal representation of the time-series data .
+      This internal representation is constructed in the `process` method of the
+      `SeriesPipeline`.
+    * If you want to test or debug your `SeriesProcessor` object, just encapsulate
+      your instance of this class in a `SeriesPipeline`. The latter allows more
+      versatile input for its `process` method.
+
+    &#34;&#34;&#34;
+    t_start = time.time()
+
+    # Only selecting the series that are needed for this processing step
+    # requested_dict = {}
+    # try:
+    #     for sig in self.get_required_series():
+    #         requested_dict[sig] = series_dict[sig]
+    # except KeyError as key:
+    #     # Re raise error as we can&#39;t continue
+    #     raise KeyError(
+    #         &#34;Key %s is not present in the input dict and needed for processor %s&#34;
+    #         % (key, self.name)
+    #     )
+
+    # Variable that will contain the final output of this method
+    processed_output: Dict[str, pd.Series] = {}
+
+    def get_series_list(keys: Tuple[str]):
+        &#34;&#34;&#34;Get an ordered series list view for the given keys.&#34;&#34;&#34;
+        return [series_dict[key] for key in keys]
+
+    def get_series_dict(keys: Tuple[str]):
+        &#34;&#34;&#34;Get a series dict view for the given keys.&#34;&#34;&#34;
+        return {key: series_dict[key] for key in keys}
+
+    for series_name_tuple in self.series_names:
+        func_output = self.function(
+            *get_series_list(series_name_tuple), **self.kwargs
+        )
+        func_output = _handle_seriesprocessor_func_output(
+            func_output,
+            get_series_dict(series_name_tuple),
+            self.name,
+        )
+        # Check that the output of the function call produces unique columns / keys
+        assert (
+            len(set(processed_output.keys()).intersection(func_output.keys())) == 0
+        )
+        processed_output.update(func_output)
+
+    elapsed = time.time() - t_start
+    logger.info(
+        f&#34;Finished function [{self.name}] on {self.series_names} in &#34;
+        f&#34;[{elapsed} seconds]!&#34;
+    )
+
+    return processed_output</code></pre>
+</details>
 </dd>
 </dl>
 </dd>
@@ -431,6 +809,219 @@ versatile input for its <code>process</code> method.</li>
 internal series dict, by default None. <strong>The processing steps will be
 executed in the same order as passed in this list</strong>.</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class SeriesPipeline:
+    &#34;&#34;&#34;Pipeline for applying ``SeriesProcessor`` objects sequentially.
+
+    Parameters
+    ----------
+    processors : List[SeriesProcessor], optional
+        List of ``SeriesProcessor`` objects that will be applied sequentially to the
+        internal series dict, by default None. **The processing steps will be
+        executed in the same order as passed in this list**.
+
+    &#34;&#34;&#34;
+
+    def __init__(self, processors: Optional[List[SeriesProcessor]] = None):
+        self.processing_steps: List[SeriesProcessor] = []  # TODO: dit private of niet?
+        if processors is not None:
+            self.processing_steps = processors
+
+    def get_required_series(self) -&gt; List[str]:
+        &#34;&#34;&#34;Return all required series names for this pipeline.
+
+        Return the list of series names that are required in order to execute all the
+        ``SeriesProcessor`` objects of this processing pipeline.
+
+        Returns
+        -------
+        List[str]
+            List of all the required series names.
+
+        &#34;&#34;&#34;
+        return list(
+            set(flatten([step.get_required_series() for step in self.processing_steps]))
+        )
+
+    def append(self, processor: SeriesProcessor) -&gt; None:
+        &#34;&#34;&#34;Append a ``SeriesProcessor`` at the end of the pipeline.
+
+        Parameters
+        ----------
+        processor : SeriesProcessor
+            The ``SeriesProcessor`` that will be added to the end of the pipeline
+
+        &#34;&#34;&#34;
+        self.processing_steps.append(processor)
+
+    def insert(self, idx: int, processor: SeriesProcessor) -&gt; None:
+        &#34;&#34;&#34;Insert a ``SeriesProcessor`` at the given index in the pipeline.
+
+        Parameters
+        ----------
+        idx : int
+            The index where the given processor should be inserted in the pipeline.
+            Index 0 will insert the given processor at the front of the pipeline,
+            and index ``len(pipeline)`` is equivalent to appending the processor.
+        processor : SeriesProcessor
+            The ``SeriesProcessor`` that will be added to the end of the pipeline
+
+        &#34;&#34;&#34;
+        self.processing_steps.insert(idx, processor)
+
+    def process(
+        self,
+        data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
+        return_df: Optional[bool] = False,
+        return_all_series: Optional[bool] = True,
+        drop_keys: Optional[List[str]] = None,
+        copy: Optional[bool] = False,
+        logging_file_path: Optional[Union[str, Path]] = None,
+    ) -&gt; Union[List[pd.Series], pd.DataFrame]:
+        &#34;&#34;&#34;Execute all ``SeriesProcessor`` objects in pipeline sequentially.
+
+        Apply all the processing steps on passed Series list or DataFrame and return the
+        preprocessed Series list or DataFrame.
+
+        Parameters
+        ----------
+        data : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
+            Dataframe or Series or list thereof, with all the required data for the
+            processing steps. \n
+            **Remark**: each Series / DataFrame must have a ``pd.DatetimeIndex``.
+            **Remark**: we assume that each name / column is unique.
+        return_df : bool, optional
+            Whether the output needs to be a series list or a DataFrame, by default 
+            False.
+            If True the output series will be combined to a DataFrame with an outer
+            merge.
+        return_all_series : bool, optional
+            Whether the output needs to return all the series, by default True.
+            * If True the output will contain all series that were passed to this
+            method.
+            * If False the output will contain just the required series (see
+            ``get_required_series``).
+        drop_keys : List[str], optional
+            Which keys should be dropped when returning the output, by default None.
+        copy : bool, optional
+            Whether the series in ``data`` should be copied, by default False.
+        logging_file_path : Union[str, Path], optional
+            The file path where the logged messages are stored, by default None.
+            If ``None``, then no logging ``FileHandler`` will be used and the logging
+            messages are only pushed to stdout. Otherwise, a logging ``FileHandler`` will
+            write the logged messages to the given file path.
+
+        Returns
+        -------
+        Union[List[pd.Series], pd.DataFrame]
+            The preprocessed series.
+
+        Notes
+        -----
+        * If a ``logging_file_path`` is provided, the execution (time) info can be
+          retrieved by calling ``logger.get_processor_logs(logging_file_path)``. &lt;br&gt;
+          Be aware that the ``logging_file_path`` gets cleared before the logger pushes
+          logged messages. Hence, one should use a separate logging file for each
+          constructed processing and feature instance with this library.
+        * If a series processor its function output is a ``np.ndarray``, the input series
+          dict (required dict for that function) must contain just 1 series! That series
+          its name and index are used to return a series dict. When a user does not want
+          a numpy array to replace its input series, it is his / her responsibility to
+          create a new ``pd.Series`` (or ``pd.DataFrame``) of that numpy array with a
+          different (column) name.
+        * If ``func_output`` is a ``pd.Series``, keep in mind that the input series gets
+          transformed (i.e., replaced) in the pipeline with the ``func_output`` when the
+          series name is  equal.
+
+        Raises
+        ------
+        _ProcessingError
+            Error raised when a processing step fails.
+
+        &#34;&#34;&#34;
+        # Delete other logging handlers
+        delete_logging_handlers(logger)
+        # Add logging handler (if path provided)
+        if logging_file_path:
+            add_logging_handler(logger, logging_file_path)
+
+        # Convert the data to a series_dict
+        series_dict: Dict[str, pd.Series] = {}
+        for s in to_series_list(data):
+            # Assert the assumptions we make!
+            if len(s):
+                assert isinstance(s.index, pd.DatetimeIndex)
+            # TODO: also check monotonic increasing?
+
+            if s.name in self.get_required_series():
+                series_dict[str(s.name)] = s.copy() if copy else s
+            elif return_all_series:
+                # If all the series have to be returned
+                series_dict[str(s.name)] = s.copy() if copy else s
+
+        output_keys = set()  # Maintain set of output series
+        for processor in self.processing_steps:
+            try:
+                processed_dict = processor(series_dict)
+                output_keys.update(processed_dict.keys())
+                series_dict.update(processed_dict)
+            except Exception as e:
+                raise _ProcessingError(
+                    &#34;Error while processing function {}:\n {}&#34;.format(
+                        processor.name, str(e)
+                    )
+                ) from e
+
+        if not return_all_series:
+            # Return just the output series
+            output_dict = {key: series_dict[str(key)] for key in output_keys}
+            series_dict = output_dict
+
+        if drop_keys is not None:
+            # Drop the keys that should not be included in the output
+            output_dict = {
+                key: series_dict[key]
+                for key in set(series_dict.keys()).difference(drop_keys)
+            }
+            series_dict = output_dict
+
+        if return_df:
+            # We merge the series dict into a DataFrame
+            return series_dict_to_df(series_dict)
+        else:
+            return [s for s in series_dict.values()]
+
+    def serialize(self, file_path: Union[str, Path]):
+        &#34;&#34;&#34;Serialize this ``SeriesPipeline`` instance.
+
+        Notes
+        ------
+        As we use [Dill](https://github.com/uqfoundation/dill){:target=&#34;_blank&#34;} to
+        serialize, we can also serialize (decorator)functions which are defined in the
+        local scope, like lambdas.
+
+        Parameters
+        ----------
+        file_path : Union[str, Path]
+            The path where the ``SeriesProcessor`` will be serialized.
+
+        &#34;&#34;&#34;
+        with open(file_path, &#34;wb&#34;) as f:
+            dill.dump(self, f, recurse=True)
+
+    def __repr__(self):
+        &#34;&#34;&#34;Return formal representation of object.&#34;&#34;&#34;
+        return (
+            &#34;[\n&#34; + &#34;&#34;.join([f&#34;\t{str(p)}\n&#34; for p in self.processing_steps]) + &#34;]&#34;
+        )
+
+    def __str__(self):
+        &#34;&#34;&#34;Return informal representation of object.&#34;&#34;&#34;
+        return self.__repr__()</code></pre>
+</details>
 <h3>Methods</h3>
 <dl>
 <dt id="tsflex.processing.SeriesPipeline.get_required_series"><code class="name flex">
@@ -445,6 +1036,26 @@ executed in the same order as passed in this list</strong>.</dd>
 <dt><code>List[str]</code></dt>
 <dd>List of all the required series names.</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_required_series(self) -&gt; List[str]:
+    &#34;&#34;&#34;Return all required series names for this pipeline.
+
+    Return the list of series names that are required in order to execute all the
+    ``SeriesProcessor`` objects of this processing pipeline.
+
+    Returns
+    -------
+    List[str]
+        List of all the required series names.
+
+    &#34;&#34;&#34;
+    return list(
+        set(flatten([step.get_required_series() for step in self.processing_steps]))
+    )</code></pre>
+</details>
 </dd>
 <dt id="tsflex.processing.SeriesPipeline.append"><code class="name flex">
 <span>def <span class="ident">append</span></span>(<span>self, processor)</span>
@@ -456,6 +1067,21 @@ executed in the same order as passed in this list</strong>.</dd>
 <dt><strong><code>processor</code></strong> :&ensp;<code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code></dt>
 <dd>The <code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code> that will be added to the end of the pipeline</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def append(self, processor: SeriesProcessor) -&gt; None:
+    &#34;&#34;&#34;Append a ``SeriesProcessor`` at the end of the pipeline.
+
+    Parameters
+    ----------
+    processor : SeriesProcessor
+        The ``SeriesProcessor`` that will be added to the end of the pipeline
+
+    &#34;&#34;&#34;
+    self.processing_steps.append(processor)</code></pre>
+</details>
 </dd>
 <dt id="tsflex.processing.SeriesPipeline.insert"><code class="name flex">
 <span>def <span class="ident">insert</span></span>(<span>self, idx, processor)</span>
@@ -471,6 +1097,25 @@ and index <code>len(pipeline)</code> is equivalent to appending the processor.</
 <dt><strong><code>processor</code></strong> :&ensp;<code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code></dt>
 <dd>The <code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code> that will be added to the end of the pipeline</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def insert(self, idx: int, processor: SeriesProcessor) -&gt; None:
+    &#34;&#34;&#34;Insert a ``SeriesProcessor`` at the given index in the pipeline.
+
+    Parameters
+    ----------
+    idx : int
+        The index where the given processor should be inserted in the pipeline.
+        Index 0 will insert the given processor at the front of the pipeline,
+        and index ``len(pipeline)`` is equivalent to appending the processor.
+    processor : SeriesProcessor
+        The ``SeriesProcessor`` that will be added to the end of the pipeline
+
+    &#34;&#34;&#34;
+    self.processing_steps.insert(idx, processor)</code></pre>
+</details>
 </dd>
 <dt id="tsflex.processing.SeriesPipeline.process"><code class="name flex">
 <span>def <span class="ident">process</span></span>(<span>self, data, return_df=False, return_all_series=True, drop_keys=None, copy=False, logging_file_path=None)</span>
@@ -537,6 +1182,132 @@ equal.</li>
 <dt><code>_ProcessingError</code></dt>
 <dd>Error raised when a processing step fails.</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def process(
+    self,
+    data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
+    return_df: Optional[bool] = False,
+    return_all_series: Optional[bool] = True,
+    drop_keys: Optional[List[str]] = None,
+    copy: Optional[bool] = False,
+    logging_file_path: Optional[Union[str, Path]] = None,
+) -&gt; Union[List[pd.Series], pd.DataFrame]:
+    &#34;&#34;&#34;Execute all ``SeriesProcessor`` objects in pipeline sequentially.
+
+    Apply all the processing steps on passed Series list or DataFrame and return the
+    preprocessed Series list or DataFrame.
+
+    Parameters
+    ----------
+    data : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
+        Dataframe or Series or list thereof, with all the required data for the
+        processing steps. \n
+        **Remark**: each Series / DataFrame must have a ``pd.DatetimeIndex``.
+        **Remark**: we assume that each name / column is unique.
+    return_df : bool, optional
+        Whether the output needs to be a series list or a DataFrame, by default 
+        False.
+        If True the output series will be combined to a DataFrame with an outer
+        merge.
+    return_all_series : bool, optional
+        Whether the output needs to return all the series, by default True.
+        * If True the output will contain all series that were passed to this
+        method.
+        * If False the output will contain just the required series (see
+        ``get_required_series``).
+    drop_keys : List[str], optional
+        Which keys should be dropped when returning the output, by default None.
+    copy : bool, optional
+        Whether the series in ``data`` should be copied, by default False.
+    logging_file_path : Union[str, Path], optional
+        The file path where the logged messages are stored, by default None.
+        If ``None``, then no logging ``FileHandler`` will be used and the logging
+        messages are only pushed to stdout. Otherwise, a logging ``FileHandler`` will
+        write the logged messages to the given file path.
+
+    Returns
+    -------
+    Union[List[pd.Series], pd.DataFrame]
+        The preprocessed series.
+
+    Notes
+    -----
+    * If a ``logging_file_path`` is provided, the execution (time) info can be
+      retrieved by calling ``logger.get_processor_logs(logging_file_path)``. &lt;br&gt;
+      Be aware that the ``logging_file_path`` gets cleared before the logger pushes
+      logged messages. Hence, one should use a separate logging file for each
+      constructed processing and feature instance with this library.
+    * If a series processor its function output is a ``np.ndarray``, the input series
+      dict (required dict for that function) must contain just 1 series! That series
+      its name and index are used to return a series dict. When a user does not want
+      a numpy array to replace its input series, it is his / her responsibility to
+      create a new ``pd.Series`` (or ``pd.DataFrame``) of that numpy array with a
+      different (column) name.
+    * If ``func_output`` is a ``pd.Series``, keep in mind that the input series gets
+      transformed (i.e., replaced) in the pipeline with the ``func_output`` when the
+      series name is  equal.
+
+    Raises
+    ------
+    _ProcessingError
+        Error raised when a processing step fails.
+
+    &#34;&#34;&#34;
+    # Delete other logging handlers
+    delete_logging_handlers(logger)
+    # Add logging handler (if path provided)
+    if logging_file_path:
+        add_logging_handler(logger, logging_file_path)
+
+    # Convert the data to a series_dict
+    series_dict: Dict[str, pd.Series] = {}
+    for s in to_series_list(data):
+        # Assert the assumptions we make!
+        if len(s):
+            assert isinstance(s.index, pd.DatetimeIndex)
+        # TODO: also check monotonic increasing?
+
+        if s.name in self.get_required_series():
+            series_dict[str(s.name)] = s.copy() if copy else s
+        elif return_all_series:
+            # If all the series have to be returned
+            series_dict[str(s.name)] = s.copy() if copy else s
+
+    output_keys = set()  # Maintain set of output series
+    for processor in self.processing_steps:
+        try:
+            processed_dict = processor(series_dict)
+            output_keys.update(processed_dict.keys())
+            series_dict.update(processed_dict)
+        except Exception as e:
+            raise _ProcessingError(
+                &#34;Error while processing function {}:\n {}&#34;.format(
+                    processor.name, str(e)
+                )
+            ) from e
+
+    if not return_all_series:
+        # Return just the output series
+        output_dict = {key: series_dict[str(key)] for key in output_keys}
+        series_dict = output_dict
+
+    if drop_keys is not None:
+        # Drop the keys that should not be included in the output
+        output_dict = {
+            key: series_dict[key]
+            for key in set(series_dict.keys()).difference(drop_keys)
+        }
+        series_dict = output_dict
+
+    if return_df:
+        # We merge the series dict into a DataFrame
+        return series_dict_to_df(series_dict)
+    else:
+        return [s for s in series_dict.values()]</code></pre>
+</details>
 </dd>
 <dt id="tsflex.processing.SeriesPipeline.serialize"><code class="name flex">
 <span>def <span class="ident">serialize</span></span>(<span>self, file_path)</span>
@@ -552,6 +1323,28 @@ local scope, like lambdas.</p>
 <dt><strong><code>file_path</code></strong> :&ensp;<code>Union[str, Path]</code></dt>
 <dd>The path where the <code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code> will be serialized.</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def serialize(self, file_path: Union[str, Path]):
+    &#34;&#34;&#34;Serialize this ``SeriesPipeline`` instance.
+
+    Notes
+    ------
+    As we use [Dill](https://github.com/uqfoundation/dill){:target=&#34;_blank&#34;} to
+    serialize, we can also serialize (decorator)functions which are defined in the
+    local scope, like lambdas.
+
+    Parameters
+    ----------
+    file_path : Union[str, Path]
+        The path where the ``SeriesProcessor`` will be serialized.
+
+    &#34;&#34;&#34;
+    with open(file_path, &#34;wb&#34;) as f:
+        dill.dump(self, f, recurse=True)</code></pre>
+</details>
 </dd>
 </dl>
 </dd>

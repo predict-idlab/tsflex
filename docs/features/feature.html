@@ -13,6 +13,10 @@ features." />
 <style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#ebf3ff}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#edfcf4}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
 <style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
 <style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script>
+window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+ga('create', 'G-C88NHWRRP8', 'auto'); ga('send', 'pageview');
+</script><script async src='https://www.google-analytics.com/analytics.js'></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
 <script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
 <link rel="icon" href="https://media.discordapp.net/attachments/372491075153166338/852906324417445908/icon.png">
@@ -26,6 +30,216 @@ features." />
 <section id="section-intro">
 <p>FeatureDescriptor and MultipleFeatureDescriptors class for creating time-series
 features.</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python"># -*- coding: utf-8 -*-
+&#34;&#34;&#34;
+
+FeatureDescriptor and MultipleFeatureDescriptors class for creating time-series
+features.
+
+&#34;&#34;&#34;
+
+import itertools
+from typing import Callable, List, Union, Tuple
+
+import pandas as pd
+
+from .function_wrapper import NumpyFuncWrapper
+from ..utils.classes import FrozenClass
+from ..utils.data import to_list, to_tuple
+from ..utils.time import parse_time_arg
+
+
+class FeatureDescriptor(FrozenClass):
+    &#34;&#34;&#34;A FeatureDescriptor object, containing all feature information.
+
+    Parameters
+    ----------
+    function : Union[NumpyFuncWrapper, Callable]
+        The function that calculates this feature.
+        The prototype of the function should match: \n
+
+            function(*series: np.ndarray)
+                -&gt; Union[Any, List[Any]]
+
+    series_name : Union[str, Tuple[str]]
+        The names of the series on which the feature function should be applied.
+        This argument should match the `function` its input; \n
+        * If `series_name` is a string (or tuple of a single string), than 
+            `function` should require just one series as input.
+        * If `series_name` is a tuple of strings, than `function` should
+            require `len(tuple)` series as input **and in exactly the same order**
+    window : Union[float, str, pd.Timedelta]
+        The window size, this argument supports multiple types: \n
+        * If the type is an `float`, it represents the series its window size in
+            **seconds**.
+        * If the window&#39;s type is a `pd.Timedelta`, the window size represents
+            the window-time.
+        * If a `str`, it represents a window-time-string. \n
+            .. Note::
+                When no time-unit is present in the string, it represents the stride
+                size in **seconds**.
+
+    stride : Union[int, str, pd.Timedelta]
+        The stride of the window rolling process, supports multiple types: \n
+        * If the type is `float`, it represents the stride size in **seconds**
+        * If the type is `pd.Timedelta`, it represents the stride-roll timedelta.
+        * If a type is `str`, it represents a stride-roll-time-string. \n
+            .. Note::
+                When no time-unit is present in the string, it represents the stride
+                size in **seconds**.
+
+    Notes
+    -----
+    * For each `function` - `input`(-series) - `window` - stride combination, one needs
+      to create a distinct `FeatureDescriptor`. Hence it is more convenient to
+      create a `MultipleFeatureDescriptors` when `function` - `window` - `stride`
+      _combinations_ should be applied on various input-series (combinations).
+    * When `function` takes multiple series (i.e., arguments) as input, these are
+      joined (based on the index) before applying the function. If the indexes of
+      these series are not exactly the same, it might occur that not all series have
+      exactly the same length! Hence,  make sure that the `function` can deal with
+      this!
+    * For more information about the str-based time args, look into:
+      [pandas time delta](https://pandas.pydata.org/pandas-docs/stable/user_guide/timedeltas.html#parsing){:target=&#34;_blank&#34;}
+    &lt;br&gt;&lt;br&gt;
+    .. todo::
+        * Add documentation of how the index/slicing takes place / which
+          assumptions we make.
+        * Raise error function tries to change values of view due to flag
+
+
+    Raises
+    ------
+    TypeError
+        Raised when the `function` is not an instance of Callable or
+        NumpyFuncWrapper.
+
+    See Also
+    --------
+    StridedRolling: As the window-stride (time) conversion takes place there.
+
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        function: Union[NumpyFuncWrapper, Callable],
+        series_name: Union[str, Tuple[str]],
+        window: Union[float, str, pd.Timedelta],
+        stride: Union[float, str, pd.Timedelta],
+    ):
+        self.series_name: Tuple[str] = to_tuple(series_name)
+        self.window: pd.Timedelta = parse_time_arg(window)
+        self.stride: pd.Timedelta = parse_time_arg(stride)
+
+        # Order of if statements is important (as NumpyFuncWrapper also is a Callable)!
+        if isinstance(function, NumpyFuncWrapper):
+            self.function: NumpyFuncWrapper = function
+        elif isinstance(function, Callable):
+            self.function: NumpyFuncWrapper = NumpyFuncWrapper(function)
+        else:
+            raise TypeError(
+                &#34;Expected feature function to be a `NumpyFuncWrapper` but is a&#34;
+                f&#34; {type(function)}.&#34;
+            )
+
+        # Construct a function-string
+        f_name = str(self.function)
+        self._func_str: str = f&#34;{self.__class__.__name__} - func: {f_name}&#34;
+
+        self._freeze()
+
+    def get_required_series(self) -&gt; List[str]:
+        &#34;&#34;&#34;Return all required series names for this feature descriptor.
+
+        Return the list of series names that are required in order to execute the
+        feature function.
+
+        Returns
+        -------
+        List[str]
+            List of all the required series names.
+
+        &#34;&#34;&#34;
+        return list(set(self.series_name))        
+
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Representation string of Feature.&#34;&#34;&#34;
+        return f&#34;{self.__class__.__name__}({self.series_name}, {self.window}, &#34; \
+               f&#34;{self.stride})&#34;
+
+
+class MultipleFeatureDescriptors:
+    &#34;&#34;&#34;Create a MultipleFeatureDescriptors object.
+
+    Create a list of features from **all** combinations of the given parameter
+    lists. Total number of created Features will be:
+
+        len(func_inputs)*len(functions)*len(windows)*len(strides).
+
+    Parameters
+    ----------
+    functions : Union[NumpyFuncWrapper, Callable, List[Union[NumpyFuncWrapper, Callable]]]
+        The functions, can be either of both types (even in a single array).
+    series_names : Union[str, Tuple[str], List[str], List[Tuple[str]]]
+        The names of the series on which the feature function should be applied.
+
+        This argument should match the `function` its input; \n
+        * If `series_names` is a (list of) string (or tuple of a single string),
+          than `function` should require just one series as input.
+        * If `series_names` is a (list of) tuple of strings, than `function` should
+          require `len(tuple)` series as input.
+
+        A list means multiple series (combinations) to extract feature from; \n
+        * If `series_names` is a string or a tuple of strings, than `function` will
+          be called only once for the series of this argument.
+        * If `series_names` is a list of either strings or tuple of strings, than
+          `function` will be called for each entry of this list.
+
+        Note: when passing a list as `series_names`, all items in this list should
+        have the same type, i.e, either \n
+        * all a str
+        * or, all a tuple _with same length_. \n
+    windows : Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
+        All the window sizes.
+    strides : Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
+        All the strides.
+
+    &#34;&#34;&#34;
+    def __init__(
+        self,
+        functions: Union[NumpyFuncWrapper, Callable, List[Union[NumpyFuncWrapper, Callable]]],
+        series_names: Union[str, Tuple[str], List[str], List[Tuple[str]]],
+        windows: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
+        strides: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
+    ):
+        # Cast functions to NumpyFuncWrapper, this avoids creating multiple
+        # NumpyFuncWrapper objects for the same function in the FeatureDescriptor
+        def to_np_func_wrapper(f: Callable): 
+            return f if isinstance(f, NumpyFuncWrapper) else NumpyFuncWrapper(f)
+        functions = [to_np_func_wrapper(f) for f in to_list(functions)]
+        # Convert the series names to list of tuples
+        series_names = [to_tuple(names) for names in to_list(series_names)]
+        # Assert that function inputs (series) all have the same length
+        assert all(
+            len(series_names[0]) == len(series_name_tuple)
+            for series_name_tuple in series_names
+        )
+        # Convert the other types to list
+        windows = to_list(windows)
+        strides = to_list(strides)
+
+        self.feature_descriptions: List[FeatureDescriptor] = []
+        # Iterate over all combinations
+        combinations = [functions, series_names, windows, strides]
+        for function, series_name, window, stride in itertools.product(*combinations):
+            self.feature_descriptions.append(
+                FeatureDescriptor(function, series_name, window, stride)
+            )</code></pre>
+</details>
 </section>
 <section>
 </section>
@@ -131,6 +345,128 @@ NumpyFuncWrapper.</dd>
 <dt><code>StridedRolling</code></dt>
 <dd>As the window-stride (time) conversion takes place there.</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class FeatureDescriptor(FrozenClass):
+    &#34;&#34;&#34;A FeatureDescriptor object, containing all feature information.
+
+    Parameters
+    ----------
+    function : Union[NumpyFuncWrapper, Callable]
+        The function that calculates this feature.
+        The prototype of the function should match: \n
+
+            function(*series: np.ndarray)
+                -&gt; Union[Any, List[Any]]
+
+    series_name : Union[str, Tuple[str]]
+        The names of the series on which the feature function should be applied.
+        This argument should match the `function` its input; \n
+        * If `series_name` is a string (or tuple of a single string), than 
+            `function` should require just one series as input.
+        * If `series_name` is a tuple of strings, than `function` should
+            require `len(tuple)` series as input **and in exactly the same order**
+    window : Union[float, str, pd.Timedelta]
+        The window size, this argument supports multiple types: \n
+        * If the type is an `float`, it represents the series its window size in
+            **seconds**.
+        * If the window&#39;s type is a `pd.Timedelta`, the window size represents
+            the window-time.
+        * If a `str`, it represents a window-time-string. \n
+            .. Note::
+                When no time-unit is present in the string, it represents the stride
+                size in **seconds**.
+
+    stride : Union[int, str, pd.Timedelta]
+        The stride of the window rolling process, supports multiple types: \n
+        * If the type is `float`, it represents the stride size in **seconds**
+        * If the type is `pd.Timedelta`, it represents the stride-roll timedelta.
+        * If a type is `str`, it represents a stride-roll-time-string. \n
+            .. Note::
+                When no time-unit is present in the string, it represents the stride
+                size in **seconds**.
+
+    Notes
+    -----
+    * For each `function` - `input`(-series) - `window` - stride combination, one needs
+      to create a distinct `FeatureDescriptor`. Hence it is more convenient to
+      create a `MultipleFeatureDescriptors` when `function` - `window` - `stride`
+      _combinations_ should be applied on various input-series (combinations).
+    * When `function` takes multiple series (i.e., arguments) as input, these are
+      joined (based on the index) before applying the function. If the indexes of
+      these series are not exactly the same, it might occur that not all series have
+      exactly the same length! Hence,  make sure that the `function` can deal with
+      this!
+    * For more information about the str-based time args, look into:
+      [pandas time delta](https://pandas.pydata.org/pandas-docs/stable/user_guide/timedeltas.html#parsing){:target=&#34;_blank&#34;}
+    &lt;br&gt;&lt;br&gt;
+    .. todo::
+        * Add documentation of how the index/slicing takes place / which
+          assumptions we make.
+        * Raise error function tries to change values of view due to flag
+
+
+    Raises
+    ------
+    TypeError
+        Raised when the `function` is not an instance of Callable or
+        NumpyFuncWrapper.
+
+    See Also
+    --------
+    StridedRolling: As the window-stride (time) conversion takes place there.
+
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        function: Union[NumpyFuncWrapper, Callable],
+        series_name: Union[str, Tuple[str]],
+        window: Union[float, str, pd.Timedelta],
+        stride: Union[float, str, pd.Timedelta],
+    ):
+        self.series_name: Tuple[str] = to_tuple(series_name)
+        self.window: pd.Timedelta = parse_time_arg(window)
+        self.stride: pd.Timedelta = parse_time_arg(stride)
+
+        # Order of if statements is important (as NumpyFuncWrapper also is a Callable)!
+        if isinstance(function, NumpyFuncWrapper):
+            self.function: NumpyFuncWrapper = function
+        elif isinstance(function, Callable):
+            self.function: NumpyFuncWrapper = NumpyFuncWrapper(function)
+        else:
+            raise TypeError(
+                &#34;Expected feature function to be a `NumpyFuncWrapper` but is a&#34;
+                f&#34; {type(function)}.&#34;
+            )
+
+        # Construct a function-string
+        f_name = str(self.function)
+        self._func_str: str = f&#34;{self.__class__.__name__} - func: {f_name}&#34;
+
+        self._freeze()
+
+    def get_required_series(self) -&gt; List[str]:
+        &#34;&#34;&#34;Return all required series names for this feature descriptor.
+
+        Return the list of series names that are required in order to execute the
+        feature function.
+
+        Returns
+        -------
+        List[str]
+            List of all the required series names.
+
+        &#34;&#34;&#34;
+        return list(set(self.series_name))        
+
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Representation string of Feature.&#34;&#34;&#34;
+        return f&#34;{self.__class__.__name__}({self.series_name}, {self.window}, &#34; \
+               f&#34;{self.stride})&#34;</code></pre>
+</details>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li>tsflex.utils.classes.FrozenClass</li>
@@ -149,6 +485,24 @@ feature function.</p>
 <dt><code>List[str]</code></dt>
 <dd>List of all the required series names.</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_required_series(self) -&gt; List[str]:
+    &#34;&#34;&#34;Return all required series names for this feature descriptor.
+
+    Return the list of series names that are required in order to execute the
+    feature function.
+
+    Returns
+    -------
+    List[str]
+        List of all the required series names.
+
+    &#34;&#34;&#34;
+    return list(set(self.series_name))        </code></pre>
+</details>
 </dd>
 </dl>
 </dd>
@@ -195,6 +549,78 @@ have the same type, i.e, either </p>
 <dt><strong><code>strides</code></strong> :&ensp;<code>Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],</code></dt>
 <dd>All the strides.</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class MultipleFeatureDescriptors:
+    &#34;&#34;&#34;Create a MultipleFeatureDescriptors object.
+
+    Create a list of features from **all** combinations of the given parameter
+    lists. Total number of created Features will be:
+
+        len(func_inputs)*len(functions)*len(windows)*len(strides).
+
+    Parameters
+    ----------
+    functions : Union[NumpyFuncWrapper, Callable, List[Union[NumpyFuncWrapper, Callable]]]
+        The functions, can be either of both types (even in a single array).
+    series_names : Union[str, Tuple[str], List[str], List[Tuple[str]]]
+        The names of the series on which the feature function should be applied.
+
+        This argument should match the `function` its input; \n
+        * If `series_names` is a (list of) string (or tuple of a single string),
+          than `function` should require just one series as input.
+        * If `series_names` is a (list of) tuple of strings, than `function` should
+          require `len(tuple)` series as input.
+
+        A list means multiple series (combinations) to extract feature from; \n
+        * If `series_names` is a string or a tuple of strings, than `function` will
+          be called only once for the series of this argument.
+        * If `series_names` is a list of either strings or tuple of strings, than
+          `function` will be called for each entry of this list.
+
+        Note: when passing a list as `series_names`, all items in this list should
+        have the same type, i.e, either \n
+        * all a str
+        * or, all a tuple _with same length_. \n
+    windows : Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
+        All the window sizes.
+    strides : Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
+        All the strides.
+
+    &#34;&#34;&#34;
+    def __init__(
+        self,
+        functions: Union[NumpyFuncWrapper, Callable, List[Union[NumpyFuncWrapper, Callable]]],
+        series_names: Union[str, Tuple[str], List[str], List[Tuple[str]]],
+        windows: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
+        strides: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
+    ):
+        # Cast functions to NumpyFuncWrapper, this avoids creating multiple
+        # NumpyFuncWrapper objects for the same function in the FeatureDescriptor
+        def to_np_func_wrapper(f: Callable): 
+            return f if isinstance(f, NumpyFuncWrapper) else NumpyFuncWrapper(f)
+        functions = [to_np_func_wrapper(f) for f in to_list(functions)]
+        # Convert the series names to list of tuples
+        series_names = [to_tuple(names) for names in to_list(series_names)]
+        # Assert that function inputs (series) all have the same length
+        assert all(
+            len(series_names[0]) == len(series_name_tuple)
+            for series_name_tuple in series_names
+        )
+        # Convert the other types to list
+        windows = to_list(windows)
+        strides = to_list(strides)
+
+        self.feature_descriptions: List[FeatureDescriptor] = []
+        # Iterate over all combinations
+        combinations = [functions, series_names, windows, strides]
+        for function, series_name, window, stride in itertools.product(*combinations):
+            self.feature_descriptions.append(
+                FeatureDescriptor(function, series_name, window, stride)
+            )</code></pre>
+</details>
 </dd>
 </dl>
 </section>

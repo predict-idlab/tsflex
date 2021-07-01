@@ -12,6 +12,10 @@
 <style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#ebf3ff}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#edfcf4}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
 <style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
 <style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script>
+window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+ga('create', 'G-C88NHWRRP8', 'auto'); ga('send', 'pageview');
+</script><script async src='https://www.google-analytics.com/analytics.js'></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
 <script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
 <link rel="icon" href="https://media.discordapp.net/attachments/372491075153166338/852906324417445908/icon.png">
@@ -231,6 +235,36 @@ When using multivariate data, with either different sample rates or with an irre
 <p><a href="#tsflex.features.get_feature_logs">More info</a></p>
 <p><br></p>
 <hr>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#34;&#34;&#34;Feature extraction submodule.
+
+.. include:: ../../docs/pdoc_include/features.md
+
+&#34;&#34;&#34;
+
+__author__ = &#34;Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost&#34;
+
+from .. import __pdoc__
+from .feature import FeatureDescriptor, MultipleFeatureDescriptors
+from .feature_collection import FeatureCollection
+from .function_wrapper import NumpyFuncWrapper
+from .logger import get_feature_logs, get_function_stats, get_series_names_stats
+
+__pdoc__[&#34;NumpyFuncWrapper.__call__&#34;] = True
+
+__all__ = [
+    &#34;FeatureDescriptor&#34;,
+    &#34;MultipleFeatureDescriptors&#34;,
+    &#34;FeatureCollection&#34;,
+    &#34;NumpyFuncWrapper&#34;,
+    &#34;get_feature_logs&#34;,
+    &#34;get_function_stats&#34;,
+    &#34;get_series_names_stats&#34;,
+]</code></pre>
+</details>
 </section>
 <section>
 <h2 class="section-title" id="header-submodules">Sub-modules</h2>
@@ -280,6 +314,30 @@ is passed to the <code><a title="tsflex.features.FeatureCollection" href="#tsfle
 <dd>A DataFrame with the features its function, input series names and
 calculation duration.</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_feature_logs(logging_file_path: str) -&gt; pd.DataFrame:
+    &#34;&#34;&#34;Get execution (time) info for each feature of a `FeatureCollection`.
+
+    Parameters
+    ----------
+    logging_file_path: str
+        The file path where the logged messages are stored. This is the file path that
+        is passed to the `FeatureCollection` its `calculate` method.
+
+    Returns
+    -------
+    pd.DataFrame
+        A DataFrame with the features its function, input series names and 
+        calculation duration.
+
+    &#34;&#34;&#34;
+    df = _parse_logging_execution_to_df(logging_file_path)
+    df[&#34;duration&#34;] = pd.to_timedelta(df[&#34;duration&#34;], unit=&#34;s&#34;)
+    return df</code></pre>
+</details>
 </dd>
 <dt id="tsflex.features.get_function_stats"><code class="name flex">
 <span>def <span class="ident">get_function_stats</span></span>(<span>logging_file_path)</span>
@@ -298,6 +356,33 @@ is passed to the <code><a title="tsflex.features.FeatureCollection" href="#tsfle
 <dd>A DataFrame with for each function (i.e., <code>function-(window,stride)</code>)
 combination the mean (time), std (time), sum (time), and number of executions.</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_function_stats(logging_file_path: str) -&gt; pd.DataFrame:
+    &#34;&#34;&#34;Get execution (time) statistics for each function.
+
+    Parameters
+    ----------
+    logging_file_path: str
+        The file path where the logged messages are stored. This is the file path that
+        is passed to the `FeatureCollection` its `calculate` method.
+
+    Returns
+    -------
+    pd.DataFrame
+        A DataFrame with for each function (i.e., `function-(window,stride)`) 
+        combination the mean (time), std (time), sum (time), and number of executions.
+
+    &#34;&#34;&#34;
+    df = _parse_logging_execution_to_df(logging_file_path)
+    return (
+        df.groupby([&#34;function&#34;, &#34;window&#34;, &#34;stride&#34;])
+        .agg({&#34;duration&#34;: [&#34;mean&#34;, &#34;std&#34;, &#34;sum&#34;, &#34;count&#34;]})
+        .sort_values(by=(&#34;duration&#34;, &#34;mean&#34;), ascending=False)
+    )</code></pre>
+</details>
 </dd>
 <dt id="tsflex.features.get_series_names_stats"><code class="name flex">
 <span>def <span class="ident">get_series_names_stats</span></span>(<span>logging_file_path)</span>
@@ -316,6 +401,33 @@ is passed to the <code><a title="tsflex.features.FeatureCollection" href="#tsfle
 <dd>A DataFrame with for each function the mean (time), std (time), sum (time), and
 number of executions.</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_series_names_stats(logging_file_path: str) -&gt; pd.DataFrame:
+    &#34;&#34;&#34;Get execution (time) statistics for each `key-(window,stride)` combination.
+
+    Parameters
+    ----------
+    logging_file_path: str
+        The file path where the logged messages are stored. This is the file path that
+        is passed to the `FeatureCollection` its `calculate` method.
+
+    Returns
+    -------
+    pd.DataFrame
+        A DataFrame with for each function the mean (time), std (time), sum (time), and
+        number of executions.
+
+    &#34;&#34;&#34;
+    df = _parse_logging_execution_to_df(logging_file_path)
+    return (
+        df.groupby([&#34;series_names&#34;, &#34;window&#34;, &#34;stride&#34;])
+        .agg({&#34;duration&#34;: [&#34;sum&#34;, &#34;mean&#34;, &#34;std&#34;, &#34;count&#34;]})
+        .sort_values(by=(&#34;duration&#34;, &#34;sum&#34;), ascending=False)
+    )</code></pre>
+</details>
 </dd>
 </dl>
 </section>
@@ -417,6 +529,128 @@ NumpyFuncWrapper.</dd>
 <dt><code>StridedRolling</code></dt>
 <dd>As the window-stride (time) conversion takes place there.</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class FeatureDescriptor(FrozenClass):
+    &#34;&#34;&#34;A FeatureDescriptor object, containing all feature information.
+
+    Parameters
+    ----------
+    function : Union[NumpyFuncWrapper, Callable]
+        The function that calculates this feature.
+        The prototype of the function should match: \n
+
+            function(*series: np.ndarray)
+                -&gt; Union[Any, List[Any]]
+
+    series_name : Union[str, Tuple[str]]
+        The names of the series on which the feature function should be applied.
+        This argument should match the `function` its input; \n
+        * If `series_name` is a string (or tuple of a single string), than 
+            `function` should require just one series as input.
+        * If `series_name` is a tuple of strings, than `function` should
+            require `len(tuple)` series as input **and in exactly the same order**
+    window : Union[float, str, pd.Timedelta]
+        The window size, this argument supports multiple types: \n
+        * If the type is an `float`, it represents the series its window size in
+            **seconds**.
+        * If the window&#39;s type is a `pd.Timedelta`, the window size represents
+            the window-time.
+        * If a `str`, it represents a window-time-string. \n
+            .. Note::
+                When no time-unit is present in the string, it represents the stride
+                size in **seconds**.
+
+    stride : Union[int, str, pd.Timedelta]
+        The stride of the window rolling process, supports multiple types: \n
+        * If the type is `float`, it represents the stride size in **seconds**
+        * If the type is `pd.Timedelta`, it represents the stride-roll timedelta.
+        * If a type is `str`, it represents a stride-roll-time-string. \n
+            .. Note::
+                When no time-unit is present in the string, it represents the stride
+                size in **seconds**.
+
+    Notes
+    -----
+    * For each `function` - `input`(-series) - `window` - stride combination, one needs
+      to create a distinct `FeatureDescriptor`. Hence it is more convenient to
+      create a `MultipleFeatureDescriptors` when `function` - `window` - `stride`
+      _combinations_ should be applied on various input-series (combinations).
+    * When `function` takes multiple series (i.e., arguments) as input, these are
+      joined (based on the index) before applying the function. If the indexes of
+      these series are not exactly the same, it might occur that not all series have
+      exactly the same length! Hence,  make sure that the `function` can deal with
+      this!
+    * For more information about the str-based time args, look into:
+      [pandas time delta](https://pandas.pydata.org/pandas-docs/stable/user_guide/timedeltas.html#parsing){:target=&#34;_blank&#34;}
+    &lt;br&gt;&lt;br&gt;
+    .. todo::
+        * Add documentation of how the index/slicing takes place / which
+          assumptions we make.
+        * Raise error function tries to change values of view due to flag
+
+
+    Raises
+    ------
+    TypeError
+        Raised when the `function` is not an instance of Callable or
+        NumpyFuncWrapper.
+
+    See Also
+    --------
+    StridedRolling: As the window-stride (time) conversion takes place there.
+
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        function: Union[NumpyFuncWrapper, Callable],
+        series_name: Union[str, Tuple[str]],
+        window: Union[float, str, pd.Timedelta],
+        stride: Union[float, str, pd.Timedelta],
+    ):
+        self.series_name: Tuple[str] = to_tuple(series_name)
+        self.window: pd.Timedelta = parse_time_arg(window)
+        self.stride: pd.Timedelta = parse_time_arg(stride)
+
+        # Order of if statements is important (as NumpyFuncWrapper also is a Callable)!
+        if isinstance(function, NumpyFuncWrapper):
+            self.function: NumpyFuncWrapper = function
+        elif isinstance(function, Callable):
+            self.function: NumpyFuncWrapper = NumpyFuncWrapper(function)
+        else:
+            raise TypeError(
+                &#34;Expected feature function to be a `NumpyFuncWrapper` but is a&#34;
+                f&#34; {type(function)}.&#34;
+            )
+
+        # Construct a function-string
+        f_name = str(self.function)
+        self._func_str: str = f&#34;{self.__class__.__name__} - func: {f_name}&#34;
+
+        self._freeze()
+
+    def get_required_series(self) -&gt; List[str]:
+        &#34;&#34;&#34;Return all required series names for this feature descriptor.
+
+        Return the list of series names that are required in order to execute the
+        feature function.
+
+        Returns
+        -------
+        List[str]
+            List of all the required series names.
+
+        &#34;&#34;&#34;
+        return list(set(self.series_name))        
+
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Representation string of Feature.&#34;&#34;&#34;
+        return f&#34;{self.__class__.__name__}({self.series_name}, {self.window}, &#34; \
+               f&#34;{self.stride})&#34;</code></pre>
+</details>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li>tsflex.utils.classes.FrozenClass</li>
@@ -435,6 +669,24 @@ feature function.</p>
 <dt><code>List[str]</code></dt>
 <dd>List of all the required series names.</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_required_series(self) -&gt; List[str]:
+    &#34;&#34;&#34;Return all required series names for this feature descriptor.
+
+    Return the list of series names that are required in order to execute the
+    feature function.
+
+    Returns
+    -------
+    List[str]
+        List of all the required series names.
+
+    &#34;&#34;&#34;
+    return list(set(self.series_name))        </code></pre>
+</details>
 </dd>
 </dl>
 </dd>
@@ -481,6 +733,78 @@ have the same type, i.e, either </p>
 <dt><strong><code>strides</code></strong> :&ensp;<code>Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],</code></dt>
 <dd>All the strides.</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class MultipleFeatureDescriptors:
+    &#34;&#34;&#34;Create a MultipleFeatureDescriptors object.
+
+    Create a list of features from **all** combinations of the given parameter
+    lists. Total number of created Features will be:
+
+        len(func_inputs)*len(functions)*len(windows)*len(strides).
+
+    Parameters
+    ----------
+    functions : Union[NumpyFuncWrapper, Callable, List[Union[NumpyFuncWrapper, Callable]]]
+        The functions, can be either of both types (even in a single array).
+    series_names : Union[str, Tuple[str], List[str], List[Tuple[str]]]
+        The names of the series on which the feature function should be applied.
+
+        This argument should match the `function` its input; \n
+        * If `series_names` is a (list of) string (or tuple of a single string),
+          than `function` should require just one series as input.
+        * If `series_names` is a (list of) tuple of strings, than `function` should
+          require `len(tuple)` series as input.
+
+        A list means multiple series (combinations) to extract feature from; \n
+        * If `series_names` is a string or a tuple of strings, than `function` will
+          be called only once for the series of this argument.
+        * If `series_names` is a list of either strings or tuple of strings, than
+          `function` will be called for each entry of this list.
+
+        Note: when passing a list as `series_names`, all items in this list should
+        have the same type, i.e, either \n
+        * all a str
+        * or, all a tuple _with same length_. \n
+    windows : Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
+        All the window sizes.
+    strides : Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
+        All the strides.
+
+    &#34;&#34;&#34;
+    def __init__(
+        self,
+        functions: Union[NumpyFuncWrapper, Callable, List[Union[NumpyFuncWrapper, Callable]]],
+        series_names: Union[str, Tuple[str], List[str], List[Tuple[str]]],
+        windows: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
+        strides: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
+    ):
+        # Cast functions to NumpyFuncWrapper, this avoids creating multiple
+        # NumpyFuncWrapper objects for the same function in the FeatureDescriptor
+        def to_np_func_wrapper(f: Callable): 
+            return f if isinstance(f, NumpyFuncWrapper) else NumpyFuncWrapper(f)
+        functions = [to_np_func_wrapper(f) for f in to_list(functions)]
+        # Convert the series names to list of tuples
+        series_names = [to_tuple(names) for names in to_list(series_names)]
+        # Assert that function inputs (series) all have the same length
+        assert all(
+            len(series_names[0]) == len(series_name_tuple)
+            for series_name_tuple in series_names
+        )
+        # Convert the other types to list
+        windows = to_list(windows)
+        strides = to_list(strides)
+
+        self.feature_descriptions: List[FeatureDescriptor] = []
+        # Iterate over all combinations
+        combinations = [functions, series_names, windows, strides]
+        for function, series_name, window, stride in itertools.product(*combinations):
+            self.feature_descriptions.append(
+                FeatureDescriptor(function, series_name, window, stride)
+            )</code></pre>
+</details>
 </dd>
 <dt id="tsflex.features.FeatureCollection"><code class="flex name class">
 <span>class <span class="ident">FeatureCollection</span></span>
@@ -493,6 +817,321 @@ have the same type, i.e, either </p>
 <dt><strong><code>feature_descriptors</code></strong> :&ensp;<code>Union[<a title="tsflex.features.FeatureDescriptor" href="#tsflex.features.FeatureDescriptor">FeatureDescriptor</a>, <a title="tsflex.features.MultipleFeatureDescriptors" href="#tsflex.features.MultipleFeatureDescriptors">MultipleFeatureDescriptors</a>, List[Union[<a title="tsflex.features.FeatureDescriptor" href="#tsflex.features.FeatureDescriptor">FeatureDescriptor</a>, <a title="tsflex.features.MultipleFeatureDescriptors" href="#tsflex.features.MultipleFeatureDescriptors">MultipleFeatureDescriptors</a>]]]</code>, optional</dt>
 <dd>Initial (list of) feature(s) to add to collection, by default None</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class FeatureCollection:
+    &#34;&#34;&#34;Create a FeatureCollection.
+
+    Parameters
+    ----------
+    feature_descriptors : Union[FeatureDescriptor, MultipleFeatureDescriptors, List[Union[FeatureDescriptor, MultipleFeatureDescriptors]]], optional
+        Initial (list of) feature(s) to add to collection, by default None
+
+    &#34;&#34;&#34;
+
+    def __init__(
+        self,
+        feature_descriptors: Optional[
+            Union[
+                FeatureDescriptor, MultipleFeatureDescriptors,
+                List[Union[FeatureDescriptor, MultipleFeatureDescriptors]]
+            ]
+        ] = None,
+    ):
+        # The feature collection is a dict with keys of type:
+        #   tuple(tuple(str), float OR pd.timedelta, float OR pd.timedelta)
+        # The outer tuple&#39;s values correspond to (series_key(s), window, stride)
+        self._feature_desc_dict: Dict[
+            Tuple[Tuple[str], pd.Timedelta, pd.Timedelta], List[FeatureDescriptor]
+        ] = {}
+
+        if feature_descriptors:
+            self.add(feature_descriptors)
+
+    def get_required_series(self) -&gt; List[str]:
+        &#34;&#34;&#34;Return all required series names for this feature collection.
+
+        Return the list of series names that are required in order to calculate all the
+        features (defined by the `FeatureDescriptor` objects) of this feature
+        collection.
+
+        Returns
+        -------
+        List[str]
+            List of all the required series names.
+
+        &#34;&#34;&#34;
+        return list(
+            set(
+                flatten(
+                    [fr_key[0] for fr_key in self._feature_desc_dict.keys()]
+                )
+            )
+        )
+
+    @staticmethod
+    def _get_collection_key(feature: FeatureDescriptor)\
+            -&gt; Tuple[tuple, pd.Timedelta, pd.Timedelta]:
+        # Note: `window` &amp; `stride` properties can either be a pd.Timedelta or an int
+        return feature.series_name, feature.window, feature.stride
+
+    def _add_feature(self, feature: FeatureDescriptor):
+        &#34;&#34;&#34;Add a `FeatureDescriptor` instance to the collection.
+
+        Parameters
+        ----------
+        feature : FeatureDescriptor
+            The feature that will be added to this feature collection.
+
+        &#34;&#34;&#34;
+        series_win_stride_key = self._get_collection_key(feature)
+        if series_win_stride_key in self._feature_desc_dict.keys():
+            self._feature_desc_dict[series_win_stride_key].append(feature)
+        else:
+            self._feature_desc_dict[series_win_stride_key] = [feature]
+
+    def add(
+        self,
+        features: Union[
+            FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection, List[
+                Union[FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection]
+            ]
+        ],
+    ):
+        &#34;&#34;&#34;Add feature(s) to the FeatureCollection.
+
+        Parameters
+        ----------
+        features : Union[FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection, List[Union[FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection]]]
+            Feature(s) (containers) whose contained features will be added.
+
+        Raises
+        ------
+        TypeError
+            Raised when an item within `features` is not an instance of
+            [`MultipleFeatureDescriptors`, `FeatureDescriptors`, `FeatureCollection`].
+
+        &#34;&#34;&#34;
+        # Convert to list if necessary
+        features = to_list(features)
+
+        for feature in features:
+            if isinstance(feature, MultipleFeatureDescriptors):
+                self.add(feature.feature_descriptions)
+            elif isinstance(feature, FeatureDescriptor):
+                self._add_feature(feature)
+            elif isinstance(feature, FeatureCollection):
+                # List needs to be flattened
+                self.add(list(flatten(feature._feature_desc_dict.values())))
+            else:
+                raise TypeError(f&#34;type: {type(feature)} is not supported - {feature}&#34;)
+
+    @staticmethod
+    def _executor(idx: int):
+        stroll, function = stroll_feat_list[idx]
+        return stroll.apply_func(function)
+
+    def _construct_stroll_feat_list(
+        self, series_dict: Dict[str, pd.Series], window_idx: str, approve_sparsity: bool
+    ) -&gt; List[Tuple[StridedRolling, NumpyFuncWrapper]]:
+        # --- Future work ---
+        # We could also make the StridedRolling creation multithreaded
+        # Very low priority because the STROLL __init__ is rather efficient!
+        stroll_feat_list: List[Tuple[StridedRolling, NumpyFuncWrapper]] = []
+        for key, win, stride in self._feature_desc_dict.keys():
+            try:
+                stroll = StridedRolling(
+                    data=[series_dict[k] for k in key],
+                    window=win,
+                    stride=stride,
+                    window_idx=window_idx,
+                    approve_sparsity=approve_sparsity,
+                )
+            except KeyError:
+                raise KeyError(f&#34;Key {key} not found in series dict.&#34;)
+
+            for feature in self._feature_desc_dict[(key, win, stride)]:
+                stroll_feat_list.append((stroll, feature.function))
+        return stroll_feat_list
+
+    def calculate(
+        self,
+        data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
+        return_df: Optional[bool] = False,
+        window_idx: Optional[str] = &#39;end&#39;,
+        approve_sparsity: Optional[bool] = False,
+        show_progress: Optional[bool] = False,
+        logging_file_path: Optional[Union[str, Path]] = None,
+        n_jobs: Optional[int] = None,
+    ) -&gt; Union[List[pd.DataFrame], pd.DataFrame]:
+        &#34;&#34;&#34;Calculate features on the passed data.
+
+        Notes
+        ------
+        * The (column-)names of the series in `data` represent the names in the keys.
+        * If a `logging_file_path` is provided, the execution (time) info can be
+          retrieved by calling `logger.get_feature_logs(logging_file_path)`.
+          Be aware that the `logging_file_path` gets cleared before the logger pushes
+          logged messages. Hence, one should use a separate logging file for each
+          constructed processing and feature instance with this library.
+
+        Parameters
+        ----------
+        data : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
+            Dataframe or Series or list thereof, with all the required data for the
+            feature calculation. \n
+            **Remark**: each Series / DataFrame must have a `pd.DatetimeIndex`.
+            **Remark**: we assume that each name / column is unique.
+        return_df : bool, optional
+            Whether the output needs to be a dataframe list or a DataFrame, by default 
+            False.
+            If `True` the output dataframes will be merged to a DataFrame with an outer
+            merge.
+        window_idx : str, optional
+            The window&#39;s index position which will be used as index for the
+            feature_window aggregation. Must be either of: [&#39;begin&#39;, &#39;middle&#39;, &#39;end&#39;],
+            by default &#39;end&#39;. All features in this collection will use the same
+            window_idx.
+        approve_sparsity: bool, optional
+            Bool indicating whether the user acknowledges that there may be sparsity 
+            (i.e., irregularly sampled data), by default False.
+            If False and sparsity is observed, a warning is raised.
+        show_progress: bool, optional
+            If True, the progress will be shown with a progressbar, by default False.
+        logging_file_path : Union[str, Path], optional
+            The file path where the logged messages are stored. If `None`, then no
+            logging `FileHandler` will be used and the logging messages are only pushed
+            to stdout. Otherwise, a logging `FileHandler` will write the logged messages
+            to the given file path.
+        n_jobs : int, optional
+            The number of processes used for the feature calculation. If `None`, then
+            the number returned by `os.cpu_count()` is used, by default None. \n
+            If n_jobs is either 0 or 1, the code will be executed sequentially without
+            creating a process pool. This is very useful when debugging, as the stack
+            trace will be more comprehensible.
+
+            .. tip::
+                * It takes on avg. _300ms_ to schedule everything with
+                  multiprocessing. So if your feature extraction code runs faster than
+                  ~1.5s, it might not be worth it to parallelize the process
+                  (and thus better set the `n_jobs` to 0-1).
+                * This method its memory peaks are significantly lower when executed
+                  sequentially. Set the `n_jobs` to 0-1 if this matters.
+
+        Returns
+        -------
+        Union[List[pd.DataFrame], pd.DataFrame]
+            The calculated features.
+
+        Raises
+        ------
+        KeyError
+            Raised when a required key is not found in `data`.
+
+        &#34;&#34;&#34;
+        # Delete other logging handlers
+        delete_logging_handlers(logger)
+        # Add logging handler (if path provided)
+        if logging_file_path:
+            add_logging_handler(logger, logging_file_path)
+
+        # Convert the data to a series_dict
+        series_dict: Dict[str, pd.Series] = {}
+        for s in to_series_list(data):
+            # Assert the assumptions we make!
+            assert isinstance(s.index, pd.DatetimeIndex)
+            assert s.index.is_monotonic_increasing
+
+            if s.name in self.get_required_series():
+                series_dict[str(s.name)] = s
+
+        calculated_feature_list: List[pd.DataFrame] = []
+        # Note: this variable has a global scope so this is shared in multiprocessing
+        global stroll_feat_list
+        stroll_feat_list = self._construct_stroll_feat_list(
+            series_dict, window_idx, approve_sparsity
+        )
+
+        if n_jobs in [0, 1]:
+            # print(&#39;Executing feature extraction sequentially&#39;)
+            if show_progress:
+                stroll_feat_list = tqdm(stroll_feat_list)
+            for stroll, func in stroll_feat_list:
+                calculated_feature_list.append(stroll.apply_func(func))
+        else:
+            # ---- Future work -----
+            # Try locking inside the executer when calling next() on a global generator
+            # Create global (precomputed) stroll-feature list 
+            # global stroll_feat_list
+            # stroll_feat_list = [stroll_feat for stroll_feat in stroll_feat_generator]
+            # https://pathos.readthedocs.io/en/latest/pathos.html#usage
+            with ProcessPool(nodes=n_jobs, source=True) as pool:
+                results = pool.uimap(
+                    self._executor,
+                    range(len(stroll_feat_list)),
+                )
+                if show_progress:
+                    results = tqdm(results, total=len(stroll_feat_list))
+                for f in results:
+                    calculated_feature_list.append(f)
+                # Close &amp; join - see: https://github.com/uqfoundation/pathos/issues/131
+                pool.close()
+                pool.join()
+                # Clear because: https://github.com/uqfoundation/pathos/issues/111
+                pool.clear()
+
+        if return_df:
+            df_merged = pd.DataFrame()
+            for calculated_feature in calculated_feature_list:
+                df_merged = pd.merge(
+                    left=df_merged,
+                    right=calculated_feature,
+                    how=&#34;outer&#34;,
+                    left_index=True,
+                    right_index=True,
+                )
+            return df_merged
+        else:
+            return calculated_feature_list
+
+    def serialize(self, file_path: Union[str, Path]):
+        &#34;&#34;&#34;Serialize this `FeatureCollection` instance.
+
+        Parameters
+        ----------
+        file_path : Union[str, Path]
+            The path where the `FeatureCollection` will be serialized.
+
+        Notes
+        -----
+        * As we use [Dill](https://github.com/uqfoundation/dill){:target=&#34;_blank&#34;} to
+          serialize the files, we can **also serialize functions which are defined in
+          the local scope, like lambdas.**
+
+        &#34;&#34;&#34;
+        with open(file_path, &#34;wb&#34;) as f:
+            dill.dump(self, f, recurse=True)
+
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Representation string of a FeatureCollection.&#34;&#34;&#34;
+        feature_keys = sorted(set(k[0] for k in self._feature_desc_dict.keys()))
+        output_str = &#34;&#34;
+        for feature_key in feature_keys:
+            output_str += f&#34;{&#39;|&#39;.join(feature_key)}: (&#34;
+            keys = (x for x in self._feature_desc_dict.keys() if x[0] == feature_key)
+            for _, win_size, stride in keys:
+                output_str += f&#34;\n\twin: &#34;
+                win_str = timedelta_to_str(win_size)
+                stride_str = timedelta_to_str(stride)
+                output_str += f&#34;{str(win_str):&lt;6}, stride: {str(stride_str)}: [&#34;
+                for feat_desc in self._feature_desc_dict[feature_key, win_size, stride]:
+                    output_str += f&#34;\n\t\t{feat_desc._func_str},&#34;
+                output_str += &#34;\n\t]&#34;
+            output_str += &#34;\n)\n&#34;
+        return output_str</code></pre>
+</details>
 <h3>Methods</h3>
 <dl>
 <dt id="tsflex.features.FeatureCollection.get_required_series"><code class="name flex">
@@ -508,6 +1147,31 @@ collection.</p>
 <dt><code>List[str]</code></dt>
 <dd>List of all the required series names.</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_required_series(self) -&gt; List[str]:
+    &#34;&#34;&#34;Return all required series names for this feature collection.
+
+    Return the list of series names that are required in order to calculate all the
+    features (defined by the `FeatureDescriptor` objects) of this feature
+    collection.
+
+    Returns
+    -------
+    List[str]
+        List of all the required series names.
+
+    &#34;&#34;&#34;
+    return list(
+        set(
+            flatten(
+                [fr_key[0] for fr_key in self._feature_desc_dict.keys()]
+            )
+        )
+    )</code></pre>
+</details>
 </dd>
 <dt id="tsflex.features.FeatureCollection.add"><code class="name flex">
 <span>def <span class="ident">add</span></span>(<span>self, features)</span>
@@ -525,6 +1189,46 @@ collection.</p>
 <dd>Raised when an item within <code>features</code> is not an instance of
 [<code>MultipleFeatureDescriptors</code>, <code>FeatureDescriptors</code>, <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code>].</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add(
+    self,
+    features: Union[
+        FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection, List[
+            Union[FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection]
+        ]
+    ],
+):
+    &#34;&#34;&#34;Add feature(s) to the FeatureCollection.
+
+    Parameters
+    ----------
+    features : Union[FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection, List[Union[FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection]]]
+        Feature(s) (containers) whose contained features will be added.
+
+    Raises
+    ------
+    TypeError
+        Raised when an item within `features` is not an instance of
+        [`MultipleFeatureDescriptors`, `FeatureDescriptors`, `FeatureCollection`].
+
+    &#34;&#34;&#34;
+    # Convert to list if necessary
+    features = to_list(features)
+
+    for feature in features:
+        if isinstance(feature, MultipleFeatureDescriptors):
+            self.add(feature.feature_descriptions)
+        elif isinstance(feature, FeatureDescriptor):
+            self._add_feature(feature)
+        elif isinstance(feature, FeatureCollection):
+            # List needs to be flattened
+            self.add(list(flatten(feature._feature_desc_dict.values())))
+        else:
+            raise TypeError(f&#34;type: {type(feature)} is not supported - {feature}&#34;)</code></pre>
+</details>
 </dd>
 <dt id="tsflex.features.FeatureCollection.calculate"><code class="name flex">
 <span>def <span class="ident">calculate</span></span>(<span>self, data, return_df=False, window_idx='end', approve_sparsity=False, show_progress=False, logging_file_path=None, n_jobs=None)</span>
@@ -600,6 +1304,150 @@ sequentially. Set the <code>n_jobs</code> to 0-1 if this matters.</li>
 <dt><code>KeyError</code></dt>
 <dd>Raised when a required key is not found in <code>data</code>.</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def calculate(
+    self,
+    data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
+    return_df: Optional[bool] = False,
+    window_idx: Optional[str] = &#39;end&#39;,
+    approve_sparsity: Optional[bool] = False,
+    show_progress: Optional[bool] = False,
+    logging_file_path: Optional[Union[str, Path]] = None,
+    n_jobs: Optional[int] = None,
+) -&gt; Union[List[pd.DataFrame], pd.DataFrame]:
+    &#34;&#34;&#34;Calculate features on the passed data.
+
+    Notes
+    ------
+    * The (column-)names of the series in `data` represent the names in the keys.
+    * If a `logging_file_path` is provided, the execution (time) info can be
+      retrieved by calling `logger.get_feature_logs(logging_file_path)`.
+      Be aware that the `logging_file_path` gets cleared before the logger pushes
+      logged messages. Hence, one should use a separate logging file for each
+      constructed processing and feature instance with this library.
+
+    Parameters
+    ----------
+    data : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
+        Dataframe or Series or list thereof, with all the required data for the
+        feature calculation. \n
+        **Remark**: each Series / DataFrame must have a `pd.DatetimeIndex`.
+        **Remark**: we assume that each name / column is unique.
+    return_df : bool, optional
+        Whether the output needs to be a dataframe list or a DataFrame, by default 
+        False.
+        If `True` the output dataframes will be merged to a DataFrame with an outer
+        merge.
+    window_idx : str, optional
+        The window&#39;s index position which will be used as index for the
+        feature_window aggregation. Must be either of: [&#39;begin&#39;, &#39;middle&#39;, &#39;end&#39;],
+        by default &#39;end&#39;. All features in this collection will use the same
+        window_idx.
+    approve_sparsity: bool, optional
+        Bool indicating whether the user acknowledges that there may be sparsity 
+        (i.e., irregularly sampled data), by default False.
+        If False and sparsity is observed, a warning is raised.
+    show_progress: bool, optional
+        If True, the progress will be shown with a progressbar, by default False.
+    logging_file_path : Union[str, Path], optional
+        The file path where the logged messages are stored. If `None`, then no
+        logging `FileHandler` will be used and the logging messages are only pushed
+        to stdout. Otherwise, a logging `FileHandler` will write the logged messages
+        to the given file path.
+    n_jobs : int, optional
+        The number of processes used for the feature calculation. If `None`, then
+        the number returned by `os.cpu_count()` is used, by default None. \n
+        If n_jobs is either 0 or 1, the code will be executed sequentially without
+        creating a process pool. This is very useful when debugging, as the stack
+        trace will be more comprehensible.
+
+        .. tip::
+            * It takes on avg. _300ms_ to schedule everything with
+              multiprocessing. So if your feature extraction code runs faster than
+              ~1.5s, it might not be worth it to parallelize the process
+              (and thus better set the `n_jobs` to 0-1).
+            * This method its memory peaks are significantly lower when executed
+              sequentially. Set the `n_jobs` to 0-1 if this matters.
+
+    Returns
+    -------
+    Union[List[pd.DataFrame], pd.DataFrame]
+        The calculated features.
+
+    Raises
+    ------
+    KeyError
+        Raised when a required key is not found in `data`.
+
+    &#34;&#34;&#34;
+    # Delete other logging handlers
+    delete_logging_handlers(logger)
+    # Add logging handler (if path provided)
+    if logging_file_path:
+        add_logging_handler(logger, logging_file_path)
+
+    # Convert the data to a series_dict
+    series_dict: Dict[str, pd.Series] = {}
+    for s in to_series_list(data):
+        # Assert the assumptions we make!
+        assert isinstance(s.index, pd.DatetimeIndex)
+        assert s.index.is_monotonic_increasing
+
+        if s.name in self.get_required_series():
+            series_dict[str(s.name)] = s
+
+    calculated_feature_list: List[pd.DataFrame] = []
+    # Note: this variable has a global scope so this is shared in multiprocessing
+    global stroll_feat_list
+    stroll_feat_list = self._construct_stroll_feat_list(
+        series_dict, window_idx, approve_sparsity
+    )
+
+    if n_jobs in [0, 1]:
+        # print(&#39;Executing feature extraction sequentially&#39;)
+        if show_progress:
+            stroll_feat_list = tqdm(stroll_feat_list)
+        for stroll, func in stroll_feat_list:
+            calculated_feature_list.append(stroll.apply_func(func))
+    else:
+        # ---- Future work -----
+        # Try locking inside the executer when calling next() on a global generator
+        # Create global (precomputed) stroll-feature list 
+        # global stroll_feat_list
+        # stroll_feat_list = [stroll_feat for stroll_feat in stroll_feat_generator]
+        # https://pathos.readthedocs.io/en/latest/pathos.html#usage
+        with ProcessPool(nodes=n_jobs, source=True) as pool:
+            results = pool.uimap(
+                self._executor,
+                range(len(stroll_feat_list)),
+            )
+            if show_progress:
+                results = tqdm(results, total=len(stroll_feat_list))
+            for f in results:
+                calculated_feature_list.append(f)
+            # Close &amp; join - see: https://github.com/uqfoundation/pathos/issues/131
+            pool.close()
+            pool.join()
+            # Clear because: https://github.com/uqfoundation/pathos/issues/111
+            pool.clear()
+
+    if return_df:
+        df_merged = pd.DataFrame()
+        for calculated_feature in calculated_feature_list:
+            df_merged = pd.merge(
+                left=df_merged,
+                right=calculated_feature,
+                how=&#34;outer&#34;,
+                left_index=True,
+                right_index=True,
+            )
+        return df_merged
+    else:
+        return calculated_feature_list</code></pre>
+</details>
 </dd>
 <dt id="tsflex.features.FeatureCollection.serialize"><code class="name flex">
 <span>def <span class="ident">serialize</span></span>(<span>self, file_path)</span>
@@ -617,6 +1465,28 @@ sequentially. Set the <code>n_jobs</code> to 0-1 if this matters.</li>
 serialize the files, we can <strong>also serialize functions which are defined in
 the local scope, like lambdas.</strong></li>
 </ul></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def serialize(self, file_path: Union[str, Path]):
+    &#34;&#34;&#34;Serialize this `FeatureCollection` instance.
+
+    Parameters
+    ----------
+    file_path : Union[str, Path]
+        The path where the `FeatureCollection` will be serialized.
+
+    Notes
+    -----
+    * As we use [Dill](https://github.com/uqfoundation/dill){:target=&#34;_blank&#34;} to
+      serialize the files, we can **also serialize functions which are defined in
+      the local scope, like lambdas.**
+
+    &#34;&#34;&#34;
+    with open(file_path, &#34;wb&#34;) as f:
+        dill.dump(self, f, recurse=True)</code></pre>
+</details>
 </dd>
 </dl>
 </dd>
@@ -641,6 +1511,71 @@ array. It also defines the names of the function outputs.</p>
 <dd>Raised when the <code>output_names</code> cannot be set.</dd>
 </dl>
 <p>Create NumpyFuncWrapper instance.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class NumpyFuncWrapper(FrozenClass):  # TODO: waarom niet gewoon FuncWrapper?
+    &#34;&#34;&#34;Numpy function wrapper.
+
+    A Numpy function wrapper which takes a numpy array as input and returns a numpy
+    array. It also defines the names of the function outputs.
+
+    Parameters
+    ----------
+    func : Callable
+        The wrapped function.
+    output_names : Union[List[str], str], optional
+        The name of the outputs of the function, by default None.
+
+    Raises
+    ------
+    TypeError
+        Raised when the `output_names` cannot be set.
+
+    &#34;&#34;&#34;
+
+    def __init__(
+        self, func: Callable, output_names: Union[List[str], str] = None, **kwargs
+    ):
+        &#34;&#34;&#34;Create NumpyFuncWrapper instance.&#34;&#34;&#34;
+        self.func = func
+        self.kwargs: dict = kwargs
+
+        if isinstance(output_names, list):
+            self.output_names = output_names
+        elif isinstance(output_names, str):
+            self.output_names = [output_names]
+        elif not output_names:
+            self.output_names = [self.func.__name__]
+        else:
+            raise TypeError(f&#34;`output_names` is unexpected type {type(output_names)}&#34;)
+
+        self._freeze()
+
+    def __repr__(self) -&gt; str:
+        &#34;&#34;&#34;Return repr string.&#34;&#34;&#34;
+        return (
+            f&#34;{self.__class__.__name__}({self.func.__name__}, {self.output_names},&#34;
+            f&#34; {self.kwargs})&#34;
+        )
+
+    def __call__(self, *series: np.ndarray) -&gt; Any:
+        &#34;&#34;&#34;Call wrapped function with passed data.
+
+        Parameters
+        ---------
+        *series : np.ndarray
+            The (multiple) input series for the function.
+
+        Returns
+        -------
+        Any
+            The function its output for the passed series.
+
+        &#34;&#34;&#34;
+        return self.func(*series, **self.kwargs)</code></pre>
+</details>
 <h3>Ancestors</h3>
 <ul class="hlist">
 <li>tsflex.utils.classes.FrozenClass</li>
@@ -662,6 +1597,26 @@ array. It also defines the names of the function outputs.</p>
 <dt><code>Any</code></dt>
 <dd>The function its output for the passed series.</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def __call__(self, *series: np.ndarray) -&gt; Any:
+    &#34;&#34;&#34;Call wrapped function with passed data.
+
+    Parameters
+    ---------
+    *series : np.ndarray
+        The (multiple) input series for the function.
+
+    Returns
+    -------
+    Any
+        The function its output for the passed series.
+
+    &#34;&#34;&#34;
+    return self.func(*series, **self.kwargs)</code></pre>
+</details>
 </dd>
 </dl>
 </dd>

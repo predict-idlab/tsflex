@@ -12,6 +12,10 @@
 <style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#ebf3ff}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#edfcf4}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
 <style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
 <style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script>
+window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+ga('create', 'G-C88NHWRRP8', 'auto'); ga('send', 'pageview');
+</script><script async src='https://www.google-analytics.com/analytics.js'></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
 <script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
 <link rel="icon" href="https://media.discordapp.net/attachments/372491075153166338/852906324417445908/icon.png">
@@ -35,6 +39,300 @@ work</li>
 window-based delayed correlation or something like that.</li>
 </ul>
 </div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">&#34;&#34;&#34;Contains a (rather) fast implementation of a **time-based** strided rolling window.
+
+.. todo::
+    look into **series-based** stroll, instead of np.ndarray based stroll.&lt;br&gt;
+    advantages:\n
+    * a series is a wrapper around a 1D np.ndarray, so all np-based operations should
+      work
+    * the end-user can always use the time-index for advanced feature calculation e.g.
+      window-based delayed correlation or something like that.
+
+&#34;&#34;&#34;
+
+__author__ = &#34;Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost&#34;
+
+import time
+import warnings
+import numpy as np
+import pandas as pd
+
+from typing import Callable, Union, List, Tuple, Optional
+from collections import namedtuple
+
+from .function_wrapper import NumpyFuncWrapper
+from .logger import logger
+from ..utils.data import to_series_list
+from ..utils.time import timedelta_to_str
+
+
+class StridedRolling:
+    &#34;&#34;&#34;Custom time-based sliding window with stride for pandas DataFrames.
+
+    Parameters
+    ----------
+    data : Union[pd.Series, pd.DataFrame]
+        ``pd.Series`` or ``pd.DataFrame`` to slide over, the index must be a
+        (time-zone-aware) ``pd.DatetimeIndex``.
+    window : Union[int, pd.Timedelta]
+        Either an int or ``pd.Timedelta``, representing the sliding window length in
+        samples or the sliding window duration, respectively.
+    stride : Union[int, pd.Timedelta]
+        Either an int or ``pd.Timedelta``, representing the stride size in samples or
+        the stride duration, respectively.
+    window_idx : str, optional
+        The window&#39;s index position which will be used as index for the
+        feature_window aggregation. Must be either of: [&#39;begin&#39;, &#39;middle&#39;, &#39;end&#39;], by
+        default &#39;end&#39;.
+    bound_method: str, optional
+        The start-end bound methodology which is used to generate the slice ranges when
+        ``data`` consists of multiple series / columns.
+        Must be either of: [&#39;inner&#39;, &#39;outer&#39;, &#39;first&#39;], by default &#39;inner&#39;.
+
+        * if ``inner``, the inner-bounds of the series are used, the
+        * if ``outer``, the inner-bounds of the series are used
+        * if ``first``, the first-series it&#39;s bound will be used
+    approve_sparsity: bool, optional
+        Bool indicating whether the user acknowledges that there may be sparsity (i.e.,
+        irregularly sampled data), by default False.
+        If False and sparsity is observed, a warning is raised.
+
+    Notes
+    -----
+    * This instance withholds a **read-only**-view of the data its values.
+
+    &lt;br&gt;
+
+    .. todo::
+        The `bound_method`-argument must still be propagated to `FeatureCollection`
+
+    &#34;&#34;&#34;
+
+    # Create the named tuple
+    _NumpySeriesContainer = namedtuple(
+        &#34;SeriesContainer&#34;, [&#34;values&#34;, &#34;start_indexes&#34;, &#34;end_indexes&#34;]
+    )
+
+    def __init__(
+            self,
+            data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
+            window: pd.Timedelta,
+            stride: pd.Timedelta,
+            window_idx: Optional[str] = &#34;end&#34;,
+            bound_method: Optional[str] = &#34;inner&#34;,
+            approve_sparsity: Optional[bool] = False,
+    ):
+        self.window: pd.Timedelta = window
+        self.stride: pd.Timedelta = stride
+
+        # 0. standardize the input
+        series_list: List[pd.Series] = to_series_list(data)
+        self.series_key: Tuple[str] = tuple([str(s.name) for s in series_list])
+
+        # 1. Determine the bounds
+        t_start, t_end = self._determine_bounds(series_list, bound_method)
+
+        # And slice **all** the series to these tightest bounds
+        assert (t_end - t_start) &gt; window
+        series_list = [s[t_start:t_end] for s in series_list]
+
+        # 2. Create the time_index which will be used for DataFrame reconstruction
+        # use closed = left to exclude &#39;end&#39; if it falls on the boundary
+        # note: the index automatically takes the timezone of `t_start` &amp; `t_end`
+        # note: the index-name of the first passed series will be used
+        self.index = pd.date_range(
+            t_start, t_end - window, freq=stride, name=series_list[0].index.name
+        )
+
+        # --- and adjust the time_index
+        # note: this code can also be placed in the `apply_func` method (if we want to
+        #  make the bound window-idx setting feature specific).
+        if window_idx == &#34;end&#34;:
+            self.index += window
+        elif window_idx == &#34;middle&#34;:
+            self.index += window / 2
+        elif window_idx == &#34;begin&#34;:
+            pass
+        else:
+            raise ValueError(
+                f&#34;window index {window_idx} must be either of: &#34;
+                &#34;[&#39;end&#39;, &#39;middle&#39;, &#39;begin&#39;]&#34;
+            )
+
+        # ---------- Efficient numpy code -------
+        # 1. Convert everything to int64
+        np_start = t_start.to_datetime64()
+        np_window = self.window.to_timedelta64()
+        np_stride = self.stride.to_timedelta64()
+
+        # 2. Precompute the start &amp; end times (these remain the same for each series)
+        # note: this if equivalent to:
+        #   if `window` == &#39;begin&#34;:
+        #       start_times = self.index.values
+        np_start_times = np.arange(
+            start=np_start, stop=np_start + (len(self.index) * np_stride),
+            step=np_stride,
+            dtype=np.datetime64,
+        )
+        np_end_times = np_start_times + np_window
+
+        self.series_containers: List[StridedRolling._NumpySeriesContainer] = []
+        for series in series_list:
+            # create a non-writeable view of the series
+            np_series = series.values
+            np_series.flags.writeable = False
+
+            np_idx_times = series.index.values
+            self.series_containers.append(
+                StridedRolling._NumpySeriesContainer(
+                    # TODO: maybe save the pd.Series instead of the np.series
+                    values=np_series,
+                    # the slicing will be performed on [ t_start, t_end [
+                    # TODO: this can maybe be optimized -&gt; further look into this
+                    # np_idx_times, np_start_times, &amp; np_end_times are all sorted!
+                    # as we assume &amp; check that the time index is monotonically
+                    # increasing &amp; the latter 2 are created using `np.arange()`
+                    start_indexes=np.searchsorted(np_idx_times, np_start_times, &#34;left&#34;),
+                    end_indexes=np.searchsorted(np_idx_times, np_end_times, &#34;left&#34;),
+                )
+            )
+
+            if not approve_sparsity:
+                last_container = self.series_containers[-1]
+                qs = [0, 0.1, 0.5, 0.9, 1]
+                series_idx_stats = np.quantile(
+                    last_container.end_indexes - last_container.start_indexes, q=qs
+                )
+                q_str = &#34;, &#34;.join([f&#34;q={q}: {v}&#34; for q, v in zip(qs, series_idx_stats)])
+                if series_idx_stats[0] != series_idx_stats[1]:  # min != max
+                    warnings.warn(
+                        f&#34;There are gaps in the time-series {series.name}; &#34;
+                        + f&#34;\n \t Quantiles of nb values in window: {q_str}&#34;,
+                        RuntimeWarning,
+                    )
+
+    @staticmethod
+    def _determine_bounds(
+            series_list: List[pd.Series], bound_method: str
+    ) -&gt; Tuple[pd.Timestamp, pd.Timestamp]:
+        &#34;&#34;&#34;Determine the bounds of the passed series.
+
+        Parameters
+        ----------
+        series_list : List[pd.Series]
+            The list of series for which the bounds are determined.
+
+        bound_method : str
+            The methodology which is used for the ``series_list`` bound determination
+
+        Returns
+        -------
+        Tuple[pd.Timestamp, pd.Timestamp]
+            The start &amp; end timestamp, respectively.
+
+        &#34;&#34;&#34;
+        if bound_method == &#34;inner&#34;:
+            latest_start = series_list[0].index[0]
+            earliest_stop = series_list[0].index[-1]
+            for series in series_list[1:]:
+                latest_start = max(latest_start, series.index[0])
+                earliest_stop = min(earliest_stop, series.index[-1])
+            return latest_start, earliest_stop
+
+        if bound_method == &#34;outer&#34;:
+            earliest_start = series_list[0].index[0]
+            latest_stop = series_list[0].index[-1]
+            for series in series_list[1:]:
+                earliest_start = min(earliest_start, series.index[0])
+                latest_stop = max(latest_stop, series.index[-1])
+            return earliest_start, latest_stop
+
+        elif bound_method == &#34;first&#34;:
+            return series_list[0].index[0], series_list[0].index[-1]
+
+        else:
+            raise ValueError(f&#34;invalid bound method string passed {bound_method}&#34;)
+
+    def apply_func(self, np_func: Union[Callable, NumpyFuncWrapper]) -&gt; pd.DataFrame:
+        &#34;&#34;&#34;Apply a function to the expanded time-series.
+
+        Parameters
+        ----------
+        np_func : Union[Callable, NumpyFuncWrapper]
+            The Callable (wrapped) function which will be applied.
+
+        Returns
+        -------
+        pd.DataFrame
+            The merged output of the function applied to every column in a
+            new DataFrame. The DataFrame&#39;s column-names have the format:
+                `&lt;series_col_name(s)&gt;_&lt;feature_name&gt;__w=&lt;window&gt;_s=&lt;stride&gt;`.
+
+        Raises
+        ------
+        ValueError
+            If the passed ``np_func`` tries to adjust the data its read-only view.
+
+        Notes
+        -----
+        * If ``np_func`` is only a callable argument, with no additional logic, this
+          will only work for a one-to-one mapping, i.e., no multiple feature-output
+          columns are supported for this case!&lt;br&gt;
+          If you want to calculate one-to-many, ``np_func`` should be
+          a ``NumpyFuncWrapper`` instance and explicitly use
+          the ``output_names`` attributes of its constructor.
+
+        &#34;&#34;&#34;
+
+        # Convert win &amp; stride to time-string if available :)
+        def create_feat_col_name(feat_name) -&gt; str:
+            win_str = timedelta_to_str(self.window)
+            stride_str = timedelta_to_str(self.stride)
+            win_stride_str = f&#34;w={win_str}_s={stride_str}&#34;
+            return f&#34;{&#39;|&#39;.join(self.series_key)}__{feat_name}__{win_stride_str}&#34;
+
+        if not isinstance(np_func, NumpyFuncWrapper):
+            np_func = NumpyFuncWrapper(np_func)
+        feat_names = np_func.output_names
+
+        t_start = time.time()
+
+        def get_slices(idx):
+            # get the slice of each series for the given index
+            return [
+                sc.values[sc.start_indexes[idx]: sc.end_indexes[idx]]
+                for sc in self.series_containers
+            ]
+
+        # --- Future work ---
+        # would be nice if we could optimize this double for loop with something
+        # more vectorized
+        out = np.array([np_func(*get_slices(idx)) for idx in range(len(self.index))])
+
+        # Aggregate function output in a dictionary
+        feat_out = {}
+        if out.ndim == 1 or (out.ndim == 2 and out.shape[1] == 1):
+            assert len(feat_names) == 1
+            feat_out[create_feat_col_name(feat_names[0])] = out.flatten()
+        if out.ndim == 2 and out.shape[1] &gt; 1:
+            assert len(feat_names) == out.shape[1]
+            for col_idx in range(out.shape[1]):
+                feat_out[create_feat_col_name(feat_names[col_idx])] = out[:, col_idx]
+
+        elapsed = time.time() - t_start
+        logger.info(
+            f&#34;Finished function [{np_func.func.__name__}] on &#34;
+            f&#34;{[self.series_key]} with window-stride &#34;
+            f&#34;[{self.window}, {self.stride}] in [{elapsed} seconds]!&#34;
+        )
+
+        return pd.DataFrame(index=self.index, data=feat_out)</code></pre>
+</details>
 </section>
 <section>
 </section>
@@ -91,6 +389,272 @@ If False and sparsity is observed, a warning is raised.</dd>
 <p class="admonition-title">TODO</p>
 <p>The <code>bound_method</code>-argument must still be propagated to <code>FeatureCollection</code></p>
 </div></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class StridedRolling:
+    &#34;&#34;&#34;Custom time-based sliding window with stride for pandas DataFrames.
+
+    Parameters
+    ----------
+    data : Union[pd.Series, pd.DataFrame]
+        ``pd.Series`` or ``pd.DataFrame`` to slide over, the index must be a
+        (time-zone-aware) ``pd.DatetimeIndex``.
+    window : Union[int, pd.Timedelta]
+        Either an int or ``pd.Timedelta``, representing the sliding window length in
+        samples or the sliding window duration, respectively.
+    stride : Union[int, pd.Timedelta]
+        Either an int or ``pd.Timedelta``, representing the stride size in samples or
+        the stride duration, respectively.
+    window_idx : str, optional
+        The window&#39;s index position which will be used as index for the
+        feature_window aggregation. Must be either of: [&#39;begin&#39;, &#39;middle&#39;, &#39;end&#39;], by
+        default &#39;end&#39;.
+    bound_method: str, optional
+        The start-end bound methodology which is used to generate the slice ranges when
+        ``data`` consists of multiple series / columns.
+        Must be either of: [&#39;inner&#39;, &#39;outer&#39;, &#39;first&#39;], by default &#39;inner&#39;.
+
+        * if ``inner``, the inner-bounds of the series are used, the
+        * if ``outer``, the inner-bounds of the series are used
+        * if ``first``, the first-series it&#39;s bound will be used
+    approve_sparsity: bool, optional
+        Bool indicating whether the user acknowledges that there may be sparsity (i.e.,
+        irregularly sampled data), by default False.
+        If False and sparsity is observed, a warning is raised.
+
+    Notes
+    -----
+    * This instance withholds a **read-only**-view of the data its values.
+
+    &lt;br&gt;
+
+    .. todo::
+        The `bound_method`-argument must still be propagated to `FeatureCollection`
+
+    &#34;&#34;&#34;
+
+    # Create the named tuple
+    _NumpySeriesContainer = namedtuple(
+        &#34;SeriesContainer&#34;, [&#34;values&#34;, &#34;start_indexes&#34;, &#34;end_indexes&#34;]
+    )
+
+    def __init__(
+            self,
+            data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
+            window: pd.Timedelta,
+            stride: pd.Timedelta,
+            window_idx: Optional[str] = &#34;end&#34;,
+            bound_method: Optional[str] = &#34;inner&#34;,
+            approve_sparsity: Optional[bool] = False,
+    ):
+        self.window: pd.Timedelta = window
+        self.stride: pd.Timedelta = stride
+
+        # 0. standardize the input
+        series_list: List[pd.Series] = to_series_list(data)
+        self.series_key: Tuple[str] = tuple([str(s.name) for s in series_list])
+
+        # 1. Determine the bounds
+        t_start, t_end = self._determine_bounds(series_list, bound_method)
+
+        # And slice **all** the series to these tightest bounds
+        assert (t_end - t_start) &gt; window
+        series_list = [s[t_start:t_end] for s in series_list]
+
+        # 2. Create the time_index which will be used for DataFrame reconstruction
+        # use closed = left to exclude &#39;end&#39; if it falls on the boundary
+        # note: the index automatically takes the timezone of `t_start` &amp; `t_end`
+        # note: the index-name of the first passed series will be used
+        self.index = pd.date_range(
+            t_start, t_end - window, freq=stride, name=series_list[0].index.name
+        )
+
+        # --- and adjust the time_index
+        # note: this code can also be placed in the `apply_func` method (if we want to
+        #  make the bound window-idx setting feature specific).
+        if window_idx == &#34;end&#34;:
+            self.index += window
+        elif window_idx == &#34;middle&#34;:
+            self.index += window / 2
+        elif window_idx == &#34;begin&#34;:
+            pass
+        else:
+            raise ValueError(
+                f&#34;window index {window_idx} must be either of: &#34;
+                &#34;[&#39;end&#39;, &#39;middle&#39;, &#39;begin&#39;]&#34;
+            )
+
+        # ---------- Efficient numpy code -------
+        # 1. Convert everything to int64
+        np_start = t_start.to_datetime64()
+        np_window = self.window.to_timedelta64()
+        np_stride = self.stride.to_timedelta64()
+
+        # 2. Precompute the start &amp; end times (these remain the same for each series)
+        # note: this if equivalent to:
+        #   if `window` == &#39;begin&#34;:
+        #       start_times = self.index.values
+        np_start_times = np.arange(
+            start=np_start, stop=np_start + (len(self.index) * np_stride),
+            step=np_stride,
+            dtype=np.datetime64,
+        )
+        np_end_times = np_start_times + np_window
+
+        self.series_containers: List[StridedRolling._NumpySeriesContainer] = []
+        for series in series_list:
+            # create a non-writeable view of the series
+            np_series = series.values
+            np_series.flags.writeable = False
+
+            np_idx_times = series.index.values
+            self.series_containers.append(
+                StridedRolling._NumpySeriesContainer(
+                    # TODO: maybe save the pd.Series instead of the np.series
+                    values=np_series,
+                    # the slicing will be performed on [ t_start, t_end [
+                    # TODO: this can maybe be optimized -&gt; further look into this
+                    # np_idx_times, np_start_times, &amp; np_end_times are all sorted!
+                    # as we assume &amp; check that the time index is monotonically
+                    # increasing &amp; the latter 2 are created using `np.arange()`
+                    start_indexes=np.searchsorted(np_idx_times, np_start_times, &#34;left&#34;),
+                    end_indexes=np.searchsorted(np_idx_times, np_end_times, &#34;left&#34;),
+                )
+            )
+
+            if not approve_sparsity:
+                last_container = self.series_containers[-1]
+                qs = [0, 0.1, 0.5, 0.9, 1]
+                series_idx_stats = np.quantile(
+                    last_container.end_indexes - last_container.start_indexes, q=qs
+                )
+                q_str = &#34;, &#34;.join([f&#34;q={q}: {v}&#34; for q, v in zip(qs, series_idx_stats)])
+                if series_idx_stats[0] != series_idx_stats[1]:  # min != max
+                    warnings.warn(
+                        f&#34;There are gaps in the time-series {series.name}; &#34;
+                        + f&#34;\n \t Quantiles of nb values in window: {q_str}&#34;,
+                        RuntimeWarning,
+                    )
+
+    @staticmethod
+    def _determine_bounds(
+            series_list: List[pd.Series], bound_method: str
+    ) -&gt; Tuple[pd.Timestamp, pd.Timestamp]:
+        &#34;&#34;&#34;Determine the bounds of the passed series.
+
+        Parameters
+        ----------
+        series_list : List[pd.Series]
+            The list of series for which the bounds are determined.
+
+        bound_method : str
+            The methodology which is used for the ``series_list`` bound determination
+
+        Returns
+        -------
+        Tuple[pd.Timestamp, pd.Timestamp]
+            The start &amp; end timestamp, respectively.
+
+        &#34;&#34;&#34;
+        if bound_method == &#34;inner&#34;:
+            latest_start = series_list[0].index[0]
+            earliest_stop = series_list[0].index[-1]
+            for series in series_list[1:]:
+                latest_start = max(latest_start, series.index[0])
+                earliest_stop = min(earliest_stop, series.index[-1])
+            return latest_start, earliest_stop
+
+        if bound_method == &#34;outer&#34;:
+            earliest_start = series_list[0].index[0]
+            latest_stop = series_list[0].index[-1]
+            for series in series_list[1:]:
+                earliest_start = min(earliest_start, series.index[0])
+                latest_stop = max(latest_stop, series.index[-1])
+            return earliest_start, latest_stop
+
+        elif bound_method == &#34;first&#34;:
+            return series_list[0].index[0], series_list[0].index[-1]
+
+        else:
+            raise ValueError(f&#34;invalid bound method string passed {bound_method}&#34;)
+
+    def apply_func(self, np_func: Union[Callable, NumpyFuncWrapper]) -&gt; pd.DataFrame:
+        &#34;&#34;&#34;Apply a function to the expanded time-series.
+
+        Parameters
+        ----------
+        np_func : Union[Callable, NumpyFuncWrapper]
+            The Callable (wrapped) function which will be applied.
+
+        Returns
+        -------
+        pd.DataFrame
+            The merged output of the function applied to every column in a
+            new DataFrame. The DataFrame&#39;s column-names have the format:
+                `&lt;series_col_name(s)&gt;_&lt;feature_name&gt;__w=&lt;window&gt;_s=&lt;stride&gt;`.
+
+        Raises
+        ------
+        ValueError
+            If the passed ``np_func`` tries to adjust the data its read-only view.
+
+        Notes
+        -----
+        * If ``np_func`` is only a callable argument, with no additional logic, this
+          will only work for a one-to-one mapping, i.e., no multiple feature-output
+          columns are supported for this case!&lt;br&gt;
+          If you want to calculate one-to-many, ``np_func`` should be
+          a ``NumpyFuncWrapper`` instance and explicitly use
+          the ``output_names`` attributes of its constructor.
+
+        &#34;&#34;&#34;
+
+        # Convert win &amp; stride to time-string if available :)
+        def create_feat_col_name(feat_name) -&gt; str:
+            win_str = timedelta_to_str(self.window)
+            stride_str = timedelta_to_str(self.stride)
+            win_stride_str = f&#34;w={win_str}_s={stride_str}&#34;
+            return f&#34;{&#39;|&#39;.join(self.series_key)}__{feat_name}__{win_stride_str}&#34;
+
+        if not isinstance(np_func, NumpyFuncWrapper):
+            np_func = NumpyFuncWrapper(np_func)
+        feat_names = np_func.output_names
+
+        t_start = time.time()
+
+        def get_slices(idx):
+            # get the slice of each series for the given index
+            return [
+                sc.values[sc.start_indexes[idx]: sc.end_indexes[idx]]
+                for sc in self.series_containers
+            ]
+
+        # --- Future work ---
+        # would be nice if we could optimize this double for loop with something
+        # more vectorized
+        out = np.array([np_func(*get_slices(idx)) for idx in range(len(self.index))])
+
+        # Aggregate function output in a dictionary
+        feat_out = {}
+        if out.ndim == 1 or (out.ndim == 2 and out.shape[1] == 1):
+            assert len(feat_names) == 1
+            feat_out[create_feat_col_name(feat_names[0])] = out.flatten()
+        if out.ndim == 2 and out.shape[1] &gt; 1:
+            assert len(feat_names) == out.shape[1]
+            for col_idx in range(out.shape[1]):
+                feat_out[create_feat_col_name(feat_names[col_idx])] = out[:, col_idx]
+
+        elapsed = time.time() - t_start
+        logger.info(
+            f&#34;Finished function [{np_func.func.__name__}] on &#34;
+            f&#34;{[self.series_key]} with window-stride &#34;
+            f&#34;[{self.window}, {self.stride}] in [{elapsed} seconds]!&#34;
+        )
+
+        return pd.DataFrame(index=self.index, data=feat_out)</code></pre>
+</details>
 <h3>Methods</h3>
 <dl>
 <dt id="tsflex.features.strided_rolling.StridedRolling.apply_func"><code class="name flex">
@@ -124,6 +688,85 @@ If you want to calculate one-to-many, <code>np_func</code> should be
 a <code>NumpyFuncWrapper</code> instance and explicitly use
 the <code>output_names</code> attributes of its constructor.</li>
 </ul></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def apply_func(self, np_func: Union[Callable, NumpyFuncWrapper]) -&gt; pd.DataFrame:
+    &#34;&#34;&#34;Apply a function to the expanded time-series.
+
+    Parameters
+    ----------
+    np_func : Union[Callable, NumpyFuncWrapper]
+        The Callable (wrapped) function which will be applied.
+
+    Returns
+    -------
+    pd.DataFrame
+        The merged output of the function applied to every column in a
+        new DataFrame. The DataFrame&#39;s column-names have the format:
+            `&lt;series_col_name(s)&gt;_&lt;feature_name&gt;__w=&lt;window&gt;_s=&lt;stride&gt;`.
+
+    Raises
+    ------
+    ValueError
+        If the passed ``np_func`` tries to adjust the data its read-only view.
+
+    Notes
+    -----
+    * If ``np_func`` is only a callable argument, with no additional logic, this
+      will only work for a one-to-one mapping, i.e., no multiple feature-output
+      columns are supported for this case!&lt;br&gt;
+      If you want to calculate one-to-many, ``np_func`` should be
+      a ``NumpyFuncWrapper`` instance and explicitly use
+      the ``output_names`` attributes of its constructor.
+
+    &#34;&#34;&#34;
+
+    # Convert win &amp; stride to time-string if available :)
+    def create_feat_col_name(feat_name) -&gt; str:
+        win_str = timedelta_to_str(self.window)
+        stride_str = timedelta_to_str(self.stride)
+        win_stride_str = f&#34;w={win_str}_s={stride_str}&#34;
+        return f&#34;{&#39;|&#39;.join(self.series_key)}__{feat_name}__{win_stride_str}&#34;
+
+    if not isinstance(np_func, NumpyFuncWrapper):
+        np_func = NumpyFuncWrapper(np_func)
+    feat_names = np_func.output_names
+
+    t_start = time.time()
+
+    def get_slices(idx):
+        # get the slice of each series for the given index
+        return [
+            sc.values[sc.start_indexes[idx]: sc.end_indexes[idx]]
+            for sc in self.series_containers
+        ]
+
+    # --- Future work ---
+    # would be nice if we could optimize this double for loop with something
+    # more vectorized
+    out = np.array([np_func(*get_slices(idx)) for idx in range(len(self.index))])
+
+    # Aggregate function output in a dictionary
+    feat_out = {}
+    if out.ndim == 1 or (out.ndim == 2 and out.shape[1] == 1):
+        assert len(feat_names) == 1
+        feat_out[create_feat_col_name(feat_names[0])] = out.flatten()
+    if out.ndim == 2 and out.shape[1] &gt; 1:
+        assert len(feat_names) == out.shape[1]
+        for col_idx in range(out.shape[1]):
+            feat_out[create_feat_col_name(feat_names[col_idx])] = out[:, col_idx]
+
+    elapsed = time.time() - t_start
+    logger.info(
+        f&#34;Finished function [{np_func.func.__name__}] on &#34;
+        f&#34;{[self.series_key]} with window-stride &#34;
+        f&#34;[{self.window}, {self.stride}] in [{elapsed} seconds]!&#34;
+    )
+
+    return pd.DataFrame(index=self.index, data=feat_out)</code></pre>
+</details>
 </dd>
 </dl>
 </dd>

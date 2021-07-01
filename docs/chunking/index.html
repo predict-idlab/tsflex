@@ -12,6 +12,10 @@
 <style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}#sidebar > *:last-child{margin-bottom:2cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#ebf3ff}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#edfcf4}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
 <style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%;height:100vh;overflow:auto;position:sticky;top:0}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
 <style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script>
+window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+ga('create', 'G-C88NHWRRP8', 'auto'); ga('send', 'pageview');
+</script><script async src='https://www.google-analytics.com/analytics.js'></script>
 <script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
 <script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
 <link rel="icon" href="https://media.discordapp.net/attachments/372491075153166338/852906324417445908/icon.png">
@@ -24,6 +28,22 @@
 </header>
 <section id="section-intro">
 <p>Utilities for chunking time-series data before feeding it to the operators.</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python"># -*- coding: utf-8 -*-
+&#34;&#34;&#34;Utilities for chunking time-series data before feeding it to the operators.
+&#34;&#34;&#34;
+
+__author__ = &#39;Jonas Van Der Donckt&#39;
+
+from .chunking import chunk_data
+
+__all__ = [
+    &#34;chunk_data&#34;
+]</code></pre>
+</details>
 </section>
 <section>
 <h2 class="section-title" id="header-submodules">Sub-modules</h2>
@@ -40,7 +60,7 @@
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="tsflex.chunking.chunk_data"><code class="name flex">
-<span>def <span class="ident">chunk_data</span></span>(<span>data, fs_dict, chunk_range_margin_s=None, min_chunk_dur_s=None, max_chunk_dur_s=None, sub_chunk_overlap_s=0, copy=True, verbose=False)</span>
+<span>def <span class="ident">chunk_data</span></span>(<span>data, fs_dict, chunk_range_margin=None, min_chunk_dur=None, max_chunk_dur=None, sub_chunk_overlap='0s', copy=True, verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Divide the time-series <code>data</code> in same time-range chunks.</p>
@@ -50,11 +70,6 @@
 <li>Divides the <code>data</code> into chunks, according to the parameter
 configuration and the detected gaps.</li>
 </ol>
-<div class="admonition todo">
-<p class="admonition-title">TODO</p>
-<p>The (int/float) time-based chunk argument could also support
-time-strings or even pd.timedelta.</p>
-</div>
 <h2 id="notes">Notes</h2>
 <ul>
 <li>As the <code>fs_dict</code> is requested, the assumption is made that <strong>each item</strong> in <code>data</code>
@@ -76,25 +91,25 @@ frequency (when there are no gaps).</dd>
 <dt><strong><code>fs_dict</code></strong> :&ensp;<code>Dict[str, int]</code></dt>
 <dd>The sample frequency dict. This dict must at least withhold all the keys
 from the items in <code>data</code>.</dd>
-<dt><strong><code>chunk_range_margin_s</code></strong> :&ensp;<code>float</code>, optional</dt>
+<dt><strong><code>chunk_range_margin</code></strong> :&ensp;<code>Union[float, str, pd.Timedelta]</code>, optional</dt>
 <dd>
-<p>The allowed margin (in seconds) between same time-range chunks their start
-and end time. If <code>None</code> the margin will be set as:</p>
+<p>The allowed margin (in seconds if a float) between same time-range chunks their
+start and end time. If <code>None</code> the margin will be set as:</p>
 <pre><code>2 / min(fs_dict.intersection(data.names).values())
 </code></pre>
 <p>Which is equivalent to twice the min-fs (= max-period) of the passed <code>data</code>,
 by default None.</p>
 </dd>
-<dt><strong><code>min_chunk_dur_s</code></strong> :&ensp;<code>float</code>, optional</dt>
-<dd>The minimal duration of a chunk in seconds, by default None
+<dt><strong><code>min_chunk_dur</code></strong> :&ensp;<code>Union[float, str, pd.Timedelta]</code>, optional</dt>
+<dd>The minimal duration of a chunk (in seconds if a float), by default None
 Chunks with durations smaller than this will be discarded (and not returned).</dd>
-<dt><strong><code>max_chunk_dur_s</code></strong> :&ensp;<code>float</code>, optional</dt>
-<dd>The maximal duration of a chunk in seconds, by default None
+<dt><strong><code>max_chunk_dur</code></strong> :&ensp;<code>Union[float, str, pd.Timedelta]</code>, optional</dt>
+<dd>The maximal duration of a chunk (in seconds if a float), by default None
 Chunks with durations larger than this will be chunked in smaller <code>sub_chunks</code>
 where each sub-chunk has a maximal duration of <code>max_chunk_dur_s</code>.</dd>
-<dt><strong><code>sub_chunk_overlap_s</code></strong> :&ensp;<code>float</code>, optional</dt>
-<dd>The sub-chunk boundary overlap in seconds. If available, this margin will be
-added to either side of the <code>sub_chunk</code>. \n
+<dt><strong><code>sub_chunk_overlap</code></strong> :&ensp;<code>Union[float, str, pd.Timedelta]</code>, optional</dt>
+<dd>The sub-chunk boundary overlap (in seconds if a float). If available, this
+margin will be added to either side of the <code>sub_chunk</code>. \n
 This is especially useful to not lose inter-<code>sub_chunk</code> data (as each
 <code>sub_chunk</code> is in fact a continuous chunk) when window-based aggregations
 are performed on these same time range output (sub_)chunks. \n
@@ -110,6 +125,225 @@ This argument is only relevant if <code>max_chunk_dur_s</code> is set.</dd>
 <dt><code>List[List[pd.Series]]</code></dt>
 <dd>A list of same time range chunks.</dd>
 </dl></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def chunk_data(
+        data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
+        fs_dict: Dict[str, int],
+        chunk_range_margin: Optional[Union[float, str, pd.Timedelta]] = None,
+        min_chunk_dur: Optional[Union[float, str, pd.Timedelta]] = None,
+        max_chunk_dur: Optional[Union[float, str, pd.Timedelta]] = None,
+        sub_chunk_overlap: Optional[Union[float, str, pd.Timedelta]] = &#34;0s&#34;,
+        copy=True,
+        verbose=False,
+) -&gt; List[List[pd.Series]]:
+    r&#34;&#34;&#34;Divide the time-series `data` in same time-range chunks.
+
+    Does 2 things:
+
+    1. Detecting gaps in the `data`(-list) time series.
+    2. Divides the `data` into chunks, according to the parameter
+        configuration and the detected gaps.
+
+    Notes
+    -----
+    * As the `fs_dict` is requested, the assumption is made that **each item** in `data`
+      has a **fixed sample frequency** and that **each item** in `data` 
+    * All subsequent series-chunks are matched against the time-ranges of the first
+      series. This implies that **the first item in `data` serves as a reference**
+      for gap-matching.
+    * The term `sub-chunk` refers to the chunks who exceed the `max_chunk_duration_s`
+      parameter and are therefore further divided into sub-chunks.
+      TODO: @Jeroen -&gt; zo een note toevoegen aan constructor featuredescriptor
+
+    Parameters
+    ----------
+    data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
+        The time-series data which will be chunked. Each item in `data` must have a 
+        `pd.DatetimeIndex`. 
+        The assumption is made that each `item` in data has a _nearly-constant_ sample 
+        frequency (when there are no gaps).
+    fs_dict: Dict[str, int]
+        The sample frequency dict. This dict must at least withhold all the keys
+        from the items in `data`.
+    chunk_range_margin: Union[float, str, pd.Timedelta], optional
+        The allowed margin (in seconds if a float) between same time-range chunks their
+        start and end time. If `None` the margin will be set as:
+
+            2 / min(fs_dict.intersection(data.names).values())
+
+         Which is equivalent to twice the min-fs (= max-period) of the passed `data`,
+         by default None.
+    min_chunk_dur : Union[float, str, pd.Timedelta], optional
+        The minimal duration of a chunk (in seconds if a float), by default None
+        Chunks with durations smaller than this will be discarded (and not returned).
+    max_chunk_dur : Union[float, str, pd.Timedelta], optional
+        The maximal duration of a chunk (in seconds if a float), by default None
+        Chunks with durations larger than this will be chunked in smaller `sub_chunks`
+        where each sub-chunk has a maximal duration of `max_chunk_dur_s`.
+    sub_chunk_overlap: Union[float, str, pd.Timedelta], optional
+        The sub-chunk boundary overlap (in seconds if a float). If available, this
+        margin will be added to either side of the `sub_chunk`. \n
+        This is especially useful to not lose inter-`sub_chunk` data (as each
+        `sub_chunk` is in fact a continuous chunk) when window-based aggregations
+        are performed on these same time range output (sub_)chunks. \n
+        This argument is only relevant if `max_chunk_dur_s` is set.
+    copy: boolean, optional
+        If set True will return a new view (on which you won&#39;t get a
+        `SettingWithCopyWarning` if you change the content), by default False.
+    verbose : bool, optional
+        If set, will print more verbose output, by default False
+
+    Returns
+    -------
+    List[List[pd.Series]]
+        A list of same time range chunks.
+
+    &#34;&#34;&#34;
+    # Convert the input data
+    series_list = to_series_list(data)
+
+    if min_chunk_dur is not None:
+        min_chunk_dur = parse_time_arg(min_chunk_dur)
+    if max_chunk_dur is not None:
+        max_chunk_dur = parse_time_arg(max_chunk_dur)
+    sub_chunk_overlap = parse_time_arg(sub_chunk_overlap)
+
+    # Assert that there are no duplicate series names and the names reside in fs_dict
+    assert len(series_list) == len(set([s.name for s in series_list]))
+    assert all([str(s.name) in fs_dict for s in series_list])
+
+    # Default arg -&gt; set the chunk range margin to 2x the min-freq its period
+    if chunk_range_margin is None:
+        chunk_range_margin = 2 / min([fs_dict[str(s.name)] for s in series_list])
+
+    chunk_range_margin = parse_time_arg(chunk_range_margin)
+    assert chunk_range_margin.total_seconds() &gt; 0, &#34;chunk_range_margin must be &gt; 0&#34;
+
+    # Some range asserts
+    assert sub_chunk_overlap.total_seconds() &gt;= 0, f&#34;sub_chunk_overlap_s must be &gt; 0&#34;
+    if max_chunk_dur is not None:
+        assert max_chunk_dur.total_seconds() &gt; 0, f&#34;max_chunk_dur_s must be &gt; 0&#34;
+
+    # Variable in which the same time-range chunks are stored
+    # Each list item can be seen as (t_start_chunk, t_end_chunk, chunk_list)
+    same_range_chunks: List[Tuple[pd.Timestamp, pd.Timestamp, List[pd.Series]]] = []
+
+    def print_verbose_time(sig, t_begin, t_end, msg=&#34;&#34;):
+        fmt = &#34;%Y-%m-%d %H:%M&#34;
+        if not verbose:
+            return
+        print(
+            f&#34;slice {sig.name} {t_begin.strftime(fmt):&lt;10} - {t_end.strftime(fmt):&lt;10} &#34;
+            f&#34;-  shape: {sig[t_begin:t_end].shape}&#34;
+        )
+        if len(msg):
+            print(f&#34;\t└──&gt;  {msg}&#34;)
+
+    def slice_time(sig: pd.Series, t_begin: pd.Timestamp,
+                   t_end: pd.Timestamp) -&gt; pd.Series:
+        &#34;&#34;&#34;Slice the sig Series.&#34;&#34;&#34;
+        if copy:
+            return sig[t_begin:t_end].copy()
+        else:
+            return sig[t_begin:t_end]
+
+    def insert_chunk(chunk: pd.Series):
+        &#34;&#34;&#34;Insert the chunk into `same_range_chunks`.&#34;&#34;&#34;
+        t_chunk_start, t_chunk_end = chunk.index[[0, -1]]
+
+        # Iterate over the same-(time)range-chunk (src) collection
+        for src_start, src_end, src_chunks in same_range_chunks:
+            # Check for overlap
+            if (abs(src_start - t_chunk_start) &lt;= chunk_range_margin and
+                    abs(src_end - t_chunk_end) &lt;= chunk_range_margin):
+                # Check series name not in src_chunks
+                if chunk.name not in [src_c.name for src_c in src_chunks]:
+                    src_chunks.append(chunk)
+                    print_verbose_time(chunk, t_chunk_start, t_chunk_end,
+                                       &#34;INSERT chunk&#34;)
+                    return
+                else:
+                    # There already exists a sub_chunk of this series name
+                    raise ValueError(&#34;There already exists a chunk with this series&#34;
+                                     f&#34; name - {chunk.name}&#34;)
+
+        same_range_chunks.append((t_chunk_start, t_chunk_end, [chunk]))
+        print_verbose_time(chunk, t_chunk_start, t_chunk_end, &#34;APPEND sub chunk&#34;)
+
+    for series in series_list:
+        # 1. Some checks
+        if len(series) &lt; 2:
+            if verbose:
+                print(f&#34;Too small series: {series.name} - shape: {series.shape} &#34;)
+            continue
+
+        # Allowed offset (in seconds) is sample_period + 0.5*sample_period
+        fs_sig = fs_dict[str(series.name)]
+        gaps = series.index.to_series().diff() &gt; timedelta(seconds=(1 + .5) / fs_sig)
+        # Set the first and last timestamp to True
+        gaps.iloc[[0, -1]] = True
+        gaps: List[pd.Timestamp] = series[gaps].index.to_list()
+        if verbose:
+            print(&#34;-&#34; * 10, &#34; detected gaps&#34;, &#34;-&#34; * 10)
+            print(*gaps, sep=&#34;\n&#34;)
+
+        for (t_begin_c, t_end_c) in zip(gaps, gaps[1:]):
+            # The t_end is the t_start of the new time range -&gt; hence [:-1]
+            # =&gt; cut on [t_start_c(hunk), t_end_c(hunk)[
+            sig_chunk = series[t_begin_c:t_end_c]
+            if t_end_c &lt; gaps[-1]:
+                # Note: we doe not adjust when t_end_c = gaps[-1]
+                #   (as gaps-[-1] is not really a gap)
+                sig_chunk = sig_chunk[:-1]
+
+            if len(sig_chunk) &gt; 2:  # re-adjust the t_end
+                t_end_c = sig_chunk.index[-1]
+            else:
+                print_verbose_time(series, t_begin_c, t_end_c, &#34;too small df_chunk&#34;)
+                continue
+
+            # Check for min duration
+            chunk_range_s = int(len(sig_chunk) / fs_sig)
+            if min_chunk_dur is not None and chunk_range_s &lt; \
+                    min_chunk_dur.total_seconds():
+                print_verbose_time(
+                    sig_chunk,
+                    t_begin_c,
+                    t_end_c,
+                    f&#34;Too small chunk min_dur {min_chunk_dur} &gt; {sig_chunk.shape}&#34;,
+                )
+                continue
+
+            # Divide the chunk into sub_chunks (sc&#39;s)
+            if max_chunk_dur is not None and chunk_range_s &gt; \
+                    max_chunk_dur.total_seconds():
+                print_verbose_time(
+                    sig_chunk, t_begin_c, t_end_c, &#34;Dividing in sub-chunks&#34;
+                )
+                t_begin_sc = t_begin_c
+                while t_begin_sc &lt; t_end_c:
+                    # Calculate the end sub-chunk time
+                    t_end_sc = t_begin_sc + max_chunk_dur
+
+                    # Get the end and begin sub-chunk margin
+                    t_end_sc_m = t_end_sc + sub_chunk_overlap
+                    t_end_sc_m = min(t_end_c, t_end_sc_m)
+
+                    t_begin_sc_m = t_begin_sc - sub_chunk_overlap
+                    t_begin_sc_m = max(t_begin_c, t_begin_sc_m)
+
+                    # Slice &amp; add the sub-chunk to the list
+                    insert_chunk(chunk=slice_time(series, t_begin_sc_m, t_end_sc_m), )
+
+                    # Update the condition&#39;s variable
+                    t_begin_sc = t_end_sc
+            else:
+                insert_chunk(chunk=slice_time(series, t_begin_c, t_end_c))
+    return [chunk_range[-1] for chunk_range in same_range_chunks]</code></pre>
+</details>
 </dd>
 </dl>
 </section>
