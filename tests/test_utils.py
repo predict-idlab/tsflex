@@ -11,7 +11,6 @@ from .utils import (
     dummy_data,
     logging_file_path,
     dataframe_to_series_dict,
-    pipe_transform,
     series_to_series_dict,
 )
 
@@ -60,31 +59,3 @@ def test_to_series_dict(dummy_data):
     assert series_dict.keys() == set(["TMP"])
     assert_index_equal(series_dict["TMP"].index, dummy_data.index)
     assert_series_equal(series_dict["TMP"], dummy_data["TMP"])
-
-
-from sklearn.pipeline import Pipeline
-from sklearn.impute import SimpleImputer
-from sklearn.preprocessing import MinMaxScaler
-from sklearn.linear_model import LinearRegression
-
-
-def test_pipe_transform(dummy_data):
-    pipe = Pipeline(
-        steps=[
-            ("impute", SimpleImputer(strategy="median")),
-            ("scale", MinMaxScaler()),
-            ("regr", LinearRegression()),
-        ]
-    )
-
-    inp = dummy_data[["EDA", "TMP", "ACC_x"]].copy()
-    outp = dummy_data["ACC_y"]
-    inp.iloc[:10] = np.nan
-
-    pipe.fit(inp, outp)
-    assert any(inp.isna())
-    inp_transformed = pipe_transform(pipe, inp)
-    assert inp_transformed.shape == inp.shape
-    assert not np.any(np.isnan(inp_transformed))
-    assert np.isclose(np.max(inp_transformed, axis=0), [1] * 3).all()
-    assert np.isclose(np.min(inp_transformed, axis=0), [0] * 3).all()

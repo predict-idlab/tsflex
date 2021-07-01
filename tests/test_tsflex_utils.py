@@ -43,6 +43,3 @@ def test_timedelta_to_str():
     assert timedelta_to_str(to_td('- 30 milliseconds')) == 'NEG_0.03s'
     assert timedelta_to_str(to_td('- 1000microseconds')) == 'NEG_0.001s'
     assert timedelta_to_str(to_td('- 1000000 nanoseconds')) == 'NEG_0.001s'
-
-
-
