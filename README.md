@@ -1,12 +1,12 @@
 # <p align="center"> <a href="https://predict-idlab.github.io/tsflex"><img alt="tsflex" src="https://raw.githubusercontent.com/predict-idlab/tsflex/main/docs/_static/logo.png" height="100"></a></p>
 
 [![PyPI Latest Release](https://img.shields.io/pypi/v/tsflex.svg)](https://pypi.org/project/tsflex/)
-[![Documentation](https://github.com/predict-idlab/tsflex/actions/workflows/deploy-docs.yml/badge.svg)](https://github.com/predict-idlab/tsflex/actions/workflows/deploy-docs.yml)
-[![Testing](https://github.com/predict-idlab/tsflex/actions/workflows/test.yml/badge.svg)](https://github.com/predict-idlab/tsflex/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/predict-idlab/tsflex/branch/main/graph/badge.svg)](https://codecov.io/gh/predict-idlab/tsflex)
 [![Code quality](https://img.shields.io/lgtm/grade/python/g/predict-idlab/tsflex.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/predict-idlab/tsflex/context:python)
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 [![Downloads](https://pepy.tech/badge/tsflex)](https://pepy.tech/project/tsflex)
+[![Documentation](https://github.com/predict-idlab/tsflex/actions/workflows/deploy-docs.yml/badge.svg)](https://github.com/predict-idlab/tsflex/actions/workflows/deploy-docs.yml)
+[![Testing](https://github.com/predict-idlab/tsflex/actions/workflows/test.yml/badge.svg)](https://github.com/predict-idlab/tsflex/actions/workflows/test.yml)
 
 *tsflex* is a toolkit for _**flex**ible **t**ime-**s**eries_ **[processing](https://predict-idlab.github.io/tsflex/processing) & [feature extraction](https://predict-idlab.github.io/tsflex/features)**, making few assumptions about input data. 
 
@@ -74,7 +74,8 @@ fc.calculate(data=data)
 
 * Scikit-learn integration for both processing and feature extraction<br>
   Is actively developed upon [sklearn integration](https://github.com/predict-idlab/tsflex/tree/sklearn_integration) branch.
-* Multi-index
+* Support for multi-indexed dataframes
+* Random-strided rolling for data-augmention purposes.
 
 ### Citing this package
 
