@@ -244,10 +244,6 @@ features.</p></div>
 <dd>
 <div class="desc"><p>FeatureCollection class for bookkeeping and calculation of time-series features …</p></div>
 </dd>
-<dt><code class="name"><a title="tsflex.features.feature_collection_sk" href="feature_collection_sk.html">tsflex.features.feature_collection_sk</a></code></dt>
-<dd>
-<div class="desc"><p>SKFeatureCollection class for wrapped sklearn-compatible <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> …</p></div>
-</dd>
 <dt><code class="name"><a title="tsflex.features.function_wrapper" href="function_wrapper.html">tsflex.features.function_wrapper</a></code></dt>
 <dd>
 <div class="desc"><p>NumpyFuncWrapper class for object-oriented representation of a function.</p></div>
@@ -624,105 +620,6 @@ the local scope, like lambdas.</strong></li>
 </dd>
 </dl>
 </dd>
-<dt id="tsflex.features.SKFeatureCollection"><code class="flex name class">
-<span>class <span class="ident">SKFeatureCollection</span></span>
-<span>(</span><span>feature_descriptors, logging_file_path=None, n_jobs=None)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Sklearn-compatible transformer for extracting features using <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code>.</p>
-<p>This class is basically a wrapper around <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> and its <code>calculate</code>
-method, enabling sklearn compatibility, e.g. including an instance of this class
-in <code>sklearn.pipeline.Pipeline</code>. The constructor wraps the <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> its
-constructor arguments and the
-relevant parameters of its <code>calculate</code> method.</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>feature_descriptors</code></strong> :&ensp;<code>Union[<a title="tsflex.features.FeatureDescriptor" href="#tsflex.features.FeatureDescriptor">FeatureDescriptor</a>, <a title="tsflex.features.MultipleFeatureDescriptors" href="#tsflex.features.MultipleFeatureDescriptors">MultipleFeatureDescriptors</a>, List[Union[<a title="tsflex.features.FeatureDescriptor" href="#tsflex.features.FeatureDescriptor">FeatureDescriptor</a>, <a title="tsflex.features.MultipleFeatureDescriptors" href="#tsflex.features.MultipleFeatureDescriptors">MultipleFeatureDescriptors</a>]]]</code></dt>
-<dd>Features to include in the collection.</dd>
-<dt><strong><code>logging_file_path</code></strong> :&ensp;<code>Union[str, Path]</code>, optional</dt>
-<dd>The file path where the logged messages are stored. If <code>None</code>, then no
-logging <code>FileHandler</code> will be used and the logging messages are only pushed
-to stdout. Otherwise, a logging <code>FileHandler</code> will write the logged messages
-to the given file path.</dd>
-<dt><strong><code>n_jobs</code></strong> :&ensp;<code>int</code>, optional</dt>
-<dd>
-<p>The number of processes used for the feature calculation. If <code>None</code>, then
-the number returned by <code>os.cpu_count()</code> is used, by default None. </p>
-<p>If n_jobs is either 0 or 1, the code will be executed sequentially without
-creating a process pool. This is very useful when debugging, as the stack
-trace will be more comprehensible.</p>
-</dd>
-</dl>
-<h2 id="notes">Notes</h2>
-<ul>
-<li>If a <code>logging_file_path</code> is provided, the execution (time) info can be
-retrieved by calling <code><a title="tsflex.features.logger.get_feature_logs" href="logger.html#tsflex.features.logger.get_feature_logs">get_feature_logs()</a>(logging_file_path)</code>. <br>
-Be aware that the <code>logging_file_path</code> gets cleared before the logger pushes
-logged messages. Hence, one should use a separate logging file for each
-constructed processing and feature instance with this library.</li>
-<li>It is not possible to pass the <code>merge_dfs</code> argument from the <code>calculate</code>
-method, because this should always be True (in order to output a valid
-iterable in the <code>transform</code> method)</li>
-</ul>
-<p>The following three changes were necessary to enable this sklearn-compatibility: </p>
-<ol>
-<li>The parameters of the <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> its constructor are logged in this
-class.</li>
-<li>The relevant parameters of the <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> its <code>calculate</code> method have
-been moved to the constructor and are also logged.</li>
-<li>The <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> its <code>calculate</code> method is wrapped in this class its
-<code>transform</code> method,</li>
-</ol></div>
-<h3>Ancestors</h3>
-<ul class="hlist">
-<li>sklearn.base.TransformerMixin</li>
-</ul>
-<h3>Methods</h3>
-<dl>
-<dt id="tsflex.features.SKFeatureCollection.fit"><code class="name flex">
-<span>def <span class="ident">fit</span></span>(<span>self, X=None, y=None)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Fit function that is not needed for this transformer.</p>
-<h2 id="note">Note</h2>
-<p>This function does nothing and is here for compatibility reasons.</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>X</code></strong> :&ensp;<code>Any</code></dt>
-<dd>Unneeded.</dd>
-<dt><strong><code>y</code></strong> :&ensp;<code>Any</code></dt>
-<dd>Unneeded.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code><a title="tsflex.features.SKFeatureCollection" href="#tsflex.features.SKFeatureCollection">SKFeatureCollection</a></code></dt>
-<dd>The transformer instance itself is returned.</dd>
-</dl></div>
-</dd>
-<dt id="tsflex.features.SKFeatureCollection.transform"><code class="name flex">
-<span>def <span class="ident">transform</span></span>(<span>self, X)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Calculate features on the data.</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>X</code></strong> :&ensp;<code>Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]</code></dt>
-<dd>
-<p>Dataframe or Series or list thereof, with all the required data for the
-feature calculation.</p>
-<p><strong>Remark</strong>: each Series/DataFrame must have a <code>pd.DatetimeIndex</code>. </p>
-<p>Also note that this parameter corresponds to the <code>data</code> parameter of the
-<code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> its <code>calculate</code> method.</p>
-</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>pd.DataFrame</code></dt>
-<dd>A DataFrame, containing the calculated features.</dd>
-</dl></div>
-</dd>
-</dl>
-</dd>
 <dt id="tsflex.features.NumpyFuncWrapper"><code class="flex name class">
 <span>class <span class="ident">NumpyFuncWrapper</span></span>
 <span>(</span><span>func, output_names=None, **kwargs)</span>
@@ -815,7 +712,6 @@ alt="logo should be displayed here" style="width: 100%;"></a>
 <ul>
 <li><code><a title="tsflex.features.feature" href="feature.html">tsflex.features.feature</a></code></li>
 <li><code><a title="tsflex.features.feature_collection" href="feature_collection.html">tsflex.features.feature_collection</a></code></li>
-<li><code><a title="tsflex.features.feature_collection_sk" href="feature_collection_sk.html">tsflex.features.feature_collection_sk</a></code></li>
 <li><code><a title="tsflex.features.function_wrapper" href="function_wrapper.html">tsflex.features.function_wrapper</a></code></li>
 <li><code><a title="tsflex.features.logger" href="logger.html">tsflex.features.logger</a></code></li>
 <li><code><a title="tsflex.features.strided_rolling" href="strided_rolling.html">tsflex.features.strided_rolling</a></code></li>
@@ -846,13 +742,6 @@ alt="logo should be displayed here" style="width: 100%;"></a>
 <li><code><a title="tsflex.features.FeatureCollection.add" href="#tsflex.features.FeatureCollection.add">add</a></code></li>
 <li><code><a title="tsflex.features.FeatureCollection.calculate" href="#tsflex.features.FeatureCollection.calculate">calculate</a></code></li>
 <li><code><a title="tsflex.features.FeatureCollection.serialize" href="#tsflex.features.FeatureCollection.serialize">serialize</a></code></li>
-</ul>
-</li>
-<li>
-<h4><code><a title="tsflex.features.SKFeatureCollection" href="#tsflex.features.SKFeatureCollection">SKFeatureCollection</a></code></h4>
-<ul class="">
-<li><code><a title="tsflex.features.SKFeatureCollection.fit" href="#tsflex.features.SKFeatureCollection.fit">fit</a></code></li>
-<li><code><a title="tsflex.features.SKFeatureCollection.transform" href="#tsflex.features.SKFeatureCollection.transform">transform</a></code></li>
 </ul>
 </li>
 <li>

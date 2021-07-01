@@ -239,10 +239,6 @@ For these cases we provide the <a href="#tsflex.processing.dataframe_func">dataf
 <dd>
 <div class="desc"><p>SeriesPipeline class for time-series data (pre-)processing pipeline.</p></div>
 </dd>
-<dt><code class="name"><a title="tsflex.processing.series_pipeline_sk" href="series_pipeline_sk.html">tsflex.processing.series_pipeline_sk</a></code></dt>
-<dd>
-<div class="desc"><p>SKSeriesPipeline class for wrapped sklearn-compatible <code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code> …</p></div>
-</dd>
 <dt><code class="name"><a title="tsflex.processing.series_processor" href="series_processor.html">tsflex.processing.series_processor</a></code></dt>
 <dd>
 <div class="desc"><p>Code for time-series data (pre-)processing.</p></div>
@@ -559,117 +555,6 @@ local scope, like lambdas.</p>
 </dd>
 </dl>
 </dd>
-<dt id="tsflex.processing.SKSeriesPipeline"><code class="flex name class">
-<span>class <span class="ident">SKSeriesPipeline</span></span>
-<span>(</span><span>processors, return_all_series=True, drop_keys=None, logging_file_path=None)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Sklearn-compatible transformer for processing data using a <code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code>.</p>
-<p>This class is basically a wrapper around <code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code> and its <code>process</code>
-method, enabling sklearn compatibility, e.g. including an instance of this class
-in <code>sklearn.pipeline.Pipeline</code>.</p>
-<p>Concretely three changes were necessary to enable this sklearn-compatibility</p>
-<ol>
-<li>The parameters of the <code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code> its constructor are logged in this
-class.</li>
-<li>The relevant parameters of the <code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code> its <code>process</code> method have
-been moved to the constructor and are also logged.</li>
-<li>The <code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code> its <code>process</code> method is wrapped in this class its
-<code>transform</code> method,</li>
-</ol>
-<p>This constructor wraps the <code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code> constructor arguments and the
-relevant parameters of its <code>process</code> method.</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>processors</code></strong> :&ensp;<code>List[<a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a>]</code></dt>
-<dd>List of <code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code> objects that will be applied sequentially to the
-given data. The processing steps will be executed in the
-same order as
-passed with this list.</dd>
-<dt><strong><code>return_all_series</code></strong> :&ensp;<code>bool</code>, optional</dt>
-<dd>
-<p>Whether the output needs to return all the series, by default True. </p>
-<ul>
-<li>If <code>True</code> the output will contain all series that were passed to this
-method.</li>
-<li>If <code>False</code> the output will contain just the required series (see
-<code><a title="tsflex.processing.SeriesPipeline.get_required_series" href="#tsflex.processing.SeriesPipeline.get_required_series">SeriesPipeline.get_required_series()</a></code>).</li>
-</ul>
-</dd>
-<dt><strong><code>drop_keys</code></strong> :&ensp;<code>List[str]</code>, optional</dt>
-<dd>Which keys should be dropped when returning the output, by default None.</dd>
-<dt><strong><code>logging_file_path</code></strong> :&ensp;<code>Union[str, Path]</code>, optional</dt>
-<dd>
-<p>The file path where the logged messages are stored, by default None. </p>
-<ul>
-<li>If <code>None</code>, then no logging <code>FileHandler</code> will be used and the logging
-messages are only pushed to stdout.</li>
-<li>Otherwise, a logging <code>FileHandler</code> will write the logged messages to
-the given file path.</li>
-</ul>
-</dd>
-</dl>
-<h2 id="notes">Notes</h2>
-<ul>
-<li>If a <code>logging_file_path</code> is provided, the execution (time) statistics can be
-retrieved by calling <code><a title="tsflex.processing.logger.get_processor_logs" href="logger.html#tsflex.processing.logger.get_processor_logs">get_processor_logs()</a>(logging_file_path)</code>. <br>
-Be aware that the <code>logging_file_path</code> gets cleared before the logger pushes
-logged messages. Hence, one should use a separate logging file for each
-constructed processing and feature instance with this library.</li>
-<li>It is not possible to pass the <code>return_df</code> argument from the <code>process</code>
-method, because this should always be True (in order to output a valid
-iterable in the <code>transform</code> method)</li>
-</ul></div>
-<h3>Ancestors</h3>
-<ul class="hlist">
-<li>sklearn.base.TransformerMixin</li>
-</ul>
-<h3>Methods</h3>
-<dl>
-<dt id="tsflex.processing.SKSeriesPipeline.fit"><code class="name flex">
-<span>def <span class="ident">fit</span></span>(<span>self, X=None, y=None)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Fit function that is not needed for this transformer.</p>
-<h2 id="note">Note</h2>
-<p>This function does nothing and is here for compatibility reasons.</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>X</code></strong> :&ensp;<code>Any</code></dt>
-<dd>Unneeded.</dd>
-<dt><strong><code>y</code></strong> :&ensp;<code>Any</code></dt>
-<dd>Unneeded.</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code><a title="tsflex.processing.SKSeriesPipeline" href="#tsflex.processing.SKSeriesPipeline">SKSeriesPipeline</a></code></dt>
-<dd>The transformer instance itself is returned.</dd>
-</dl></div>
-</dd>
-<dt id="tsflex.processing.SKSeriesPipeline.transform"><code class="name flex">
-<span>def <span class="ident">transform</span></span>(<span>self, X)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Process the data.</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>X</code></strong> :&ensp;<code>Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]</code></dt>
-<dd>
-<p>Dataframe or Series or list thereof, with all the required data for the
-processing steps. </p>
-<p><strong>Remark</strong>: each Series/DataFrame must have a <code>pd.DatetimeIndex</code>. </p>
-<p>Note that this parameter corresponds to the <code>data</code> parameter of the
-<code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code> its <code>process</code> method.</p>
-</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>pd.DataFrame</code></dt>
-<dd>A DataFrame, containing the processed data.</dd>
-</dl></div>
-</dd>
-</dl>
-</dd>
 </dl>
 </section>
 </article>
@@ -712,7 +597,6 @@ alt="logo should be displayed here" style="width: 100%;"></a>
 <ul>
 <li><code><a title="tsflex.processing.logger" href="logger.html">tsflex.processing.logger</a></code></li>
 <li><code><a title="tsflex.processing.series_pipeline" href="series_pipeline.html">tsflex.processing.series_pipeline</a></code></li>
-<li><code><a title="tsflex.processing.series_pipeline_sk" href="series_pipeline_sk.html">tsflex.processing.series_pipeline_sk</a></code></li>
 <li><code><a title="tsflex.processing.series_processor" href="series_processor.html">tsflex.processing.series_processor</a></code></li>
 <li><code><a title="tsflex.processing.utils" href="utils.html">tsflex.processing.utils</a></code></li>
 </ul>
@@ -740,13 +624,6 @@ alt="logo should be displayed here" style="width: 100%;"></a>
 <li><code><a title="tsflex.processing.SeriesPipeline.insert" href="#tsflex.processing.SeriesPipeline.insert">insert</a></code></li>
 <li><code><a title="tsflex.processing.SeriesPipeline.process" href="#tsflex.processing.SeriesPipeline.process">process</a></code></li>
 <li><code><a title="tsflex.processing.SeriesPipeline.serialize" href="#tsflex.processing.SeriesPipeline.serialize">serialize</a></code></li>
-</ul>
-</li>
-<li>
-<h4><code><a title="tsflex.processing.SKSeriesPipeline" href="#tsflex.processing.SKSeriesPipeline">SKSeriesPipeline</a></code></h4>
-<ul class="">
-<li><code><a title="tsflex.processing.SKSeriesPipeline.fit" href="#tsflex.processing.SKSeriesPipeline.fit">fit</a></code></li>
-<li><code><a title="tsflex.processing.SKSeriesPipeline.transform" href="#tsflex.processing.SKSeriesPipeline.transform">transform</a></code></li>
 </ul>
 </li>
 </ul>
