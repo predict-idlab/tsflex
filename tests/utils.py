@@ -7,6 +7,7 @@ import pytest
 import pandas as pd
 import numpy as np
 
+from sklearn.pipeline import Pipeline
 from typing import Union, Dict
 
 
@@ -39,3 +40,14 @@ def dataframe_to_series_dict(df: pd.DataFrame) -> Dict[str, pd.Series]:
 def series_to_series_dict(series: pd.Series) -> Dict[str, pd.Series]:
     assert series.name is not None, "Series must have a name in order to get a key!"
     return {series.name: series.copy()}
+
+
+def pipe_transform(pipe: Pipeline, X: Union[pd.DataFrame, np.ndarray]) -> np.ndarray:
+    """Transform the given X data with the (fitted) pipeline."""
+    X_transformed = X
+    for _, el in pipe.steps:
+        try:
+            X_transformed = el.transform(X_transformed)
+        except:
+            pass
+    return X_transformed

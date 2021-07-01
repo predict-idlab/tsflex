@@ -17,6 +17,7 @@ pathos = "^0.2.7"
 tqdm = "^4.60.0"
 dill = "^0.3.3"
 fastparquet = "^0.6.3"
+scikit-learn = "^0.24.2"
 
 [tool.poetry.dev-dependencies]
 black = "^20.8b1"
