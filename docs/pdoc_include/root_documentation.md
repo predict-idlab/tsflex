@@ -3,13 +3,30 @@ This is the documentation of **tsflex**, which is a `time-series first` Python t
 
 This makes _tsflex_ suitable for use-cases such as inference on streaming data, performing operations on irregularly sampled time-series, and dealing with time-gaps.
 
-> ~ _With great flexibility comes great responsiblity, read our docs!_ ~ - the tsflex devs
+> ~ _**With great flexibility comes great responsiblity, read our docs!**_ - the tsflex devs
+
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css" integrity="sha512-HK5fgLBL+xu6dm/Ii3z4xhlSUyZgTT9tuc/hSrtw6uzJOvgRr2a9jyxxT1ely+B+xFAmJKVSTbpM/CuL7qxO8w==" crossorigin>
+
+<div class="container" style="text-align: center">
+        <h3><strong>Installation</strong></h3><br>
+        <a title="tsflex on PyPI" href="https://pypi.org/project/tsflex/" style="margin-right:.8em; background-color: #48c774; border-color: transparent; color: #fff; padding: 0.75rem; border-radius: 4px;"
+                   itemprop="downloadUrl" data-ga-event-category="PyPI">
+                    <span class="icon"><i class="fa fa-download"></i></span>
+                    <span>PyPI</span>
+                </a> &nbsp;
+                <a title="tsflex on GitHub" href="https://github.com/predict-idlab/tsflex" style="color: #4a4a4a; background-color: #f5f5f5 !important; font-size: 1em; font-weight: 400; line-height: 1.5; border-radius: 4px; padding: 0.75rem; "
+                   data-ga-event-category="GitHub">
+                    <span class="icon"><i class="fab fa-github"></i></span>
+                    <span>GitHub</span>
+                </a>
+</div>
+<br>
+<hr style="height: 1px; border: none; border-top: 1px solid darkgrey;">
 
 ## Contents
 
 The following sections will explain the tsflex package in detail 
 
-  - [Installation](#installation)
   - [Getting started](#getting-started)
     - [Series processing](/tsflex/processing)
     - [Feature extraction](/tsflex/features)
@@ -18,17 +35,6 @@ The following sections will explain the tsflex package in detail
      - [Data chunking](/tsflex/chunking)
   - [API reference](#header-submodules) 
 
-<br>
-
-## Installation ✨
-
-If you are using [**pip**](https://pypi.org/project/tsflex/), just execute the following command:
-
-```shell
-pip install tsflex
-```
-
-<br>
 
 ## Getting started 🚀
 

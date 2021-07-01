@@ -1,11 +1,12 @@
 # <p align="center"> <a href="https://predict-idlab.github.io/tsflex"><img alt="tsflex" src="https://raw.githubusercontent.com/predict-idlab/tsflex/main/docs/_static/logo.png" height="100"></a></p>
 
 [![PyPI Latest Release](https://img.shields.io/pypi/v/tsflex.svg)](https://pypi.org/project/tsflex/)
-[![Documentation](https://github.com/predict-idlab/tsflex/actions/workflows/deploy-docs.yml/badge.svg)](https://github.com/predict-idlab/tsflex/actions/workflows/deploy-docs.yml)
-[![Testing](https://github.com/predict-idlab/tsflex/actions/workflows/test.yml/badge.svg)](https://github.com/predict-idlab/tsflex/actions/workflows/test.yml)
 [![codecov](https://codecov.io/gh/predict-idlab/tsflex/branch/main/graph/badge.svg)](https://codecov.io/gh/predict-idlab/tsflex)
 [![Code quality](https://img.shields.io/lgtm/grade/python/g/predict-idlab/tsflex.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/predict-idlab/tsflex/context:python)
+![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 [![Downloads](https://pepy.tech/badge/tsflex)](https://pepy.tech/project/tsflex)
+[![Documentation](https://github.com/predict-idlab/tsflex/actions/workflows/deploy-docs.yml/badge.svg)](https://github.com/predict-idlab/tsflex/actions/workflows/deploy-docs.yml)
+[![Testing](https://github.com/predict-idlab/tsflex/actions/workflows/test.yml/badge.svg)](https://github.com/predict-idlab/tsflex/actions/workflows/test.yml)
 
 *tsflex* is a toolkit for _**flex**ible **t**ime-**s**eries_ **[processing](https://predict-idlab.github.io/tsflex/processing) & [feature extraction](https://predict-idlab.github.io/tsflex/features)**, making few assumptions about input data. 
 
@@ -40,32 +41,6 @@ pip install tsflex
 
 _tsflex_ is built to be intuitive, so we encourage you to copy-paste this code and toy with some parameters!
 
-
-### <a href="https://predict-idlab.github.io/tsflex/processing/#getting-started">Series processing</a>
-
-```python
-import pandas as pd; import scipy.signal as ssig; import numpy as np
-from tsflex.processing import SeriesProcessor, SeriesPipeline
-
-# 1. -------- Get your time-indexed data --------
-# Data contains 3 columns; ["ACC_x", "ACC_y", "ACC_z"]
-url = "https://github.com/predict-idlab/tsflex/raw/main/examples/data/empatica/acc.parquet"
-data = pd.read_parquet(url).set_index("timestamp")
-
-# 2 -------- Construct your processing pipeline --------
-processing_pipe = SeriesPipeline(
-    processors=[
-        SeriesProcessor(function=np.abs, series_names=["ACC_x", "ACC_y", "ACC_z"]),
-        SeriesProcessor(ssig.medfilt, ["ACC_x", "ACC_y", "ACC_z"], kernel_size=5)  # (with kwargs!)
-    ]
-)
-# -- 2.1. Append processing steps to your processing pipeline
-processing_pipe.append(SeriesProcessor(ssig.detrend, ["ACC_x", "ACC_y", "ACC_z"]))
-
-# 3 -------- Process the data --------
-processing_pipe.process(data=data)
-```
-
 ### <a href="https://predict-idlab.github.io/tsflex/features/#getting-started">Feature extraction</a>
 
 ```python
@@ -95,16 +70,34 @@ fc.add(FeatureDescriptor(np.min, "TMP", '2.5min', '2.5min'))
 fc.calculate(data=data)
 ```
 
-### Scikit-learn integration
+### Future work 🔨
 
-`TODO`
+* Scikit-learn integration for both processing and feature extraction<br>
+  Is actively developed upon [sklearn integration](https://github.com/predict-idlab/tsflex/tree/sklearn_integration) branch.
+* Support for multi-indexed dataframes
+* Random-strided rolling for data-augmention purposes.
 
-<br>
+### Citing this package
+
+Bibtex entry:
+```text
+@article{vanderdonckt2021tsflex,
+    author = {Van Der Donckt, Jonas and Van Der Donckt, Jeroen and Van Hoecke, Sofie},
+    journal = {SoftwareX},
+    title = {tsflex: flexible time series processing \& feature extraction},
+    url = {https://github.com/predict-idlab/tsflex},
+    date = {2021},
+    publisher={Elsevier}
+}
+```
 
 ---
 
 <p align="center">
 👤 <i>Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost</i>
 </p>
+
+
+This package can be cited as:
 
 

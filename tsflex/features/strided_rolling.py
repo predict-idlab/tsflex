@@ -23,7 +23,7 @@ from collections import namedtuple
 from .function_wrapper import NumpyFuncWrapper
 from .logger import logger
 from ..utils.data import to_series_list
-from ..utils.timedelta import timedelta_to_str
+from ..utils.time import timedelta_to_str
 
 
 class StridedRolling:
