@@ -88,7 +88,10 @@ def test_warning_uneven_sampled_series_feature_collection(dummy_data):
 
     with warnings.catch_warnings(record=True) as w:
         # Trigger the warning
-        res_df = fc.calculate(inp, return_df=True, approve_sparsity=False)
+        # Note -> for some (yet unkknown) reason, the warning's aren't caught anymore
+        # when using multiprocess (they are thrown nevertheless!), so we changed
+        # n_jobs=1
+        res_df = fc.calculate(inp, return_df=True, n_jobs=1, approve_sparsity=False)
         # Verify the warning
         assert len(w) == 2
         assert all([issubclass(warn.category, RuntimeWarning) for warn in w])
