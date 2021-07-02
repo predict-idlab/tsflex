@@ -52,7 +52,7 @@ class FeatureCollection:
         #   tuple(tuple(str), float OR pd.timedelta, float OR pd.timedelta)
         # The outer tuple's values correspond to (series_key(s), window, stride)
         self._feature_desc_dict: Dict[
-            Tuple[Tuple[str], pd.Timedelta, pd.Timedelta], List[FeatureDescriptor]
+            Tuple[Tuple[str, ...], pd.Timedelta, pd.Timedelta], List[FeatureDescriptor]
         ] = {}
 
         if feature_descriptors:

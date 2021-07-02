@@ -87,7 +87,7 @@ class StridedRolling:
 
         # 0. standardize the input
         series_list: List[pd.Series] = to_series_list(data)
-        self.series_key: Tuple[str] = tuple([str(s.name) for s in series_list])
+        self.series_key: Tuple[str, ...] = tuple([str(s.name) for s in series_list])
 
         # 1. Determine the bounds
         t_start, t_end = self._determine_bounds(series_list, bound_method)
