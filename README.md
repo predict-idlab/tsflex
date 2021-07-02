@@ -72,21 +72,22 @@ fc.calculate(data=data)
 
 ### Future work 🔨
 
-* Scikit-learn integration for both processing and feature extraction<br>
-  Is actively developed upon [sklearn integration](https://github.com/predict-idlab/tsflex/tree/sklearn_integration) branch.
-* Support for multi-indexed dataframes
-* Random-strided rolling for data-augmention purposes.
+* scikit-learn integration for both processing and feature extraction<br>
+  **note**: is actively developed upon [sklearn integration](https://github.com/predict-idlab/tsflex/tree/sklearn_integration) branch.
+* support for multi-indexed dataframes
+* random-strided rolling for data-augmention purposes.
 
-### Citing this package
+## Referencing our package
 
-Bibtex entry:
-```text
+If you use `tsflex` in a scientific publication, we would highly appreciate citing us as:
+
+```bibtex
 @article{vanderdonckt2021tsflex,
     author = {Van Der Donckt, Jonas and Van Der Donckt, Jeroen and Van Hoecke, Sofie},
-    journal = {SoftwareX},
     title = {tsflex: flexible time series processing \& feature extraction},
+    journal = {SoftwareX},
+    year = {2021},
     url = {https://github.com/predict-idlab/tsflex},
-    date = {2021},
     publisher={Elsevier}
 }
 ```
@@ -96,8 +97,3 @@ Bibtex entry:
 <p align="center">
 👤 <i>Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost</i>
 </p>
-
-
-This package can be cited as:
-
-

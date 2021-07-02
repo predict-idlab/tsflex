@@ -280,7 +280,6 @@ class FeatureCollection:
         # Note: this variable has a global scope so this is shared in multiprocessing
         if n_jobs in [0, 1]:
             # print('Executing feature extraction sequentially')
-            global stroll_feat_generator
             stroll_feat_generator = self._construct_stroll_feat_generator(
                 series_dict, window_idx, approve_sparsity
             )
