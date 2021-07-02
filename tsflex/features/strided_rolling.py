@@ -106,7 +106,7 @@ class StridedRolling:
         elif window_idx == "middle":
             window_idx_offset = window / 2
         elif window_idx == "begin":
-            window_idx_offset = 0
+            window_idx_offset = pd.Timedelta(seconds=0)
         else:
             raise ValueError(
                 f"window index {window_idx} must be either of: "
