@@ -52,7 +52,7 @@ def chunk_data(
         The sample frequency dict. This dict must at least withhold all the keys
         from the items in `data`.
     chunk_range_margin: Union[float, str, pd.Timedelta], optional
-        The allowed margin (in seconds if a flaot) between same time-range chunks their
+        The allowed margin (in seconds if a float) between same time-range chunks their
         start and end time. If `None` the margin will be set as:
 
             2 / min(fs_dict.intersection(data.names).values())
