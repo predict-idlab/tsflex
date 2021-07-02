@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "tsflex"
-version = "0.1.1.5"
+version = "0.1.1.8"
 description = "Toolkit for flexible processing & feature extraction on time-series data"
 authors = ["Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"]
 readme = "README.md"
@@ -10,7 +10,7 @@ documentation = "https://predict-idlab.github.io/tsflex"
 keywords = ["time-series", "processing", "feature-extraction", "data-science"]
 
 [tool.poetry.dependencies]
-python = "^3.7.1"
+python = "^3.7"
 pandas = "^1.2.3"
 numpy = "^1.19.0"
 pathos = "^0.2.7"
