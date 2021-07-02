@@ -29,7 +29,7 @@ class FeatureDescriptor(FrozenClass):
             function(*series: np.ndarray)
                 -> Union[Any, List[Any]]
 
-    series_name : Union[str, Tuple[str]]
+    series_name : Union[str, Tuple[str, ...]]
         The names of the series on which the feature function should be applied.
         This argument should match the `function` its input; \n
         * If `series_name` is a string (or tuple of a single string), than 
@@ -91,11 +91,11 @@ class FeatureDescriptor(FrozenClass):
     def __init__(
         self,
         function: Union[NumpyFuncWrapper, Callable],
-        series_name: Union[str, Tuple[str]],
+        series_name: Union[str, Tuple[str, ...]],
         window: Union[float, str, pd.Timedelta],
         stride: Union[float, str, pd.Timedelta],
     ):
-        self.series_name: Tuple[str] = to_tuple(series_name)
+        self.series_name: Tuple[str, ...] = to_tuple(series_name)
         self.window: pd.Timedelta = parse_time_arg(window)
         self.stride: pd.Timedelta = parse_time_arg(stride)
 
@@ -148,7 +148,7 @@ class MultipleFeatureDescriptors:
     ----------
     functions : Union[NumpyFuncWrapper, Callable, List[Union[NumpyFuncWrapper, Callable]]]
         The functions, can be either of both types (even in a single array).
-    series_names : Union[str, Tuple[str], List[str], List[Tuple[str]]]
+    series_names : Union[str, Tuple[str, ...], List[str], List[Tuple[str, ...]]]
         The names of the series on which the feature function should be applied.
 
         This argument should match the `function` its input; \n
@@ -176,7 +176,7 @@ class MultipleFeatureDescriptors:
     def __init__(
         self,
         functions: Union[NumpyFuncWrapper, Callable, List[Union[NumpyFuncWrapper, Callable]]],
-        series_names: Union[str, Tuple[str], List[str], List[Tuple[str]]],
+        series_names: Union[str, Tuple[str, ...], List[str], List[Tuple[str, ...]]],
         windows: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
         strides: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
     ):
