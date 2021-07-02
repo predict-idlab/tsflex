@@ -94,30 +94,34 @@ class StridedRolling:
 
         # And slice **all** the series to these tightest bounds
         assert (t_end - t_start) > window
-        series_list = [s[t_start:t_end] for s in series_list]
+        if len(series_list) > 1:
+            series_list = [s[t_start:t_end] for s in series_list]
 
         # 2. Create the time_index which will be used for DataFrame reconstruction
-        # use closed = left to exclude 'end' if it falls on the boundary
-        # note: the index automatically takes the timezone of `t_start` & `t_end`
-        # note: the index-name of the first passed series will be used
-        self.index = pd.date_range(
-            t_start, t_end - window, freq=stride, name=series_list[0].index.name
-        )
-
-        # --- and adjust the time_index
+        # 2.1 - and adjust the time_index
         # note: this code can also be placed in the `apply_func` method (if we want to
         #  make the bound window-idx setting feature specific).
         if window_idx == "end":
-            self.index += window
+            window_idx_offset = window
         elif window_idx == "middle":
-            self.index += window / 2
+            window_idx_offset = window / 2
         elif window_idx == "begin":
-            pass
+            window_idx_offset = 0
         else:
             raise ValueError(
                 f"window index {window_idx} must be either of: "
                 "['end', 'middle', 'begin']"
             )
+
+        # use closed = left to exclude 'end' if it falls on the boundary
+        # note: the index automatically takes the timezone of `t_start` & `t_end`
+        # note: the index-name of the first passed series will be used
+        self.index = pd.date_range(
+            start=t_start + window_idx_offset,
+            end=t_end - window + window_idx_offset,
+            freq=stride,
+            name=series_list[0].index.name
+        )
 
         # ---------- Efficient numpy code -------
         # 1. Convert everything to int64
@@ -257,17 +261,15 @@ class StridedRolling:
 
         t_start = time.time()
 
-        def get_slices(idx):
-            # get the slice of each series for the given index
-            return [
-                sc.values[sc.start_indexes[idx]: sc.end_indexes[idx]]
-                for sc in self.series_containers
-            ]
-
         # --- Future work ---
         # would be nice if we could optimize this double for loop with something
         # more vectorized
-        out = np.array([np_func(*get_slices(idx)) for idx in range(len(self.index))])
+        out = np.array(
+            [np_func(
+                *[sc.values[sc.start_indexes[idx]: sc.end_indexes[idx]]
+                  for sc in self.series_containers]
+            ) for idx in range(len(self.index))]
+        )
 
         # Aggregate function output in a dictionary
         feat_out = {}

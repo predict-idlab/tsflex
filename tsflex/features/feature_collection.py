@@ -14,7 +14,7 @@ import dill
 import pandas as pd
 
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union, Iterator
 from pathos.multiprocessing import ProcessPool
 from tqdm.auto import tqdm
 
@@ -162,6 +162,28 @@ class FeatureCollection:
                 stroll_feat_list.append((stroll, feature.function))
         return stroll_feat_list
 
+    def _construct_stroll_feat_generator(
+        self, series_dict: Dict[str, pd.Series], window_idx: str, approve_sparsity: bool
+    ) -> Iterator[Tuple[StridedRolling, NumpyFuncWrapper]]:
+        # --- Future work ---
+        # We could also make the StridedRolling creation multithreaded
+        # Very low priority because the STROLL __init__ is rather efficient!
+
+        for key, win, stride in self._feature_desc_dict.keys():
+            try:
+                stroll = StridedRolling(
+                    data=[series_dict[k] for k in key],
+                    window=win,
+                    stride=stride,
+                    window_idx=window_idx,
+                    approve_sparsity=approve_sparsity,
+                )
+            except KeyError:
+                raise KeyError(f"Key {key} not found in series dict.")
+
+            for feature in self._feature_desc_dict[(key, win, stride)]:
+                yield stroll, feature.function
+
     def calculate(
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
@@ -231,6 +253,7 @@ class FeatureCollection:
         Union[List[pd.DataFrame], pd.DataFrame]
             The calculated features.
 
+
         Raises
         ------
         KeyError
@@ -255,18 +278,21 @@ class FeatureCollection:
 
         calculated_feature_list: List[pd.DataFrame] = []
         # Note: this variable has a global scope so this is shared in multiprocessing
-        global stroll_feat_list
-        stroll_feat_list = self._construct_stroll_feat_list(
-            series_dict, window_idx, approve_sparsity
-        )
-
         if n_jobs in [0, 1]:
             # print('Executing feature extraction sequentially')
+            global stroll_feat_generator
+            stroll_feat_generator = self._construct_stroll_feat_generator(
+                series_dict, window_idx, approve_sparsity
+            )
             if show_progress:
-                stroll_feat_list = tqdm(stroll_feat_list)
-            for stroll, func in stroll_feat_list:
-                calculated_feature_list.append(stroll.apply_func(func))
+                stroll_feat_generator = tqdm(stroll_feat_generator)
+            calculated_feature_list = [stroll.apply_func(func)
+                                       for stroll, func in stroll_feat_generator]
         else:
+            global stroll_feat_list
+            stroll_feat_list = self._construct_stroll_feat_list(
+                series_dict, window_idx, approve_sparsity
+            )
             # ---- Future work -----
             # Try locking inside the executer when calling next() on a global generator
             # Create global (precomputed) stroll-feature list 
@@ -280,8 +306,7 @@ class FeatureCollection:
                 )
                 if show_progress:
                     results = tqdm(results, total=len(stroll_feat_list))
-                for f in results:
-                    calculated_feature_list.append(f)
+                calculated_feature_list = [f for f in results]
                 # Close & join - see: https://github.com/uqfoundation/pathos/issues/131
                 pool.close()
                 pool.join()
@@ -289,16 +314,7 @@ class FeatureCollection:
                 pool.clear()
 
         if return_df:
-            df_merged = pd.DataFrame()
-            for calculated_feature in calculated_feature_list:
-                df_merged = pd.merge(
-                    left=df_merged,
-                    right=calculated_feature,
-                    how="outer",
-                    left_index=True,
-                    right_index=True,
-                )
-            return df_merged
+            return pd.concat(calculated_feature_list, axis=1, join='outer', copy=False)
         else:
             return calculated_feature_list
 
