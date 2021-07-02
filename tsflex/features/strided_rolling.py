@@ -12,14 +12,13 @@
 
 __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
 
-import sys
 import time
 import warnings
+import pandas as pd
+import numpy as np
+
 from collections import namedtuple
 from typing import Callable, Union, List, Tuple, Optional
-
-import numpy as np
-import pandas as pd
 
 from .function_wrapper import NumpyFuncWrapper
 from .logger import logger
@@ -169,14 +168,12 @@ class StridedRolling:
                     last_container.end_indexes - last_container.start_indexes, q=qs
                 )
                 q_str = ", ".join([f"q={q}: {v}" for q, v in zip(qs, series_idx_stats)])
-                print(q_str, flush=True)
                 if not all(series_idx_stats == series_idx_stats[-1]):  # min != max
                     warnings.warn(
                         f"There are gaps in the time-series {series.name}; "
                         + f"\n \t Quantiles of nb values in window: {q_str}",
                         RuntimeWarning,
                     )
-                    sys.stderr.flush()
 
     @staticmethod
     def _determine_bounds(

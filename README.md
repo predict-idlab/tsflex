@@ -1,6 +1,7 @@
 # <p align="center"> <a href="https://predict-idlab.github.io/tsflex"><img alt="tsflex" src="https://raw.githubusercontent.com/predict-idlab/tsflex/main/docs/_static/logo.png" height="100"></a></p>
 
 [![PyPI Latest Release](https://img.shields.io/pypi/v/tsflex.svg)](https://pypi.org/project/tsflex/)
+[![support-version](https://img.shields.io/pypi/pyversions/tsflex)](https://img.shields.io/pypi/pyversions/tsflex)
 [![codecov](https://codecov.io/gh/predict-idlab/tsflex/branch/main/graph/badge.svg)](https://codecov.io/gh/predict-idlab/tsflex)
 [![Code quality](https://img.shields.io/lgtm/grade/python/g/predict-idlab/tsflex.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/predict-idlab/tsflex/context:python)
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
@@ -70,7 +71,12 @@ fc.add(FeatureDescriptor(np.min, "TMP", '2.5min', '2.5min'))
 fc.calculate(data=data)
 ```
 
-### Future work 🔨
+### More examples
+
+For processing [look here](https://predict-idlab.github.io/tsflex/processing/index.html#working-example)    
+Other examples can be found [here](https://github.com/predict-idlab/tsflex/tree/main/examples)
+
+## Future work 🔨
 
 * scikit-learn integration for both processing and feature extraction<br>
   **note**: is actively developed upon [sklearn integration](https://github.com/predict-idlab/tsflex/tree/sklearn_integration) branch.
