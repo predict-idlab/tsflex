@@ -82,7 +82,6 @@ def test_warning_uneven_sampled_series_feature_collection(dummy_data):
 
     assert set(fc.get_required_series()) == set(["EDA", "TMP"])
     assert len(fc.get_required_series()) == 2
-
     # Drop some data to obtain an irregular sampling rate
     inp = dummy_data.drop(np.random.choice(dummy_data.index[1:-1], 500, replace=False))
 
@@ -107,6 +106,33 @@ def test_warning_uneven_sampled_series_feature_collection(dummy_data):
         )
 
 
+def test_featurecollection_repr(dummy_data):
+    def corr(s1, s2):
+        min_len = min(len(s1), len(s2))
+        s1 = s1[:min_len]
+        s2 = s2[:min_len]
+        return np.corrcoef(s1, s2)[0][-1].astype(s1.dtype)
+
+    fc = FeatureCollection(feature_descriptors=[
+        FeatureDescriptor(
+            function=NumpyFuncWrapper(func=corr, output_names='corrcoef'),
+            series_name=("EDA", "TMP"),
+            window='30s',
+            stride='30s'
+        ),
+    ]
+    )
+    fc_str: str = fc.__repr__()
+    assert "EDA|TMP" in fc_str
+    assert fc_str == "EDA|TMP: (\n\twin: 30s   , stride: 30s: [\n\t\tFeatureDescriptor - func: NumpyFuncWrapper(corr, ['corrcoef'], {}),\n\t]\n)\n"
+
+    out = fc.calculate(dummy_data, n_jobs=1, return_df=True)
+    assert out.columns[0] == 'EDA|TMP__corrcoef__w=30s_s=30s'
+
+    out = fc.calculate(dummy_data, n_jobs=None, return_df=True)
+    assert out.columns[0] == 'EDA|TMP__corrcoef__w=30s_s=30s'
+
+
 def test_window_idx_single_series_feature_collection(dummy_data):
     fd = FeatureDescriptor(
         function=np.sum,
@@ -118,9 +144,19 @@ def test_window_idx_single_series_feature_collection(dummy_data):
 
     assert fc.get_required_series() == ["EDA"]
 
-    res_begin = fc.calculate(dummy_data, return_df=True, window_idx="begin")
-    res_end = fc.calculate(dummy_data, return_df=True, window_idx="end")
-    res_middle = fc.calculate(dummy_data, return_df=True, window_idx="middle")
+    res_begin = fc.calculate(dummy_data, return_df=True, n_jobs=0, window_idx="begin")
+    res_end = fc.calculate(dummy_data, return_df=True, n_jobs=0, window_idx="end")
+    res_middle = fc.calculate(dummy_data, return_df=True, n_jobs=0, window_idx="middle")
+    assert np.isclose(res_begin.values, res_end.values).all()
+    assert np.isclose(res_begin.values, res_middle.values).all()
+
+    res_begin = fc.calculate(dummy_data, return_df=True, n_jobs=None, window_idx="begin")
+    res_end = fc.calculate(dummy_data, return_df=True, n_jobs=None, window_idx="end")
+    res_middle = fc.calculate(dummy_data, return_df=True, n_jobs=None, window_idx="middle")
+
+    with pytest.raises(ValueError):
+        res_not_existing = fc.calculate(
+            dummy_data, n_jobs=0, return_df=True, window_idx="somewhere")
 
     assert np.isclose(res_begin.values, res_end.values).all()
     assert np.isclose(res_begin.values, res_middle.values).all()
@@ -309,6 +345,113 @@ def test_many_to_many_feature_collection(dummy_data):
     assert set(res_df.columns.values) == set(expected_output_names)
     assert (res_df[expected_output_names[0]] != res_df[expected_output_names[1]]).any()
     assert (res_df[expected_output_names[0]] != res_df[expected_output_names[2]]).any()
+
+
+def test_categorical_funcs():
+    categories = ["a", "b", "c", "another_category", 12]
+    categorical_data = pd.Series(
+        data=np.random.choice(categories, 1000),
+        index=pd.date_range("2021-07-01", freq="1h", periods=1000),
+    ).rename("cat")
+
+    # drop some data, as we don't make frequency assumptions
+    categorical_data = categorical_data.drop(
+        np.random.choice(categorical_data.index, 200, replace=False)
+    )
+
+    def count_categories(arr, categories):
+        return [sum(arr.astype(str) == str(cat)) for cat in categories]
+
+    cat_count = NumpyFuncWrapper(
+        func=count_categories,
+        output_names=["count-" + str(cat) for cat in categories],
+        # kwargs
+        categories=categories
+    )
+
+    # construct the collection in which you add all your features
+    fc = FeatureCollection(
+        feature_descriptors=[
+            FeatureDescriptor(
+                function=cat_count,
+                series_name='cat',
+                window='1day',
+                stride='12hours'
+            )
+        ]
+    )
+
+    for n_jobs in [0, None]:
+        out = fc.calculate(data=categorical_data, approve_sparsity=True,
+                           n_jobs=n_jobs, return_df=True)
+        for c in categories:
+            assert f'cat__count-{str(c)}__w=1D_s=12h' in out.columns
+
+
+def test_time_based_features():
+    # create a time column
+    time_value_series = (
+        pd.Series(index=pd.date_range("2021-07-01", freq="1h", periods=1000),
+                  dtype=object)
+            .index.to_series()
+            .rename("time")
+    )
+
+    # drop some data, as we don't make frequency assumptions
+    time_value_series = time_value_series.drop(
+        np.random.choice(time_value_series.index, 250, replace=False)
+    )
+
+    def std_hour(time_arr):
+        # calcualtes the std in seconds
+        if time_arr.shape[0] <= 3:
+            return np.NaN
+        return np.std(np.diff(time_arr).astype("timedelta64[us]").astype(np.int64) / (
+                    60 * 60 * 1e6))
+
+    fc = FeatureCollection(
+        feature_descriptors=[
+            FeatureDescriptor(
+                function=std_hour, series_name="time", window="6 hours",
+                stride="4 hours"
+            )
+        ]
+    )
+    out = fc.calculate(
+        data=time_value_series, approve_sparsity=True, n_jobs=1, return_df=True
+    )
+    assert out.columns[0] == 'time__std_hour__w=6h_s=4h'
+
+    out = fc.calculate(
+        data=time_value_series, approve_sparsity=True, n_jobs=None, return_df=True
+    )
+    assert out.columns[0] == 'time__std_hour__w=6h_s=4h'
+
+
+def test_pass_by_value(dummy_data):
+    def try_change_vie(series_view: np.ndarray):
+        series_view[:5] = 0  # update the view -> error!
+        return np.mean(series_view)
+
+    fc_gsr = FeatureCollection([
+        FeatureDescriptor(try_change_vie, "EDA", '30s', '15s', )]
+    )
+
+    for n_jobs in [0, None]:
+        with pytest.raises(ValueError):
+            out = fc_gsr.calculate(dummy_data, return_df=True, n_jobs=n_jobs)
+
+
+def test_datatype_retention(dummy_data):
+    for dtype in [np.float16, np.float32, np.int64, np.int32]:
+        def mean_dtype(series_view: np.ndarray):
+            return np.mean(series_view).astype(dtype)
+
+        fc_gsr = FeatureCollection([FeatureDescriptor(mean_dtype, "EDA", '30s','15s',)])
+        for n_jobs in [0, 1, 2, None]:
+            print(dtype, n_jobs)
+            out = fc_gsr.calculate(dummy_data, return_df=True, n_jobs=n_jobs)
+            assert out.values.dtype == dtype
 
 
 ### Test 'error' use-cases

@@ -67,7 +67,7 @@ class SeriesProcessor(FrozenClass):
             A function that processes a ``np.ndarray`` instead of ``pd.Series``
             should work just fine.
 
-    series_names : Union[str, Tuple[str], List[str], List[Tuple[str]]]
+    series_names : Union[str, Tuple[str, ...], List[str], List[Tuple[str, ...]]]
         The names of the series on which the processing function should be applied.
 
         This argument should match the `function` its input; \n
@@ -112,7 +112,7 @@ class SeriesProcessor(FrozenClass):
     def __init__(
         self,
         function: Callable,
-        series_names: Union[str, Tuple[str], List[str], List[Tuple[str]]],
+        series_names: Union[str, Tuple[str, ...], List[str], List[Tuple[str, ...]]],
         **kwargs,
     ):
         series_names = [to_tuple(names) for names in to_list(series_names)]
@@ -121,7 +121,7 @@ class SeriesProcessor(FrozenClass):
             len(series_names[0]) == len(series_name_tuple)
             for series_name_tuple in series_names
         )
-        self.series_names: List[Tuple[str]] = series_names
+        self.series_names: List[Tuple[str, ...]] = series_names
         self.function = function
         self.name = self.function.__name__
 
@@ -191,11 +191,11 @@ class SeriesProcessor(FrozenClass):
         # Variable that will contain the final output of this method
         processed_output: Dict[str, pd.Series] = {}
 
-        def get_series_list(keys: Tuple[str]):
+        def get_series_list(keys: Tuple[str, ...]):
             """Get an ordered series list view for the given keys."""
             return [series_dict[key] for key in keys]
 
-        def get_series_dict(keys: Tuple[str]):
+        def get_series_dict(keys: Tuple[str, ...]):
             """Get a series dict view for the given keys."""
             return {key: series_dict[key] for key in keys}
 
