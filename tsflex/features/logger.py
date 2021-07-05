@@ -13,7 +13,7 @@ import pandas as pd
 import re
 
 from ..utils.logging import logging_file_to_df
-from ..utils.timedelta import timedelta_to_str
+from ..utils.time import timedelta_to_str
 
 # Package specific logger
 logger = logging.getLogger("feature_calculation_logger")

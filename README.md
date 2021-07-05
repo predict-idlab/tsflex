@@ -1,11 +1,13 @@
 # <p align="center"> <a href="https://predict-idlab.github.io/tsflex"><img alt="tsflex" src="https://raw.githubusercontent.com/predict-idlab/tsflex/main/docs/_static/logo.png" height="100"></a></p>
 
 [![PyPI Latest Release](https://img.shields.io/pypi/v/tsflex.svg)](https://pypi.org/project/tsflex/)
-[![Documentation](https://github.com/predict-idlab/tsflex/actions/workflows/deploy-docs.yml/badge.svg)](https://github.com/predict-idlab/tsflex/actions/workflows/deploy-docs.yml)
-[![Testing](https://github.com/predict-idlab/tsflex/actions/workflows/test.yml/badge.svg)](https://github.com/predict-idlab/tsflex/actions/workflows/test.yml)
+[![support-version](https://img.shields.io/pypi/pyversions/tsflex)](https://img.shields.io/pypi/pyversions/tsflex)
 [![codecov](https://codecov.io/gh/predict-idlab/tsflex/branch/main/graph/badge.svg)](https://codecov.io/gh/predict-idlab/tsflex)
 [![Code quality](https://img.shields.io/lgtm/grade/python/g/predict-idlab/tsflex.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/predict-idlab/tsflex/context:python)
+![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 [![Downloads](https://pepy.tech/badge/tsflex)](https://pepy.tech/project/tsflex)
+[![Documentation](https://github.com/predict-idlab/tsflex/actions/workflows/deploy-docs.yml/badge.svg)](https://github.com/predict-idlab/tsflex/actions/workflows/deploy-docs.yml)
+[![Testing](https://github.com/predict-idlab/tsflex/actions/workflows/test.yml/badge.svg)](https://github.com/predict-idlab/tsflex/actions/workflows/test.yml)
 
 *tsflex* is a toolkit for _**flex**ible **t**ime-**s**eries_ **[processing](https://predict-idlab.github.io/tsflex/processing) & [feature extraction](https://predict-idlab.github.io/tsflex/features)**, making few assumptions about input data. 
 
@@ -27,7 +29,7 @@ pip install tsflex
 * flexible;
     * handles multi-variate time-series
     * versatile function support  
-      => **integrates natively** with many packages for processing (e.g., [scipy.signal](https://docs.scipy.org/doc/scipy/reference/tutorial/signal.html)) & feature extraction (e.g., [numpy](https://numpy.org/doc/stable/reference/routines.html), [scipy.stats](https://docs.scipy.org/doc/scipy/reference/tutorial/stats.html))
+      => **integrates natively** with many packages for processing (e.g., [scipy.signal](https://docs.scipy.org/doc/scipy/reference/tutorial/signal.html), [statsmodels.tsa](https://www.statsmodels.org/stable/tsa.html#time-series-filters)) & feature extraction (e.g., [numpy](https://numpy.org/doc/stable/reference/routines.html), [scipy.stats](https://docs.scipy.org/doc/scipy/reference/tutorial/stats.html))
     * feature-extraction handles **multiple strides & window sizes**
 * efficient view-based operations  
   => extremely **low memory peak & fast execution** times ([see benchmarks]())
@@ -39,32 +41,6 @@ pip install tsflex
 ## Usage
 
 _tsflex_ is built to be intuitive, so we encourage you to copy-paste this code and toy with some parameters!
-
-
-### <a href="https://predict-idlab.github.io/tsflex/processing/#getting-started">Series processing</a>
-
-```python
-import pandas as pd; import scipy.signal as ssig; import numpy as np
-from tsflex.processing import SeriesProcessor, SeriesPipeline
-
-# 1. -------- Get your time-indexed data --------
-# Data contains 3 columns; ["ACC_x", "ACC_y", "ACC_z"]
-url = "https://github.com/predict-idlab/tsflex/raw/main/examples/data/empatica/acc.parquet"
-data = pd.read_parquet(url).set_index("timestamp")
-
-# 2 -------- Construct your processing pipeline --------
-processing_pipe = SeriesPipeline(
-    processors=[
-        SeriesProcessor(function=np.abs, series_names=["ACC_x", "ACC_y", "ACC_z"]),
-        SeriesProcessor(ssig.medfilt, ["ACC_x", "ACC_y", "ACC_z"], kernel_size=5)  # (with kwargs!)
-    ]
-)
-# -- 2.1. Append processing steps to your processing pipeline
-processing_pipe.append(SeriesProcessor(ssig.detrend, ["ACC_x", "ACC_y", "ACC_z"]))
-
-# 3 -------- Process the data --------
-processing_pipe.process(data=data)
-```
 
 ### <a href="https://predict-idlab.github.io/tsflex/features/#getting-started">Feature extraction</a>
 
@@ -95,16 +71,35 @@ fc.add(FeatureDescriptor(np.min, "TMP", '2.5min', '2.5min'))
 fc.calculate(data=data)
 ```
 
-### Scikit-learn integration
+### More examples
 
-`TODO`
+For processing [look here](https://predict-idlab.github.io/tsflex/processing/index.html#working-example)    
+Other examples can be found [here](https://github.com/predict-idlab/tsflex/tree/main/examples)
 
-<br>
+## Future work 🔨
+
+* scikit-learn integration for both processing and feature extraction<br>
+  **note**: is actively developed upon [sklearn integration](https://github.com/predict-idlab/tsflex/tree/sklearn_integration) branch.
+* support for multi-indexed dataframes
+* random-strided rolling for data-augmention purposes.
+
+## Referencing our package
+
+If you use `tsflex` in a scientific publication, we would highly appreciate citing us as:
+
+```bibtex
+@article{vanderdonckt2021tsflex,
+    author = {Van Der Donckt, Jonas and Van Der Donckt, Jeroen and Van Hoecke, Sofie},
+    title = {tsflex: flexible time series processing \& feature extraction},
+    journal = {SoftwareX},
+    year = {2021},
+    url = {https://github.com/predict-idlab/tsflex},
+    publisher={Elsevier}
+}
+```
 
 ---
 
 <p align="center">
 👤 <i>Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost</i>
 </p>
-
-

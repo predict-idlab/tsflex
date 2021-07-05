@@ -117,7 +117,7 @@ def to_list(x: Any) -> List:
     return x
 
 
-def to_tuple(x: Any) -> Tuple[Any]:
+def to_tuple(x: Any) -> Tuple[Any, ...]:
     """Convert the input to a tuple if necessary.
 
     Parameters

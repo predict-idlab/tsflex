@@ -12,6 +12,7 @@ __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
 import dill
 import pandas as pd
+import numpy as np
 
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
@@ -23,7 +24,7 @@ from .logger import logger
 from .strided_rolling import StridedRolling
 from ..features.function_wrapper import NumpyFuncWrapper
 from ..utils.data import to_list, to_series_list, flatten
-from ..utils.timedelta import timedelta_to_str
+from ..utils.time import timedelta_to_str
 from ..utils.logging import delete_logging_handlers, add_logging_handler
 
 
@@ -41,8 +42,9 @@ class FeatureCollection:
         self,
         feature_descriptors: Optional[
             Union[
-                FeatureDescriptor, MultipleFeatureDescriptors,
-                List[Union[FeatureDescriptor, MultipleFeatureDescriptors]]
+                FeatureDescriptor,
+                MultipleFeatureDescriptors,
+                List[Union[FeatureDescriptor, MultipleFeatureDescriptors]],
             ]
         ] = None,
     ):
@@ -50,7 +52,7 @@ class FeatureCollection:
         #   tuple(tuple(str), float OR pd.timedelta, float OR pd.timedelta)
         # The outer tuple's values correspond to (series_key(s), window, stride)
         self._feature_desc_dict: Dict[
-            Tuple[Tuple[str], pd.Timedelta, pd.Timedelta], List[FeatureDescriptor]
+            Tuple[Tuple[str, ...], pd.Timedelta, pd.Timedelta], List[FeatureDescriptor]
         ] = {}
 
         if feature_descriptors:
@@ -70,16 +72,13 @@ class FeatureCollection:
 
         """
         return list(
-            set(
-                flatten(
-                    [fr_key[0] for fr_key in self._feature_desc_dict.keys()]
-                )
-            )
+            set(flatten([fr_key[0] for fr_key in self._feature_desc_dict.keys()]))
         )
 
     @staticmethod
-    def _get_collection_key(feature: FeatureDescriptor)\
-            -> Tuple[tuple, pd.Timedelta, pd.Timedelta]:
+    def _get_collection_key(
+        feature: FeatureDescriptor,
+    ) -> Tuple[tuple, pd.Timedelta, pd.Timedelta]:
         # Note: `window` & `stride` properties can either be a pd.Timedelta or an int
         return feature.series_name, feature.window, feature.stride
 
@@ -101,9 +100,12 @@ class FeatureCollection:
     def add(
         self,
         features: Union[
-            FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection, List[
+            FeatureDescriptor, 
+            MultipleFeatureDescriptors,
+            FeatureCollection,
+            List[
                 Union[FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection]
-            ]
+            ],
         ],
     ):
         """Add feature(s) to the FeatureCollection.
@@ -136,37 +138,48 @@ class FeatureCollection:
 
     @staticmethod
     def _executor(idx: int):
-        stroll, function = stroll_feat_list[idx]
+        # global get_stroll_func
+        stroll, function = get_stroll_func(idx)
         return stroll.apply_func(function)
 
-    def _construct_stroll_feat_list(
+    def _stroll_feat_generator(
         self, series_dict: Dict[str, pd.Series], window_idx: str, approve_sparsity: bool
     ) -> List[Tuple[StridedRolling, NumpyFuncWrapper]]:
         # --- Future work ---
         # We could also make the StridedRolling creation multithreaded
         # Very low priority because the STROLL __init__ is rather efficient!
-        stroll_feat_list: List[Tuple[StridedRolling, NumpyFuncWrapper]] = []
-        for key, win, stride in self._feature_desc_dict.keys():
-            try:
-                stroll = StridedRolling(
-                    data=[series_dict[k] for k in key],
-                    window=win,
-                    stride=stride,
-                    window_idx=window_idx,
-                    approve_sparsity=approve_sparsity,
-                )
-            except KeyError:
-                raise KeyError(f"Key {key} not found in series dict.")
+        keys_wins_strides = list(self._feature_desc_dict.keys())
+        lengths = np.cumsum(
+            [len(self._feature_desc_dict[k]) for k in keys_wins_strides]
+        )
 
-            for feature in self._feature_desc_dict[(key, win, stride)]:
-                stroll_feat_list.append((stroll, feature.function))
-        return stroll_feat_list
+        def get_stroll_function(idx):
+            key_idx = np.searchsorted(lengths, idx, "right")  # right bc idx starts at 0
+            key, win, stride = keys_wins_strides[key_idx]
+            stroll = StridedRolling(
+                data=[series_dict[k] for k in key],
+                window=win,
+                stride=stride,
+                window_idx=window_idx,
+                approve_sparsity=approve_sparsity,
+            )
+            feature = self._feature_desc_dict[keys_wins_strides[key_idx]][
+                idx - lengths[key_idx]
+            ]
+            return stroll, feature.function
+
+        return get_stroll_function
+
+    def _get_stroll_feat_length(self) -> int:
+        return sum(
+            len(self._feature_desc_dict[k]) for k in self._feature_desc_dict.keys()
+        )
 
     def calculate(
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         return_df: Optional[bool] = False,
-        window_idx: Optional[str] = 'end',
+        window_idx: Optional[str] = "end",
         approve_sparsity: Optional[bool] = False,
         show_progress: Optional[bool] = False,
         logging_file_path: Optional[Union[str, Path]] = None,
@@ -191,7 +204,7 @@ class FeatureCollection:
             **Remark**: each Series / DataFrame must have a `pd.DatetimeIndex`.
             **Remark**: we assume that each name / column is unique.
         return_df : bool, optional
-            Whether the output needs to be a dataframe list or a DataFrame, by default 
+            Whether the output needs to be a dataframe list or a DataFrame, by default
             False.
             If `True` the output dataframes will be merged to a DataFrame with an outer
             merge.
@@ -201,7 +214,7 @@ class FeatureCollection:
             by default 'end'. All features in this collection will use the same
             window_idx.
         approve_sparsity: bool, optional
-            Bool indicating whether the user acknowledges that there may be sparsity 
+            Bool indicating whether the user acknowledges that there may be sparsity
             (i.e., irregularly sampled data), by default False.
             If False and sparsity is observed, a warning is raised.
         show_progress: bool, optional
@@ -254,34 +267,28 @@ class FeatureCollection:
                 series_dict[str(s.name)] = s
 
         calculated_feature_list: List[pd.DataFrame] = []
+        
         # Note: this variable has a global scope so this is shared in multiprocessing
-        global stroll_feat_list
-        stroll_feat_list = self._construct_stroll_feat_list(
+        global get_stroll_func
+        get_stroll_func = self._stroll_feat_generator(
             series_dict, window_idx, approve_sparsity
         )
 
         if n_jobs in [0, 1]:
-            # print('Executing feature extraction sequentially')
+            idxs = range(self._get_stroll_feat_length())
             if show_progress:
-                stroll_feat_list = tqdm(stroll_feat_list)
-            for stroll, func in stroll_feat_list:
-                calculated_feature_list.append(stroll.apply_func(func))
+                idxs = tqdm(idxs)
+            calculated_feature_list = [self._executor(idx) for idx in idxs]
         else:
-            # ---- Future work -----
-            # Try locking inside the executer when calling next() on a global generator
-            # Create global (precomputed) stroll-feature list 
-            # global stroll_feat_list
-            # stroll_feat_list = [stroll_feat for stroll_feat in stroll_feat_generator]
             # https://pathos.readthedocs.io/en/latest/pathos.html#usage
             with ProcessPool(nodes=n_jobs, source=True) as pool:
                 results = pool.uimap(
                     self._executor,
-                    range(len(stroll_feat_list)),
+                    range(self._get_stroll_feat_length()),
                 )
                 if show_progress:
-                    results = tqdm(results, total=len(stroll_feat_list))
-                for f in results:
-                    calculated_feature_list.append(f)
+                    results = tqdm(results, total=self._get_stroll_feat_length())
+                calculated_feature_list = [f for f in results]
                 # Close & join - see: https://github.com/uqfoundation/pathos/issues/131
                 pool.close()
                 pool.join()
@@ -289,16 +296,7 @@ class FeatureCollection:
                 pool.clear()
 
         if return_df:
-            df_merged = pd.DataFrame()
-            for calculated_feature in calculated_feature_list:
-                df_merged = pd.merge(
-                    left=df_merged,
-                    right=calculated_feature,
-                    how="outer",
-                    left_index=True,
-                    right_index=True,
-                )
-            return df_merged
+            return pd.concat(calculated_feature_list, axis=1, join="outer", copy=False)
         else:
             return calculated_feature_list
 

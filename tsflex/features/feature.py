@@ -14,6 +14,7 @@ import pandas as pd
 from .function_wrapper import NumpyFuncWrapper
 from ..utils.classes import FrozenClass
 from ..utils.data import to_list, to_tuple
+from ..utils.time import parse_time_arg
 
 
 class FeatureDescriptor(FrozenClass):
@@ -28,7 +29,7 @@ class FeatureDescriptor(FrozenClass):
             function(*series: np.ndarray)
                 -> Union[Any, List[Any]]
 
-    series_name : Union[str, Tuple[str]]
+    series_name : Union[str, Tuple[str, ...]]
         The names of the series on which the feature function should be applied.
         This argument should match the `function` its input; \n
         * If `series_name` is a string (or tuple of a single string), than 
@@ -90,13 +91,13 @@ class FeatureDescriptor(FrozenClass):
     def __init__(
         self,
         function: Union[NumpyFuncWrapper, Callable],
-        series_name: Union[str, Tuple[str]],
+        series_name: Union[str, Tuple[str, ...]],
         window: Union[float, str, pd.Timedelta],
         stride: Union[float, str, pd.Timedelta],
     ):
-        self.series_name: Tuple[str] = to_tuple(series_name)
-        self.window: pd.Timedelta = FeatureDescriptor._parse_time_arg(window)
-        self.stride: pd.Timedelta = FeatureDescriptor._parse_time_arg(stride)
+        self.series_name: Tuple[str, ...] = to_tuple(series_name)
+        self.window: pd.Timedelta = parse_time_arg(window)
+        self.stride: pd.Timedelta = parse_time_arg(stride)
 
         # Order of if statements is important (as NumpyFuncWrapper also is a Callable)!
         if isinstance(function, NumpyFuncWrapper):
@@ -114,46 +115,6 @@ class FeatureDescriptor(FrozenClass):
         self._func_str: str = f"{self.__class__.__name__} - func: {f_name}"
 
         self._freeze()
-
-    @staticmethod
-    def _parse_time_arg(arg: Union[float, str, pd.Timedelta]) -> pd.Timedelta:
-        """Parse the `window`/`stride` arg into a fixed set of types.
-
-        Parameters
-        ----------
-        arg : Union[float, str, pd.Timedelta]
-            The arg that will be parsed. \n
-            * If the type is an `int` or `float`, it should represent the timedelta in
-              **seconds**.
-            * If the type is a `pd.Timedelta`, nothing will happen.
-            * If the type is a `str`, `arg` should represent a time-string, and will be
-              converted to a `pd.Timedelta`.
-              Note: if there is no time-unit in the string, it should represent the
-              timedelta in **seconds**.
-
-        Returns
-        -------
-        pd.Timedelta
-            The parsed time arg
-
-        Raises
-        ------
-        TypeError
-            Raised when `arg` is not an instance of `float`, `int`, `str`, or
-            `pd.Timedelta`.
-
-        """
-        try:
-            # Cast a string without time units to float (or cast an int to float)
-            arg = float(arg)
-        except:
-            pass
-
-        if isinstance(arg, float):
-            return pd.Timedelta(seconds=arg)
-        elif isinstance(arg, str):
-            return pd.Timedelta(arg)
-        raise TypeError(f"arg type {type(arg)} is not supported!")
 
     def get_required_series(self) -> List[str]:
         """Return all required series names for this feature descriptor.
@@ -187,7 +148,7 @@ class MultipleFeatureDescriptors:
     ----------
     functions : Union[NumpyFuncWrapper, Callable, List[Union[NumpyFuncWrapper, Callable]]]
         The functions, can be either of both types (even in a single array).
-    series_names : Union[str, Tuple[str], List[str], List[Tuple[str]]]
+    series_names : Union[str, Tuple[str, ...], List[str], List[Tuple[str, ...]]]
         The names of the series on which the feature function should be applied.
 
         This argument should match the `function` its input; \n
@@ -215,7 +176,7 @@ class MultipleFeatureDescriptors:
     def __init__(
         self,
         functions: Union[NumpyFuncWrapper, Callable, List[Union[NumpyFuncWrapper, Callable]]],
-        series_names: Union[str, Tuple[str], List[str], List[Tuple[str]]],
+        series_names: Union[str, Tuple[str, ...], List[str], List[Tuple[str, ...]]],
         windows: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
         strides: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
     ):
