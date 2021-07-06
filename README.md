@@ -25,6 +25,12 @@ If you are using [**pip**](https://pypi.org/project/tsflex/), just execute the f
 pip install tsflex
 ```
 
+Or, if you are using [**conda**](https://anaconda.org/conda-forge/tsflex), then execute this command:
+
+```sh
+conda install -c conda-forge tsflex
+```
+
 ## Why tsflex? ✨
 
 * flexible;
