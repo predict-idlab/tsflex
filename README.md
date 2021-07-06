@@ -6,6 +6,7 @@
 [![Code quality](https://img.shields.io/lgtm/grade/python/g/predict-idlab/tsflex.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/predict-idlab/tsflex/context:python)
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 [![Downloads](https://pepy.tech/badge/tsflex)](https://pepy.tech/project/tsflex)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?)](http://makeapullrequest.com) 
 [![Documentation](https://github.com/predict-idlab/tsflex/actions/workflows/deploy-docs.yml/badge.svg)](https://github.com/predict-idlab/tsflex/actions/workflows/deploy-docs.yml)
 [![Testing](https://github.com/predict-idlab/tsflex/actions/workflows/test.yml/badge.svg)](https://github.com/predict-idlab/tsflex/actions/workflows/test.yml)
 
@@ -89,7 +90,7 @@ If you use `tsflex` in a scientific publication, we would highly appreciate citi
 
 ```bibtex
 @article{vanderdonckt2021tsflex,
-    author = {Van Der Donckt, Jonas and Van Der Donckt, Jeroen and Van Hoecke, Sofie},
+    author = {Van Der Donckt, Jonas and Van Der Donckt, Jeroen and Deprost, Emiel and Van Hoecke, Sofie},
     title = {tsflex: flexible time series processing \& feature extraction},
     journal = {SoftwareX},
     year = {2021},
