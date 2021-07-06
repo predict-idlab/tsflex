@@ -10,7 +10,7 @@
 [![Documentation](https://github.com/predict-idlab/tsflex/actions/workflows/deploy-docs.yml/badge.svg)](https://github.com/predict-idlab/tsflex/actions/workflows/deploy-docs.yml)
 [![Testing](https://github.com/predict-idlab/tsflex/actions/workflows/test.yml/badge.svg)](https://github.com/predict-idlab/tsflex/actions/workflows/test.yml)
 
-*tsflex* is a toolkit for _**flex**ible **t**ime-**s**eries_ **[processing](https://predict-idlab.github.io/tsflex/processing) & [feature extraction](https://predict-idlab.github.io/tsflex/features)**, making few assumptions about input data. 
+*tsflex* is a toolkit for _**flex**ible **t**ime **s**eries_ **[processing](https://predict-idlab.github.io/tsflex/processing) & [feature extraction](https://predict-idlab.github.io/tsflex/features)**, making few assumptions about input data. 
 
 #### Useful links
 
@@ -28,7 +28,7 @@ pip install tsflex
 ## Why tsflex? ✨
 
 * flexible;
-    * handles multi-variate time-series
+    * handles multivariate time series
     * versatile function support  
       => **integrates natively** with many packages for processing (e.g., [scipy.signal](https://docs.scipy.org/doc/scipy/reference/tutorial/signal.html), [statsmodels.tsa](https://www.statsmodels.org/stable/tsa.html#time-series-filters)) & feature extraction (e.g., [numpy](https://numpy.org/doc/stable/reference/routines.html), [scipy.stats](https://docs.scipy.org/doc/scipy/reference/tutorial/stats.html))
     * feature-extraction handles **multiple strides & window sizes**
@@ -37,7 +37,7 @@ pip install tsflex
     <!-- * faster than any existing library (single- & multi-core)
     * lower memory peak than any existing library (single- & multi-core) -->
 * maintains the **time-index** of the data
-* makes **little to no assumptions** about the time-series data
+* ###### makes **little to no assumptions** about the time series data
 
 ## Usage
 

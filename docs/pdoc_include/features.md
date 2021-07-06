@@ -186,7 +186,7 @@ However, the end-user must take some things in consideration.
 
 ### Multiple time series
 
-* functions that work on **multiple time-series**: see the `tsflex.chunking` module for more info.
+* functions that work on **multiple time series**: see the `tsflex.chunking` module for more info.
 
 
 ### Irregularly sampled data
