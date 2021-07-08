@@ -192,3 +192,9 @@ The table below positions _tsflex_ among other relative packages.
 </table></div>
 
 <br><br>
+
+# Benchmark
+
+<iframe src="https://datapane.com/u/jonasvdd/reports/tsflex-benchmark-v1/embed/" width="100%" height="540px" style="border: none;">IFrame not supported</iframe>
+
+<br>
