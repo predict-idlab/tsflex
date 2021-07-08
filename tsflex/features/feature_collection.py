@@ -10,6 +10,7 @@ from __future__ import annotations  # Make typing work for the enclosing class
 
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
+import os
 import dill
 import pandas as pd
 import numpy as np
@@ -273,6 +274,9 @@ class FeatureCollection:
         get_stroll_func = self._stroll_feat_generator(
             series_dict, window_idx, approve_sparsity
         )
+
+        if n_jobs is None: 
+            n_jobs = os.cpu_count()
 
         if n_jobs in [0, 1]:
             idxs = range(self._get_stroll_feat_length())
