@@ -2,8 +2,9 @@
 
 The following sections will explain the feature extraction module in detail.
 
-[**Jump to API reference**](#header-submodules)
-
+<!-- <div style="text-align: center;"> -->
+<h3><b><a href="#header-submodules">Jump to API reference</a></b></h3>
+<!-- </div> -->
 <br>
 
 ## Working example ✅
