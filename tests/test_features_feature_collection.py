@@ -429,12 +429,12 @@ def test_time_based_features():
 
 
 def test_pass_by_value(dummy_data):
-    def try_change_vie(series_view: np.ndarray):
+    def try_change_view(series_view: np.ndarray):
         series_view[:5] = 0  # update the view -> error!
         return np.mean(series_view)
 
     fc_gsr = FeatureCollection([
-        FeatureDescriptor(try_change_vie, "EDA", '30s', '15s', )]
+        FeatureDescriptor(try_change_view, "EDA", '30s', '15s', )]
     )
 
     for n_jobs in [0, None]:

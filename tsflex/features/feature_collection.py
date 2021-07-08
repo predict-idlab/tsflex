@@ -10,6 +10,7 @@ from __future__ import annotations  # Make typing work for the enclosing class
 
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
+import os
 import dill
 import pandas as pd
 import numpy as np
@@ -273,9 +274,14 @@ class FeatureCollection:
         get_stroll_func = self._stroll_feat_generator(
             series_dict, window_idx, approve_sparsity
         )
+        nb_stroll_funcs = self._get_stroll_feat_length()
+
+        if n_jobs is None: 
+            n_jobs = os.cpu_count()
+        n_jobs = min(n_jobs, nb_stroll_funcs)
 
         if n_jobs in [0, 1]:
-            idxs = range(self._get_stroll_feat_length())
+            idxs = range(nb_stroll_funcs)
             if show_progress:
                 idxs = tqdm(idxs)
             calculated_feature_list = [self._executor(idx) for idx in idxs]
@@ -284,7 +290,7 @@ class FeatureCollection:
             with ProcessPool(nodes=n_jobs, source=True) as pool:
                 results = pool.uimap(
                     self._executor,
-                    range(self._get_stroll_feat_length()),
+                    range(nb_stroll_funcs),
                 )
                 if show_progress:
                     results = tqdm(results, total=self._get_stroll_feat_length())

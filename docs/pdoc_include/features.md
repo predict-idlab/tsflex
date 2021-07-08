@@ -65,11 +65,11 @@ As shown above, there are 3 relevant classes for feature-extraction.
 
 1. [FeatureCollection](/tsflex/features/#tsflex.features.FeatureCollection): serves as a registry, withholding the to-be-calculated _features_
 2. [FeatureDescriptor](/tsflex/features/#tsflex.features.FeatureDescriptor): an instance of this class describes a _feature_. <br>Features are defined by:
-      * `series_name`: the names of the signal(s) which this feature will use. 
+      * `series_name`: the names of the input series on which the feature-function will operate 
       * `function`: the _Callable_ feature-function - e.g. _np.mean_
       * `window`: the _time-based_ window -  e.g. _"1hour"_
       * `stride`: the _time-based_ stride - e.g. _"2days"_
-3. [NumpyFuncWrapper](/tsflex/features/#tsflex.features.NumpyFuncWrapper): a wrapper around _Callable_ functions, intended for advanced feature function definitions, such as:
+3. [NumpyFuncWrapper](/tsflex/features/#tsflex.features.NumpyFuncWrapper): a wrapper around _Callable_ functions, intended for advanced feature-function definitions, such as:
     * features with multiple output columns
     * passing _**kwargs_ to feature functions
 
