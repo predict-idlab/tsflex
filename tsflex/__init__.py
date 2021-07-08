@@ -1,6 +1,10 @@
 """<i><b>flex</b>ible <b>t</b>ime-<b>s</b>eries operations</i>
 
 .. include:: ../docs/pdoc_include/root_documentation.md
+
+
+.. include:: ../docs/pdoc_include/tsflex_matrix.md
+
 """
 
 __docformat__ = 'numpy'
