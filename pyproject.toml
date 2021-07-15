@@ -10,7 +10,7 @@ documentation = "https://predict-idlab.github.io/tsflex"
 keywords = ["time-series", "processing", "feature-extraction", "data-science"]
 
 [tool.poetry.dependencies]
-python = "^3.7"
+python = "^3.7.1"  # When deploying set this to 3.7
 pandas = "^1.2.3"
 numpy = "^1.19.0"
 pathos = "^0.2.7"
