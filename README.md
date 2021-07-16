@@ -42,7 +42,7 @@ conda install -c conda-forge tsflex
       => **integrates natively** with many packages for processing (e.g., [scipy.signal](https://docs.scipy.org/doc/scipy/reference/tutorial/signal.html), [statsmodels.tsa](https://www.statsmodels.org/stable/tsa.html#time-series-filters)) & feature extraction (e.g., [numpy](https://numpy.org/doc/stable/reference/routines.html), [scipy.stats](https://docs.scipy.org/doc/scipy/reference/tutorial/stats.html))
     * feature-extraction handles **multiple strides & window sizes**
 * efficient view-based operations  
-  => extremely **low memory peak & fast execution times** ([see benchmarks](https://github.com/predict-idlab/tsflex-benchmarking)
+  => extremely **low memory peak & fast execution times** ([see benchmarks](https://github.com/predict-idlab/tsflex-benchmarking))
     <!-- * faster than any existing library (single- & multi-core)
     * lower memory peak than any existing library (single- & multi-core) -->
 * maintains the **time-index** of the data
