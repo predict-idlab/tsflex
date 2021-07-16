@@ -16,6 +16,7 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: 3.8
+    
     - name: Install poetry
       uses: Gr1N/setup-poetry@v4
     - name: Cache poetry
@@ -28,6 +29,7 @@ jobs:
     - name: Install dependencies
       run: poetry install
       if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+    
     - name: Build docs
       run: poetry run pdoc3 --template-dir docs/pdoc_template/ --output-dir docs --html tsflex/
     - name: Deploy docs

@@ -2,8 +2,9 @@
 
 The following sections will explain the feature extraction module in detail.
 
-[**Jump to API reference**](#header-submodules)
-
+<!-- <div style="text-align: center;"> -->
+<h3><b><a href="#header-submodules">Jump to API reference</a></b></h3>
+<!-- </div> -->
 <br>
 
 ## Working example ✅
@@ -65,11 +66,11 @@ As shown above, there are 3 relevant classes for feature-extraction.
 
 1. [FeatureCollection](/tsflex/features/#tsflex.features.FeatureCollection): serves as a registry, withholding the to-be-calculated _features_
 2. [FeatureDescriptor](/tsflex/features/#tsflex.features.FeatureDescriptor): an instance of this class describes a _feature_. <br>Features are defined by:
-      * `series_name`: the names of the signal(s) which this feature will use. 
+      * `series_name`: the names of the input series on which the feature-function will operate 
       * `function`: the _Callable_ feature-function - e.g. _np.mean_
       * `window`: the _time-based_ window -  e.g. _"1hour"_
       * `stride`: the _time-based_ stride - e.g. _"2days"_
-3. [NumpyFuncWrapper](/tsflex/features/#tsflex.features.NumpyFuncWrapper): a wrapper around _Callable_ functions, intended for advanced feature function definitions, such as:
+3. [NumpyFuncWrapper](/tsflex/features/#tsflex.features.NumpyFuncWrapper): a wrapper around _Callable_ functions, intended for advanced feature-function definitions, such as:
     * features with multiple output columns
     * passing _**kwargs_ to feature functions
 
@@ -186,7 +187,7 @@ However, the end-user must take some things in consideration.
 
 ### Multiple time series
 
-* functions that work on **multiple time-series**: see the `tsflex.chunking` module for more info.
+* functions that work on **multiple time series**: see the `tsflex.chunking` module for more info.
 
 
 ### Irregularly sampled data

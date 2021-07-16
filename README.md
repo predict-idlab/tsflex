@@ -1,15 +1,19 @@
 # <p align="center"> <a href="https://predict-idlab.github.io/tsflex"><img alt="tsflex" src="https://raw.githubusercontent.com/predict-idlab/tsflex/main/docs/_static/logo.png" height="100"></a></p>
 
 [![PyPI Latest Release](https://img.shields.io/pypi/v/tsflex.svg)](https://pypi.org/project/tsflex/)
+[![Conda Latest Release](https://img.shields.io/conda/vn/conda-forge/tsflex?label=conda)](https://anaconda.org/conda-forge/tsflex)
 [![support-version](https://img.shields.io/pypi/pyversions/tsflex)](https://img.shields.io/pypi/pyversions/tsflex)
-[![codecov](https://codecov.io/gh/predict-idlab/tsflex/branch/main/graph/badge.svg)](https://codecov.io/gh/predict-idlab/tsflex)
-[![Code quality](https://img.shields.io/lgtm/grade/python/g/predict-idlab/tsflex.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/predict-idlab/tsflex/context:python)
-![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
+[![codecov](https://img.shields.io/codecov/c/github/predict-idlab/tsflex?logo=codecov)](https://codecov.io/gh/predict-idlab/tsflex)
+[![Code quality](https://img.shields.io/lgtm/grade/python/github/predict-idlab/tsflex?label=code%20quality&logo=lgtm)](https://lgtm.com/projects/g/predict-idlab/tsflex/context:python)
+![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?color=black)
 [![Downloads](https://pepy.tech/badge/tsflex)](https://pepy.tech/project/tsflex)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?)](http://makeapullrequest.com) 
 [![Documentation](https://github.com/predict-idlab/tsflex/actions/workflows/deploy-docs.yml/badge.svg)](https://github.com/predict-idlab/tsflex/actions/workflows/deploy-docs.yml)
 [![Testing](https://github.com/predict-idlab/tsflex/actions/workflows/test.yml/badge.svg)](https://github.com/predict-idlab/tsflex/actions/workflows/test.yml)
 
-*tsflex* is a toolkit for _**flex**ible **t**ime-**s**eries_ **[processing](https://predict-idlab.github.io/tsflex/processing) & [feature extraction](https://predict-idlab.github.io/tsflex/features)**, making few assumptions about input data. 
+<!-- ![Downloads](https://img.shields.io/conda/dn/conda-forge/tsflex?logo=anaconda) -->
+
+*tsflex* is a toolkit for _**flex**ible **t**ime **s**eries_ **[processing](https://predict-idlab.github.io/tsflex/processing) & [feature extraction](https://predict-idlab.github.io/tsflex/features)**, making few assumptions about input data. 
 
 #### Useful links
 
@@ -24,19 +28,25 @@ If you are using [**pip**](https://pypi.org/project/tsflex/), just execute the f
 pip install tsflex
 ```
 
+Or, if you are using [**conda**](https://anaconda.org/conda-forge/tsflex), then execute this command:
+
+```sh
+conda install -c conda-forge tsflex
+```
+
 ## Why tsflex? ✨
 
 * flexible;
-    * handles multi-variate time-series
+    * handles multivariate time series
     * versatile function support  
       => **integrates natively** with many packages for processing (e.g., [scipy.signal](https://docs.scipy.org/doc/scipy/reference/tutorial/signal.html), [statsmodels.tsa](https://www.statsmodels.org/stable/tsa.html#time-series-filters)) & feature extraction (e.g., [numpy](https://numpy.org/doc/stable/reference/routines.html), [scipy.stats](https://docs.scipy.org/doc/scipy/reference/tutorial/stats.html))
     * feature-extraction handles **multiple strides & window sizes**
 * efficient view-based operations  
-  => extremely **low memory peak & fast execution** times ([see benchmarks]())
+  => extremely **low memory peak & fast execution times** ([see benchmarks](https://github.com/predict-idlab/tsflex/tree/main/examples/benchmarking))
     <!-- * faster than any existing library (single- & multi-core)
     * lower memory peak than any existing library (single- & multi-core) -->
 * maintains the **time-index** of the data
-* makes **little to no assumptions** about the time-series data
+* makes **little to no assumptions** about the time series data
 
 ## Usage
 
@@ -89,7 +99,7 @@ If you use `tsflex` in a scientific publication, we would highly appreciate citi
 
 ```bibtex
 @article{vanderdonckt2021tsflex,
-    author = {Van Der Donckt, Jonas and Van Der Donckt, Jeroen and Van Hoecke, Sofie},
+    author = {Van Der Donckt, Jonas and Van Der Donckt, Jeroen and Deprost, Emiel and Van Hoecke, Sofie},
     title = {tsflex: flexible time series processing \& feature extraction},
     journal = {SoftwareX},
     year = {2021},

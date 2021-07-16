@@ -2,8 +2,9 @@
 
 The following sections will explain the processing module in detail.
 
-[**Jump to API reference**](#header-submodules)
-
+<!-- <div style="text-align: center;"> -->
+<h3><b><a href="#header-submodules">Jump to API reference</a></b></h3>
+<!-- </div> -->
 <br>
 
 ## Working example ✅
@@ -63,7 +64,7 @@ As shown above, there are 2 relevant classes for processing.
 2. [SeriesProcessor](/tsflex/processing/#tsflex.processing.SeriesProcessor): an instance of this class describes a _processing step_. <br>Processors are defined by:
       * `function`: the _Callable_ processing-function - e.g. _scipy.signal.detrend_
       * `series_names`: the _name(s)_ of the series on which the processing function should be applied
-      * `**kwargs`: the _keyword agruments_ for the `function`.
+      * `**kwargs`: the _keyword arguments_ for the `function`.
 
 The snippet below shows how the `SeriesPipeline` & `SeriesProcessor` components work:
 
