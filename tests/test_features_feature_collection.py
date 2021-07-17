@@ -262,6 +262,57 @@ def test_featurecollection_feature_collection(dummy_data):
     assert all(res_df.index[1:] - res_df.index[:-1] == pd.to_timedelta(2.5, unit="s"))
 
 
+def test_featurecollection_error_val(dummy_data):
+    fd = FeatureDescriptor(
+        function=np.max,
+        series_name="EDA",
+        window="5s",
+        stride="2.5s",
+    )
+    fc = FeatureCollection(FeatureCollection(feature_descriptors=fd))
+
+    eda_data = dummy_data["EDA"].dropna()
+    eda_data = eda_data.iloc[:2] + eda_data.iloc[1+25*4:] # Leave gap of 25 s
+    assert (eda_data.index[1:] - eda_data.index[:-1]).max() == pd.Timedelta("25 s")
+
+    with pytest.raises(ValueError):
+        fc.calculate(eda_data, return_df=True, n_jobs=1, approve_sparsity=True)
+
+    res_df = fc.calculate(eda_data, return_df=True, n_jobs=1, approve_sparsity=True, error_val=np.nan)
+
+    freq = pd.to_timedelta(pd.infer_freq(dummy_data.index)) / np.timedelta64(1, "s")
+    stride_s = 2.5
+    window_s = 5
+    assert len(res_df) == (int(len(dummy_data) / (1 / freq)) - window_s) // stride_s
+    assert all(res_df.index[1:] - res_df.index[:-1] == pd.to_timedelta(2.5, unit="s"))
+
+def test_featurecollection_error_val_multiple_outputs(dummy_data):
+    def get_stats(series: np.ndarray):
+        return np.min(series), np.max(series)
+
+    fd = FeatureDescriptor(
+        function=NumpyFuncWrapper(get_stats, output_names=['min', 'max']),
+        series_name="EDA",
+        window="5s",
+        stride="2.5s",
+    )
+    fc = FeatureCollection(FeatureCollection(feature_descriptors=fd))
+
+    eda_data = dummy_data["EDA"].dropna()
+    eda_data = eda_data.iloc[:2] + eda_data.iloc[1+25*4:] # Leave gap of 25 s
+    assert (eda_data.index[1:] - eda_data.index[:-1]).max() == pd.Timedelta("25 s")
+
+    with pytest.raises(ValueError):
+        fc.calculate(eda_data, return_df=True, n_jobs=1, approve_sparsity=True)
+
+    res_df = fc.calculate(eda_data, return_df=True, n_jobs=1, approve_sparsity=True, error_val=np.nan)
+
+    freq = pd.to_timedelta(pd.infer_freq(dummy_data.index)) / np.timedelta64(1, "s")
+    stride_s = 2.5
+    window_s = 5
+    assert len(res_df) == (int(len(dummy_data) / (1 / freq)) - window_s) // stride_s
+    assert all(res_df.index[1:] - res_df.index[:-1] == pd.to_timedelta(2.5, unit="s"))
+
 ### Test various feature descriptor functions
 
 

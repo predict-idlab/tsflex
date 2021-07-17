@@ -2,7 +2,7 @@
 
 __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
 
-from typing import Callable, List, Union, Any
+from typing import Callable, List, Union, Any, Optional
 
 import numpy as np
 
@@ -57,18 +57,31 @@ class NumpyFuncWrapper(FrozenClass):  # TODO: waarom niet gewoon FuncWrapper?
             f" {self.kwargs})"
         )
 
-    def __call__(self, *series: np.ndarray) -> Any:
+    def __call__(self, *series: np.ndarray, error_val: Optional[Any] = None) -> Any:
         """Call wrapped function with passed data.
 
         Parameters
         ---------
         *series : np.ndarray
             The (multiple) input series for the function.
+        error_val : Any, optional
+            The value that gets returned when there is an error in the function call, by
+            default None. If error_val is None, than no other values are returned in 
+            case of an error, and thus the error is thrown. If error_val is not None, 
+            than the value is returned len(self.output_names) times.
 
         Returns
         -------
         Any
-            The function its output for the passed series.
+            The function its output for the passed series or error_val for 
+            len(self.output_names) times when error_val is not None and an error is
+            thrown by the function.
 
         """
-        return self.func(*series, **self.kwargs)
+        if error_val is None:
+            return self.func(*series, **self.kwargs)
+        try:
+            return self.func(*series, **self.kwargs)
+        except:
+            output = [error_val] * len(self.output_names)
+            return output[0] if len(output) == 1 else tuple(output)
