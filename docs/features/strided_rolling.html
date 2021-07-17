@@ -63,7 +63,7 @@ import pandas as pd
 import numpy as np
 
 from collections import namedtuple
-from typing import Callable, Union, List, Tuple, Optional
+from typing import Callable, Union, List, Tuple, Optional, Any
 
 from .function_wrapper import NumpyFuncWrapper
 from .logger import logger
@@ -262,13 +262,22 @@ class StridedRolling:
         else:
             raise ValueError(f&#34;invalid bound method string passed {bound_method}&#34;)
 
-    def apply_func(self, np_func: Union[Callable, NumpyFuncWrapper]) -&gt; pd.DataFrame:
+    def apply_func(
+        self, np_func: Union[NumpyFuncWrapper], error_val: Optional[Any] = None
+    ) -&gt; pd.DataFrame:
         &#34;&#34;&#34;Apply a function to the expanded time-series.
 
         Parameters
         ----------
         np_func : Union[Callable, NumpyFuncWrapper]
             The Callable (wrapped) function which will be applied.
+        error_val : Any, optional
+            The value that gets returned by the function when there is an error in the 
+            function call, by default None. If error_val is None, then no other values 
+            are returned in case of an error, and thus the error is thrown. If error_val
+            is not None, then the value is returned len(self.output_names) times.
+            Note that an error is most likely due to an empty / sparse window. This is 
+            thus a convenient way to return default values in such cases.
 
         Returns
         -------
@@ -300,8 +309,6 @@ class StridedRolling:
             win_stride_str = f&#34;w={win_str}_s={stride_str}&#34;
             return f&#34;{&#39;|&#39;.join(self.series_key)}__{feat_name}__{win_stride_str}&#34;
 
-        if not isinstance(np_func, NumpyFuncWrapper):
-            np_func = NumpyFuncWrapper(np_func)
         feat_names = np_func.output_names
 
         t_start = time.time()
@@ -312,7 +319,8 @@ class StridedRolling:
         out = np.array(
             [np_func(
                 *[sc.values[sc.start_indexes[idx]: sc.end_indexes[idx]]
-                  for sc in self.series_containers]
+                  for sc in self.series_containers],
+                error_val=error_val,
             ) for idx in range(len(self.index))]
         )
 
@@ -586,13 +594,22 @@ If False and sparsity is observed, a warning is raised.</dd>
         else:
             raise ValueError(f&#34;invalid bound method string passed {bound_method}&#34;)
 
-    def apply_func(self, np_func: Union[Callable, NumpyFuncWrapper]) -&gt; pd.DataFrame:
+    def apply_func(
+        self, np_func: Union[NumpyFuncWrapper], error_val: Optional[Any] = None
+    ) -&gt; pd.DataFrame:
         &#34;&#34;&#34;Apply a function to the expanded time-series.
 
         Parameters
         ----------
         np_func : Union[Callable, NumpyFuncWrapper]
             The Callable (wrapped) function which will be applied.
+        error_val : Any, optional
+            The value that gets returned by the function when there is an error in the 
+            function call, by default None. If error_val is None, then no other values 
+            are returned in case of an error, and thus the error is thrown. If error_val
+            is not None, then the value is returned len(self.output_names) times.
+            Note that an error is most likely due to an empty / sparse window. This is 
+            thus a convenient way to return default values in such cases.
 
         Returns
         -------
@@ -624,8 +641,6 @@ If False and sparsity is observed, a warning is raised.</dd>
             win_stride_str = f&#34;w={win_str}_s={stride_str}&#34;
             return f&#34;{&#39;|&#39;.join(self.series_key)}__{feat_name}__{win_stride_str}&#34;
 
-        if not isinstance(np_func, NumpyFuncWrapper):
-            np_func = NumpyFuncWrapper(np_func)
         feat_names = np_func.output_names
 
         t_start = time.time()
@@ -636,7 +651,8 @@ If False and sparsity is observed, a warning is raised.</dd>
         out = np.array(
             [np_func(
                 *[sc.values[sc.start_indexes[idx]: sc.end_indexes[idx]]
-                  for sc in self.series_containers]
+                  for sc in self.series_containers],
+                error_val=error_val,
             ) for idx in range(len(self.index))]
         )
 
@@ -662,7 +678,7 @@ If False and sparsity is observed, a warning is raised.</dd>
 <h3>Methods</h3>
 <dl>
 <dt id="tsflex.features.strided_rolling.StridedRolling.apply_func"><code class="name flex">
-<span>def <span class="ident">apply_func</span></span>(<span>self, np_func)</span>
+<span>def <span class="ident">apply_func</span></span>(<span>self, np_func, error_val=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Apply a function to the expanded time-series.</p>
@@ -670,6 +686,13 @@ If False and sparsity is observed, a warning is raised.</dd>
 <dl>
 <dt><strong><code>np_func</code></strong> :&ensp;<code>Union[Callable, NumpyFuncWrapper]</code></dt>
 <dd>The Callable (wrapped) function which will be applied.</dd>
+<dt><strong><code>error_val</code></strong> :&ensp;<code>Any</code>, optional</dt>
+<dd>The value that gets returned by the function when there is an error in the
+function call, by default None. If error_val is None, then no other values
+are returned in case of an error, and thus the error is thrown. If error_val
+is not None, then the value is returned len(self.output_names) times.
+Note that an error is most likely due to an empty / sparse window. This is
+thus a convenient way to return default values in such cases.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
@@ -696,13 +719,22 @@ the <code>output_names</code> attributes of its constructor.</li>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def apply_func(self, np_func: Union[Callable, NumpyFuncWrapper]) -&gt; pd.DataFrame:
+<pre><code class="python">def apply_func(
+    self, np_func: Union[NumpyFuncWrapper], error_val: Optional[Any] = None
+) -&gt; pd.DataFrame:
     &#34;&#34;&#34;Apply a function to the expanded time-series.
 
     Parameters
     ----------
     np_func : Union[Callable, NumpyFuncWrapper]
         The Callable (wrapped) function which will be applied.
+    error_val : Any, optional
+        The value that gets returned by the function when there is an error in the 
+        function call, by default None. If error_val is None, then no other values 
+        are returned in case of an error, and thus the error is thrown. If error_val
+        is not None, then the value is returned len(self.output_names) times.
+        Note that an error is most likely due to an empty / sparse window. This is 
+        thus a convenient way to return default values in such cases.
 
     Returns
     -------
@@ -734,8 +766,6 @@ the <code>output_names</code> attributes of its constructor.</li>
         win_stride_str = f&#34;w={win_str}_s={stride_str}&#34;
         return f&#34;{&#39;|&#39;.join(self.series_key)}__{feat_name}__{win_stride_str}&#34;
 
-    if not isinstance(np_func, NumpyFuncWrapper):
-        np_func = NumpyFuncWrapper(np_func)
     feat_names = np_func.output_names
 
     t_start = time.time()
@@ -746,7 +776,8 @@ the <code>output_names</code> attributes of its constructor.</li>
     out = np.array(
         [np_func(
             *[sc.values[sc.start_indexes[idx]: sc.end_indexes[idx]]
-              for sc in self.series_containers]
+              for sc in self.series_containers],
+            error_val=error_val,
         ) for idx in range(len(self.index))]
     )
 

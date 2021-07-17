@@ -932,10 +932,10 @@ have the same type, i.e, either </p>
                 raise TypeError(f&#34;type: {type(feature)} is not supported - {feature}&#34;)
 
     @staticmethod
-    def _executor(idx: int):
+    def _executor(idx: int, error_val: Optional[Any] = None):
         # global get_stroll_func
         stroll, function = get_stroll_func(idx)
-        return stroll.apply_func(function)
+        return stroll.apply_func(function, error_val)
 
     def _stroll_feat_generator(
         self, series_dict: Dict[str, pd.Series], window_idx: str, approve_sparsity: bool
@@ -976,6 +976,7 @@ have the same type, i.e, either </p>
         return_df: Optional[bool] = False,
         window_idx: Optional[str] = &#34;end&#34;,
         approve_sparsity: Optional[bool] = False,
+        error_val: Optional[Any] = None,
         show_progress: Optional[bool] = False,
         logging_file_path: Optional[Union[str, Path]] = None,
         n_jobs: Optional[int] = None,
@@ -1012,6 +1013,13 @@ have the same type, i.e, either </p>
             Bool indicating whether the user acknowledges that there may be sparsity
             (i.e., irregularly sampled data), by default False.
             If False and sparsity is observed, a warning is raised.
+        error_val : Any, optional
+            The value that gets returned when there is an error in the function call, by
+            default None. If `error_val` is None, then no other values are returned in 
+            case of an error, and thus the error is thrown. If `error_val` is not None, 
+            then the value is returned ``len(self.output_names)`` times.
+            Note that an error is most likely due to an empty / sparse window. This is 
+            thus a convenient way to return default values in such cases.
         show_progress: bool, optional
             If True, the progress will be shown with a progressbar, by default False.
         logging_file_path : Union[str, Path], optional
@@ -1078,13 +1086,14 @@ have the same type, i.e, either </p>
             idxs = range(nb_stroll_funcs)
             if show_progress:
                 idxs = tqdm(idxs)
-            calculated_feature_list = [self._executor(idx) for idx in idxs]
+            calculated_feature_list = [self._executor(idx, error_val) for idx in idxs]
         else:
             # https://pathos.readthedocs.io/en/latest/pathos.html#usage
             with ProcessPool(nodes=n_jobs, source=True) as pool:
                 results = pool.uimap(
                     self._executor,
                     range(nb_stroll_funcs),
+                    [error_val]*nb_stroll_funcs,
                 )
                 if show_progress:
                     results = tqdm(results, total=self._get_stroll_feat_length())
@@ -1234,7 +1243,7 @@ collection.</p>
 </details>
 </dd>
 <dt id="tsflex.features.FeatureCollection.calculate"><code class="name flex">
-<span>def <span class="ident">calculate</span></span>(<span>self, data, return_df=False, window_idx='end', approve_sparsity=False, show_progress=False, logging_file_path=None, n_jobs=None)</span>
+<span>def <span class="ident">calculate</span></span>(<span>self, data, return_df=False, window_idx='end', approve_sparsity=False, error_val=None, show_progress=False, logging_file_path=None, n_jobs=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Calculate features on the passed data.</p>
@@ -1270,6 +1279,13 @@ window_idx.</dd>
 <dd>Bool indicating whether the user acknowledges that there may be sparsity
 (i.e., irregularly sampled data), by default False.
 If False and sparsity is observed, a warning is raised.</dd>
+<dt><strong><code>error_val</code></strong> :&ensp;<code>Any</code>, optional</dt>
+<dd>The value that gets returned when there is an error in the function call, by
+default None. If <code>error_val</code> is None, then no other values are returned in
+case of an error, and thus the error is thrown. If <code>error_val</code> is not None,
+then the value is returned <code>len(self.output_names)</code> times.
+Note that an error is most likely due to an empty / sparse window. This is
+thus a convenient way to return default values in such cases.</dd>
 <dt><strong><code>show_progress</code></strong> :&ensp;<code>bool</code>, optional</dt>
 <dd>If True, the progress will be shown with a progressbar, by default False.</dd>
 <dt><strong><code>logging_file_path</code></strong> :&ensp;<code>Union[str, Path]</code>, optional</dt>
@@ -1317,6 +1333,7 @@ sequentially. Set the <code>n_jobs</code> to 0-1 if this matters.</li>
     return_df: Optional[bool] = False,
     window_idx: Optional[str] = &#34;end&#34;,
     approve_sparsity: Optional[bool] = False,
+    error_val: Optional[Any] = None,
     show_progress: Optional[bool] = False,
     logging_file_path: Optional[Union[str, Path]] = None,
     n_jobs: Optional[int] = None,
@@ -1353,6 +1370,13 @@ sequentially. Set the <code>n_jobs</code> to 0-1 if this matters.</li>
         Bool indicating whether the user acknowledges that there may be sparsity
         (i.e., irregularly sampled data), by default False.
         If False and sparsity is observed, a warning is raised.
+    error_val : Any, optional
+        The value that gets returned when there is an error in the function call, by
+        default None. If `error_val` is None, then no other values are returned in 
+        case of an error, and thus the error is thrown. If `error_val` is not None, 
+        then the value is returned ``len(self.output_names)`` times.
+        Note that an error is most likely due to an empty / sparse window. This is 
+        thus a convenient way to return default values in such cases.
     show_progress: bool, optional
         If True, the progress will be shown with a progressbar, by default False.
     logging_file_path : Union[str, Path], optional
@@ -1419,13 +1443,14 @@ sequentially. Set the <code>n_jobs</code> to 0-1 if this matters.</li>
         idxs = range(nb_stroll_funcs)
         if show_progress:
             idxs = tqdm(idxs)
-        calculated_feature_list = [self._executor(idx) for idx in idxs]
+        calculated_feature_list = [self._executor(idx, error_val) for idx in idxs]
     else:
         # https://pathos.readthedocs.io/en/latest/pathos.html#usage
         with ProcessPool(nodes=n_jobs, source=True) as pool:
             results = pool.uimap(
                 self._executor,
                 range(nb_stroll_funcs),
+                [error_val]*nb_stroll_funcs,
             )
             if show_progress:
                 results = tqdm(results, total=self._get_stroll_feat_length())
@@ -1553,21 +1578,34 @@ array. It also defines the names of the function outputs.</p>
             f&#34; {self.kwargs})&#34;
         )
 
-    def __call__(self, *series: np.ndarray) -&gt; Any:
+    def __call__(self, *series: np.ndarray, error_val: Optional[Any] = None) -&gt; Any:
         &#34;&#34;&#34;Call wrapped function with passed data.
 
         Parameters
         ---------
         *series : np.ndarray
             The (multiple) input series for the function.
+        error_val : Any, optional
+            The value that gets returned when there is an error in the function call, by
+            default None. If `error_val` is None, then no other values are returned in 
+            case of an error, and thus the error is thrown. If `error_val` is not None, 
+            then the value is returned ``len(self.output_names)`` times.
 
         Returns
         -------
         Any
-            The function its output for the passed series.
+            The function its output for the passed series or 
+            ``len(self.output_names)`` times `error_val`, when error_val is not None and 
+            an error is thrown by the function.
 
         &#34;&#34;&#34;
-        return self.func(*series, **self.kwargs)</code></pre>
+        if error_val is None:
+            return self.func(*series, **self.kwargs)
+        try:
+            return self.func(*series, **self.kwargs)
+        except:
+            output = [error_val] * len(self.output_names)
+            return output[0] if len(output) == 1 else tuple(output)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -1576,7 +1614,7 @@ array. It also defines the names of the function outputs.</p>
 <h3>Methods</h3>
 <dl>
 <dt id="tsflex.features.NumpyFuncWrapper.__call__"><code class="name flex">
-<span>def <span class="ident">__call__</span></span>(<span>self, *series)</span>
+<span>def <span class="ident">__call__</span></span>(<span>self, *series, error_val=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Call wrapped function with passed data.</p>
@@ -1584,31 +1622,51 @@ array. It also defines the names of the function outputs.</p>
 <dl>
 <dt><strong><code>*series</code></strong> :&ensp;<code>np.ndarray</code></dt>
 <dd>The (multiple) input series for the function.</dd>
+<dt><strong><code>error_val</code></strong> :&ensp;<code>Any</code>, optional</dt>
+<dd>The value that gets returned when there is an error in the function call, by
+default None. If <code>error_val</code> is None, then no other values are returned in
+case of an error, and thus the error is thrown. If <code>error_val</code> is not None,
+then the value is returned <code>len(self.output_names)</code> times.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><code>Any</code></dt>
-<dd>The function its output for the passed series.</dd>
+<dd>The function its output for the passed series or
+<code>len(self.output_names)</code> times <code>error_val</code>, when error_val is not None and
+an error is thrown by the function.</dd>
 </dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def __call__(self, *series: np.ndarray) -&gt; Any:
+<pre><code class="python">def __call__(self, *series: np.ndarray, error_val: Optional[Any] = None) -&gt; Any:
     &#34;&#34;&#34;Call wrapped function with passed data.
 
     Parameters
     ---------
     *series : np.ndarray
         The (multiple) input series for the function.
+    error_val : Any, optional
+        The value that gets returned when there is an error in the function call, by
+        default None. If `error_val` is None, then no other values are returned in 
+        case of an error, and thus the error is thrown. If `error_val` is not None, 
+        then the value is returned ``len(self.output_names)`` times.
 
     Returns
     -------
     Any
-        The function its output for the passed series.
+        The function its output for the passed series or 
+        ``len(self.output_names)`` times `error_val`, when error_val is not None and 
+        an error is thrown by the function.
 
     &#34;&#34;&#34;
-    return self.func(*series, **self.kwargs)</code></pre>
+    if error_val is None:
+        return self.func(*series, **self.kwargs)
+    try:
+        return self.func(*series, **self.kwargs)
+    except:
+        output = [error_val] * len(self.output_names)
+        return output[0] if len(output) == 1 else tuple(output)</code></pre>
 </details>
 </dd>
 </dl>

@@ -52,7 +52,7 @@ import pandas as pd
 import numpy as np
 
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union, Any
 from pathos.multiprocessing import ProcessPool
 from tqdm.auto import tqdm
 
@@ -174,10 +174,10 @@ class FeatureCollection:
                 raise TypeError(f&#34;type: {type(feature)} is not supported - {feature}&#34;)
 
     @staticmethod
-    def _executor(idx: int):
+    def _executor(idx: int, error_val: Optional[Any] = None):
         # global get_stroll_func
         stroll, function = get_stroll_func(idx)
-        return stroll.apply_func(function)
+        return stroll.apply_func(function, error_val)
 
     def _stroll_feat_generator(
         self, series_dict: Dict[str, pd.Series], window_idx: str, approve_sparsity: bool
@@ -218,6 +218,7 @@ class FeatureCollection:
         return_df: Optional[bool] = False,
         window_idx: Optional[str] = &#34;end&#34;,
         approve_sparsity: Optional[bool] = False,
+        error_val: Optional[Any] = None,
         show_progress: Optional[bool] = False,
         logging_file_path: Optional[Union[str, Path]] = None,
         n_jobs: Optional[int] = None,
@@ -254,6 +255,13 @@ class FeatureCollection:
             Bool indicating whether the user acknowledges that there may be sparsity
             (i.e., irregularly sampled data), by default False.
             If False and sparsity is observed, a warning is raised.
+        error_val : Any, optional
+            The value that gets returned when there is an error in the function call, by
+            default None. If `error_val` is None, then no other values are returned in 
+            case of an error, and thus the error is thrown. If `error_val` is not None, 
+            then the value is returned ``len(self.output_names)`` times.
+            Note that an error is most likely due to an empty / sparse window. This is 
+            thus a convenient way to return default values in such cases.
         show_progress: bool, optional
             If True, the progress will be shown with a progressbar, by default False.
         logging_file_path : Union[str, Path], optional
@@ -320,13 +328,14 @@ class FeatureCollection:
             idxs = range(nb_stroll_funcs)
             if show_progress:
                 idxs = tqdm(idxs)
-            calculated_feature_list = [self._executor(idx) for idx in idxs]
+            calculated_feature_list = [self._executor(idx, error_val) for idx in idxs]
         else:
             # https://pathos.readthedocs.io/en/latest/pathos.html#usage
             with ProcessPool(nodes=n_jobs, source=True) as pool:
                 results = pool.uimap(
                     self._executor,
                     range(nb_stroll_funcs),
+                    [error_val]*nb_stroll_funcs,
                 )
                 if show_progress:
                     results = tqdm(results, total=self._get_stroll_feat_length())
@@ -512,10 +521,10 @@ class FeatureCollection:
                 raise TypeError(f&#34;type: {type(feature)} is not supported - {feature}&#34;)
 
     @staticmethod
-    def _executor(idx: int):
+    def _executor(idx: int, error_val: Optional[Any] = None):
         # global get_stroll_func
         stroll, function = get_stroll_func(idx)
-        return stroll.apply_func(function)
+        return stroll.apply_func(function, error_val)
 
     def _stroll_feat_generator(
         self, series_dict: Dict[str, pd.Series], window_idx: str, approve_sparsity: bool
@@ -556,6 +565,7 @@ class FeatureCollection:
         return_df: Optional[bool] = False,
         window_idx: Optional[str] = &#34;end&#34;,
         approve_sparsity: Optional[bool] = False,
+        error_val: Optional[Any] = None,
         show_progress: Optional[bool] = False,
         logging_file_path: Optional[Union[str, Path]] = None,
         n_jobs: Optional[int] = None,
@@ -592,6 +602,13 @@ class FeatureCollection:
             Bool indicating whether the user acknowledges that there may be sparsity
             (i.e., irregularly sampled data), by default False.
             If False and sparsity is observed, a warning is raised.
+        error_val : Any, optional
+            The value that gets returned when there is an error in the function call, by
+            default None. If `error_val` is None, then no other values are returned in 
+            case of an error, and thus the error is thrown. If `error_val` is not None, 
+            then the value is returned ``len(self.output_names)`` times.
+            Note that an error is most likely due to an empty / sparse window. This is 
+            thus a convenient way to return default values in such cases.
         show_progress: bool, optional
             If True, the progress will be shown with a progressbar, by default False.
         logging_file_path : Union[str, Path], optional
@@ -658,13 +675,14 @@ class FeatureCollection:
             idxs = range(nb_stroll_funcs)
             if show_progress:
                 idxs = tqdm(idxs)
-            calculated_feature_list = [self._executor(idx) for idx in idxs]
+            calculated_feature_list = [self._executor(idx, error_val) for idx in idxs]
         else:
             # https://pathos.readthedocs.io/en/latest/pathos.html#usage
             with ProcessPool(nodes=n_jobs, source=True) as pool:
                 results = pool.uimap(
                     self._executor,
                     range(nb_stroll_funcs),
+                    [error_val]*nb_stroll_funcs,
                 )
                 if show_progress:
                     results = tqdm(results, total=self._get_stroll_feat_length())
@@ -814,7 +832,7 @@ collection.</p>
 </details>
 </dd>
 <dt id="tsflex.features.feature_collection.FeatureCollection.calculate"><code class="name flex">
-<span>def <span class="ident">calculate</span></span>(<span>self, data, return_df=False, window_idx='end', approve_sparsity=False, show_progress=False, logging_file_path=None, n_jobs=None)</span>
+<span>def <span class="ident">calculate</span></span>(<span>self, data, return_df=False, window_idx='end', approve_sparsity=False, error_val=None, show_progress=False, logging_file_path=None, n_jobs=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Calculate features on the passed data.</p>
@@ -850,6 +868,13 @@ window_idx.</dd>
 <dd>Bool indicating whether the user acknowledges that there may be sparsity
 (i.e., irregularly sampled data), by default False.
 If False and sparsity is observed, a warning is raised.</dd>
+<dt><strong><code>error_val</code></strong> :&ensp;<code>Any</code>, optional</dt>
+<dd>The value that gets returned when there is an error in the function call, by
+default None. If <code>error_val</code> is None, then no other values are returned in
+case of an error, and thus the error is thrown. If <code>error_val</code> is not None,
+then the value is returned <code>len(self.output_names)</code> times.
+Note that an error is most likely due to an empty / sparse window. This is
+thus a convenient way to return default values in such cases.</dd>
 <dt><strong><code>show_progress</code></strong> :&ensp;<code>bool</code>, optional</dt>
 <dd>If True, the progress will be shown with a progressbar, by default False.</dd>
 <dt><strong><code>logging_file_path</code></strong> :&ensp;<code>Union[str, Path]</code>, optional</dt>
@@ -897,6 +922,7 @@ sequentially. Set the <code>n_jobs</code> to 0-1 if this matters.</li>
     return_df: Optional[bool] = False,
     window_idx: Optional[str] = &#34;end&#34;,
     approve_sparsity: Optional[bool] = False,
+    error_val: Optional[Any] = None,
     show_progress: Optional[bool] = False,
     logging_file_path: Optional[Union[str, Path]] = None,
     n_jobs: Optional[int] = None,
@@ -933,6 +959,13 @@ sequentially. Set the <code>n_jobs</code> to 0-1 if this matters.</li>
         Bool indicating whether the user acknowledges that there may be sparsity
         (i.e., irregularly sampled data), by default False.
         If False and sparsity is observed, a warning is raised.
+    error_val : Any, optional
+        The value that gets returned when there is an error in the function call, by
+        default None. If `error_val` is None, then no other values are returned in 
+        case of an error, and thus the error is thrown. If `error_val` is not None, 
+        then the value is returned ``len(self.output_names)`` times.
+        Note that an error is most likely due to an empty / sparse window. This is 
+        thus a convenient way to return default values in such cases.
     show_progress: bool, optional
         If True, the progress will be shown with a progressbar, by default False.
     logging_file_path : Union[str, Path], optional
@@ -999,13 +1032,14 @@ sequentially. Set the <code>n_jobs</code> to 0-1 if this matters.</li>
         idxs = range(nb_stroll_funcs)
         if show_progress:
             idxs = tqdm(idxs)
-        calculated_feature_list = [self._executor(idx) for idx in idxs]
+        calculated_feature_list = [self._executor(idx, error_val) for idx in idxs]
     else:
         # https://pathos.readthedocs.io/en/latest/pathos.html#usage
         with ProcessPool(nodes=n_jobs, source=True) as pool:
             results = pool.uimap(
                 self._executor,
                 range(nb_stroll_funcs),
+                [error_val]*nb_stroll_funcs,
             )
             if show_progress:
                 results = tqdm(results, total=self._get_stroll_feat_length())
