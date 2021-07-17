@@ -272,7 +272,8 @@ def test_featurecollection_error_val(dummy_data):
     fc = FeatureCollection(FeatureCollection(feature_descriptors=fd))
 
     eda_data = dummy_data["EDA"].dropna()
-    eda_data = eda_data.iloc[:2] + eda_data.iloc[1+25*4:] # Leave gap of 25 s
+    eda_data[2:1+25*4] = None # Leave gap of 25 s
+    eda_data = eda_data.dropna()
     assert (eda_data.index[1:] - eda_data.index[:-1]).max() == pd.Timedelta("25 s")
 
     with pytest.raises(ValueError):
@@ -299,7 +300,8 @@ def test_featurecollection_error_val_multiple_outputs(dummy_data):
     fc = FeatureCollection(FeatureCollection(feature_descriptors=fd))
 
     eda_data = dummy_data["EDA"].dropna()
-    eda_data = eda_data.iloc[:2] + eda_data.iloc[1+25*4:] # Leave gap of 25 s
+    eda_data[2:1+25*4] = None # Leave gap of 25 s
+    eda_data = eda_data.dropna()
     assert (eda_data.index[1:] - eda_data.index[:-1]).max() == pd.Timedelta("25 s")
 
     with pytest.raises(ValueError):

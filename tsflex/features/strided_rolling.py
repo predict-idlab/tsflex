@@ -226,11 +226,11 @@ class StridedRolling:
         ----------
         np_func : Union[Callable, NumpyFuncWrapper]
             The Callable (wrapped) function which will be applied.
-        error_val : Any, optional  # TODO: other name??
+        error_val : Any, optional
             The value that gets returned by the function when there is an error in the 
-            function call, by default None. If error_val is None, than no other values 
+            function call, by default None. If error_val is None, then no other values 
             are returned in case of an error, and thus the error is thrown. If error_val
-            is not None, than the value is returned len(self.output_names) times.
+            is not None, then the value is returned len(self.output_names) times.
             Note that an error is most likely due to an empty / sparse window. This is 
             thus a convenient way to return default values in such cases.
 
