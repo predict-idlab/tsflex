@@ -4,6 +4,7 @@ __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
 
 from typing import Callable, List, Union, Any, Optional
 
+import warnings
 import numpy as np
 
 from .. import __pdoc__
@@ -81,7 +82,10 @@ class NumpyFuncWrapper(FrozenClass):  # TODO: waarom niet gewoon FuncWrapper?
         if error_val is None:
             return self.func(*series, **self.kwargs)
         try:
-            return self.func(*series, **self.kwargs)
-        except:
+            # Ignore warnings that may arise 
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                return self.func(*series, **self.kwargs)
+        except Exception:
             output = [error_val] * len(self.output_names)
             return output[0] if len(output) == 1 else tuple(output)

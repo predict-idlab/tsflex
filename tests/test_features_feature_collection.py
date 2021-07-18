@@ -272,7 +272,8 @@ def test_featurecollection_error_val(dummy_data):
     fc = FeatureCollection(FeatureCollection(feature_descriptors=fd))
 
     eda_data = dummy_data["EDA"].dropna()
-    eda_data = eda_data.iloc[:2] + eda_data.iloc[1+25*4:] # Leave gap of 25 s
+    eda_data = pd.concat([eda_data.iloc[:2], eda_data.iloc[1+25*4:]]) # Leave 25s gap
+    assert eda_data.isna().any() == False
     assert (eda_data.index[1:] - eda_data.index[:-1]).max() == pd.Timedelta("25 s")
 
     with pytest.raises(ValueError):
@@ -286,12 +287,15 @@ def test_featurecollection_error_val(dummy_data):
     assert len(res_df) == (int(len(dummy_data) / (1 / freq)) - window_s) // stride_s
     assert all(res_df.index[1:] - res_df.index[:-1] == pd.to_timedelta(2.5, unit="s"))
 
+    assert res_df[1:9].isna().sum().all().all()
+    assert res_df[9:].isna().sum().any().any() == False
+
 def test_featurecollection_error_val_multiple_outputs(dummy_data):
     def get_stats(series: np.ndarray):
         return np.min(series), np.max(series)
 
     fd = FeatureDescriptor(
-        function=NumpyFuncWrapper(get_stats, output_names=['min', 'max']),
+        function=NumpyFuncWrapper(get_stats, output_names=["min", "max"]),
         series_name="EDA",
         window="5s",
         stride="2.5s",
@@ -299,7 +303,8 @@ def test_featurecollection_error_val_multiple_outputs(dummy_data):
     fc = FeatureCollection(FeatureCollection(feature_descriptors=fd))
 
     eda_data = dummy_data["EDA"].dropna()
-    eda_data = eda_data.iloc[:2] + eda_data.iloc[1+25*4:] # Leave gap of 25 s
+    eda_data = pd.concat([eda_data.iloc[:2], eda_data.iloc[1+25*4:]]) # Leave 25s gap
+    assert eda_data.isna().any() == False
     assert (eda_data.index[1:] - eda_data.index[:-1]).max() == pd.Timedelta("25 s")
 
     with pytest.raises(ValueError):
@@ -312,6 +317,10 @@ def test_featurecollection_error_val_multiple_outputs(dummy_data):
     window_s = 5
     assert len(res_df) == (int(len(dummy_data) / (1 / freq)) - window_s) // stride_s
     assert all(res_df.index[1:] - res_df.index[:-1] == pd.to_timedelta(2.5, unit="s"))
+
+    assert res_df[1:9].isna().sum().all().all()
+    assert res_df[9:].isna().sum().any().any() == False
+
 
 ### Test various feature descriptor functions
 
