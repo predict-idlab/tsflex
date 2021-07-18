@@ -219,11 +219,11 @@ class FeatureCollection:
             Bool indicating whether the user acknowledges that there may be sparsity
             (i.e., irregularly sampled data), by default False.
             If False and sparsity is observed, a warning is raised.
-        error_val : Any, optional  # TODO: other name??
+        error_val : Any, optional
             The value that gets returned when there is an error in the function call, by
-            default None. If `error_val` is None, than no other values are returned in 
+            default None. If `error_val` is None, then no other values are returned in 
             case of an error, and thus the error is thrown. If `error_val` is not None, 
-            than the value is returned ``len(self.output_names)`` times.
+            then the value is returned ``len(self.output_names)`` times.
             Note that an error is most likely due to an empty / sparse window. This is 
             thus a convenient way to return default values in such cases.
         show_progress: bool, optional

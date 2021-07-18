@@ -67,16 +67,16 @@ class NumpyFuncWrapper(FrozenClass):  # TODO: waarom niet gewoon FuncWrapper?
             The (multiple) input series for the function.
         error_val : Any, optional
             The value that gets returned when there is an error in the function call, by
-            default None. If `error_val` is None, than no other values are returned in 
+            default None. If `error_val` is None, then no other values are returned in 
             case of an error, and thus the error is thrown. If `error_val` is not None, 
-            than the value is returned ``len(self.output_names)`` times.
+            then the value is returned ``len(self.output_names)`` times.
 
         Returns
         -------
         Any
-            The function its output for the passed series or ``len(self.output_names)``
-            times error_val when error_val is not None and an error is thrown by the 
-            function.
+            The function its output for the passed series or 
+            ``len(self.output_names)`` times `error_val`, when error_val is not None and 
+            an error is thrown by the function.
 
         """
         if error_val is None:
