@@ -140,7 +140,7 @@ class SeriesProcessor(FrozenClass):
             List of all the required series names.
 
         """
-        return list(set(flatten([name for name in self.series_names])))
+        return list(set(flatten(name for name in self.series_names)))
 
     def __call__(self, series_dict: Dict[str, pd.Series]) -> Dict[str, pd.Series]:
         """**Call**culates the processed series.

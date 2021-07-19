@@ -48,7 +48,7 @@ class SeriesPipeline:
 
         """
         return list(
-            set(flatten([step.get_required_series() for step in self.processing_steps]))
+            set(flatten(step.get_required_series() for step in self.processing_steps))
         )
 
     def append(self, processor: SeriesProcessor) -> None:
