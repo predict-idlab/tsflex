@@ -94,6 +94,16 @@ class FeatureCollection:
         """
         series_win_stride_key = self._get_collection_key(feature)
         if series_win_stride_key in self._feature_desc_dict.keys():
+            added_output_names = flatten(                
+                f.function.output_names
+                for f in self._feature_desc_dict[series_win_stride_key]
+            )
+            # Check that not a feature with the same output_name(s) is already added
+            # for the series_win_stride_key
+            assert not any(
+                output_name in added_output_names
+                for output_name in feature.function.output_names
+            )
             self._feature_desc_dict[series_win_stride_key].append(feature)
         else:
             self._feature_desc_dict[series_win_stride_key] = [feature]
