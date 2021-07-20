@@ -12,6 +12,7 @@ __pycache__/*
 .cache/*
 .*.swp
 .ipynb_checkpoints/*
+iframe_figures/*
 .DS_Store
 .directory
 

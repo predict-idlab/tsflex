@@ -1,4 +1,4 @@
-This is the documentation of **tsflex**, which is a `time-series first` Python toolkit for 
+This is the documentation of [**tsflex**](https://github.com/predict-idlab/tsflex), which is a `time-series first` Python toolkit for 
 **processing & feature extraction**, making few assumptions about input data.
 
 This makes _tsflex_ suitable for use-cases such as inference on streaming data, performing operations on irregularly sampled time-series, and dealing with time-gaps.

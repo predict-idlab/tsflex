@@ -274,6 +274,7 @@ def test_featurecollection_error_val(dummy_data):
     eda_data = dummy_data["EDA"].dropna()
     eda_data[2:1+25*4] = None # Leave gap of 25 s
     eda_data = eda_data.dropna()
+    assert eda_data.isna().any() == False
     assert (eda_data.index[1:] - eda_data.index[:-1]).max() == pd.Timedelta("25 s")
 
     with pytest.raises(ValueError):
@@ -287,12 +288,16 @@ def test_featurecollection_error_val(dummy_data):
     assert len(res_df) == (int(len(dummy_data) / (1 / freq)) - window_s) // stride_s
     assert all(res_df.index[1:] - res_df.index[:-1] == pd.to_timedelta(2.5, unit="s"))
 
+    assert res_df[1:9].isna().sum().all().all()
+    assert res_df[9:].isna().sum().any().any() == False
+
+
 def test_featurecollection_error_val_multiple_outputs(dummy_data):
     def get_stats(series: np.ndarray):
         return np.min(series), np.max(series)
 
     fd = FeatureDescriptor(
-        function=NumpyFuncWrapper(get_stats, output_names=['min', 'max']),
+        function=NumpyFuncWrapper(get_stats, output_names=["min", "max"]),
         series_name="EDA",
         window="5s",
         stride="2.5s",
@@ -302,6 +307,7 @@ def test_featurecollection_error_val_multiple_outputs(dummy_data):
     eda_data = dummy_data["EDA"].dropna()
     eda_data[2:1+25*4] = None # Leave gap of 25 s
     eda_data = eda_data.dropna()
+    assert eda_data.isna().any() == False
     assert (eda_data.index[1:] - eda_data.index[:-1]).max() == pd.Timedelta("25 s")
 
     with pytest.raises(ValueError):
@@ -314,6 +320,10 @@ def test_featurecollection_error_val_multiple_outputs(dummy_data):
     window_s = 5
     assert len(res_df) == (int(len(dummy_data) / (1 / freq)) - window_s) // stride_s
     assert all(res_df.index[1:] - res_df.index[:-1] == pd.to_timedelta(2.5, unit="s"))
+
+    assert res_df[1:9].isna().sum().all().all()
+    assert res_df[9:].isna().sum().any().any() == False
+
 
 ### Test various feature descriptor functions
 
@@ -561,3 +571,17 @@ def test_one_to_many_error_feature_collection(dummy_data):
 
     with pytest.raises(Exception):
         fc.calculate(dummy_data)
+
+
+def test__error_same_output_feature_collection(dummy_data):
+    def sum_func(sig: np.ndarray) -> float:
+        return sum(sig)
+
+    mfd = MultipleFeatureDescriptors(
+        functions=[sum_func, NumpyFuncWrapper(np.max), np.min],
+        series_names=["EDA", "TMP"],
+        windows=["5s", "7s", "5s"],  # Two times 5s
+        strides="2.5s",
+    )
+    with pytest.raises(AssertionError):
+        fc = FeatureCollection(feature_descriptors=mfd)
