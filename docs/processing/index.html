@@ -549,7 +549,7 @@ input series.</li>
             List of all the required series names.
 
         &#34;&#34;&#34;
-        return list(set(flatten([name for name in self.series_names])))
+        return list(set(flatten(name for name in self.series_names)))
 
     def __call__(self, series_dict: Dict[str, pd.Series]) -&gt; Dict[str, pd.Series]:
         &#34;&#34;&#34;**Call**culates the processed series.
@@ -675,7 +675,7 @@ processing function.</p>
         List of all the required series names.
 
     &#34;&#34;&#34;
-    return list(set(flatten([name for name in self.series_names])))</code></pre>
+    return list(set(flatten(name for name in self.series_names)))</code></pre>
 </details>
 </dd>
 <dt id="tsflex.processing.SeriesProcessor.__call__"><code class="name flex">
@@ -845,7 +845,7 @@ executed in the same order as passed in this list</strong>.</dd>
 
         &#34;&#34;&#34;
         return list(
-            set(flatten([step.get_required_series() for step in self.processing_steps]))
+            set(flatten(step.get_required_series() for step in self.processing_steps))
         )
 
     def append(self, processor: SeriesProcessor) -&gt; None:
@@ -1055,7 +1055,7 @@ executed in the same order as passed in this list</strong>.</dd>
 
     &#34;&#34;&#34;
     return list(
-        set(flatten([step.get_required_series() for step in self.processing_steps]))
+        set(flatten(step.get_required_series() for step in self.processing_steps))
     )</code></pre>
 </details>
 </dd>

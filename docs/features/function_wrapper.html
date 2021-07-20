@@ -38,6 +38,7 @@ __author__ = &#34;Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost&#34
 
 from typing import Callable, List, Union, Any, Optional
 
+import warnings
 import numpy as np
 
 from .. import __pdoc__
@@ -115,8 +116,11 @@ class NumpyFuncWrapper(FrozenClass):  # TODO: waarom niet gewoon FuncWrapper?
         if error_val is None:
             return self.func(*series, **self.kwargs)
         try:
-            return self.func(*series, **self.kwargs)
-        except:
+            # Ignore warnings that may arise 
+            with warnings.catch_warnings():
+                warnings.simplefilter(&#34;ignore&#34;)
+                return self.func(*series, **self.kwargs)
+        except Exception:
             output = [error_val] * len(self.output_names)
             return output[0] if len(output) == 1 else tuple(output)</code></pre>
 </details>
@@ -224,8 +228,11 @@ array. It also defines the names of the function outputs.</p>
         if error_val is None:
             return self.func(*series, **self.kwargs)
         try:
-            return self.func(*series, **self.kwargs)
-        except:
+            # Ignore warnings that may arise 
+            with warnings.catch_warnings():
+                warnings.simplefilter(&#34;ignore&#34;)
+                return self.func(*series, **self.kwargs)
+        except Exception:
             output = [error_val] * len(self.output_names)
             return output[0] if len(output) == 1 else tuple(output)</code></pre>
 </details>
@@ -285,8 +292,11 @@ an error is thrown by the function.</dd>
     if error_val is None:
         return self.func(*series, **self.kwargs)
     try:
-        return self.func(*series, **self.kwargs)
-    except:
+        # Ignore warnings that may arise 
+        with warnings.catch_warnings():
+            warnings.simplefilter(&#34;ignore&#34;)
+            return self.func(*series, **self.kwargs)
+    except Exception:
         output = [error_val] * len(self.output_names)
         return output[0] if len(output) == 1 else tuple(output)</code></pre>
 </details>

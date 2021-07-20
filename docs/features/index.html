@@ -888,6 +888,16 @@ have the same type, i.e, either </p>
         &#34;&#34;&#34;
         series_win_stride_key = self._get_collection_key(feature)
         if series_win_stride_key in self._feature_desc_dict.keys():
+            added_output_names = flatten(                
+                f.function.output_names
+                for f in self._feature_desc_dict[series_win_stride_key]
+            )
+            # Check that not a feature with the same output_name(s) is already added
+            # for the series_win_stride_key
+            assert not any(
+                output_name in added_output_names
+                for output_name in feature.function.output_names
+            )
             self._feature_desc_dict[series_win_stride_key].append(feature)
         else:
             self._feature_desc_dict[series_win_stride_key] = [feature]
@@ -1602,8 +1612,11 @@ array. It also defines the names of the function outputs.</p>
         if error_val is None:
             return self.func(*series, **self.kwargs)
         try:
-            return self.func(*series, **self.kwargs)
-        except:
+            # Ignore warnings that may arise 
+            with warnings.catch_warnings():
+                warnings.simplefilter(&#34;ignore&#34;)
+                return self.func(*series, **self.kwargs)
+        except Exception:
             output = [error_val] * len(self.output_names)
             return output[0] if len(output) == 1 else tuple(output)</code></pre>
 </details>
@@ -1663,8 +1676,11 @@ an error is thrown by the function.</dd>
     if error_val is None:
         return self.func(*series, **self.kwargs)
     try:
-        return self.func(*series, **self.kwargs)
-    except:
+        # Ignore warnings that may arise 
+        with warnings.catch_warnings():
+            warnings.simplefilter(&#34;ignore&#34;)
+            return self.func(*series, **self.kwargs)
+    except Exception:
         output = [error_val] * len(self.output_names)
         return output[0] if len(output) == 1 else tuple(output)</code></pre>
 </details>
