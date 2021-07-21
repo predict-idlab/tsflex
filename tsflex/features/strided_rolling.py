@@ -18,7 +18,7 @@ import pandas as pd
 import numpy as np
 
 from collections import namedtuple
-from typing import Callable, Union, List, Tuple, Optional, Any
+from typing import Callable, Union, List, Tuple, Optional
 
 from .function_wrapper import NumpyFuncWrapper
 from .logger import logger
@@ -217,22 +217,13 @@ class StridedRolling:
         else:
             raise ValueError(f"invalid bound method string passed {bound_method}")
 
-    def apply_func(
-        self, np_func: Union[NumpyFuncWrapper], error_val: Optional[Any] = None
-    ) -> pd.DataFrame:
+    def apply_func(self, np_func: Union[NumpyFuncWrapper]) -> pd.DataFrame:
         """Apply a function to the expanded time-series.
 
         Parameters
         ----------
         np_func : Union[Callable, NumpyFuncWrapper]
             The Callable (wrapped) function which will be applied.
-        error_val : Any, optional
-            The value that gets returned by the function when there is an error in the 
-            function call, by default None. If error_val is None, then no other values 
-            are returned in case of an error, and thus the error is thrown. If error_val
-            is not None, then the value is returned len(self.output_names) times.
-            Note that an error is most likely due to an empty / sparse window. This is 
-            thus a convenient way to return default values in such cases.
 
         Returns
         -------
@@ -275,7 +266,6 @@ class StridedRolling:
             [np_func(
                 *[sc.values[sc.start_indexes[idx]: sc.end_indexes[idx]]
                   for sc in self.series_containers],
-                error_val=error_val,
             ) for idx in range(len(self.index))]
         )
 

@@ -278,18 +278,7 @@ def test_featurecollection_error_val(dummy_data):
     assert (eda_data.index[1:] - eda_data.index[:-1]).max() == pd.Timedelta("25 s")
 
     with pytest.raises(ValueError):
-        fc.calculate(eda_data, return_df=True, n_jobs=1, approve_sparsity=True)
-
-    res_df = fc.calculate(eda_data, return_df=True, n_jobs=1, approve_sparsity=True, error_val=np.nan)
-
-    freq = pd.to_timedelta(pd.infer_freq(dummy_data.index)) / np.timedelta64(1, "s")
-    stride_s = 2.5
-    window_s = 5
-    assert len(res_df) == (int(len(dummy_data) / (1 / freq)) - window_s) // stride_s
-    assert all(res_df.index[1:] - res_df.index[:-1] == pd.to_timedelta(2.5, unit="s"))
-
-    assert res_df[1:9].isna().sum().all().all()
-    assert res_df[9:].isna().sum().any().any() == False
+        fc.calculate(eda_data, return_df=True, approve_sparsity=True)
 
 
 def test_featurecollection_error_val_multiple_outputs(dummy_data):
@@ -311,18 +300,7 @@ def test_featurecollection_error_val_multiple_outputs(dummy_data):
     assert (eda_data.index[1:] - eda_data.index[:-1]).max() == pd.Timedelta("25 s")
 
     with pytest.raises(ValueError):
-        fc.calculate(eda_data, return_df=True, n_jobs=1, approve_sparsity=True)
-
-    res_df = fc.calculate(eda_data, return_df=True, n_jobs=1, approve_sparsity=True, error_val=np.nan)
-
-    freq = pd.to_timedelta(pd.infer_freq(dummy_data.index)) / np.timedelta64(1, "s")
-    stride_s = 2.5
-    window_s = 5
-    assert len(res_df) == (int(len(dummy_data) / (1 / freq)) - window_s) // stride_s
-    assert all(res_df.index[1:] - res_df.index[:-1] == pd.to_timedelta(2.5, unit="s"))
-
-    assert res_df[1:9].isna().sum().all().all()
-    assert res_df[9:].isna().sum().any().any() == False
+        fc.calculate(eda_data, return_df=True, approve_sparsity=True)
 
 
 ### Test various feature descriptor functions

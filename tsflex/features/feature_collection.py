@@ -16,7 +16,7 @@ import pandas as pd
 import numpy as np
 
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union, Any
+from typing import Dict, List, Optional, Tuple, Union
 from pathos.multiprocessing import ProcessPool
 from tqdm.auto import tqdm
 
@@ -148,10 +148,10 @@ class FeatureCollection:
                 raise TypeError(f"type: {type(feature)} is not supported - {feature}")
 
     @staticmethod
-    def _executor(idx: int, error_val: Optional[Any] = None):
+    def _executor(idx: int):
         # global get_stroll_func
         stroll, function = get_stroll_func(idx)
-        return stroll.apply_func(function, error_val)
+        return stroll.apply_func(function)
 
     def _stroll_feat_generator(
         self, series_dict: Dict[str, pd.Series], window_idx: str, approve_sparsity: bool
@@ -192,7 +192,6 @@ class FeatureCollection:
         return_df: Optional[bool] = False,
         window_idx: Optional[str] = "end",
         approve_sparsity: Optional[bool] = False,
-        error_val: Optional[Any] = None,
         show_progress: Optional[bool] = False,
         logging_file_path: Optional[Union[str, Path]] = None,
         n_jobs: Optional[int] = None,
@@ -229,13 +228,6 @@ class FeatureCollection:
             Bool indicating whether the user acknowledges that there may be sparsity
             (i.e., irregularly sampled data), by default False.
             If False and sparsity is observed, a warning is raised.
-        error_val : Any, optional
-            The value that gets returned when there is an error in the function call, by
-            default None. If `error_val` is None, then no other values are returned in 
-            case of an error, and thus the error is thrown. If `error_val` is not None, 
-            then the value is returned ``len(self.output_names)`` times.
-            Note that an error is most likely due to an empty / sparse window. This is 
-            thus a convenient way to return default values in such cases.
         show_progress: bool, optional
             If True, the progress will be shown with a progressbar, by default False.
         logging_file_path : Union[str, Path], optional
@@ -302,14 +294,13 @@ class FeatureCollection:
             idxs = range(nb_stroll_funcs)
             if show_progress:
                 idxs = tqdm(idxs)
-            calculated_feature_list = [self._executor(idx, error_val) for idx in idxs]
+            calculated_feature_list = [self._executor(idx) for idx in idxs]
         else:
             # https://pathos.readthedocs.io/en/latest/pathos.html#usage
             with ProcessPool(nodes=n_jobs, source=True) as pool:
                 results = pool.uimap(
                     self._executor,
-                    range(nb_stroll_funcs),
-                    [error_val]*nb_stroll_funcs,
+                    range(nb_stroll_funcs)
                 )
                 if show_progress:
                     results = tqdm(results, total=self._get_stroll_feat_length())
