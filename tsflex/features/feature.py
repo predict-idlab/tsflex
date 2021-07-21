@@ -11,7 +11,7 @@ from typing import Callable, List, Union, Tuple
 
 import pandas as pd
 
-from .function_wrapper import NumpyFuncWrapper
+from .function_wrapper import FuncWrapper
 from ..utils.classes import FrozenClass
 from ..utils.data import to_list, to_tuple
 from ..utils.time import parse_time_arg
@@ -22,7 +22,7 @@ class FeatureDescriptor(FrozenClass):
 
     Parameters
     ----------
-    function : Union[NumpyFuncWrapper, Callable]
+    function : Union[FuncWrapper, Callable]
         The function that calculates this feature.
         The prototype of the function should match: \n
 
@@ -79,8 +79,7 @@ class FeatureDescriptor(FrozenClass):
     Raises
     ------
     TypeError
-        Raised when the `function` is not an instance of Callable or
-        NumpyFuncWrapper.
+        Raised when the `function` is not an instance of Callable or FuncWrapper.
 
     See Also
     --------
@@ -90,7 +89,7 @@ class FeatureDescriptor(FrozenClass):
 
     def __init__(
         self,
-        function: Union[NumpyFuncWrapper, Callable],
+        function: Union[FuncWrapper, Callable],
         series_name: Union[str, Tuple[str, ...]],
         window: Union[float, str, pd.Timedelta],
         stride: Union[float, str, pd.Timedelta],
@@ -99,14 +98,14 @@ class FeatureDescriptor(FrozenClass):
         self.window: pd.Timedelta = parse_time_arg(window)
         self.stride: pd.Timedelta = parse_time_arg(stride)
 
-        # Order of if statements is important (as NumpyFuncWrapper also is a Callable)!
-        if isinstance(function, NumpyFuncWrapper):
-            self.function: NumpyFuncWrapper = function
+        # Order of if statements is important (as FuncWrapper also is a Callable)!
+        if isinstance(function, FuncWrapper):
+            self.function: FuncWrapper = function
         elif isinstance(function, Callable):
-            self.function: NumpyFuncWrapper = NumpyFuncWrapper(function)
+            self.function: FuncWrapper = FuncWrapper(function)
         else:
             raise TypeError(
-                "Expected feature function to be a `NumpyFuncWrapper` but is a"
+                "Expected feature function to be a `FuncWrapper` but is a"
                 f" {type(function)}."
             )
 
@@ -146,7 +145,7 @@ class MultipleFeatureDescriptors:
 
     Parameters
     ----------
-    functions : Union[NumpyFuncWrapper, Callable, List[Union[NumpyFuncWrapper, Callable]]]
+    functions : Union[FuncWrapper, Callable, List[Union[FuncWrapper, Callable]]]
         The functions, can be either of both types (even in a single array).
     series_names : Union[str, Tuple[str, ...], List[str], List[Tuple[str, ...]]]
         The names of the series on which the feature function should be applied.
@@ -175,16 +174,16 @@ class MultipleFeatureDescriptors:
     """
     def __init__(
         self,
-        functions: Union[NumpyFuncWrapper, Callable, List[Union[NumpyFuncWrapper, Callable]]],
+        functions: Union[FuncWrapper, Callable, List[Union[FuncWrapper, Callable]]],
         series_names: Union[str, Tuple[str, ...], List[str], List[Tuple[str, ...]]],
         windows: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
         strides: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
     ):
-        # Cast functions to NumpyFuncWrapper, this avoids creating multiple
-        # NumpyFuncWrapper objects for the same function in the FeatureDescriptor
-        def to_np_func_wrapper(f: Callable): 
-            return f if isinstance(f, NumpyFuncWrapper) else NumpyFuncWrapper(f)
-        functions = [to_np_func_wrapper(f) for f in to_list(functions)]
+        # Cast functions to FuncWrapper, this avoids creating multiple
+        # FuncWrapper objects for the same function in the FeatureDescriptor
+        def to_func_wrapper(f: Callable): 
+            return f if isinstance(f, FuncWrapper) else FuncWrapper(f)
+        functions = [to_func_wrapper(f) for f in to_list(functions)]
         # Convert the series names to list of tuples
         series_names = [to_tuple(names) for names in to_list(series_names)]
         # Assert that function inputs (series) all have the same length

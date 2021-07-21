@@ -6,7 +6,7 @@ import pytest
 import pandas as pd
 import numpy as np
 
-from tsflex.features import NumpyFuncWrapper
+from tsflex.features import FuncWrapper
 from tsflex.features import FeatureDescriptor, MultipleFeatureDescriptors
 
 ### FeatureDescriptor
@@ -26,7 +26,7 @@ def test_simple_feature_descriptor():
     assert fd.window == pd.Timedelta(5, unit='seconds')
     assert fd.stride == pd.Timedelta(2.5, unit='seconds')
     assert fd.get_required_series() == ["EDA"]
-    assert isinstance(fd.function, NumpyFuncWrapper)
+    assert isinstance(fd.function, FuncWrapper)
 
 def test_simple_raw_np_func_feature_descriptor():
     fd = FeatureDescriptor(
@@ -40,7 +40,7 @@ def test_simple_raw_np_func_feature_descriptor():
     assert fd.window == pd.Timedelta(5, unit='seconds')
     assert fd.stride == pd.Timedelta(2.5, unit='seconds')
     assert fd.get_required_series() == ["EDA"]
-    assert isinstance(fd.function, NumpyFuncWrapper)
+    assert isinstance(fd.function, FuncWrapper)
 
 def test_simple_feature_descriptor_str_float_seconds():
     def sum_func(sig: np.ndarray) -> float:
@@ -57,13 +57,13 @@ def test_simple_feature_descriptor_str_float_seconds():
     assert fd.window == pd.Timedelta(5, unit='seconds')
     assert fd.stride == pd.Timedelta(2.5, unit='seconds')
     assert fd.get_required_series() == ["EDA"]
-    assert isinstance(fd.function, NumpyFuncWrapper)
+    assert isinstance(fd.function, FuncWrapper)
 
 def test_simple_feature_descriptor_func_wrapper():
     def sum_func(sig: np.ndarray) -> float:
         return sum(sig)
 
-    sum_func_wrapped = NumpyFuncWrapper(sum_func)
+    sum_func_wrapped = FuncWrapper(sum_func)
 
     fd = FeatureDescriptor(
         function=sum_func_wrapped,
@@ -76,7 +76,7 @@ def test_simple_feature_descriptor_func_wrapper():
     assert fd.window == pd.Timedelta(5, unit='seconds')
     assert fd.stride == pd.Timedelta(2.5, unit='seconds')
     assert fd.get_required_series() == ["EDA"]
-    assert isinstance(fd.function, NumpyFuncWrapper)
+    assert isinstance(fd.function, FuncWrapper)
 
 
 ### Test 'error' use-cases
@@ -111,7 +111,7 @@ def test_multiple_feature_descriptors():
         return sum(sig)
 
     mfd = MultipleFeatureDescriptors(
-        functions=[sum_func, NumpyFuncWrapper(np.max), np.min],
+        functions=[sum_func, FuncWrapper(np.max), np.min],
         series_names=["EDA", "TMP"],
         windows=['5s', '7.5s'],
         strides='2.5s',

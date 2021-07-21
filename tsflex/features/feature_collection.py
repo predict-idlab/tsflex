@@ -23,7 +23,7 @@ from tqdm.auto import tqdm
 from .feature import FeatureDescriptor, MultipleFeatureDescriptors
 from .logger import logger
 from .strided_rolling import StridedRolling
-from ..features.function_wrapper import NumpyFuncWrapper
+from ..features.function_wrapper import FuncWrapper
 from ..utils.data import to_list, to_series_list, flatten
 from ..utils.time import timedelta_to_str
 from ..utils.logging import delete_logging_handlers, add_logging_handler
@@ -155,7 +155,7 @@ class FeatureCollection:
 
     def _stroll_feat_generator(
         self, series_dict: Dict[str, pd.Series], window_idx: str, approve_sparsity: bool
-    ) -> List[Tuple[StridedRolling, NumpyFuncWrapper]]:
+    ) -> List[Tuple[StridedRolling, FuncWrapper]]:
         # --- Future work ---
         # We could also make the StridedRolling creation multithreaded
         # Very low priority because the STROLL __init__ is rather efficient!
@@ -167,17 +167,19 @@ class FeatureCollection:
         def get_stroll_function(idx):
             key_idx = np.searchsorted(lengths, idx, "right")  # right bc idx starts at 0
             key, win, stride = keys_wins_strides[key_idx]
+            feature = self._feature_desc_dict[keys_wins_strides[key_idx]][
+                idx - lengths[key_idx]
+            ]
+            function: FuncWrapper = feature.function
             stroll = StridedRolling(
                 data=[series_dict[k] for k in key],
                 window=win,
                 stride=stride,
                 window_idx=window_idx,
                 approve_sparsity=approve_sparsity,
+                data_type=function.input_type,
             )
-            feature = self._feature_desc_dict[keys_wins_strides[key_idx]][
-                idx - lengths[key_idx]
-            ]
-            return stroll, feature.function
+            return stroll, function
 
         return get_stroll_function
 

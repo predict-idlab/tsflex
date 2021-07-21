@@ -7,7 +7,7 @@ import warnings
 import pandas as pd
 import numpy as np
 
-from tsflex.features import NumpyFuncWrapper
+from tsflex.features import FuncWrapper
 from tsflex.features import FeatureDescriptor, MultipleFeatureDescriptors
 from tsflex.features import FeatureCollection
 
@@ -115,7 +115,7 @@ def test_featurecollection_repr(dummy_data):
 
     fc = FeatureCollection(feature_descriptors=[
         FeatureDescriptor(
-            function=NumpyFuncWrapper(func=corr, output_names='corrcoef'),
+            function=FuncWrapper(func=corr, output_names='corrcoef'),
             series_name=("EDA", "TMP"),
             window='30s',
             stride='30s'
@@ -124,7 +124,7 @@ def test_featurecollection_repr(dummy_data):
     )
     fc_str: str = fc.__repr__()
     assert "EDA|TMP" in fc_str
-    assert fc_str == "EDA|TMP: (\n\twin: 30s   , stride: 30s: [\n\t\tFeatureDescriptor - func: NumpyFuncWrapper(corr, ['corrcoef'], {}),\n\t]\n)\n"
+    assert fc_str == "EDA|TMP: (\n\twin: 30s   , stride: 30s: [\n\t\tFeatureDescriptor - func: FuncWrapper(corr, ['corrcoef'], {}),\n\t]\n)\n"
 
     out = fc.calculate(dummy_data, n_jobs=1, return_df=True)
     assert out.columns[0] == 'EDA|TMP__corrcoef__w=30s_s=30s'
@@ -180,7 +180,7 @@ def test_multiplefeaturedescriptors_feature_collection(dummy_data):
         return sum(sig)
 
     mfd = MultipleFeatureDescriptors(
-        functions=[sum_func, NumpyFuncWrapper(np.max), np.min],
+        functions=[sum_func, FuncWrapper(np.max), np.min],
         series_names=["EDA", "TMP"],
         windows=["5s", "7.5s"],
         strides="2.5s",
@@ -286,7 +286,7 @@ def test_featurecollection_error_val_multiple_outputs(dummy_data):
         return np.min(series), np.max(series)
 
     fd = FeatureDescriptor(
-        function=NumpyFuncWrapper(get_stats, output_names=["min", "max"]),
+        function=FuncWrapper(get_stats, output_names=["min", "max"]),
         series_name="EDA",
         window="5s",
         stride="2.5s",
@@ -310,7 +310,7 @@ def test_one_to_many_feature_collection(dummy_data):
     def quantiles(sig: pd.Series) -> Tuple[float, float, float]:
         return np.quantile(sig, q=[0.1, 0.5, 0.9])
 
-    q_func = NumpyFuncWrapper(quantiles, output_names=["q_0.1", "q_0.5", "q_0.9"])
+    q_func = FuncWrapper(quantiles, output_names=["q_0.1", "q_0.5", "q_0.9"])
     fd = FeatureDescriptor(q_func, series_name="EDA", window="5s", stride="2.5s")
     fc = FeatureCollection(fd)
 
@@ -360,7 +360,7 @@ def test_many_to_many_feature_collection(dummy_data):
     ) -> Tuple[float, float, float]:
         return np.quantile(np.abs(sig1 - sig2), q=[0.1, 0.5, 0.9])
 
-    q_func = NumpyFuncWrapper(
+    q_func = FuncWrapper(
         quantiles_abs_diff,
         output_names=["q_0.1_abs_diff", "q_0.5_abs_diff", "q_0.9_abs_diff"],
     )
@@ -388,6 +388,49 @@ def test_many_to_many_feature_collection(dummy_data):
     assert (res_df[expected_output_names[0]] != res_df[expected_output_names[2]]).any()
 
 
+def test_series_funcs(dummy_data):
+    def min_max_time_diff(x: pd.Series, mult=1):
+        diff = (x.index[1:] - x.index[:-1]).total_seconds().max()
+        return diff.min()*mult, diff.max()*mult
+    def time_diff(x: pd.Series):
+        return (x.index[-1] - x.index[0]).total_seconds()
+
+    fc = FeatureCollection(
+        MultipleFeatureDescriptors(
+            functions=[np.mean, np.sum, len, 
+                FuncWrapper(
+                    min_max_time_diff, input_type=pd.Series, 
+                    output_names=["min_time_diff", "max_time_diff"], mult=3,
+                ),
+                FuncWrapper(time_diff, input_type=pd.Series),
+                FuncWrapper(np.max, input_type=pd.Series)
+            ],
+            series_names=["EDA", "TMP"],
+            windows="5s",
+            strides="2.5s",
+        )
+    )
+
+    assert set(fc.get_required_series()) == set(["EDA", "TMP"])
+
+    res_df = fc.calculate(dummy_data, return_df=True)
+    assert res_df.shape[1] == 2*7
+    freq = pd.to_timedelta(pd.infer_freq(dummy_data.index)) / np.timedelta64(1, "s")
+    stride_s = 2.5
+    window_s = 5
+    assert len(res_df) == (int(len(dummy_data) / (1 / freq)) - window_s) // stride_s
+
+    expected_output_names = [
+        "EDA|TMP__q_0.1_abs_diff__w=5s_s=2.5s",
+        "EDA|TMP__q_0.5_abs_diff__w=5s_s=2.5s",
+        "EDA|TMP__q_0.9_abs_diff__w=5s_s=2.5s",
+    ]
+    assert "EDA__min_time_diff__w=5s_s=2.5s" in res_df.columns
+    assert "EDA__amax__w=5s_s=2.5s" in res_df.columns
+    assert all(res_df["EDA__min_time_diff__w=5s_s=2.5s"] == res_df["EDA__max_time_diff__w=5s_s=2.5s"])
+    assert all(res_df["EDA__min_time_diff__w=5s_s=2.5s"] == 0.25*3)
+
+
 def test_categorical_funcs():
     categories = ["a", "b", "c", "another_category", 12]
     categorical_data = pd.Series(
@@ -403,7 +446,7 @@ def test_categorical_funcs():
     def count_categories(arr, categories):
         return [sum(arr.astype(str) == str(cat)) for cat in categories]
 
-    cat_count = NumpyFuncWrapper(
+    cat_count = FuncWrapper(
         func=count_categories,
         output_names=["count-" + str(cat) for cat in categories],
         # kwargs
@@ -515,7 +558,7 @@ def test_one_to_many_error_feature_collection(dummy_data):
     def quantiles(sig: pd.Series) -> Tuple[float, float, float]:
         return np.quantile(sig, q=[0.1, 0.5, 0.9])
 
-    # quantiles should be wrapped in a NumpyFuncWrapper
+    # quantiles should be wrapped in a FuncWrapper
     fd = FeatureDescriptor(quantiles, series_name="EDA", window="5s", stride="2.5s")
     fc = FeatureCollection(fd)
 
@@ -528,7 +571,7 @@ def test_one_to_many_wrong_np_funcwrapper_error_feature_collection(dummy_data):
         return np.quantile(sig, q=[0.1, 0.5, 0.9])
 
     # Wrong number of output_names in func wrapper
-    q_func = NumpyFuncWrapper(quantiles, output_names=["q_0.1", "q_0.5"])
+    q_func = FuncWrapper(quantiles, output_names=["q_0.1", "q_0.5"])
     fd = FeatureDescriptor(q_func, series_name="EDA", window="5s", stride="2.5s")
     fc = FeatureCollection(fd)
 
@@ -556,7 +599,7 @@ def test__error_same_output_feature_collection(dummy_data):
         return sum(sig)
 
     mfd = MultipleFeatureDescriptors(
-        functions=[sum_func, NumpyFuncWrapper(np.max), np.min],
+        functions=[sum_func, FuncWrapper(np.max), np.min],
         series_names=["EDA", "TMP"],
         windows=["5s", "7s", "5s"],  # Two times 5s
         strides="2.5s",
