@@ -18,16 +18,16 @@ import pandas as pd
 import numpy as np
 
 from collections import namedtuple
-from typing import Callable, Union, List, Tuple, Optional, Any
+from typing import Callable, Union, List, Tuple, Optional
 
-from .function_wrapper import NumpyFuncWrapper
+from .function_wrapper import FuncWrapper
 from .logger import logger
-from ..utils.data import to_series_list
+from ..utils.data import SUPPORTED_STROLL_TYPES, to_series_list
 from ..utils.time import timedelta_to_str
 
 
 class StridedRolling:
-    """Custom time-based sliding window with stride for pandas DataFrames.
+    """Custom time-based sliding window with stride.
 
     Parameters
     ----------
@@ -56,6 +56,12 @@ class StridedRolling:
         Bool indicating whether the user acknowledges that there may be sparsity (i.e.,
         irregularly sampled data), by default False.
         If False and sparsity is observed, a warning is raised.
+    data_type: Union[np.array, pd.Series], optional
+        The data type of the stroll (either np.array or pd.Series), by default np.array.
+        Note: Make sure to only set this argument to pd.Series when this is really 
+        required, since pd.Series strided-rolling is significantly less efficient. 
+        For a np.array it is possible to create very efficient views, but there is no 
+        such thing as a pd.Series view. Thus, for each stroll, a new series is created.
 
     Notes
     -----
@@ -78,12 +84,16 @@ class StridedRolling:
             data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
             window: pd.Timedelta,
             stride: pd.Timedelta,
+            data_type: Optional[Union[np.array, pd.Series]] = np.array,
             window_idx: Optional[str] = "end",
             bound_method: Optional[str] = "inner",
             approve_sparsity: Optional[bool] = False,
     ):
         self.window: pd.Timedelta = window
         self.stride: pd.Timedelta = stride
+        
+        assert data_type in SUPPORTED_STROLL_TYPES
+        self.data_type = data_type
 
         # 0. standardize the input
         series_list: List[pd.Series] = to_series_list(data)
@@ -142,15 +152,22 @@ class StridedRolling:
 
         self.series_containers: List[StridedRolling._NumpySeriesContainer] = []
         for series in series_list:
-            # create a non-writeable view of the series
-            np_series = series.values
-            np_series.flags.writeable = False
-
             np_idx_times = series.index.values
+            series_name = series.name
+            if data_type is np.array:
+                # create a non-writeable view of the series
+                series = series.values
+                series.flags.writeable = False
+            elif data_type is pd.Series:
+                series.values.flags.writeable = False
+                series.index.values.flags.writeable = False
+            else:
+                raise ValueError("unsupported datatype")
+
             self.series_containers.append(
                 StridedRolling._NumpySeriesContainer(
                     # TODO: maybe save the pd.Series instead of the np.series
-                    values=np_series,
+                    values=series,
                     # the slicing will be performed on [ t_start, t_end [
                     # TODO: this can maybe be optimized -> further look into this
                     # np_idx_times, np_start_times, & np_end_times are all sorted!
@@ -170,7 +187,7 @@ class StridedRolling:
                 q_str = ", ".join([f"q={q}: {v}" for q, v in zip(qs, series_idx_stats)])
                 if not all(series_idx_stats == series_idx_stats[-1]):  # min != max
                     warnings.warn(
-                        f"There are gaps in the time-series {series.name}; "
+                        f"There are gaps in the time-series {series_name}; "
                         + f"\n \t Quantiles of nb values in window: {q_str}",
                         RuntimeWarning,
                     )
@@ -217,22 +234,13 @@ class StridedRolling:
         else:
             raise ValueError(f"invalid bound method string passed {bound_method}")
 
-    def apply_func(
-        self, np_func: Union[NumpyFuncWrapper], error_val: Optional[Any] = None
-    ) -> pd.DataFrame:
+    def apply_func(self, func: FuncWrapper) -> pd.DataFrame:
         """Apply a function to the expanded time-series.
 
         Parameters
         ----------
-        np_func : Union[Callable, NumpyFuncWrapper]
-            The Callable (wrapped) function which will be applied.
-        error_val : Any, optional
-            The value that gets returned by the function when there is an error in the 
-            function call, by default None. If error_val is None, then no other values 
-            are returned in case of an error, and thus the error is thrown. If error_val
-            is not None, then the value is returned len(self.output_names) times.
-            Note that an error is most likely due to an empty / sparse window. This is 
-            thus a convenient way to return default values in such cases.
+        func : FuncWrapper
+            The Callable wrapped function which will be applied.
 
         Returns
         -------
@@ -244,15 +252,15 @@ class StridedRolling:
         Raises
         ------
         ValueError
-            If the passed ``np_func`` tries to adjust the data its read-only view.
+            If the passed ``func`` tries to adjust the data its read-only view.
 
         Notes
         -----
-        * If ``np_func`` is only a callable argument, with no additional logic, this
+        * If ``func`` is only a callable argument, with no additional logic, this
           will only work for a one-to-one mapping, i.e., no multiple feature-output
           columns are supported for this case!<br>
-          If you want to calculate one-to-many, ``np_func`` should be
-          a ``NumpyFuncWrapper`` instance and explicitly use
+          If you want to calculate one-to-many, ``func`` should be
+          a ``FuncWrapper`` instance and explicitly use
           the ``output_names`` attributes of its constructor.
 
         """
@@ -264,7 +272,7 @@ class StridedRolling:
             win_stride_str = f"w={win_str}_s={stride_str}"
             return f"{'|'.join(self.series_key)}__{feat_name}__{win_stride_str}"
 
-        feat_names = np_func.output_names
+        feat_names = func.output_names
 
         t_start = time.time()
 
@@ -272,10 +280,9 @@ class StridedRolling:
         # would be nice if we could optimize this double for loop with something
         # more vectorized
         out = np.array(
-            [np_func(
+            [func(
                 *[sc.values[sc.start_indexes[idx]: sc.end_indexes[idx]]
                   for sc in self.series_containers],
-                error_val=error_val,
             ) for idx in range(len(self.index))]
         )
 
@@ -291,7 +298,7 @@ class StridedRolling:
 
         elapsed = time.time() - t_start
         logger.info(
-            f"Finished function [{np_func.func.__name__}] on "
+            f"Finished function [{func.func.__name__}] on "
             f"{[self.series_key]} with window-stride "
             f"[{self.window}, {self.stride}] in [{elapsed} seconds]!"
         )

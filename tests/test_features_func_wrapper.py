@@ -5,20 +5,20 @@ __author__ = "Jeroen Van Der Donckt, Emiel Deprost, Jonas Van Der Donckt"
 import pandas as pd
 import numpy as np
 
-from tsflex.features import NumpyFuncWrapper
+from tsflex.features import FuncWrapper
 from typing import Tuple
 
 from .utils import dummy_data, dataframe_to_series_dict, series_to_series_dict
 
 
-## NumpyFuncWrapper
+## FuncWrapper
 
 
 def test_simple_numpy_func_wrapper(dummy_data):
     def sum_func(sig: np.ndarray) -> float:
         return sum(sig)
 
-    np_func = NumpyFuncWrapper(sum_func)
+    np_func = FuncWrapper(sum_func)
 
     assert np_func.output_names == ["sum_func"]
     assert np.isclose(np_func(dummy_data["EDA"]), dummy_data["EDA"].sum())
@@ -28,7 +28,7 @@ def test_multi_output_numpy_func_wrapper(dummy_data):
     def mean_std(sig: np.ndarray) -> Tuple[float, float]:
         return np.mean(sig), np.std(sig)
 
-    np_func = NumpyFuncWrapper(mean_std, output_names=["mean", "std"])
+    np_func = FuncWrapper(mean_std, output_names=["mean", "std"])
 
     assert np_func.output_names == ["mean", "std"]
     mean, std = np_func(dummy_data["TMP"])
@@ -39,7 +39,7 @@ def test_multi_input_numpy_func_wrapper(dummy_data):
     def mean_abs_diff(sig1: np.ndarray, sig2: np.ndarray) -> float:
         return np.mean(np.abs(sig1 - sig2))
 
-    np_func = NumpyFuncWrapper(mean_abs_diff)
+    np_func = FuncWrapper(mean_abs_diff)
 
     assert np_func.output_names == ['mean_abs_diff']
     res = np_func(dummy_data['EDA'], dummy_data['TMP'])
@@ -49,9 +49,9 @@ def test_kwargs_numpy_func_wrapper(dummy_data):
     def return_arg2(sig: np.ndarray, arg2=5):
         return arg2
     
-    np_func1 = NumpyFuncWrapper(return_arg2, output_names='arg2')
-    np_func2 = NumpyFuncWrapper(return_arg2, output_names='arg2', arg2=10)
-    np_func3 = NumpyFuncWrapper(return_arg2, arg2=15, output_names='arg2')
+    np_func1 = FuncWrapper(return_arg2, output_names='arg2')
+    np_func2 = FuncWrapper(return_arg2, output_names='arg2', arg2=10)
+    np_func3 = FuncWrapper(return_arg2, arg2=15, output_names='arg2')
 
     assert np_func1.output_names == ['arg2']
     assert np_func2.output_names == ['arg2']
@@ -59,3 +59,26 @@ def test_kwargs_numpy_func_wrapper(dummy_data):
     assert np_func1([]) == 5
     assert np_func2([]) == 10
     assert np_func3([]) == 15
+
+
+def test_series_func_wrapper(dummy_data):
+    def max_diff(x: pd.Series):
+        return x.index.to_series().diff().dt.total_seconds().max()
+    
+    func = FuncWrapper(max_diff, input_type=pd.Series)
+
+    assert func.output_names == ['max_diff']
+    assert func(dummy_data["EDA"]) == 0.25
+
+
+def test_series_func_wrapper_with_kwargs(dummy_data):
+    def max_diff(x: pd.Series, mult=1):
+        return x.index.to_series().diff().dt.total_seconds().max() * mult
+    
+    func1 = FuncWrapper(max_diff, input_type=pd.Series)
+    func2 = FuncWrapper(max_diff, input_type=pd.Series, mult=3, output_names='MAX_DIFF')
+
+    assert func1.output_names == ['max_diff']
+    assert func2.output_names == ['MAX_DIFF']
+    assert func1(dummy_data["EDA"]) == 0.25
+    assert func2(dummy_data["EDA"]) == 0.25*3

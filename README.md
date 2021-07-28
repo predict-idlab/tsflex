@@ -56,7 +56,7 @@ _tsflex_ is built to be intuitive, so we encourage you to copy-paste this code a
 
 ```python
 import pandas as pd; import scipy.stats as ssig; import numpy as np
-from tsflex.features import FeatureDescriptor, FeatureCollection, NumpyFuncWrapper
+from tsflex.features import FeatureDescriptor, FeatureCollection, FuncWrapper
 
 # 1. -------- Get your time-indexed data --------
 # Data contains 1 column; ["TMP"]
@@ -67,7 +67,7 @@ data = pd.read_parquet(url).set_index("timestamp")
 fc = FeatureCollection(
     feature_descriptors=[
         FeatureDescriptor(
-            function=NumpyFuncWrapper(func=ssig.skew, output_names="skew"),
+            function=FuncWrapper(func=ssig.skew, output_names="skew"),
             series_name="TMP", 
             window="5min",  # Use 5 minutes 
             stride="2.5min",  # With steps of 2.5 minutes

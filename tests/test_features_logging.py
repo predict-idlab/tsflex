@@ -8,7 +8,6 @@ import warnings
 import pandas as pd
 import numpy as np
 
-from tsflex.features import NumpyFuncWrapper
 from tsflex.features import FeatureDescriptor, MultipleFeatureDescriptors
 from tsflex.features import FeatureCollection
 from tsflex.features import get_feature_logs, get_function_stats, get_series_names_stats

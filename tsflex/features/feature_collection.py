@@ -16,14 +16,14 @@ import pandas as pd
 import numpy as np
 
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union, Any
+from typing import Dict, List, Optional, Tuple, Union
 from pathos.multiprocessing import ProcessPool
 from tqdm.auto import tqdm
 
 from .feature import FeatureDescriptor, MultipleFeatureDescriptors
 from .logger import logger
 from .strided_rolling import StridedRolling
-from ..features.function_wrapper import NumpyFuncWrapper
+from ..features.function_wrapper import FuncWrapper
 from ..utils.data import to_list, to_series_list, flatten
 from ..utils.time import timedelta_to_str
 from ..utils.logging import delete_logging_handlers, add_logging_handler
@@ -148,14 +148,14 @@ class FeatureCollection:
                 raise TypeError(f"type: {type(feature)} is not supported - {feature}")
 
     @staticmethod
-    def _executor(idx: int, error_val: Optional[Any] = None):
+    def _executor(idx: int):
         # global get_stroll_func
         stroll, function = get_stroll_func(idx)
-        return stroll.apply_func(function, error_val)
+        return stroll.apply_func(function)
 
     def _stroll_feat_generator(
         self, series_dict: Dict[str, pd.Series], window_idx: str, approve_sparsity: bool
-    ) -> List[Tuple[StridedRolling, NumpyFuncWrapper]]:
+    ) -> List[Tuple[StridedRolling, FuncWrapper]]:
         # --- Future work ---
         # We could also make the StridedRolling creation multithreaded
         # Very low priority because the STROLL __init__ is rather efficient!
@@ -167,17 +167,19 @@ class FeatureCollection:
         def get_stroll_function(idx):
             key_idx = np.searchsorted(lengths, idx, "right")  # right bc idx starts at 0
             key, win, stride = keys_wins_strides[key_idx]
+            feature = self._feature_desc_dict[keys_wins_strides[key_idx]][
+                idx - lengths[key_idx]
+            ]
+            function: FuncWrapper = feature.function
             stroll = StridedRolling(
                 data=[series_dict[k] for k in key],
                 window=win,
                 stride=stride,
                 window_idx=window_idx,
                 approve_sparsity=approve_sparsity,
+                data_type=function.input_type,
             )
-            feature = self._feature_desc_dict[keys_wins_strides[key_idx]][
-                idx - lengths[key_idx]
-            ]
-            return stroll, feature.function
+            return stroll, function
 
         return get_stroll_function
 
@@ -192,7 +194,6 @@ class FeatureCollection:
         return_df: Optional[bool] = False,
         window_idx: Optional[str] = "end",
         approve_sparsity: Optional[bool] = False,
-        error_val: Optional[Any] = None,
         show_progress: Optional[bool] = False,
         logging_file_path: Optional[Union[str, Path]] = None,
         n_jobs: Optional[int] = None,
@@ -229,13 +230,6 @@ class FeatureCollection:
             Bool indicating whether the user acknowledges that there may be sparsity
             (i.e., irregularly sampled data), by default False.
             If False and sparsity is observed, a warning is raised.
-        error_val : Any, optional
-            The value that gets returned when there is an error in the function call, by
-            default None. If `error_val` is None, then no other values are returned in 
-            case of an error, and thus the error is thrown. If `error_val` is not None, 
-            then the value is returned ``len(self.output_names)`` times.
-            Note that an error is most likely due to an empty / sparse window. This is 
-            thus a convenient way to return default values in such cases.
         show_progress: bool, optional
             If True, the progress will be shown with a progressbar, by default False.
         logging_file_path : Union[str, Path], optional
@@ -302,14 +296,13 @@ class FeatureCollection:
             idxs = range(nb_stroll_funcs)
             if show_progress:
                 idxs = tqdm(idxs)
-            calculated_feature_list = [self._executor(idx, error_val) for idx in idxs]
+            calculated_feature_list = [self._executor(idx) for idx in idxs]
         else:
             # https://pathos.readthedocs.io/en/latest/pathos.html#usage
             with ProcessPool(nodes=n_jobs, source=True) as pool:
                 results = pool.uimap(
                     self._executor,
-                    range(nb_stroll_funcs),
-                    [error_val]*nb_stroll_funcs,
+                    range(nb_stroll_funcs)
                 )
                 if show_progress:
                     results = tqdm(results, total=self._get_stroll_feat_length())

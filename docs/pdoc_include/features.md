@@ -16,7 +16,7 @@ This executable example creates a feature-collection that contains 2 features (s
 
 ```python
 import pandas as pd; import scipy.stats as ss; import numpy as np
-from tsflex.features import FeatureDescriptor, FeatureCollection, NumpyFuncWrapper
+from tsflex.features import FeatureDescriptor, FeatureCollection, FuncWrapper
 
 # 1. -------- Get your time-indexed data --------
 # Data contains 1 column; ["TMP"]
@@ -27,7 +27,7 @@ data = pd.read_parquet(url + "tmp.parquet").set_index("timestamp")
 fc = FeatureCollection(
     feature_descriptors=[
         FeatureDescriptor(
-            function=NumpyFuncWrapper(func=ss.skew, output_names="skew"),
+            function=FuncWrapper(func=ss.skew, output_names="skew"),
             series_name="TMP", 
             window="5min", stride="2.5min",
         )
@@ -70,7 +70,7 @@ As shown above, there are 3 relevant classes for feature-extraction.
       * `function`: the _Callable_ feature-function - e.g. _np.mean_
       * `window`: the _time-based_ window -  e.g. _"1hour"_
       * `stride`: the _time-based_ stride - e.g. _"2days"_
-3. [NumpyFuncWrapper](/tsflex/features/#tsflex.features.NumpyFuncWrapper): a wrapper around _Callable_ functions, intended for advanced feature-function definitions, such as:
+3. [FuncWrapper](/tsflex/features/#tsflex.features.FuncWrapper): a wrapper around _Callable_ functions, intended for advanced feature-function definitions, such as:
     * features with multiple output columns
     * passing _**kwargs_ to feature functions
 
@@ -82,7 +82,7 @@ from tsflex.features import FeatureDescriptor, FeatureCollection
 
 # The FeatureCollection takes a List[FeatureDescriptor] as input
 fc = FeatureCollection(feature_descriptors=[
-        # There is no need for NumpyFuncWrapper when using "simple" features
+        # There is no need for FuncWrapper when using "simple" features
         FeatureDescriptor(np.mean, "series_a", "1hour", "15min"),
         FeatureDescriptor(ss.skew, "series_b", "3hours", "5min")
     ]
@@ -122,7 +122,7 @@ from tsflex.features import MultipleFeatureDescriptors
 
 # The FeatureCollection takes a List[FeatureDescriptor] as input
 fc = FeatureCollection(feature_descriptors=[
-        # There is no need for NumpyFuncWrapper when using "simple" features
+        # There is no need for FuncWrapper when using "simple" features
         FeatureDescriptor(np.mean, "series_a", "1hour", "15min"),
         FeatureDescriptor(ss.skew, "series_b", "3hours", "5min"),
         MultipleFeatureDescriptors(
