@@ -29,10 +29,11 @@ class FuncWrapper(FrozenClass):
     input_type: Union[np.array, pd.Series], optional
         The input type that the function requires (either np.array or pd.Series), by 
         default np.array.
-        Note: Make sure to only set this argument to pd.Series if the function requires
-        a pd.Series, since pd.Series strided-rolling is significantly less efficient. 
-        For a np.array it is possible to create very efficient views, but there is no 
-        such thing as a pd.Series view. Thus, for each stroll, a new series is created.
+        .. Note:: 
+            Make sure to only set this argument to pd.Series if the function requires
+            a pd.Series, since pd.Series strided-rolling is significantly less efficient. 
+            For a np.array it is possible to create very efficient views, but there is no 
+            such thing as a pd.Series view. Thus, for each stroll, a new series is created.
     **kwargs: dict, optional
         Keyword arguments which will be also passed to the `function`
 
