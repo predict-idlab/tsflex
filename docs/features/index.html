@@ -39,7 +39,7 @@ ga('create', 'G-C88NHWRRP8', 'auto'); ga('send', 'pageview');
 <p>This executable example creates a feature-collection that contains 2 features (skewness and minimum). <br>
 <strong>Note</strong>: we do not make any assumptions about the sampling rate of the time-series data.</p>
 <pre><code class="language-python">import pandas as pd; import scipy.stats as ss; import numpy as np
-from tsflex.features import FeatureDescriptor, FeatureCollection, NumpyFuncWrapper
+from tsflex.features import FeatureDescriptor, FeatureCollection, FuncWrapper
 
 # 1. -------- Get your time-indexed data --------
 # Data contains 1 column; [&quot;TMP&quot;]
@@ -50,7 +50,7 @@ data = pd.read_parquet(url + &quot;tmp.parquet&quot;).set_index(&quot;timestamp&
 fc = FeatureCollection(
     feature_descriptors=[
         FeatureDescriptor(
-            function=NumpyFuncWrapper(func=ss.skew, output_names=&quot;skew&quot;),
+            function=FuncWrapper(func=ss.skew, output_names=&quot;skew&quot;),
             series_name=&quot;TMP&quot;, 
             window=&quot;5min&quot;, stride=&quot;2.5min&quot;,
         )
@@ -129,7 +129,7 @@ e.g. <em>"1hour"</em></li>
 <li><code>stride</code>: the <em>time-based</em> stride - e.g. <em>"2days"</em></li>
 </ul>
 </li>
-<li><a href="/tsflex/features/#tsflex.features.NumpyFuncWrapper">NumpyFuncWrapper</a>: a wrapper around <em>Callable</em> functions, intended for advanced feature-function definitions, such as:<ul>
+<li><a href="/tsflex/features/#tsflex.features.FuncWrapper">FuncWrapper</a>: a wrapper around <em>Callable</em> functions, intended for advanced feature-function definitions, such as:<ul>
 <li>features with multiple output columns</li>
 <li>passing <em>**kwargs</em> to feature functions</li>
 </ul>
@@ -141,7 +141,7 @@ from tsflex.features import FeatureDescriptor, FeatureCollection
 
 # The FeatureCollection takes a List[FeatureDescriptor] as input
 fc = FeatureCollection(feature_descriptors=[
-        # There is no need for NumpyFuncWrapper when using &quot;simple&quot; features
+        # There is no need for FuncWrapper when using &quot;simple&quot; features
         FeatureDescriptor(np.mean, &quot;series_a&quot;, &quot;1hour&quot;, &quot;15min&quot;),
         FeatureDescriptor(ss.skew, &quot;series_b&quot;, &quot;3hours&quot;, &quot;5min&quot;)
     ]
@@ -171,7 +171,7 @@ from tsflex.features import MultipleFeatureDescriptors
 
 # The FeatureCollection takes a List[FeatureDescriptor] as input
 fc = FeatureCollection(feature_descriptors=[
-        # There is no need for NumpyFuncWrapper when using &quot;simple&quot; features
+        # There is no need for FuncWrapper when using &quot;simple&quot; features
         FeatureDescriptor(np.mean, &quot;series_a&quot;, &quot;1hour&quot;, &quot;15min&quot;),
         FeatureDescriptor(ss.skew, &quot;series_b&quot;, &quot;3hours&quot;, &quot;5min&quot;),
         MultipleFeatureDescriptors(
@@ -252,16 +252,16 @@ __author__ = &#34;Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost&#34
 from .. import __pdoc__
 from .feature import FeatureDescriptor, MultipleFeatureDescriptors
 from .feature_collection import FeatureCollection
-from .function_wrapper import NumpyFuncWrapper
+from .function_wrapper import FuncWrapper
 from .logger import get_feature_logs, get_function_stats, get_series_names_stats
 
-__pdoc__[&#34;NumpyFuncWrapper.__call__&#34;] = True
+__pdoc__[&#34;FuncWrapper.__call__&#34;] = True
 
 __all__ = [
     &#34;FeatureDescriptor&#34;,
     &#34;MultipleFeatureDescriptors&#34;,
     &#34;FeatureCollection&#34;,
-    &#34;NumpyFuncWrapper&#34;,
+    &#34;FuncWrapper&#34;,
     &#34;get_feature_logs&#34;,
     &#34;get_function_stats&#34;,
     &#34;get_series_names_stats&#34;,
@@ -282,7 +282,7 @@ features.</p></div>
 </dd>
 <dt><code class="name"><a title="tsflex.features.function_wrapper" href="function_wrapper.html">tsflex.features.function_wrapper</a></code></dt>
 <dd>
-<div class="desc"><p>NumpyFuncWrapper class for object-oriented representation of a function.</p></div>
+<div class="desc"><p>FuncWrapper class for object-oriented representation of a function.</p></div>
 </dd>
 <dt><code class="name"><a title="tsflex.features.logger" href="logger.html">tsflex.features.logger</a></code></dt>
 <dd>
@@ -444,7 +444,7 @@ number of executions.</dd>
 <div class="desc"><p>A FeatureDescriptor object, containing all feature information.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>function</code></strong> :&ensp;<code>Union[<a title="tsflex.features.NumpyFuncWrapper" href="#tsflex.features.NumpyFuncWrapper">NumpyFuncWrapper</a>, Callable]</code></dt>
+<dt><strong><code>function</code></strong> :&ensp;<code>Union[<a title="tsflex.features.FuncWrapper" href="#tsflex.features.FuncWrapper">FuncWrapper</a>, Callable]</code></dt>
 <dd>The function that calculates this feature.
 The prototype of the function should match: <pre><code>function(*series: np.ndarray)
     -&gt; Union[Any, List[Any]]
@@ -523,8 +523,7 @@ assumptions we make.</li>
 <h2 id="raises">Raises</h2>
 <dl>
 <dt><code>TypeError</code></dt>
-<dd>Raised when the <code>function</code> is not an instance of Callable or
-NumpyFuncWrapper.</dd>
+<dd>Raised when the <code>function</code> is not an instance of Callable or FuncWrapper.</dd>
 </dl>
 <h2 id="see-also">See Also</h2>
 <dl>
@@ -540,7 +539,7 @@ NumpyFuncWrapper.</dd>
 
     Parameters
     ----------
-    function : Union[NumpyFuncWrapper, Callable]
+    function : Union[FuncWrapper, Callable]
         The function that calculates this feature.
         The prototype of the function should match: \n
 
@@ -597,8 +596,7 @@ NumpyFuncWrapper.</dd>
     Raises
     ------
     TypeError
-        Raised when the `function` is not an instance of Callable or
-        NumpyFuncWrapper.
+        Raised when the `function` is not an instance of Callable or FuncWrapper.
 
     See Also
     --------
@@ -608,7 +606,7 @@ NumpyFuncWrapper.</dd>
 
     def __init__(
         self,
-        function: Union[NumpyFuncWrapper, Callable],
+        function: Union[FuncWrapper, Callable],
         series_name: Union[str, Tuple[str, ...]],
         window: Union[float, str, pd.Timedelta],
         stride: Union[float, str, pd.Timedelta],
@@ -617,14 +615,14 @@ NumpyFuncWrapper.</dd>
         self.window: pd.Timedelta = parse_time_arg(window)
         self.stride: pd.Timedelta = parse_time_arg(stride)
 
-        # Order of if statements is important (as NumpyFuncWrapper also is a Callable)!
-        if isinstance(function, NumpyFuncWrapper):
-            self.function: NumpyFuncWrapper = function
+        # Order of if statements is important (as FuncWrapper also is a Callable)!
+        if isinstance(function, FuncWrapper):
+            self.function: FuncWrapper = function
         elif isinstance(function, Callable):
-            self.function: NumpyFuncWrapper = NumpyFuncWrapper(function)
+            self.function: FuncWrapper = FuncWrapper(function)
         else:
             raise TypeError(
-                &#34;Expected feature function to be a `NumpyFuncWrapper` but is a&#34;
+                &#34;Expected feature function to be a `FuncWrapper` but is a&#34;
                 f&#34; {type(function)}.&#34;
             )
 
@@ -704,7 +702,7 @@ lists. Total number of created Features will be:</p>
 </code></pre>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>functions</code></strong> :&ensp;<code>Union[<a title="tsflex.features.NumpyFuncWrapper" href="#tsflex.features.NumpyFuncWrapper">NumpyFuncWrapper</a>, Callable, List[Union[<a title="tsflex.features.NumpyFuncWrapper" href="#tsflex.features.NumpyFuncWrapper">NumpyFuncWrapper</a>, Callable]]]</code></dt>
+<dt><strong><code>functions</code></strong> :&ensp;<code>Union[<a title="tsflex.features.FuncWrapper" href="#tsflex.features.FuncWrapper">FuncWrapper</a>, Callable, List[Union[<a title="tsflex.features.FuncWrapper" href="#tsflex.features.FuncWrapper">FuncWrapper</a>, Callable]]]</code></dt>
 <dd>The functions, can be either of both types (even in a single array).</dd>
 <dt><strong><code>series_names</code></strong> :&ensp;<code>Union[str, Tuple[str, &hellip;], List[str], List[Tuple[str, &hellip;]]]</code></dt>
 <dd>
@@ -749,7 +747,7 @@ have the same type, i.e, either </p>
 
     Parameters
     ----------
-    functions : Union[NumpyFuncWrapper, Callable, List[Union[NumpyFuncWrapper, Callable]]]
+    functions : Union[FuncWrapper, Callable, List[Union[FuncWrapper, Callable]]]
         The functions, can be either of both types (even in a single array).
     series_names : Union[str, Tuple[str, ...], List[str], List[Tuple[str, ...]]]
         The names of the series on which the feature function should be applied.
@@ -778,16 +776,16 @@ have the same type, i.e, either </p>
     &#34;&#34;&#34;
     def __init__(
         self,
-        functions: Union[NumpyFuncWrapper, Callable, List[Union[NumpyFuncWrapper, Callable]]],
+        functions: Union[FuncWrapper, Callable, List[Union[FuncWrapper, Callable]]],
         series_names: Union[str, Tuple[str, ...], List[str], List[Tuple[str, ...]]],
         windows: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
         strides: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
     ):
-        # Cast functions to NumpyFuncWrapper, this avoids creating multiple
-        # NumpyFuncWrapper objects for the same function in the FeatureDescriptor
-        def to_np_func_wrapper(f: Callable): 
-            return f if isinstance(f, NumpyFuncWrapper) else NumpyFuncWrapper(f)
-        functions = [to_np_func_wrapper(f) for f in to_list(functions)]
+        # Cast functions to FuncWrapper, this avoids creating multiple
+        # FuncWrapper objects for the same function in the FeatureDescriptor
+        def to_func_wrapper(f: Callable): 
+            return f if isinstance(f, FuncWrapper) else FuncWrapper(f)
+        functions = [to_func_wrapper(f) for f in to_list(functions)]
         # Convert the series names to list of tuples
         series_names = [to_tuple(names) for names in to_list(series_names)]
         # Assert that function inputs (series) all have the same length
@@ -942,14 +940,14 @@ have the same type, i.e, either </p>
                 raise TypeError(f&#34;type: {type(feature)} is not supported - {feature}&#34;)
 
     @staticmethod
-    def _executor(idx: int, error_val: Optional[Any] = None):
+    def _executor(idx: int):
         # global get_stroll_func
         stroll, function = get_stroll_func(idx)
-        return stroll.apply_func(function, error_val)
+        return stroll.apply_func(function)
 
     def _stroll_feat_generator(
         self, series_dict: Dict[str, pd.Series], window_idx: str, approve_sparsity: bool
-    ) -&gt; List[Tuple[StridedRolling, NumpyFuncWrapper]]:
+    ) -&gt; List[Tuple[StridedRolling, FuncWrapper]]:
         # --- Future work ---
         # We could also make the StridedRolling creation multithreaded
         # Very low priority because the STROLL __init__ is rather efficient!
@@ -961,17 +959,19 @@ have the same type, i.e, either </p>
         def get_stroll_function(idx):
             key_idx = np.searchsorted(lengths, idx, &#34;right&#34;)  # right bc idx starts at 0
             key, win, stride = keys_wins_strides[key_idx]
+            feature = self._feature_desc_dict[keys_wins_strides[key_idx]][
+                idx - lengths[key_idx]
+            ]
+            function: FuncWrapper = feature.function
             stroll = StridedRolling(
                 data=[series_dict[k] for k in key],
                 window=win,
                 stride=stride,
                 window_idx=window_idx,
                 approve_sparsity=approve_sparsity,
+                data_type=function.input_type,
             )
-            feature = self._feature_desc_dict[keys_wins_strides[key_idx]][
-                idx - lengths[key_idx]
-            ]
-            return stroll, feature.function
+            return stroll, function
 
         return get_stroll_function
 
@@ -986,7 +986,6 @@ have the same type, i.e, either </p>
         return_df: Optional[bool] = False,
         window_idx: Optional[str] = &#34;end&#34;,
         approve_sparsity: Optional[bool] = False,
-        error_val: Optional[Any] = None,
         show_progress: Optional[bool] = False,
         logging_file_path: Optional[Union[str, Path]] = None,
         n_jobs: Optional[int] = None,
@@ -1023,13 +1022,6 @@ have the same type, i.e, either </p>
             Bool indicating whether the user acknowledges that there may be sparsity
             (i.e., irregularly sampled data), by default False.
             If False and sparsity is observed, a warning is raised.
-        error_val : Any, optional
-            The value that gets returned when there is an error in the function call, by
-            default None. If `error_val` is None, then no other values are returned in 
-            case of an error, and thus the error is thrown. If `error_val` is not None, 
-            then the value is returned ``len(self.output_names)`` times.
-            Note that an error is most likely due to an empty / sparse window. This is 
-            thus a convenient way to return default values in such cases.
         show_progress: bool, optional
             If True, the progress will be shown with a progressbar, by default False.
         logging_file_path : Union[str, Path], optional
@@ -1096,14 +1088,13 @@ have the same type, i.e, either </p>
             idxs = range(nb_stroll_funcs)
             if show_progress:
                 idxs = tqdm(idxs)
-            calculated_feature_list = [self._executor(idx, error_val) for idx in idxs]
+            calculated_feature_list = [self._executor(idx) for idx in idxs]
         else:
             # https://pathos.readthedocs.io/en/latest/pathos.html#usage
             with ProcessPool(nodes=n_jobs, source=True) as pool:
                 results = pool.uimap(
                     self._executor,
-                    range(nb_stroll_funcs),
-                    [error_val]*nb_stroll_funcs,
+                    range(nb_stroll_funcs)
                 )
                 if show_progress:
                     results = tqdm(results, total=self._get_stroll_feat_length())
@@ -1253,7 +1244,7 @@ collection.</p>
 </details>
 </dd>
 <dt id="tsflex.features.FeatureCollection.calculate"><code class="name flex">
-<span>def <span class="ident">calculate</span></span>(<span>self, data, return_df=False, window_idx='end', approve_sparsity=False, error_val=None, show_progress=False, logging_file_path=None, n_jobs=None)</span>
+<span>def <span class="ident">calculate</span></span>(<span>self, data, return_df=False, window_idx='end', approve_sparsity=False, show_progress=False, logging_file_path=None, n_jobs=None)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Calculate features on the passed data.</p>
@@ -1289,13 +1280,6 @@ window_idx.</dd>
 <dd>Bool indicating whether the user acknowledges that there may be sparsity
 (i.e., irregularly sampled data), by default False.
 If False and sparsity is observed, a warning is raised.</dd>
-<dt><strong><code>error_val</code></strong> :&ensp;<code>Any</code>, optional</dt>
-<dd>The value that gets returned when there is an error in the function call, by
-default None. If <code>error_val</code> is None, then no other values are returned in
-case of an error, and thus the error is thrown. If <code>error_val</code> is not None,
-then the value is returned <code>len(self.output_names)</code> times.
-Note that an error is most likely due to an empty / sparse window. This is
-thus a convenient way to return default values in such cases.</dd>
 <dt><strong><code>show_progress</code></strong> :&ensp;<code>bool</code>, optional</dt>
 <dd>If True, the progress will be shown with a progressbar, by default False.</dd>
 <dt><strong><code>logging_file_path</code></strong> :&ensp;<code>Union[str, Path]</code>, optional</dt>
@@ -1343,7 +1327,6 @@ sequentially. Set the <code>n_jobs</code> to 0-1 if this matters.</li>
     return_df: Optional[bool] = False,
     window_idx: Optional[str] = &#34;end&#34;,
     approve_sparsity: Optional[bool] = False,
-    error_val: Optional[Any] = None,
     show_progress: Optional[bool] = False,
     logging_file_path: Optional[Union[str, Path]] = None,
     n_jobs: Optional[int] = None,
@@ -1380,13 +1363,6 @@ sequentially. Set the <code>n_jobs</code> to 0-1 if this matters.</li>
         Bool indicating whether the user acknowledges that there may be sparsity
         (i.e., irregularly sampled data), by default False.
         If False and sparsity is observed, a warning is raised.
-    error_val : Any, optional
-        The value that gets returned when there is an error in the function call, by
-        default None. If `error_val` is None, then no other values are returned in 
-        case of an error, and thus the error is thrown. If `error_val` is not None, 
-        then the value is returned ``len(self.output_names)`` times.
-        Note that an error is most likely due to an empty / sparse window. This is 
-        thus a convenient way to return default values in such cases.
     show_progress: bool, optional
         If True, the progress will be shown with a progressbar, by default False.
     logging_file_path : Union[str, Path], optional
@@ -1453,14 +1429,13 @@ sequentially. Set the <code>n_jobs</code> to 0-1 if this matters.</li>
         idxs = range(nb_stroll_funcs)
         if show_progress:
             idxs = tqdm(idxs)
-        calculated_feature_list = [self._executor(idx, error_val) for idx in idxs]
+        calculated_feature_list = [self._executor(idx) for idx in idxs]
     else:
         # https://pathos.readthedocs.io/en/latest/pathos.html#usage
         with ProcessPool(nodes=n_jobs, source=True) as pool:
             results = pool.uimap(
                 self._executor,
-                range(nb_stroll_funcs),
-                [error_val]*nb_stroll_funcs,
+                range(nb_stroll_funcs)
             )
             if show_progress:
                 results = tqdm(results, total=self._get_stroll_feat_length())
@@ -1518,36 +1493,49 @@ the local scope, like lambdas.</strong></li>
 </dd>
 </dl>
 </dd>
-<dt id="tsflex.features.NumpyFuncWrapper"><code class="flex name class">
-<span>class <span class="ident">NumpyFuncWrapper</span></span>
-<span>(</span><span>func, output_names=None, **kwargs)</span>
+<dt id="tsflex.features.FuncWrapper"><code class="flex name class">
+<span>class <span class="ident">FuncWrapper</span></span>
+<span>(</span><span>func, output_names=None, input_type=&lt;built-in function array&gt;, **kwargs)</span>
 </code></dt>
 <dd>
-<div class="desc"><p>Numpy function wrapper.</p>
-<p>A Numpy function wrapper which takes a numpy array as input and returns a numpy
-array. It also defines the names of the function outputs.</p>
+<div class="desc"><p>Function wrapper.</p>
+<p>A function wrapper which takes a numpy array / pandas series as input and returns
+one or multiple values. It also defines the names of the function outputs, and
+stores the function its keyword arguments.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
 <dt><strong><code>func</code></strong> :&ensp;<code>Callable</code></dt>
 <dd>The wrapped function.</dd>
 <dt><strong><code>output_names</code></strong> :&ensp;<code>Union[List[str], str]</code>, optional</dt>
 <dd>The name of the outputs of the function, by default None.</dd>
+<dt><strong><code>input_type</code></strong> :&ensp;<code>Union[np.array, pd.Series]</code>, optional</dt>
+<dd>The input type that the function requires (either np.array or pd.Series), by
+default np.array.<div class="admonition note">
+<p class="admonition-title">Note</p>
+Make sure to only set this argument to pd.Series if the function requires
+a pd.Series, since pd.Series strided-rolling is significantly less efficient.
+For a np.array it is possible to create very efficient views, but there is no
+such thing as a pd.Series view. Thus, for each stroll, a new series is created.</div>
+</dd>
+<dt><strong><code>**kwargs</code></strong> :&ensp;<code>dict</code>, optional</dt>
+<dd>Keyword arguments which will be also passed to the <code>function</code></dd>
 </dl>
 <h2 id="raises">Raises</h2>
 <dl>
 <dt><code>TypeError</code></dt>
 <dd>Raised when the <code>output_names</code> cannot be set.</dd>
 </dl>
-<p>Create NumpyFuncWrapper instance.</p></div>
+<p>Create FuncWrapper instance.</p></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">class NumpyFuncWrapper(FrozenClass):  # TODO: waarom niet gewoon FuncWrapper?
-    &#34;&#34;&#34;Numpy function wrapper.
+<pre><code class="python">class FuncWrapper(FrozenClass):
+    &#34;&#34;&#34;Function wrapper.
 
-    A Numpy function wrapper which takes a numpy array as input and returns a numpy
-    array. It also defines the names of the function outputs.
+    A function wrapper which takes a numpy array / pandas series as input and returns 
+    one or multiple values. It also defines the names of the function outputs, and 
+    stores the function its keyword arguments.
 
     Parameters
     ----------
@@ -1555,6 +1543,16 @@ array. It also defines the names of the function outputs.</p>
         The wrapped function.
     output_names : Union[List[str], str], optional
         The name of the outputs of the function, by default None.
+    input_type: Union[np.array, pd.Series], optional
+        The input type that the function requires (either np.array or pd.Series), by 
+        default np.array.
+        .. Note:: 
+            Make sure to only set this argument to pd.Series if the function requires
+            a pd.Series, since pd.Series strided-rolling is significantly less efficient. 
+            For a np.array it is possible to create very efficient views, but there is no 
+            such thing as a pd.Series view. Thus, for each stroll, a new series is created.
+    **kwargs: dict, optional
+        Keyword arguments which will be also passed to the `function`
 
     Raises
     ------
@@ -1564,9 +1562,13 @@ array. It also defines the names of the function outputs.</p>
     &#34;&#34;&#34;
 
     def __init__(
-        self, func: Callable, output_names: Union[List[str], str] = None, **kwargs
+        self,
+        func: Callable,
+        output_names: Optional[Union[List[str], str]] = None,
+        input_type: Optional[Union[np.array, pd.Series]] = np.array,
+        **kwargs,
     ):
-        &#34;&#34;&#34;Create NumpyFuncWrapper instance.&#34;&#34;&#34;
+        &#34;&#34;&#34;Create FuncWrapper instance.&#34;&#34;&#34;
         self.func = func
         self.kwargs: dict = kwargs
 
@@ -1579,6 +1581,9 @@ array. It also defines the names of the function outputs.</p>
         else:
             raise TypeError(f&#34;`output_names` is unexpected type {type(output_names)}&#34;)
 
+        assert input_type in SUPPORTED_STROLL_TYPES
+        self.input_type = input_type
+
         self._freeze()
 
     def __repr__(self) -&gt; str:
@@ -1588,37 +1593,21 @@ array. It also defines the names of the function outputs.</p>
             f&#34; {self.kwargs})&#34;
         )
 
-    def __call__(self, *series: np.ndarray, error_val: Optional[Any] = None) -&gt; Any:
+    def __call__(self, *series: Union[np.ndarray, pd.Series]) -&gt; Any:
         &#34;&#34;&#34;Call wrapped function with passed data.
 
         Parameters
         ---------
-        *series : np.ndarray
+        *series : Union[np.ndarray, pd.Series]
             The (multiple) input series for the function.
-        error_val : Any, optional
-            The value that gets returned when there is an error in the function call, by
-            default None. If `error_val` is None, then no other values are returned in 
-            case of an error, and thus the error is thrown. If `error_val` is not None, 
-            then the value is returned ``len(self.output_names)`` times.
 
         Returns
         -------
         Any
-            The function its output for the passed series or 
-            ``len(self.output_names)`` times `error_val`, when error_val is not None and 
-            an error is thrown by the function.
+            The function output for the passed series.
 
         &#34;&#34;&#34;
-        if error_val is None:
-            return self.func(*series, **self.kwargs)
-        try:
-            # Ignore warnings that may arise 
-            with warnings.catch_warnings():
-                warnings.simplefilter(&#34;ignore&#34;)
-                return self.func(*series, **self.kwargs)
-        except Exception:
-            output = [error_val] * len(self.output_names)
-            return output[0] if len(output) == 1 else tuple(output)</code></pre>
+        return self.func(*series, **self.kwargs)</code></pre>
 </details>
 <h3>Ancestors</h3>
 <ul class="hlist">
@@ -1626,63 +1615,40 @@ array. It also defines the names of the function outputs.</p>
 </ul>
 <h3>Methods</h3>
 <dl>
-<dt id="tsflex.features.NumpyFuncWrapper.__call__"><code class="name flex">
-<span>def <span class="ident">__call__</span></span>(<span>self, *series, error_val=None)</span>
+<dt id="tsflex.features.FuncWrapper.__call__"><code class="name flex">
+<span>def <span class="ident">__call__</span></span>(<span>self, *series)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Call wrapped function with passed data.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>*series</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dt><strong><code>*series</code></strong> :&ensp;<code>Union[np.ndarray, pd.Series]</code></dt>
 <dd>The (multiple) input series for the function.</dd>
-<dt><strong><code>error_val</code></strong> :&ensp;<code>Any</code>, optional</dt>
-<dd>The value that gets returned when there is an error in the function call, by
-default None. If <code>error_val</code> is None, then no other values are returned in
-case of an error, and thus the error is thrown. If <code>error_val</code> is not None,
-then the value is returned <code>len(self.output_names)</code> times.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><code>Any</code></dt>
-<dd>The function its output for the passed series or
-<code>len(self.output_names)</code> times <code>error_val</code>, when error_val is not None and
-an error is thrown by the function.</dd>
+<dd>The function output for the passed series.</dd>
 </dl></div>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def __call__(self, *series: np.ndarray, error_val: Optional[Any] = None) -&gt; Any:
+<pre><code class="python">def __call__(self, *series: Union[np.ndarray, pd.Series]) -&gt; Any:
     &#34;&#34;&#34;Call wrapped function with passed data.
 
     Parameters
     ---------
-    *series : np.ndarray
+    *series : Union[np.ndarray, pd.Series]
         The (multiple) input series for the function.
-    error_val : Any, optional
-        The value that gets returned when there is an error in the function call, by
-        default None. If `error_val` is None, then no other values are returned in 
-        case of an error, and thus the error is thrown. If `error_val` is not None, 
-        then the value is returned ``len(self.output_names)`` times.
 
     Returns
     -------
     Any
-        The function its output for the passed series or 
-        ``len(self.output_names)`` times `error_val`, when error_val is not None and 
-        an error is thrown by the function.
+        The function output for the passed series.
 
     &#34;&#34;&#34;
-    if error_val is None:
-        return self.func(*series, **self.kwargs)
-    try:
-        # Ignore warnings that may arise 
-        with warnings.catch_warnings():
-            warnings.simplefilter(&#34;ignore&#34;)
-            return self.func(*series, **self.kwargs)
-    except Exception:
-        output = [error_val] * len(self.output_names)
-        return output[0] if len(output) == 1 else tuple(output)</code></pre>
+    return self.func(*series, **self.kwargs)</code></pre>
 </details>
 </dd>
 </dl>
@@ -1767,9 +1733,9 @@ alt="logo should be displayed here" style="width: 100%;"></a>
 </ul>
 </li>
 <li>
-<h4><code><a title="tsflex.features.NumpyFuncWrapper" href="#tsflex.features.NumpyFuncWrapper">NumpyFuncWrapper</a></code></h4>
+<h4><code><a title="tsflex.features.FuncWrapper" href="#tsflex.features.FuncWrapper">FuncWrapper</a></code></h4>
 <ul class="">
-<li><code><a title="tsflex.features.NumpyFuncWrapper.__call__" href="#tsflex.features.NumpyFuncWrapper.__call__">__call__</a></code></li>
+<li><code><a title="tsflex.features.FuncWrapper.__call__" href="#tsflex.features.FuncWrapper.__call__">__call__</a></code></li>
 </ul>
 </li>
 </ul>
