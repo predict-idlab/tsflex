@@ -14,6 +14,7 @@ __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
 
 import time
 import warnings
+from numpy.random import random_sample
 import pandas as pd
 import numpy as np
 
@@ -158,6 +159,11 @@ class StridedRolling:
                 # create a non-writeable view of the series
                 series = series.values
                 series.flags.writeable = False
+            elif data_type is pd.Series:
+                series.values.flags.writeable = False
+                series.index.values.flags.writeable = False
+            else:
+                raise ValueError("unsupported datatype")
 
             self.series_containers.append(
                 StridedRolling._NumpySeriesContainer(
