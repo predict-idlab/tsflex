@@ -63,7 +63,7 @@ def test_kwargs_numpy_func_wrapper(dummy_data):
 
 def test_series_func_wrapper(dummy_data):
     def max_diff(x: pd.Series):
-        return (x.index[1:] - x.index[:-1]).total_seconds().max()
+        return x.index.to_series().diff().dt.total_seconds().max()
     
     func = FuncWrapper(max_diff, input_type=pd.Series)
 
@@ -73,7 +73,7 @@ def test_series_func_wrapper(dummy_data):
 
 def test_series_func_wrapper_with_kwargs(dummy_data):
     def max_diff(x: pd.Series, mult=1):
-        return (x.index[1:] - x.index[:-1]).total_seconds().max() * mult
+        return x.index.to_series().diff().dt.total_seconds().max() * mult
     
     func1 = FuncWrapper(max_diff, input_type=pd.Series)
     func2 = FuncWrapper(max_diff, input_type=pd.Series, mult=3, output_names='MAX_DIFF')

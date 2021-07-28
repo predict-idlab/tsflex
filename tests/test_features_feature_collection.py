@@ -12,6 +12,7 @@ from tsflex.features import FeatureDescriptor, MultipleFeatureDescriptors
 from tsflex.features import FeatureCollection
 
 from pandas.testing import assert_index_equal, assert_frame_equal
+from scipy.stats import linregress
 from typing import Tuple
 from .utils import dummy_data
 
@@ -390,10 +391,40 @@ def test_many_to_many_feature_collection(dummy_data):
 
 def test_series_funcs(dummy_data):
     def min_max_time_diff(x: pd.Series, mult=1):
-        diff = (x.index[1:] - x.index[:-1]).total_seconds().max()
+        diff = x.index.to_series().diff().dt.total_seconds()#.max()
         return diff.min()*mult, diff.max()*mult
     def time_diff(x: pd.Series):
         return (x.index[-1] - x.index[0]).total_seconds()
+    
+    def linear_trend_timewise(x):
+        """
+        Calculate a linear least-squares regression for the values of the time series versus the sequence from 0 to
+        length of the time series minus one.
+        This feature uses the index of the time series to fit the model, which must be of a datetime
+        dtype.
+        The parameters control which of the characteristics are returned.
+        Possible extracted attributes are "pvalue", "rvalue", "intercept", "slope", "stderr", see the documentation of
+        linregress for more information.
+        
+        :param x: the time series to calculate the feature of. The index must be datetime.
+        :type x: pandas.Series
+        
+        :param param: contains dictionaries {"attr": x} with x an string, the attribute name of the regression model
+        :type param: list
+
+        :return: the different feature values
+        :return type: list
+        """
+        ix = x.index
+
+        # Get differences between each timestamp and the first timestamp in seconds.
+        # Then convert to hours and reshape for linear regression
+        times_seconds = (ix - ix[0]).total_seconds()
+        times_hours = np.asarray(times_seconds / float(3600))
+
+        linReg = linregress(times_hours, x.values)
+        return linReg.slope, linReg.intercept, linReg.rvalue
+
 
     fc = FeatureCollection(
         MultipleFeatureDescriptors(
@@ -402,8 +433,12 @@ def test_series_funcs(dummy_data):
                     min_max_time_diff, input_type=pd.Series, 
                     output_names=["min_time_diff", "max_time_diff"], mult=3,
                 ),
+                FuncWrapper(
+                    linear_trend_timewise, input_type=pd.Series,
+                    output_names=["timewise_regr_slope", "timewise_regr_intercept", "timewise_regr_r_value"]
+                ),
                 FuncWrapper(time_diff, input_type=pd.Series),
-                FuncWrapper(np.max, input_type=pd.Series)
+                FuncWrapper(np.max, input_type=np.array)
             ],
             series_names=["EDA", "TMP"],
             windows="5s",
@@ -414,7 +449,7 @@ def test_series_funcs(dummy_data):
     assert set(fc.get_required_series()) == set(["EDA", "TMP"])
 
     res_df = fc.calculate(dummy_data, return_df=True)
-    assert res_df.shape[1] == 2*7
+    assert res_df.shape[1] == 2*10
     freq = pd.to_timedelta(pd.infer_freq(dummy_data.index)) / np.timedelta64(1, "s")
     stride_s = 2.5
     window_s = 5
