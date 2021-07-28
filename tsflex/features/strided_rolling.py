@@ -14,7 +14,6 @@ __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
 
 import time
 import warnings
-from numpy.random import random_sample
 import pandas as pd
 import numpy as np
 
