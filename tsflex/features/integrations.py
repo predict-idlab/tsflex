@@ -1,15 +1,15 @@
 """Wrappers for seamless integration of feature functions from other packages."""
 
-__author__ = "Jeroen Van Der Donckt, Jonas Van Der Donckt, Emiel Deprost"
+__author__ = "Jeroen Van Der Donckt, Jonas Van Der Donckt"
 
 import pandas as pd
 import numpy as np
 
-from typing import Callable, Any, Optional, List, Dict
+from typing import Callable, Any, Optional, List, Dict, Union
 from .feature import FuncWrapper
 
 
-def get_name(func: Callable) -> str:
+def _get_name(func: Callable) -> str:
     """Get the name of the function.
 
     Parameters
@@ -31,27 +31,62 @@ def get_name(func: Callable) -> str:
     except:
         return type(func).__name__
 
-# TODO: hoort dit hier?
+
 def make_robust(
     func: Callable,
     min_nb_samples: int = 1,
     error_val: Any = np.nan,
-    output_names = None,
+    output_names: Optional[Union[str, List[str]]]= None,
+    passthrough_nans: bool = True,
     **kwargs,
 ) -> FuncWrapper:
-    def wrap_func(x: np.ndarray):
+    """Decorates `func` into a robust funcwrapper.
+
+    More specifically this method does:<br>
+    * `np.NaN` data input propagation / filtering
+    *  `min_nb_samples` checking before feeding to `func`
+       (if not met, returns `error_val`)
+
+   Parameters
+   ----------
+   func: Callable
+       The function which will be made robust.
+   min_nb_samples: int
+       The minimum number of samples that are needed for `func` to be applied
+       successfully.
+   error_val: Any
+       The error *return* value if the `min_nb_samples` requirement is not met.
+   output_names: Union[str, List[str]]
+       The `func` its output_names
+       .. note::
+           This value must be set if `func` returns more than 1 output!
+   passthrough_nans: bool
+       If set to true, `np.NaN` values, which occur in the data will be passed through.
+       Otherwise, the `np.NaN` values will be masked out before being passed to `func`,
+       by default True
+   **kwargs:
+       Additional keyword arguments
+
+   Returns
+   -------
+   FuncWrapper
+       The robust funcwrapper
+
+   """
+    def wrap_func(x: np.array):
+        # todo -> fix multiple arrays/series as input
+        if not passthrough_nans:
+            x = x[~x.isnan()]
         if len(x) < min_nb_samples:
             return error_val
         return func(x)
 
-    wrap_func.__name__ = "[robust]__" + get_name(func)
-    output_names = get_name(func) if output_names is None else output_names
+    wrap_func.__name__ = "[robust]__" + _get_name(func)
+    output_names = _get_name(func) if output_names is None else output_names
     return FuncWrapper(wrap_func, output_names=output_names, **kwargs)
 
 
-## SEGLEARN
-
-# Decorator for seglearn functions doing the conversion (mentioned above)
+# ------------------------------------- SEGLEARN -------------------------------------
 def seglearn_wrapper(func: Callable, output_names: Optional[str] = None) -> FuncWrapper:
     """Wrapper enabling compatibility with seglearn functions.
     
@@ -77,18 +112,17 @@ def seglearn_wrapper(func: Callable, output_names: Optional[str] = None) -> Func
         out = func(x.reshape(1, len(x)))
         return out.flatten()
 
-    wrap_func.__name__ = "[seglearn_wrapped]__" + get_name(func)
-    output_names = get_name(func) if output_names is None else output_names
+    wrap_func.__name__ = "[seglearn_wrapped]__" + _get_name(func)
+    output_names = _get_name(func) if output_names is None else output_names
     return FuncWrapper(wrap_func, output_names=output_names)
 
 
-## TSFRESH
-
-
+# ------------------------------------- TSFRESH -------------------------------------
 def tsfresh_combiner_wrapper(func: Callable, param: List[Dict]) -> FuncWrapper:
     """Wrapper enabling compatibility with tsfresh combiner functions.
 
-    [tsfresh feature-funtions](https://github.com/blue-yonder/tsfresh/blob/main/tsfresh/feature_extraction/feature_calculators.py) are either of type `simple` or `combiner`.
+    [tsfresh feature-funtions](https://github.com/blue-yonder/tsfresh/blob/main/tsfresh/feature_extraction/feature_calculators.py)
+    are either of type `simple` or `combiner`.
     * `simple`: feature calculators which calculate a single number  
       **=> integrates natively with tsflex**
     * `combiner`: feature calculates which calculate a bunch of features for a list of parameters. 
@@ -114,7 +148,7 @@ def tsfresh_combiner_wrapper(func: Callable, param: List[Dict]) -> FuncWrapper:
         out = func(x, param)
         return tuple(t[1] for t in out)
 
-    wrap_func.__name__ = "[tsfresh-combiner_wrapped]__" + get_name(func)
+    wrap_func.__name__ = "[tsfresh-combiner_wrapped]__" + _get_name(func)
     input_type = pd.Series if hasattr(func, "index_type") else np.array
     return FuncWrapper(
         wrap_func,
