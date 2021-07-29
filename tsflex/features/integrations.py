@@ -42,7 +42,7 @@ def make_robust(
 ) -> FuncWrapper:
     """Decorates `func` into a robust funcwrapper.
 
-    More specifically this method does:<br>
+    More specifically this method does:\n
     * `np.NaN` data input propagation / filtering
     *  `min_nb_samples` checking before feeding to `func`
        (if not met, returns `error_val`)
@@ -122,7 +122,7 @@ def tsfresh_combiner_wrapper(func: Callable, param: List[Dict]) -> FuncWrapper:
     """Wrapper enabling compatibility with tsfresh combiner functions.
 
     [tsfresh feature-funtions](https://github.com/blue-yonder/tsfresh/blob/main/tsfresh/feature_extraction/feature_calculators.py)
-    are either of type `simple` or `combiner`.
+    are either of type `simple` or `combiner`.\n
     * `simple`: feature calculators which calculate a single number  
       **=> integrates natively with tsflex**
     * `combiner`: feature calculates which calculate a bunch of features for a list of parameters. 
