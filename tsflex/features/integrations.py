@@ -45,7 +45,9 @@ def make_robust(
     More specifically this method does:\n
     * `np.NaN` data input propagation / filtering
     *  `min_nb_samples` checking before feeding to `func`
-       (if not met, returns `error_val`)
+       (if not met, returns `error_val`)\n
+    Note: this wrapper is useful for functions that should be robust for empty or sparse
+    windows and/or nans in the data.
 
    Parameters
    ----------
@@ -63,23 +65,24 @@ def make_robust(
    passthrough_nans: bool
        If set to true, `np.NaN` values, which occur in the data will be passed through.
        Otherwise, the `np.NaN` values will be masked out before being passed to `func`,
-       by default True
+       by default True.
    **kwargs:
        Additional keyword arguments
 
    Returns
    -------
    FuncWrapper
-       The robust funcwrapper
+       The robust funcwrapper.
 
    """
-    def wrap_func(x: np.array):
-        # todo -> fix multiple arrays/series as input
+    def wrap_func(*series: Union[np.ndarray, pd.Series], **kwargs) -> FuncWrapper:
         if not passthrough_nans:
-            x = x[~x.isnan()]
-        if len(x) < min_nb_samples:
-            return error_val
-        return func(x)
+            series = [s[~np.isnan(s)] for s in series]
+        if any([len(s) < min_nb_samples for s in series]):
+            if not isinstance(output_names, list):
+                return error_val
+            return tuple([error_val] * len(output_names))
+        return func(*series, **kwargs)
 
     wrap_func.__name__ = "[robust]__" + _get_name(func)
     output_names = _get_name(func) if output_names is None else output_names
@@ -144,7 +147,7 @@ def tsfresh_combiner_wrapper(func: Callable, param: List[Dict]) -> FuncWrapper:
         The wrapped tsfresh combiner function that is compatible with tsflex.
 
     """
-    def wrap_func(x: np.ndarray):
+    def wrap_func(x: Union[np.ndarray, pd.Series]):
         out = func(x, param)
         return tuple(t[1] for t in out)
 

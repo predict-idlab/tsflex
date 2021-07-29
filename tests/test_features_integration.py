@@ -3,7 +3,8 @@
 __author__ = "Jeroen Van Der Donckt, Emiel Deprost, Jonas Van Der Donckt"
 
 import seglearn
-import tsfresh
+# import tsfresh
+import pytest
 import pandas as pd
 import numpy as np
 
@@ -14,7 +15,106 @@ from tsflex.features import (
     FuncWrapper,
     feature_collection,
 )
-from tsflex.features.integrations import seglearn_wrapper, tsfresh_combiner_wrapper
+from tsflex.features.integrations import (
+    seglearn_wrapper,
+    tsfresh_combiner_wrapper,
+    make_robust,
+)
+
+
+## ROBUST FUNCTIONS
+
+
+def test_unrobust_gap_features(dummy_data):
+    feats = MultipleFeatureDescriptors(
+        functions=[np.min, np.max],
+        series_names="EDA",
+        windows="10s",
+        strides="5s",
+    )
+    feature_collection = FeatureCollection(feats)
+
+    eda_data = dummy_data["EDA"].dropna()
+    eda_data[2 : 1 + 25 * 4] = None  # Leave gap of 25 s
+    eda_data = eda_data.dropna()
+    assert eda_data.isna().any() == False
+    assert (eda_data.index[1:] - eda_data.index[:-1]).max() == pd.Timedelta("25 s")
+
+    with pytest.raises(ValueError):
+        feature_collection.calculate(eda_data, approve_sparsity=True, n_jobs=0)
+
+
+def test_robust_gap_features(dummy_data):
+    feats = MultipleFeatureDescriptors(
+        functions=[make_robust(f, min_nb_samples=2) for f in [np.min, np.max]],
+        series_names="EDA",
+        windows="10s",
+        strides="5s",
+    )
+    feature_collection = FeatureCollection(feats)
+
+    eda_data = dummy_data["EDA"].dropna()
+    eda_data[2 : 1 + 25 * 4] = None  # Leave gap of 25 s
+    eda_data = eda_data.dropna()
+    assert eda_data.isna().any() == False
+    assert (eda_data.index[1:] - eda_data.index[:-1]).max() == pd.Timedelta("25 s")
+
+    res_df = feature_collection.calculate(eda_data, return_df=True, approve_sparsity=True)
+    assert res_df.isna()[1:4].all().all()
+    assert res_df[4:].isna().any().any() == False
+
+def test_robust_gap_features_multi_output(dummy_data):
+    def mean_std(x: np.ndarray):
+        return np.mean(x), np.std(x)
+    
+    feats = MultipleFeatureDescriptors(
+        functions=make_robust(mean_std, min_nb_samples=2, output_names=["mean", "std"]),
+        series_names="EDA",
+        windows="10s",
+        strides="5s",
+    )
+    feature_collection = FeatureCollection(feats)
+
+    eda_data = dummy_data["EDA"].dropna()
+    eda_data[2 : 1 + 25 * 4] = None  # Leave gap of 25 s
+    eda_data = eda_data.dropna()
+    assert eda_data.isna().any() == False
+    assert (eda_data.index[1:] - eda_data.index[:-1]).max() == pd.Timedelta("25 s")
+
+    res_df = feature_collection.calculate(eda_data, return_df=True, approve_sparsity=True)
+    assert res_df.isna()[1:4].all().all()
+    assert res_df[4:].isna().any().any() == False
+
+
+def test_unrobust_pass_through_features(dummy_data):
+    feats = MultipleFeatureDescriptors(
+        functions=[make_robust(f, min_nb_samples=1) for f in [np.mean, np.min]],
+        series_names="EDA",
+        windows="10s",
+        strides="5s",
+    )
+    feature_collection = FeatureCollection(feats)
+
+    eda_data = dummy_data["EDA"].dropna()
+    eda_data[np.random.choice(dummy_data.index[1:-1], 10, replace=False)] = np.nan
+
+    res_df = feature_collection.calculate(eda_data, return_df=True)
+    assert res_df.isna().any().any()
+
+def test_robust_pass_through_features(dummy_data):
+    feats = MultipleFeatureDescriptors(
+        functions=[make_robust(f, passthrough_nans=False) for f in [np.mean, np.min]],
+        series_names="EDA",
+        windows="10s",
+        strides="5s",
+    )
+    feature_collection = FeatureCollection(feats)
+
+    eda_data = dummy_data["EDA"].dropna()
+    eda_data[np.random.choice(dummy_data.index[1:-1], 10, replace=False)] = np.nan
+
+    res_df = feature_collection.calculate(eda_data, return_df=True)
+    assert res_df.isna().any().any() == False
 
 
 ## SEGLEARN
