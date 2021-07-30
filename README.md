@@ -37,9 +37,9 @@ conda install -c conda-forge tsflex
 ## Why tsflex? ✨
 
 * flexible;
-    * handles multivariate time series
+    * handles multivariate/multimodal time series
     * versatile function support  
-      => **integrates natively** with many packages for processing (e.g., [scipy.signal](https://docs.scipy.org/doc/scipy/reference/tutorial/signal.html), [statsmodels.tsa](https://www.statsmodels.org/stable/tsa.html#time-series-filters)) & feature extraction (e.g., [numpy](https://numpy.org/doc/stable/reference/routines.html), [scipy.stats](https://docs.scipy.org/doc/scipy/reference/tutorial/stats.html))
+      => **integrates natively** with many packages for processing (e.g., [scipy.signal](https://docs.scipy.org/doc/scipy/reference/tutorial/signal.html), [statsmodels.tsa](https://www.statsmodels.org/stable/tsa.html#time-series-filters)) & feature extraction (e.g., [numpy](https://numpy.org/doc/stable/reference/routines.html), [scipy.stats](https://docs.scipy.org/doc/scipy/reference/tutorial/stats.html), [seglearn](https://dmbee.github.io/seglearn/feature_functions.html#examples)¹, [tsfresh](https://tsfresh.readthedocs.io/en/latest/text/list_of_features.html)¹, [tsfel](https://tsfel.readthedocs.io/en/latest/descriptions/feature_list.html)¹)
     * feature-extraction handles **multiple strides & window sizes**
 * efficient view-based operations  
   => extremely **low memory peak & fast execution times** ([see benchmarks](https://github.com/predict-idlab/tsflex-benchmarking))
@@ -48,6 +48,8 @@ conda install -c conda-forge tsflex
 * maintains the **time-index** of the data
 * makes **little to no assumptions** about the time series data
 
+¹ These integrations are shown in [integration-example notebooks](https://github.com/predict-idlab/tsflex/tree/main/examples).
+
 ## Usage
 
 _tsflex_ is built to be intuitive, so we encourage you to copy-paste this code and toy with some parameters!
@@ -55,30 +57,29 @@ _tsflex_ is built to be intuitive, so we encourage you to copy-paste this code a
 ### <a href="https://predict-idlab.github.io/tsflex/features/#getting-started">Feature extraction</a>
 
 ```python
-import pandas as pd; import scipy.stats as ssig; import numpy as np
-from tsflex.features import FeatureDescriptor, FeatureCollection, FuncWrapper
+import pandas as pd; import numpy as np; import scipy.stats as ssig
+from tsflex.features import MultipleFeatureDescriptors, FeatureCollection
 
 # 1. -------- Get your time-indexed data --------
-# Data contains 1 column; ["TMP"]
-url = "https://github.com/predict-idlab/tsflex/raw/main/examples/data/empatica/tmp.parquet"
-data = pd.read_parquet(url).set_index("timestamp")
+url = "https://github.com/predict-idlab/tsflex/raw/main/examples/data/empatica/"
+# Contains 1 column; ["TMP"] - 4 Hz sampling rate
+data_tmp = pd.read_parquet(url+"tmp.parquet").set_index("timestamp")
+# Contains 3 columns; ["ACC_x", "ACC_y", "ACC_z"] - 32 Hz sampling rate
+data_acc =  pd.read_parquet(url+"acc.parquet").set_index("timestamp")
 
 # 2 -------- Construct your feature collection --------
 fc = FeatureCollection(
-    feature_descriptors=[
-        FeatureDescriptor(
-            function=FuncWrapper(func=ssig.skew, output_names="skew"),
-            series_name="TMP", 
-            window="5min",  # Use 5 minutes 
-            stride="2.5min",  # With steps of 2.5 minutes
-        )
-    ]
+    MultipleFeatureDescriptors(
+          functions=[np.min, np.max, np.mean, np.std, np.median, ss.skew, ss.kurtosis],
+          series_names=["TMP", "ACC_x", "ACC_y"], # Use 3 multimodal signals 
+          windows=["5min", "7.5min"],  # Use 5 minutes and 7.5 minutes 
+          strides="2.5min",  # With steps of 2.5 minutes
+    )
 )
 # -- 2.1. Add features to your feature collection
-fc.add(FeatureDescriptor(np.min, "TMP", '2.5min', '2.5min'))
 
-# 3 -------- Calculate features --------
-fc.calculate(data=data)
+# 3 -------- Calculate features (on multimodal data) --------
+fc.calculate(data=[data_tmp, data_acc])
 ```
 
 ### More examples
@@ -91,7 +92,6 @@ Other examples can be found [here](https://github.com/predict-idlab/tsflex/tree/
 * scikit-learn integration for both processing and feature extraction<br>
   **note**: is actively developed upon [sklearn integration](https://github.com/predict-idlab/tsflex/tree/sklearn_integration) branch.
 * support for multi-indexed dataframes
-* random-strided rolling for data-augmention purposes.
 
 ## Referencing our package
 
