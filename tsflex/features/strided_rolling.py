@@ -289,10 +289,14 @@ class StridedRolling:
         # Aggregate function output in a dictionary
         feat_out = {}
         if out.ndim == 1 or (out.ndim == 2 and out.shape[1] == 1):
-            assert len(feat_names) == 1
+            assert (
+                len(feat_names) == 1
+            ), f"Func {func} returned more than 1 output!"
             feat_out[create_feat_col_name(feat_names[0])] = out.flatten()
         if out.ndim == 2 and out.shape[1] > 1:
-            assert len(feat_names) == out.shape[1]
+            assert (
+                len(feat_names) == out.shape[1]
+            ), f"Func {func} returned incorrect number of outputs ({out.shape[1]})!"
             for col_idx in range(out.shape[1]):
                 feat_out[create_feat_col_name(feat_names[col_idx])] = out[:, col_idx]
 
