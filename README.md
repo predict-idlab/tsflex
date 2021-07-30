@@ -39,7 +39,7 @@ conda install -c conda-forge tsflex
 * flexible;
     * handles multivariate/multimodal time series
     * versatile function support  
-      => **integrates natively** with many packages for processing (e.g., [scipy.signal](https://docs.scipy.org/doc/scipy/reference/tutorial/signal.html), [statsmodels.tsa](https://www.statsmodels.org/stable/tsa.html#time-series-filters)) & feature extraction (e.g., [numpy](https://numpy.org/doc/stable/reference/routines.html), [scipy.stats](https://docs.scipy.org/doc/scipy/reference/tutorial/stats.html), [seglearn](https://dmbee.github.io/seglearn/feature_functions.html#examples)¹, [tsfresh](https://tsfresh.readthedocs.io/en/latest/text/list_of_features.html)¹, [tsfel](https://tsfel.readthedocs.io/en/latest/descriptions/feature_list.html)¹)
+      => **integrates natively** with many packages for processing (e.g., [scipy.signal](https://docs.scipy.org/doc/scipy/reference/tutorial/signal.html), [statsmodels.tsa](https://www.statsmodels.org/stable/tsa.html#time-series-filters)) & feature extraction (e.g., [numpy](https://numpy.org/doc/stable/reference/routines.html), [scipy.stats](https://docs.scipy.org/doc/scipy/reference/tutorial/stats.html), [seglearn](https://dmbee.github.io/seglearn/feature_functions.html)¹, [tsfresh](https://tsfresh.readthedocs.io/en/latest/text/list_of_features.html)¹, [tsfel](https://tsfel.readthedocs.io/en/latest/descriptions/feature_list.html)¹)
     * feature-extraction handles **multiple strides & window sizes**
 * efficient view-based operations  
   => extremely **low memory peak & fast execution times** ([see benchmarks](https://github.com/predict-idlab/tsflex-benchmarking))
@@ -67,7 +67,7 @@ data_tmp = pd.read_parquet(url+"tmp.parquet").set_index("timestamp")
 # Contains 3 columns; ["ACC_x", "ACC_y", "ACC_z"] - 32 Hz sampling rate
 data_acc =  pd.read_parquet(url+"acc.parquet").set_index("timestamp")
 
-# 2 -------- Construct your feature collection --------
+# 2. -------- Construct your feature collection --------
 fc = FeatureCollection(
     MultipleFeatureDescriptors(
           functions=[np.min, np.max, np.mean, np.std, np.median, ss.skew, ss.kurtosis],
@@ -76,9 +76,8 @@ fc = FeatureCollection(
           strides="2.5min",  # With steps of 2.5 minutes
     )
 )
-# -- 2.1. Add features to your feature collection
 
-# 3 -------- Calculate features (on multimodal data) --------
+# 3. -------- Calculate features --------
 fc.calculate(data=[data_tmp, data_acc])
 ```
 
