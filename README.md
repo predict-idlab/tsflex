@@ -34,22 +34,6 @@ Or, if you are using [**conda**](https://anaconda.org/conda-forge/tsflex), then 
 conda install -c conda-forge tsflex
 ```
 
-## Why tsflex? ✨
-
-* flexible;
-    * handles multivariate/multimodal time series
-    * versatile function support  
-      => **integrates natively** with many packages for processing (e.g., [scipy.signal](https://docs.scipy.org/doc/scipy/reference/tutorial/signal.html), [statsmodels.tsa](https://www.statsmodels.org/stable/tsa.html#time-series-filters)) & feature extraction (e.g., [numpy](https://numpy.org/doc/stable/reference/routines.html), [scipy.stats](https://docs.scipy.org/doc/scipy/reference/tutorial/stats.html), [seglearn](https://dmbee.github.io/seglearn/feature_functions.html)¹, [tsfresh](https://tsfresh.readthedocs.io/en/latest/text/list_of_features.html)¹, [tsfel](https://tsfel.readthedocs.io/en/latest/descriptions/feature_list.html)¹)
-    * feature-extraction handles **multiple strides & window sizes**
-* efficient view-based operations  
-  => extremely **low memory peak & fast execution times** ([see benchmarks](https://github.com/predict-idlab/tsflex-benchmarking))
-    <!-- * faster than any existing library (single- & multi-core)
-    * lower memory peak than any existing library (single- & multi-core) -->
-* maintains the **time-index** of the data
-* makes **little to no assumptions** about the time series data
-
-¹ These integrations are shown in [integration-example notebooks](https://github.com/predict-idlab/tsflex/tree/main/examples).
-
 ## Usage
 
 _tsflex_ is built to be intuitive, so we encourage you to copy-paste this code and toy with some parameters!
@@ -85,6 +69,22 @@ fc.calculate(data=[data_tmp, data_acc])
 
 For processing [look here](https://predict-idlab.github.io/tsflex/processing/index.html#working-example)    
 Other examples can be found [here](https://github.com/predict-idlab/tsflex/tree/main/examples)
+
+## Why tsflex? ✨
+
+* flexible;
+    * handles multivariate/multimodal time series
+    * versatile function support  
+      => **integrates natively** with many packages for processing (e.g., [scipy.signal](https://docs.scipy.org/doc/scipy/reference/tutorial/signal.html), [statsmodels.tsa](https://www.statsmodels.org/stable/tsa.html#time-series-filters)) & feature extraction (e.g., [numpy](https://numpy.org/doc/stable/reference/routines.html), [scipy.stats](https://docs.scipy.org/doc/scipy/reference/tutorial/stats.html), [seglearn](https://dmbee.github.io/seglearn/feature_functions.html)¹, [tsfresh](https://tsfresh.readthedocs.io/en/latest/text/list_of_features.html)¹, [tsfel](https://tsfel.readthedocs.io/en/latest/descriptions/feature_list.html)¹)
+    * feature-extraction handles **multiple strides & window sizes**
+* efficient view-based operations  
+  => extremely **low memory peak & fast execution times** ([see benchmarks](https://github.com/predict-idlab/tsflex-benchmarking))
+    <!-- * faster than any existing library (single- & multi-core)
+    * lower memory peak than any existing library (single- & multi-core) -->
+* maintains the **time-index** of the data
+* makes **little to no assumptions** about the time series data
+
+¹ These integrations are shown in [integration-example notebooks](https://github.com/predict-idlab/tsflex/tree/main/examples).
 
 ## Future work 🔨
 
