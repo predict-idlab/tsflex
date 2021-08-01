@@ -36,7 +36,7 @@ def make_robust(
     func: Callable,
     min_nb_samples: int = 1,
     error_val: Any = np.nan,
-    output_names: Optional[Union[str, List[str]]]= None,
+    output_names: Optional[Union[str, List[str]]] = None,
     passthrough_nans: bool = True,
     **kwargs,
 ) -> FuncWrapper:

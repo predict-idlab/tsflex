@@ -112,6 +112,7 @@ def get_function_stats(logging_file_path: str) -> pd.DataFrame:
         .sort_values(by=("duration", "mean"), ascending=True)
         .index.to_list()
     )
+
     def key_func(idx_level):
         if all(idx in sorted_funcs for idx in idx_level):
             return [sorted_funcs.index(idx) for idx in idx_level]
