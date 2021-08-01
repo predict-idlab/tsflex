@@ -38,6 +38,7 @@ def test_unrobust_gap_features(dummy_data):
 
     eda_data = dummy_data["EDA"].dropna()
     eda_data[2 : 1 + 25 * 4] = None  # Leave gap of 25 s
+    # -> so there are empty windows -> will rase a ValueError
     eda_data = eda_data.dropna()
     assert eda_data.isna().any() == False
     assert (eda_data.index[1:] - eda_data.index[:-1]).max() == pd.Timedelta("25 s")
@@ -48,6 +49,7 @@ def test_unrobust_gap_features(dummy_data):
 
 def test_robust_gap_features(dummy_data):
     feats = MultipleFeatureDescriptors(
+        # here, the 'make_robust' function is used
         functions=[make_robust(f, min_nb_samples=2) for f in [np.min, np.max]],
         series_names="EDA",
         windows="10s",
@@ -58,6 +60,7 @@ def test_robust_gap_features(dummy_data):
     eda_data = dummy_data["EDA"].dropna()
     eda_data[2 : 1 + 25 * 4] = None  # Leave gap of 25 s
     eda_data = eda_data.dropna()
+    # -> so there are empty windows -> will rase a ValueError
     assert eda_data.isna().any() == False
     assert (eda_data.index[1:] - eda_data.index[:-1]).max() == pd.Timedelta("25 s")
 
@@ -122,8 +125,10 @@ def test_robust_gap_features_multi_output(dummy_data):
 
 
 def test_unrobust_pass_through_features(dummy_data):
+    # here we set the passtrough-nans attribute to True
     feats = MultipleFeatureDescriptors(
-        functions=[make_robust(f, min_nb_samples=1) for f in [np.mean, np.min]],
+        functions=[make_robust(f, min_nb_samples=1, passthrough_nans=True) 
+                   for f in [np.mean, np.min]],
         series_names="EDA",
         windows="10s",
         strides="5s",
@@ -138,6 +143,7 @@ def test_unrobust_pass_through_features(dummy_data):
 
 
 def test_robust_pass_through_features(dummy_data):
+    # here we set the passtrough-nans attribute to false
     feats = MultipleFeatureDescriptors(
         functions=[make_robust(f, passthrough_nans=False) for f in [np.mean, np.min]],
         series_names="EDA",
