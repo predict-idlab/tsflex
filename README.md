@@ -41,7 +41,7 @@ _tsflex_ is built to be intuitive, so we encourage you to copy-paste this code a
 ### <a href="https://predict-idlab.github.io/tsflex/features/#getting-started">Feature extraction</a>
 
 ```python
-import pandas as pd; import numpy as np; import scipy.stats as ssig
+import pandas as pd; import numpy as np; import scipy.stats as ss
 from tsflex.features import MultipleFeatureDescriptors, FeatureCollection
 
 # 1. -------- Get your time-indexed data --------
