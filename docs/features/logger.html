@@ -144,10 +144,22 @@ def get_function_stats(logging_file_path: str) -&gt; pd.DataFrame:
 
     &#34;&#34;&#34;
     df = _parse_logging_execution_to_df(logging_file_path)
+    # Get the sorted functions in a list to use as key for sorting the groups
+    sorted_funcs = (
+        df.groupby([&#34;function&#34;])
+        .agg({&#34;duration&#34;: [&#34;mean&#34;]})
+        .sort_values(by=(&#34;duration&#34;, &#34;mean&#34;), ascending=True)
+        .index.to_list()
+    )
+
+    def key_func(idx_level):
+        if all(idx in sorted_funcs for idx in idx_level):
+            return [sorted_funcs.index(idx) for idx in idx_level]
+        return idx_level
     return (
         df.groupby([&#34;function&#34;, &#34;window&#34;, &#34;stride&#34;])
         .agg({&#34;duration&#34;: [&#34;mean&#34;, &#34;std&#34;, &#34;sum&#34;, &#34;count&#34;]})
-        .sort_values(by=(&#34;duration&#34;, &#34;mean&#34;), ascending=False)
+        .sort_index(key=key_func, ascending=False)
     )
 
 
@@ -262,10 +274,22 @@ combination the mean (time), std (time), sum (time), and number of executions.</
 
     &#34;&#34;&#34;
     df = _parse_logging_execution_to_df(logging_file_path)
+    # Get the sorted functions in a list to use as key for sorting the groups
+    sorted_funcs = (
+        df.groupby([&#34;function&#34;])
+        .agg({&#34;duration&#34;: [&#34;mean&#34;]})
+        .sort_values(by=(&#34;duration&#34;, &#34;mean&#34;), ascending=True)
+        .index.to_list()
+    )
+
+    def key_func(idx_level):
+        if all(idx in sorted_funcs for idx in idx_level):
+            return [sorted_funcs.index(idx) for idx in idx_level]
+        return idx_level
     return (
         df.groupby([&#34;function&#34;, &#34;window&#34;, &#34;stride&#34;])
         .agg({&#34;duration&#34;: [&#34;mean&#34;, &#34;std&#34;, &#34;sum&#34;, &#34;count&#34;]})
-        .sort_values(by=(&#34;duration&#34;, &#34;mean&#34;), ascending=False)
+        .sort_index(key=key_func, ascending=False)
     )</code></pre>
 </details>
 </dd>

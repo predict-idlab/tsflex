@@ -284,6 +284,10 @@ features.</p></div>
 <dd>
 <div class="desc"><p>FuncWrapper class for object-oriented representation of a function.</p></div>
 </dd>
+<dt><code class="name"><a title="tsflex.features.integrations" href="integrations.html">tsflex.features.integrations</a></code></dt>
+<dd>
+<div class="desc"><p>Wrappers for seamless integration of feature functions from other packages.</p></div>
+</dd>
 <dt><code class="name"><a title="tsflex.features.logger" href="logger.html">tsflex.features.logger</a></code></dt>
 <dd>
 <div class="desc"><p>Contains the used variables and functions to provide logging functionality …</p></div>
@@ -379,10 +383,22 @@ combination the mean (time), std (time), sum (time), and number of executions.</
 
     &#34;&#34;&#34;
     df = _parse_logging_execution_to_df(logging_file_path)
+    # Get the sorted functions in a list to use as key for sorting the groups
+    sorted_funcs = (
+        df.groupby([&#34;function&#34;])
+        .agg({&#34;duration&#34;: [&#34;mean&#34;]})
+        .sort_values(by=(&#34;duration&#34;, &#34;mean&#34;), ascending=True)
+        .index.to_list()
+    )
+
+    def key_func(idx_level):
+        if all(idx in sorted_funcs for idx in idx_level):
+            return [sorted_funcs.index(idx) for idx in idx_level]
+        return idx_level
     return (
         df.groupby([&#34;function&#34;, &#34;window&#34;, &#34;stride&#34;])
         .agg({&#34;duration&#34;: [&#34;mean&#34;, &#34;std&#34;, &#34;sum&#34;, &#34;count&#34;]})
-        .sort_values(by=(&#34;duration&#34;, &#34;mean&#34;), ascending=False)
+        .sort_index(key=key_func, ascending=False)
     )</code></pre>
 </details>
 </dd>
@@ -1071,8 +1087,6 @@ have the same type, i.e, either </p>
             if s.name in self.get_required_series():
                 series_dict[str(s.name)] = s
 
-        calculated_feature_list: List[pd.DataFrame] = []
-        
         # Note: this variable has a global scope so this is shared in multiprocessing
         global get_stroll_func
         get_stroll_func = self._stroll_feat_generator(
@@ -1412,8 +1426,6 @@ sequentially. Set the <code>n_jobs</code> to 0-1 if this matters.</li>
         if s.name in self.get_required_series():
             series_dict[str(s.name)] = s
 
-    calculated_feature_list: List[pd.DataFrame] = []
-    
     # Note: this variable has a global scope so this is shared in multiprocessing
     global get_stroll_func
     get_stroll_func = self._stroll_feat_generator(
@@ -1701,6 +1713,7 @@ alt="logo should be displayed here" style="width: 100%;"></a>
 <li><code><a title="tsflex.features.feature" href="feature.html">tsflex.features.feature</a></code></li>
 <li><code><a title="tsflex.features.feature_collection" href="feature_collection.html">tsflex.features.feature_collection</a></code></li>
 <li><code><a title="tsflex.features.function_wrapper" href="function_wrapper.html">tsflex.features.function_wrapper</a></code></li>
+<li><code><a title="tsflex.features.integrations" href="integrations.html">tsflex.features.integrations</a></code></li>
 <li><code><a title="tsflex.features.logger" href="logger.html">tsflex.features.logger</a></code></li>
 <li><code><a title="tsflex.features.strided_rolling" href="strided_rolling.html">tsflex.features.strided_rolling</a></code></li>
 </ul>
