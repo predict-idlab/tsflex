@@ -105,10 +105,22 @@ def get_function_stats(logging_file_path: str) -> pd.DataFrame:
 
     """
     df = _parse_logging_execution_to_df(logging_file_path)
+    # Get the sorted functions in a list to use as key for sorting the groups
+    sorted_funcs = (
+        df.groupby(["function"])
+        .agg({"duration": ["mean"]})
+        .sort_values(by=("duration", "mean"), ascending=True)
+        .index.to_list()
+    )
+
+    def key_func(idx_level):
+        if all(idx in sorted_funcs for idx in idx_level):
+            return [sorted_funcs.index(idx) for idx in idx_level]
+        return idx_level
     return (
         df.groupby(["function", "window", "stride"])
         .agg({"duration": ["mean", "std", "sum", "count"]})
-        .sort_values(by=("duration", "mean"), ascending=False)
+        .sort_index(key=key_func, ascending=False)
     )
 
 

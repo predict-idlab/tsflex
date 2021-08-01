@@ -279,8 +279,6 @@ class FeatureCollection:
             if s.name in self.get_required_series():
                 series_dict[str(s.name)] = s
 
-        calculated_feature_list: List[pd.DataFrame] = []
-        
         # Note: this variable has a global scope so this is shared in multiprocessing
         global get_stroll_func
         get_stroll_func = self._stroll_feat_generator(

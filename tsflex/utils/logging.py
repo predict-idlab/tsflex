@@ -25,6 +25,7 @@ def delete_logging_handlers(logger: logging.Logger):
         ]
     assert len(logger.handlers) == 1, "Multiple logging StreamHandlers present!!"
 
+
 def add_logging_handler(logger: logging.Logger, logging_file_path: Union[str, Path]):
     """Add a logging file-handler to the logger.
 
@@ -32,7 +33,7 @@ def add_logging_handler(logger: logging.Logger, logging_file_path: Union[str, Pa
     ----------
     logger : logging.Logger
         The logger.
-     logging_file_path : Union[str, Path]
+    logging_file_path : Union[str, Path]
         The file path for the file handler.
     
     """

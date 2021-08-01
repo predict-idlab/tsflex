@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "tsflex"
-version = "0.1.1.8"
+version = "0.1.2.0"  # Do not forget to update the __init__.py __version__ variable
 description = "Toolkit for flexible processing & feature extraction on time-series data"
 authors = ["Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"]
 readme = "README.md"
@@ -29,6 +29,9 @@ pytest = "^6.2.3"
 pytest-cov = "^2.12.1"
 pdoc3 = "^0.9.2"
 scipy = "^1.7.0"
+seglearn = "^1.2.3"
+tsfresh = "^0.18.0"
+tsfel = "^0.1.4"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
