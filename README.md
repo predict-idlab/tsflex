@@ -49,7 +49,7 @@ url = "https://github.com/predict-idlab/tsflex/raw/main/examples/data/empatica/"
 # Contains 1 column; ["TMP"] - 4 Hz sampling rate
 data_tmp = pd.read_parquet(url+"tmp.parquet").set_index("timestamp")
 # Contains 3 columns; ["ACC_x", "ACC_y", "ACC_z"] - 32 Hz sampling rate
-data_acc =  pd.read_parquet(url+"acc.parquet").set_index("timestamp")
+data_acc = pd.read_parquet(url+"acc.parquet").set_index("timestamp")
 
 # 2. -------- Construct your feature collection --------
 fc = FeatureCollection(
