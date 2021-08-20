@@ -121,13 +121,13 @@ Hence, it is important to keep the following principles in mind when:
 
 ### Versatile processing functions
 
-As [explained above](#processing-function) _tsflex_ is rather versatile in terms of function input and output.
+As [explained above](#processing-functions) _tsflex_ is rather versatile in terms of function input and output.
 
 _tsflex_ does not just allow ``one-to-one`` processing functions, but also ``many-to-one``, ``one-to-many``, and ``many-to-many`` functions are supported in a convenient way:
 
 - ``many-to-one``; the **processing function** should 
     - take multiple series as input 
-    - outpus a single array or (named!) series / dataframe with 1 column
+    - output a single array or (named!) series / dataframe with 1 column
 
     Example
 ```python
