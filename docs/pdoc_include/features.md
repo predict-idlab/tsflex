@@ -253,7 +253,7 @@ fd = FeatureDescriptor(
 
 !!!note
     As visible in the [feature function prototype](#feature-functions), both `np.array` and `pd.Series` are supported function input types.
-    If your feature function requires `pd.Series` as input (instead of the default `np.array`), the functions should be wrapped in a ``FuncWrapper`` with the `input_type` argument set to `pd.Series`.
+    If your feature function requires `pd.Series` as input (instead of the default `np.array`), the function should be wrapped in a ``FuncWrapper`` with the `input_type` argument set to `pd.Series`.
 
 
 <!-- TODO: tot hier geraakt -->
@@ -264,14 +264,25 @@ However, the end-user must take some things in consideration.
 
 ### Multiple time series
 
+<!-- Wat bedoelde jij hiermee @Jonas?? -->
+
 * functions that work on **multiple time series**: see the ``tsflex.chunking`` module for more info.
 
 
 ### Irregularly sampled data
 
 This case may cause that not all windows on which features are calculated have the same amount of samples.<br>
-When using multivariate data, with either different sample rates or with an irregular data-rate, you cannot make the assumption that all windows will have the same length. Your feature extraction method should thus be
-* robust
+
+When using multivariate data, with either different sample rates or with an irregular data-rate, you cannot make the assumption that all windows will have the same length. Your feature extraction method should thus be:
+>
+* robust for varying length windows
+* robust for (possible) empty windows
+
+For conveniently creating such robust features we suggest using the [``make_robust``](integrations#tsflex.features.integrations.make_robust) function.
+
+!!!note
+    A warning will be raised when irregular sampled data is observed. <br>
+    In order to avoid this warning, the user should explicitly approve that there may be sparsity in the data by setting the `approve_sparsity` flag to True in the ``FeatureCollection.calculate`` method.
 
 ### Logging
 
