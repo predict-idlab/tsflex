@@ -99,18 +99,17 @@ fc.calculate(...)
 
 The function that processes the series should match this prototype:
 
-    function(*series: np.ndarray, **kwargs)
+    function(*series: Union[np.ndarray, pd.Series], **kwargs)
         -> Union[Any, List[Any]]
 
-<!-- TODO: waarom geen pd.Series?? -->
-
-Hence, the feature function should take one (or multiple) arrays as input, these may be followed by some keyword arguments. The output of a feature function can be rather versatile (e.g., a float, an integer, a string, a bool, ... or a list thereof).
+Hence, the feature function should take one (or multiple) arrays as input, these may be followed by some keyword arguments. The output of a feature function can be rather versatile (e.g., a float, an integer, a string, a bool, ... or a list thereof). <br>
+Note that the feature function may also take one (or multiple) series as input. In this case, the feature function should be wrapped in a ``FuncWrapper``, with the `input_type` argument set to `pd.Series`.
 
 In [this section](#advanced-usage) you can find more info on advanced usage of feature functions.
 
 ### Multiple feature descriptors
 
-Sometimes it can get overly verbose when the same feature is shared over multiple series, windows and/or strides. To solve this proble, we introduce the `MultipleFeatureDescriptors`, this component allows to **create multiple feature descriptors for all** the ``function - series_name(s) - window - stride`` **combinations**.
+Sometimes it can get overly verbose when the same feature is shared over multiple series, windows and/or strides. To solve this problem, we introduce the `MultipleFeatureDescriptors`, this component allows to **create multiple feature descriptors for all** the ``function - series_name(s) - window - stride`` **combinations**.
 
 A `MultipleFeatureDescriptors` instance can be added a `FeatureCollection`.
 
@@ -168,16 +167,94 @@ These limitations are:
 
 - We support various data-types. e.g. (np.float32, string-data, time-based data). However, it is the end-users responsibility to use a function which interplays nicely with the data its format.
 
-
 <br>
 
 ## Advanced usage 👀
 
 ### Versatile functions
 
-`TODO` 
+As [explained above](#feature-functions) _tsflex_ is rather versatile in terms of function input and output.
 
-<!-- hier NumpyFuncWrapper shillen -->
+_tsflex_ does not just allow ``one-to-one`` processing functions, but also ``many-to-one``, ``one-to-many``, and ``many-to-many`` functions are supported in a convenient way:
+
+<!-- 
+- `one-to-one`; the **feature function** should
+    - take a single series as input
+    - output a single value
+
+    The function should (usually) not be wrapped in a ``FuncWrapper``. 
+
+    Example
+```python
+def abs_sum(s: np.array) -> float:
+    return np.sum(np.abs(s))
+
+fd = FeatureDescriptor(
+    abs_sum, series_name="series_1", window="5m", stride="2m30s",
+)
+``` 
+-->
+
+- `many-to-one`; the **feature function** should
+    - take multiple series as input
+    - output a single value
+
+    The function should (usually) not be wrapped in a ``FuncWrapper``. <br> 
+    Note that now the `series_name` argument requires a tuple of the ordered input series names.
+
+    Example
+```python
+def abs_sum_diff(s1: np.array, s2: np.array) -> float:
+    return np.sum(np.abs(s1 - s2))
+
+fd = FeatureDescriptor(
+    abs_sum_diff, series_name=("series_1", "series_2"), 
+    window="5m", stride="2m30s",
+)
+```
+
+- `one-to-many`; the **feature function** should
+    - take a single series as input
+    - output multiple values
+
+    The function should be wrapped in a ``FuncWrapper`` to log its multiple output names.
+
+    Example
+```python
+def abs_stats(s: np.array) -> Tuple[float]:
+    s_abs = np.abs(s)
+    return np.min(s_abs), np.max(s_abs), np.mean(s_abs), np.std(s_abs)
+
+output_names = ["abs_min", "abs_max", "abs_mean", "abs_std"]
+fd = FeatureDescriptor(
+    FuncWrapper(abs_stats, output_names=output_names),
+    series_name="series_1", window="5m", stride="2m30s",
+)
+```
+
+- `many-to-many`; the **feature function** should
+    - take multiple series as input
+    - output multiple values
+
+    The function should be wrapped in a ``FuncWrapper`` to log its multiple output names.
+
+    Example
+```python
+def abs_stats_diff(s1: np.array, s2: np.array) -> Tuple[float]:
+    s_abs_diff = np.abs(s1 - s2)
+    return np.min(s_abs_diff), np.max(s_abs_diff), np.mean(s_abs_diff)
+
+output_names = ["abs_diff_min", "abs_diff_max", "abs_diff_mean"]
+fd = FeatureDescriptor(
+    FuncWrapper(abs_stats_diff, output_names=output_names),
+    series_name=("series_1", "series_2"), window="5m", stride="2m30s",
+)
+```
+
+!!!note
+    As visible in the [feature function prototype](#feature-functions), both `np.array` and `pd.Series` are supported function input types.
+    If your feature function requires `pd.Series` as input (instead of the default `np.array`), the function should be wrapped in a ``FuncWrapper`` with the `input_type` argument set to `pd.Series`.
+
 
 <!-- TODO: tot hier geraakt -->
 
@@ -185,20 +262,24 @@ These limitations are:
 There are no assumptions made about the `data` its `time-ranges`.<br>
 However, the end-user must take some things in consideration.
 
-### Multiple time series
-
-* functions that work on **multiple time series**: see the `tsflex.chunking` module for more info.
-
-
 ### Irregularly sampled data
 
 This case may cause that not all windows on which features are calculated have the same amount of samples.<br>
-When using multivariate data, with either different sample rates or with an irregular data-rate, you cannot make the assumption that all windows will have the same length. Your feature extraction method will thus 
-  * will the s 
+
+When using multivariate data, with either different sample rates or with an irregular data-rate, you cannot make the assumption that all windows will have the same length. Your feature extraction method should thus be:
+>
+* robust for varying length windows
+* robust for (possible) empty windows
+
+For conveniently creating such robust features we suggest using the [``make_robust``](integrations#tsflex.features.integrations.make_robust) function.
+
+!!!note
+    A warning will be raised when irregular sampled data is observed. <br>
+    In order to avoid this warning, the user should explicitly approve that there may be sparsity in the data by setting the `approve_sparsity` flag to True in the ``FeatureCollection.calculate`` method.
 
 ### Logging
 
-When a `logging_file_path` is passed to the `FeatureCollection` its `calculate` method, the execution times of the feature functions will be logged.
+When a `logging_file_path` is passed to the ``FeatureCollection`` its `calculate` method, the execution times of the feature functions will be logged.
 
 [More info](#tsflex.features.get_feature_logs)
 
