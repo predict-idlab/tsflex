@@ -109,7 +109,7 @@ In [this section](#advanced-usage) you can find more info on advanced usage of f
 
 ### Multiple feature descriptors
 
-Sometimes it can get overly verbose when the same feature is shared over multiple series, windows and/or strides. To solve this proble, we introduce the `MultipleFeatureDescriptors`, this component allows to **create multiple feature descriptors for all** the ``function - series_name(s) - window - stride`` **combinations**.
+Sometimes it can get overly verbose when the same feature is shared over multiple series, windows and/or strides. To solve this problem, we introduce the `MultipleFeatureDescriptors`, this component allows to **create multiple feature descriptors for all** the ``function - series_name(s) - window - stride`` **combinations**.
 
 A `MultipleFeatureDescriptors` instance can be added a `FeatureCollection`.
 
@@ -261,13 +261,6 @@ fd = FeatureDescriptor(
 ### Multivariate-data
 There are no assumptions made about the `data` its `time-ranges`.<br>
 However, the end-user must take some things in consideration.
-
-### Multiple time series
-
-<!-- Wat bedoelde jij hiermee @Jonas?? -->
-
-* functions that work on **multiple time series**: see the ``tsflex.chunking`` module for more info.
-
 
 ### Irregularly sampled data
 
