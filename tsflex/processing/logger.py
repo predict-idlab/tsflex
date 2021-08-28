@@ -12,7 +12,7 @@ import logging
 import pandas as pd
 import re
 
-from ..utils.logging import logging_file_to_df
+from ..utils.logging import logging_file_to_df, remove_inner_brackets
 
 # Package specific logger
 logger = logging.getLogger("feature_processing_logger")
@@ -27,7 +27,7 @@ logger.addHandler(console)
 def _parse_message(message: str) -> list:
     """Parse the message of the logged info."""
     regex = r"\[(.*?)\]"
-    matches = re.findall(regex, message)
+    matches = re.findall(regex, remove_inner_brackets(message))
     assert len(matches) == 3
     func = matches[0]
     series_names = matches[1].replace("'", "")
@@ -57,8 +57,10 @@ def _parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
 
     """
     df = logging_file_to_df(logging_file_path)
-    df[["function", "series_names", "duration"]] = \
-        list(df["message"].apply(_parse_message))
+    df[["function", "series_names", "duration"]] = pd.DataFrame(
+        list(df["message"].apply(_parse_message)),
+        index=df.index,
+    )
     return df.drop(columns=["name", "log_level", "message"])
 
 

@@ -10,6 +10,37 @@ from pathlib import Path
 from typing import Union
 
 
+def remove_inner_brackets(message: str) -> str:
+    """Remove the inner brackets i.e., [ or ], from a string, outer brackets are kept.
+
+    Parameters
+    ----------
+    message: str
+        The string to remove the inner brackets from.
+
+    Returns
+    -------
+    str:
+        A new message without any inner brackets.
+    
+    """
+    level = 0
+    new_message = ""
+    for char in message:
+        if char == "[":
+            if level == 0:
+                new_message += char
+            level += 1
+        elif char == "]":
+            if level == 1:
+                new_message += char
+            level -= 1
+        else:
+            new_message += char
+        assert level >= 0
+    return new_message
+
+
 def delete_logging_handlers(logger: logging.Logger):
     """Delete all logging handlers that are not stream-handlers.
 
