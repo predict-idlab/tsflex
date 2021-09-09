@@ -73,8 +73,6 @@ class FeatureDescriptor(FrozenClass):
     .. todo::
         * Add documentation of how the index/slicing takes place / which
           assumptions we make.
-        * Raise error function tries to change values of view due to flag
-
 
     Raises
     ------

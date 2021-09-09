@@ -39,7 +39,6 @@ def chunk_data(
       for gap-matching.
     * The term `sub-chunk` refers to the chunks who exceed the `max_chunk_duration_s`
       parameter and are therefore further divided into sub-chunks.
-      TODO: @Jeroen -> zo een note toevoegen aan constructor featuredescriptor
 
     Parameters
     ----------
