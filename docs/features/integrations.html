@@ -41,86 +41,7 @@ import numpy as np
 
 from typing import Callable, Any, Optional, List, Dict, Union
 from .feature import FuncWrapper
-
-
-def _get_name(func: Callable) -&gt; str:
-    &#34;&#34;&#34;Get the name of the function.
-
-    Parameters
-    ----------
-    func: Callable
-        The function whose name has to be returned, should be either a function or an
-        object that is callable.
-
-    Returns
-    -------
-    str
-        The name of ``func`` in case of a function or the name of the class in case
-        of a callable object.
-
-    &#34;&#34;&#34;
-    assert callable(func), f&#34;The given argument {func} is not callable!&#34;
-    try:
-        return func.__name__
-    except:
-        return type(func).__name__
-
-
-def make_robust(
-    func: Callable,
-    min_nb_samples: int = 1,
-    error_val: Any = np.nan,
-    output_names: Optional[Union[str, List[str]]] = None,
-    passthrough_nans: bool = True,
-    **kwargs,
-) -&gt; FuncWrapper:
-    &#34;&#34;&#34;Decorates `func` into a robust funcwrapper.
-
-    More specifically this method does:\n
-    * `np.NaN` data input propagation / filtering
-    *  `min_nb_samples` checking before feeding to `func`
-       (if not met, returns `error_val`)\n
-    Note: this wrapper is useful for functions that should be robust for empty or sparse
-    windows and/or nans in the data.
-
-   Parameters
-   ----------
-   func: Callable
-       The function which will be made robust.
-   min_nb_samples: int
-       The minimum number of samples that are needed for `func` to be applied
-       successfully.
-   error_val: Any
-       The error *return* value if the `min_nb_samples` requirement is not met.
-   output_names: Union[str, List[str]]
-       The `func` its output_names
-       .. note::
-           This value must be set if `func` returns more than 1 output!
-   passthrough_nans: bool
-       If set to true, `np.NaN` values, which occur in the data will be passed through.
-       Otherwise, the `np.NaN` values will be masked out before being passed to `func`,
-       by default True.
-   **kwargs:
-       Additional keyword arguments
-
-   Returns
-   -------
-   FuncWrapper
-       The robust funcwrapper.
-
-   &#34;&#34;&#34;
-    def wrap_func(*series: Union[np.ndarray, pd.Series], **kwargs) -&gt; FuncWrapper:
-        if not passthrough_nans:
-            series = [s[~np.isnan(s)] for s in series]
-        if any([len(s) &lt; min_nb_samples for s in series]):
-            if not isinstance(output_names, list):
-                return error_val
-            return tuple([error_val] * len(output_names))
-        return func(*series, **kwargs)
-
-    wrap_func.__name__ = &#34;[robust]__&#34; + _get_name(func)
-    output_names = _get_name(func) if output_names is None else output_names
-    return FuncWrapper(wrap_func, output_names=output_names, **kwargs)
+from .utils import _get_name
 
 
 # ------------------------------------- SEGLEARN -------------------------------------
@@ -201,106 +122,6 @@ def tsfresh_combiner_wrapper(func: Callable, param: List[Dict]) -&gt; FuncWrappe
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="tsflex.features.integrations.make_robust"><code class="name flex">
-<span>def <span class="ident">make_robust</span></span>(<span>func, min_nb_samples=1, error_val=nan, output_names=None, passthrough_nans=True, **kwargs)</span>
-</code></dt>
-<dd>
-<div class="desc"><p>Decorates <code>func</code> into a robust funcwrapper.</p>
-<p>More specifically this method does:</p>
-<ul>
-<li><code>np.NaN</code> data input propagation / filtering</li>
-<li><code>min_nb_samples</code> checking before feeding to <code>func</code>
-(if not met, returns <code>error_val</code>)</li>
-</ul>
-<p>Note: this wrapper is useful for functions that should be robust for empty or sparse
-windows and/or nans in the data.</p>
-<h2 id="parameters">Parameters</h2>
-<dl>
-<dt><strong><code>func</code></strong> :&ensp;<code>Callable</code></dt>
-<dd>The function which will be made robust.</dd>
-<dt><strong><code>min_nb_samples</code></strong> :&ensp;<code>int</code></dt>
-<dd>The minimum number of samples that are needed for <code>func</code> to be applied
-successfully.</dd>
-<dt><strong><code>error_val</code></strong> :&ensp;<code>Any</code></dt>
-<dd>The error <em>return</em> value if the <code>min_nb_samples</code> requirement is not met.</dd>
-<dt><strong><code>output_names</code></strong> :&ensp;<code>Union[str, List[str]]</code></dt>
-<dd>The <code>func</code> its output_names<div class="admonition note">
-<p class="admonition-title">Note</p>
-This value must be set if <code>func</code> returns more than 1 output!</div>
-</dd>
-<dt><strong><code>passthrough_nans</code></strong> :&ensp;<code>bool</code></dt>
-<dd>If set to true, <code>np.NaN</code> values, which occur in the data will be passed through.
-Otherwise, the <code>np.NaN</code> values will be masked out before being passed to <code>func</code>,
-by default True.</dd>
-</dl>
-<p>**kwargs:
-Additional keyword arguments</p>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><code>FuncWrapper</code></dt>
-<dd>The robust funcwrapper.</dd>
-</dl></div>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def make_robust(
-    func: Callable,
-    min_nb_samples: int = 1,
-    error_val: Any = np.nan,
-    output_names: Optional[Union[str, List[str]]] = None,
-    passthrough_nans: bool = True,
-    **kwargs,
-) -&gt; FuncWrapper:
-    &#34;&#34;&#34;Decorates `func` into a robust funcwrapper.
-
-    More specifically this method does:\n
-    * `np.NaN` data input propagation / filtering
-    *  `min_nb_samples` checking before feeding to `func`
-       (if not met, returns `error_val`)\n
-    Note: this wrapper is useful for functions that should be robust for empty or sparse
-    windows and/or nans in the data.
-
-   Parameters
-   ----------
-   func: Callable
-       The function which will be made robust.
-   min_nb_samples: int
-       The minimum number of samples that are needed for `func` to be applied
-       successfully.
-   error_val: Any
-       The error *return* value if the `min_nb_samples` requirement is not met.
-   output_names: Union[str, List[str]]
-       The `func` its output_names
-       .. note::
-           This value must be set if `func` returns more than 1 output!
-   passthrough_nans: bool
-       If set to true, `np.NaN` values, which occur in the data will be passed through.
-       Otherwise, the `np.NaN` values will be masked out before being passed to `func`,
-       by default True.
-   **kwargs:
-       Additional keyword arguments
-
-   Returns
-   -------
-   FuncWrapper
-       The robust funcwrapper.
-
-   &#34;&#34;&#34;
-    def wrap_func(*series: Union[np.ndarray, pd.Series], **kwargs) -&gt; FuncWrapper:
-        if not passthrough_nans:
-            series = [s[~np.isnan(s)] for s in series]
-        if any([len(s) &lt; min_nb_samples for s in series]):
-            if not isinstance(output_names, list):
-                return error_val
-            return tuple([error_val] * len(output_names))
-        return func(*series, **kwargs)
-
-    wrap_func.__name__ = &#34;[robust]__&#34; + _get_name(func)
-    output_names = _get_name(func) if output_names is None else output_names
-    return FuncWrapper(wrap_func, output_names=output_names, **kwargs)</code></pre>
-</details>
-</dd>
 <dt id="tsflex.features.integrations.seglearn_wrapper"><code class="name flex">
 <span>def <span class="ident">seglearn_wrapper</span></span>(<span>func, output_names=None)</span>
 </code></dt>
@@ -453,7 +274,6 @@ alt="logo should be displayed here" style="width: 100%;"></a>
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
-<li><code><a title="tsflex.features.integrations.make_robust" href="#tsflex.features.integrations.make_robust">make_robust</a></code></li>
 <li><code><a title="tsflex.features.integrations.seglearn_wrapper" href="#tsflex.features.integrations.seglearn_wrapper">seglearn_wrapper</a></code></li>
 <li><code><a title="tsflex.features.integrations.tsfresh_combiner_wrapper" href="#tsflex.features.integrations.tsfresh_combiner_wrapper">tsfresh_combiner_wrapper</a></code></li>
 </ul>
