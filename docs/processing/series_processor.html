@@ -364,7 +364,8 @@ def _handle_seriesprocessor_func_output(
         # =&gt; if func_output.name is in the required_dict, than the original series will
         #    be replaced by this new series.
         # Assert that the series has a time-index
-        assert isinstance(func_output.index, pd.DatetimeIndex)
+        if len(func_output):
+            assert isinstance(func_output.index, pd.DatetimeIndex)
         # Assert (func_output.name is not None) | (len(required_dict) == 1)
         if func_output.name is None:
             # If a series without a name is returned that is constructed from just 1
