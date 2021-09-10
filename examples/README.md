@@ -14,7 +14,11 @@ Example that elaborates in great detail (very verbose) the various functionaliti
 
 ## 1. tsflex cross-domain examples
 
-`WIP`
+tsflex is a domain independent package for time series processing & feature extraction;
+
+| Domain | Dataset | ML Notebook |
+| --- | --- | --- |
+| Climate modelling | [Ozone level detection](https://archive.ics.uci.edu/ml/datasets/Ozone%20Level%20Detection) | [example_ozone_level_detection.ipynb](https://github.com/predict-idlab/tsflex/blob/main/examples/example_ozone_level_detection.ipynb) |  
 
 <!-- ML notebooks with sklearn, tslearn, sktime -->
 
