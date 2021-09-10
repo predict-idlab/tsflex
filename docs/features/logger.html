@@ -51,7 +51,7 @@ import logging
 import pandas as pd
 import re
 
-from ..utils.logging import logging_file_to_df
+from ..utils.logging import logging_file_to_df, remove_inner_brackets
 from ..utils.time import timedelta_to_str
 
 # Package specific logger
@@ -67,7 +67,7 @@ logger.addHandler(console)
 def _parse_message(message: str) -&gt; list:
     &#34;&#34;&#34;Parse the message of the logged info.&#34;&#34;&#34;
     regex = r&#34;\[(.*?)\]&#34;
-    matches = re.findall(regex, message)
+    matches = re.findall(regex, remove_inner_brackets(message))
     assert len(matches) == 4
     func = matches[0]
     key = matches[1].replace(&#34;&#39;&#34;, &#34;&#34;) 
@@ -98,8 +98,9 @@ def _parse_logging_execution_to_df(logging_file_path: str) -&gt; pd.DataFrame:
 
     &#34;&#34;&#34;
     df = logging_file_to_df(logging_file_path)
-    df[[&#34;function&#34;, &#34;series_names&#34;, &#34;window&#34;, &#34;stride&#34;, &#34;duration&#34;]] = list(
-        df[&#34;message&#34;].apply(_parse_message)
+    df[[&#34;function&#34;, &#34;series_names&#34;, &#34;window&#34;, &#34;stride&#34;, &#34;duration&#34;]] = pd.DataFrame(
+        list(df[&#34;message&#34;].apply(_parse_message)),
+        index=df.index,
     )
     df[&#34;window&#34;] = pd.to_timedelta(df[&#34;window&#34;]).apply(timedelta_to_str)
     df[&#34;stride&#34;] = pd.to_timedelta(df[&#34;stride&#34;]).apply(timedelta_to_str)
