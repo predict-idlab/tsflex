@@ -32,7 +32,7 @@ def chunk_data(
 
     Notes
     -----
-    * when you set `fs_dict`, the assumption is made that **each item** in `data`
+    * When you set `fs_dict`, the assumption is made that **each item** in `data`
       has a **fixed sample frequency**. If you do not set `fs_dict`, this variable
       will use the 1 / max time-diff of the corresponding series as key-value pair.
     * All subsequent series-chunks are matched against the time-ranges of the first
@@ -50,7 +50,7 @@ def chunk_data(
         frequency (when there are no gaps).
     fs_dict: Dict[str, int], optional
         The sample frequency dict. If set, this dict must at least withhold all the keys
-        from the items in `data`. 
+        from the items in `data`.
     chunk_range_margin: Union[float, str, pd.Timedelta], optional
         The allowed margin (in seconds if a float) between same time-range chunks their
         start and end time. If `None` the margin will be set as:
