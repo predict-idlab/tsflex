@@ -90,6 +90,8 @@ Other examples can be found [here](https://github.com/predict-idlab/tsflex/tree/
 
 * scikit-learn integration for both processing and feature extraction<br>
   **note**: is actively developed upon [sklearn integration](https://github.com/predict-idlab/tsflex/tree/sklearn_integration) branch.
+* support time series segmentation (exposing under the hood strided-rolling functionality)<br>
+  **note**: [see more here](https://github.com/predict-idlab/tsflex/issues/15).
 * support for multi-indexed dataframes
 
 ## Referencing our package
