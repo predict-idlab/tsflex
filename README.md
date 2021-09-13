@@ -94,6 +94,11 @@ Other examples can be found [here](https://github.com/predict-idlab/tsflex/tree/
   **note**: [see more here](https://github.com/predict-idlab/tsflex/issues/15).
 * support for multi-indexed dataframes
 
+## Contributing 👪
+
+We are thrilled to see your contributions to further enhance `tsflex`.<br>
+See [this guide](CONTRIBUTING.md) for more instructions on how to contribute.
+
 ## Referencing our package
 
 If you use `tsflex` in a scientific publication, we would highly appreciate citing us as:
