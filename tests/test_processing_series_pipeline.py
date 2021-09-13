@@ -300,4 +300,3 @@ def test_error_output_dataframe_no_time_index_series_pipeline(dummy_data):
 
 
 # TODO: test serialize
-# TODO: test logging

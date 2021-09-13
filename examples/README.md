@@ -14,7 +14,14 @@ Example that elaborates in great detail (very verbose) the various functionaliti
 
 ## 1. tsflex cross-domain examples
 
-`WIP`
+tsflex is a domain independent package for time series processing & feature extraction;
+
+| Domain | Dataset | ML Notebook |
+| --- | --- | --- |
+| Climate modelling | [Ozone level detection](https://archive.ics.uci.edu/ml/datasets/Ozone%20Level%20Detection) | [example_ozone_level_detection.ipynb](https://github.com/predict-idlab/tsflex/blob/main/examples/example_ozone_level_detection.ipynb) |  
+| Household data | [Electric power consumption](https://archive.ics.uci.edu/ml/datasets/Individual+household+electric+power+consumption) | [example_power_consumption_estimation.ipynb](example_power_consumption_estimation.ipynb)
+
+<!-- | Wearable data | [WESAD - Wearable stress & affect detection](https://archive.ics.uci.edu/ml/datasets/WESAD+%28Wearable+Stress+and+Affect+Detection%29) | [verbose_example.ipynb](verbose_example.ipynb) - <br>`TODO` create a notebook that uses the whole wesad dataset -->
 
 <!-- ML notebooks with sklearn, tslearn, sktime -->
 
@@ -39,4 +46,4 @@ We highlight how tsflex integrates conveniently with popular time series feature
 > As some of these time series feature extraction packages use different formats for their feature function, a wrapper function might be required to enable a convenient integration.  
 
 *We encourage users to add example notebooks for other feature extraction packages (and if necessary, add the required wrapper function in the [`tsflex.features.integration`](https://github.com/predict-idlab/tsflex/blob/main/tsflex/features/integrations.py) file.*  
-=> More info on contributing can be found [here](https://github.com/predict-idlab/tsflex/blob/main/CONTRIBUTING.md).
+=> More info on **contributing** can be found [here](https://github.com/predict-idlab/tsflex/blob/main/CONTRIBUTING.md).
