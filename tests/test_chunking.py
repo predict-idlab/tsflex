@@ -6,6 +6,7 @@ from datetime import datetime
 
 import numpy as np
 import pandas as pd
+import pytest
 
 from tsflex.chunking import chunk_data
 
@@ -13,9 +14,9 @@ from tsflex.chunking import chunk_data
 def test_chunking_univariate_continuous():
     # create some dummy data
     series = pd.Series(
-        index=pd.date_range(datetime.now(), periods=10_000, freq='1s'),
-        data=np.ones(10_000)
-    ).rename('1hz_series')
+        index=pd.date_range(datetime.now(), periods=10_000, freq="1s"),
+        data=np.ones(10_000),
+    ).rename("1hz_series")
     out = chunk_data(data=series, fs_dict={"1hz_series": 1}, copy=True)
     assert len(out) == 1
     assert len(out[0][0]) == 10_000
@@ -27,9 +28,9 @@ def test_chunking_univariate_continuous():
 def test_chunking_univariate_continuous_view():
     # create some dummy data
     series = pd.Series(
-        index=pd.date_range(datetime.now(), periods=10_000, freq='1s'),
-        data=np.ones(10_000)
-    ).rename('1hz_series')
+        index=pd.date_range(datetime.now(), periods=10_000, freq="1s"),
+        data=np.ones(10_000),
+    ).rename("1hz_series")
     out = chunk_data(data=series, fs_dict={"1hz_series": 1}, copy=False)
     assert len(out) == 1
     assert len(out[0][0]) == 10_000
@@ -40,30 +41,63 @@ def test_chunking_univariate_continuous_view():
     assert all(series[10:] == 1)
 
 
+def test_chunking_univariate_continuous_view_no_fs():
+    # create some dummy data
+    series = pd.Series(
+        index=pd.date_range(datetime.now(), periods=10_000, freq="1s"),
+        data=np.ones(10_000),
+    ).rename("1hz_series")
+
+    with pytest.raises(ValueError):
+        # a valueError will be raised since chunk_data does not
+        # set chunk_range_margin
+        out = chunk_data(data=series, max_chunk_dur="1000s", copy=False, verbose=True)
+    out = chunk_data(
+        data=series,
+        max_chunk_dur="1000s",
+        copy=False,
+        verbose=True,
+        chunk_range_margin="1s",
+    )
+    assert len(out) == 10
+    # this is caused by the end-inclusion of the sub-chunks
+    assert len(out[0][0]) == 1001
+
+    # as we've returned a view and not a copy -> must we also change the original series
+    out[0][0][:10] = 0
+    assert all(series[:10] == 0)
+    assert all(series[10:] == 1)
+
+
 def test_chunking_univariate_too_small_view():
     # create some dummy data
     series = pd.Series(
-        index=pd.date_range(datetime.now(), periods=10_000, freq='1s'),
-        data=np.ones(10_000)
-    ).rename('1hz_series')
-    out = chunk_data(data=series[:1], fs_dict={"1hz_series": 1}, copy=False,
-                     verbose=True)
+        index=pd.date_range(datetime.now(), periods=10_000, freq="1s"),
+        data=np.ones(10_000),
+    ).rename("1hz_series")
+    out = chunk_data(
+        data=series[:1], fs_dict={"1hz_series": 1}, copy=False, verbose=True
+    )
     assert len(out) == 0
 
 
 def test_chunking_multivariate_continuous():
     # create some dummy data
     hz_series = pd.Series(
-        index=pd.date_range(datetime.now(), periods=10_000, freq='1s'),
-        data=np.ones(10_000)
-    ).rename('1hz_series')
+        index=pd.date_range(datetime.now(), periods=10_000, freq="1s"),
+        data=np.ones(10_000),
+    ).rename("1hz_series")
 
     twohz_series = pd.Series(
-        index=pd.date_range(datetime.now(), periods=20_000, freq='500ms'),
-        data=np.ones(20_000)
-    ).rename('2hz_series')
-    out = chunk_data(data=[hz_series, twohz_series],
-                     fs_dict={"1hz_series": 1, "2hz_series": 2}, copy=True)
+        index=pd.date_range(datetime.now(), periods=20_000, freq="500ms"),
+        data=np.ones(20_000),
+    ).rename("2hz_series")
+    out = chunk_data(
+        data=[hz_series, twohz_series],
+        fs_dict={"1hz_series": 1, "2hz_series": 2},
+        copy=True,
+    )
+
     assert len(out) == 1
     assert len(out[0][0]) == 10_000
     assert len(out[0][1]) == 20_000
@@ -80,19 +114,19 @@ def test_chunking_multivariate_continuous():
         copy=True,
         max_chunk_dur=60 * 60,
         sub_chunk_overlap=30,
-        verbose=True
+        verbose=True,
     )
 
     # 166 minutes of data -> 3*60 = 180 and is smaller than 166
     assert len(out) == 3
     # assert that, for the middle part -> the sub-chunk time-range ~= 30
-    assert (
-            out[1][1].index[-1] - out[1][1].index[0] - pd.Timedelta('1hour 1min') <
-            pd.Timedelta('1second')
-    )
+    assert out[1][1].index[-1] - out[1][1].index[0] - pd.Timedelta(
+        "1hour 1min"
+    ) < pd.Timedelta("1second")
     # last start minus earliest stop must be ~= 2 times sub_chunk_overlap_s i.e. 1 min
     assert out[0][1].index[-1] - out[1][0].index[0] - pd.Timedelta(
-        '1min') < pd.Timedelta('1sec')
+        "1min"
+    ) < pd.Timedelta("1sec")
 
     # --------- SUB CHUNKS ------------
     # test the sub_chunk_marging and max_chunk duration & min_chunk_duration
@@ -104,27 +138,27 @@ def test_chunking_multivariate_continuous():
         max_chunk_dur=60 * 60,
         sub_chunk_overlap=30,
         min_chunk_dur=30,
-        verbose=True
+        verbose=True,
     )
 
     # 166 minutes of data -> 3*60 = 180 and is smaller than 166
     assert len(out) == 3
     # assert that, for the middle part -> the sub-chunk time-range ~= 30
-    assert (
-            out[1][1].index[-1] - out[1][1].index[0] - pd.Timedelta('1hour 1min') <
-            pd.Timedelta('1second')
-    )
+    assert out[1][1].index[-1] - out[1][1].index[0] - pd.Timedelta(
+        "1hour 1min"
+    ) < pd.Timedelta("1second")
     # last start minus earliest stop must be ~= 2 times sub_chunk_overlap_s i.e. 1 min
     assert out[0][1].index[-1] - out[1][0].index[0] - pd.Timedelta(
-        '1min') < pd.Timedelta('1sec')
+        "1min"
+    ) < pd.Timedelta("1sec")
 
 
 def test_chunking_univariate_gaps():
     # create some dummy data
     series = pd.Series(
-        index=pd.date_range(datetime.now(), periods=10_000, freq='1s'),
-        data=np.ones(10_000)
-    ).rename('1hz_series')
+        index=pd.date_range(datetime.now(), periods=10_000, freq="1s"),
+        data=np.ones(10_000),
+    ).rename("1hz_series")
 
     series = series.drop(series.index[10:20])
     series = series.drop(series.index[1000:1003])
@@ -136,8 +170,13 @@ def test_chunking_univariate_gaps():
     assert sum(len(out[i][0]) for i in range(len(out))) == len(series)
 
     # min chunk duration -> will now disregard the first chunk
-    out = chunk_data(data=series, fs_dict={"1hz_series": 1}, copy=True, verbose=True,
-                     min_chunk_dur=30)
+    out = chunk_data(
+        data=series,
+        fs_dict={"1hz_series": 1},
+        copy=True,
+        verbose=True,
+        min_chunk_dur=30,
+    )
     assert len(out) == 2
 
     # drop an additional chunk, making the first and chunk which orignates from 0:10 and
