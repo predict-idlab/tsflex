@@ -48,7 +48,7 @@ from ..utils.time import parse_time_arg
 
 def chunk_data(
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
-        fs_dict: Dict[str, int],
+        fs_dict: Optional[Dict[str, int]] = None,
         chunk_range_margin: Optional[Union[float, str, pd.Timedelta]] = None,
         min_chunk_dur: Optional[Union[float, str, pd.Timedelta]] = None,
         max_chunk_dur: Optional[Union[float, str, pd.Timedelta]] = None,
@@ -66,14 +66,14 @@ def chunk_data(
 
     Notes
     -----
-    * As the `fs_dict` is requested, the assumption is made that **each item** in `data`
-      has a **fixed sample frequency** and that **each item** in `data` 
+    * When you set `fs_dict`, the assumption is made that **each item** in `data`
+      has a **fixed sample frequency**. If you do not set `fs_dict`, this variable
+      will use the 1 / max time-diff of the corresponding series as key-value pair.
     * All subsequent series-chunks are matched against the time-ranges of the first
       series. This implies that **the first item in `data` serves as a reference**
       for gap-matching.
     * The term `sub-chunk` refers to the chunks who exceed the `max_chunk_duration_s`
       parameter and are therefore further divided into sub-chunks.
-      TODO: @Jeroen -&gt; zo een note toevoegen aan constructor featuredescriptor
 
     Parameters
     ----------
@@ -82,8 +82,8 @@ def chunk_data(
         `pd.DatetimeIndex`. 
         The assumption is made that each `item` in data has a _nearly-constant_ sample 
         frequency (when there are no gaps).
-    fs_dict: Dict[str, int]
-        The sample frequency dict. This dict must at least withhold all the keys
+    fs_dict: Dict[str, int], optional
+        The sample frequency dict. If set, this dict must at least withhold all the keys
         from the items in `data`.
     chunk_range_margin: Union[float, str, pd.Timedelta], optional
         The allowed margin (in seconds if a float) between same time-range chunks their
@@ -101,8 +101,8 @@ def chunk_data(
         Chunks with durations larger than this will be chunked in smaller `sub_chunks`
         where each sub-chunk has a maximal duration of `max_chunk_dur_s`.
     sub_chunk_overlap: Union[float, str, pd.Timedelta], optional
-        The sub-chunk boundary overlap (in seconds if a float). If available, this
-        margin will be added to either side of the `sub_chunk`. \n
+        The sub-chunk boundary overlap (in seconds if a float). If available, **this
+        margin / 2 will be added to either side of the `sub_chunk`**. \n
         This is especially useful to not lose inter-`sub_chunk` data (as each
         `sub_chunk` is in fact a continuous chunk) when window-based aggregations
         are performed on these same time range output (sub_)chunks. \n
@@ -128,16 +128,30 @@ def chunk_data(
         max_chunk_dur = parse_time_arg(max_chunk_dur)
     sub_chunk_overlap = parse_time_arg(sub_chunk_overlap)
 
-    # Assert that there are no duplicate series names and the names reside in fs_dict
+    # Assert that there are no duplicate series names
     assert len(series_list) == len(set([s.name for s in series_list]))
-    assert all([str(s.name) in fs_dict for s in series_list])
 
     # Default arg -&gt; set the chunk range margin to 2x the min-freq its period
     if chunk_range_margin is None:
-        chunk_range_margin = 2 / min([fs_dict[str(s.name)] for s in series_list])
+        if fs_dict is not None:
+            chunk_range_margin = 2 / min([fs_dict[str(s.name)] for s in series_list])
+        else:
+            raise ValueError(&#39;Chunk range margin must be set if fs_dict is not set!&#39;)
 
     chunk_range_margin = parse_time_arg(chunk_range_margin)
     assert chunk_range_margin.total_seconds() &gt; 0, &#34;chunk_range_margin must be &gt; 0&#34;
+
+    # if fs_dict is not set -&gt; set it to the max time-diff for the corresponding series
+    if fs_dict is None:
+        if verbose:
+            print(&#39;fs is none -&gt; using 1 / max time diff for each series as fs&#39;)
+        fs_dict = {
+            s.name: (1 / s.index.to_series().diff().max().total_seconds())
+            for s in series_list
+        }
+
+    # Assert the names reside in fs_dict
+    assert all([str(s.name) in fs_dict for s in series_list])
 
     # Some range asserts
     assert sub_chunk_overlap.total_seconds() &gt;= 0, f&#34;sub_chunk_overlap_s must be &gt; 0&#34;
@@ -246,14 +260,14 @@ def chunk_data(
                     t_end_sc = t_begin_sc + max_chunk_dur
 
                     # Get the end and begin sub-chunk margin
-                    t_end_sc_m = t_end_sc + sub_chunk_overlap
+                    t_end_sc_m = t_end_sc + sub_chunk_overlap / 2
                     t_end_sc_m = min(t_end_c, t_end_sc_m)
 
-                    t_begin_sc_m = t_begin_sc - sub_chunk_overlap
+                    t_begin_sc_m = t_begin_sc - sub_chunk_overlap / 2
                     t_begin_sc_m = max(t_begin_c, t_begin_sc_m)
 
                     # Slice &amp; add the sub-chunk to the list
-                    insert_chunk(chunk=slice_time(series, t_begin_sc_m, t_end_sc_m), )
+                    insert_chunk(chunk=slice_time(series, t_begin_sc_m, t_end_sc_m))
 
                     # Update the condition&#39;s variable
                     t_begin_sc = t_end_sc
@@ -270,7 +284,7 @@ def chunk_data(
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="tsflex.chunking.chunking.chunk_data"><code class="name flex">
-<span>def <span class="ident">chunk_data</span></span>(<span>data, fs_dict, chunk_range_margin=None, min_chunk_dur=None, max_chunk_dur=None, sub_chunk_overlap='0s', copy=True, verbose=False)</span>
+<span>def <span class="ident">chunk_data</span></span>(<span>data, fs_dict=None, chunk_range_margin=None, min_chunk_dur=None, max_chunk_dur=None, sub_chunk_overlap='0s', copy=True, verbose=False)</span>
 </code></dt>
 <dd>
 <div class="desc"><p>Divide the time-series <code>data</code> in same time-range chunks.</p>
@@ -282,14 +296,14 @@ configuration and the detected gaps.</li>
 </ol>
 <h2 id="notes">Notes</h2>
 <ul>
-<li>As the <code>fs_dict</code> is requested, the assumption is made that <strong>each item</strong> in <code>data</code>
-has a <strong>fixed sample frequency</strong> and that <strong>each item</strong> in <code>data</code> </li>
+<li>When you set <code>fs_dict</code>, the assumption is made that <strong>each item</strong> in <code>data</code>
+has a <strong>fixed sample frequency</strong>. If you do not set <code>fs_dict</code>, this variable
+will use the 1 / max time-diff of the corresponding series as key-value pair.</li>
 <li>All subsequent series-chunks are matched against the time-ranges of the first
 series. This implies that <strong>the first item in <code>data</code> serves as a reference</strong>
 for gap-matching.</li>
 <li>The term <code>sub-chunk</code> refers to the chunks who exceed the <code>max_chunk_duration_s</code>
-parameter and are therefore further divided into sub-chunks.
-TODO: @Jeroen -&gt; zo een note toevoegen aan constructor featuredescriptor</li>
+parameter and are therefore further divided into sub-chunks.</li>
 </ul>
 <h2 id="parameters">Parameters</h2>
 <dl>
@@ -298,8 +312,8 @@ TODO: @Jeroen -&gt; zo een note toevoegen aan constructor featuredescriptor</li>
 <code>pd.DatetimeIndex</code>.
 The assumption is made that each <code>item</code> in data has a <em>nearly-constant</em> sample
 frequency (when there are no gaps).</dd>
-<dt><strong><code>fs_dict</code></strong> :&ensp;<code>Dict[str, int]</code></dt>
-<dd>The sample frequency dict. This dict must at least withhold all the keys
+<dt><strong><code>fs_dict</code></strong> :&ensp;<code>Dict[str, int]</code>, optional</dt>
+<dd>The sample frequency dict. If set, this dict must at least withhold all the keys
 from the items in <code>data</code>.</dd>
 <dt><strong><code>chunk_range_margin</code></strong> :&ensp;<code>Union[float, str, pd.Timedelta]</code>, optional</dt>
 <dd>
@@ -318,8 +332,8 @@ Chunks with durations smaller than this will be discarded (and not returned).</d
 Chunks with durations larger than this will be chunked in smaller <code>sub_chunks</code>
 where each sub-chunk has a maximal duration of <code>max_chunk_dur_s</code>.</dd>
 <dt><strong><code>sub_chunk_overlap</code></strong> :&ensp;<code>Union[float, str, pd.Timedelta]</code>, optional</dt>
-<dd>The sub-chunk boundary overlap (in seconds if a float). If available, this
-margin will be added to either side of the <code>sub_chunk</code>. \n
+<dd>The sub-chunk boundary overlap (in seconds if a float). If available, <strong>this
+margin / 2 will be added to either side of the <code>sub_chunk</code></strong>. \n
 This is especially useful to not lose inter-<code>sub_chunk</code> data (as each
 <code>sub_chunk</code> is in fact a continuous chunk) when window-based aggregations
 are performed on these same time range output (sub_)chunks. \n
@@ -341,7 +355,7 @@ This argument is only relevant if <code>max_chunk_dur_s</code> is set.</dd>
 </summary>
 <pre><code class="python">def chunk_data(
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
-        fs_dict: Dict[str, int],
+        fs_dict: Optional[Dict[str, int]] = None,
         chunk_range_margin: Optional[Union[float, str, pd.Timedelta]] = None,
         min_chunk_dur: Optional[Union[float, str, pd.Timedelta]] = None,
         max_chunk_dur: Optional[Union[float, str, pd.Timedelta]] = None,
@@ -359,14 +373,14 @@ This argument is only relevant if <code>max_chunk_dur_s</code> is set.</dd>
 
     Notes
     -----
-    * As the `fs_dict` is requested, the assumption is made that **each item** in `data`
-      has a **fixed sample frequency** and that **each item** in `data` 
+    * When you set `fs_dict`, the assumption is made that **each item** in `data`
+      has a **fixed sample frequency**. If you do not set `fs_dict`, this variable
+      will use the 1 / max time-diff of the corresponding series as key-value pair.
     * All subsequent series-chunks are matched against the time-ranges of the first
       series. This implies that **the first item in `data` serves as a reference**
       for gap-matching.
     * The term `sub-chunk` refers to the chunks who exceed the `max_chunk_duration_s`
       parameter and are therefore further divided into sub-chunks.
-      TODO: @Jeroen -&gt; zo een note toevoegen aan constructor featuredescriptor
 
     Parameters
     ----------
@@ -375,8 +389,8 @@ This argument is only relevant if <code>max_chunk_dur_s</code> is set.</dd>
         `pd.DatetimeIndex`. 
         The assumption is made that each `item` in data has a _nearly-constant_ sample 
         frequency (when there are no gaps).
-    fs_dict: Dict[str, int]
-        The sample frequency dict. This dict must at least withhold all the keys
+    fs_dict: Dict[str, int], optional
+        The sample frequency dict. If set, this dict must at least withhold all the keys
         from the items in `data`.
     chunk_range_margin: Union[float, str, pd.Timedelta], optional
         The allowed margin (in seconds if a float) between same time-range chunks their
@@ -394,8 +408,8 @@ This argument is only relevant if <code>max_chunk_dur_s</code> is set.</dd>
         Chunks with durations larger than this will be chunked in smaller `sub_chunks`
         where each sub-chunk has a maximal duration of `max_chunk_dur_s`.
     sub_chunk_overlap: Union[float, str, pd.Timedelta], optional
-        The sub-chunk boundary overlap (in seconds if a float). If available, this
-        margin will be added to either side of the `sub_chunk`. \n
+        The sub-chunk boundary overlap (in seconds if a float). If available, **this
+        margin / 2 will be added to either side of the `sub_chunk`**. \n
         This is especially useful to not lose inter-`sub_chunk` data (as each
         `sub_chunk` is in fact a continuous chunk) when window-based aggregations
         are performed on these same time range output (sub_)chunks. \n
@@ -421,16 +435,30 @@ This argument is only relevant if <code>max_chunk_dur_s</code> is set.</dd>
         max_chunk_dur = parse_time_arg(max_chunk_dur)
     sub_chunk_overlap = parse_time_arg(sub_chunk_overlap)
 
-    # Assert that there are no duplicate series names and the names reside in fs_dict
+    # Assert that there are no duplicate series names
     assert len(series_list) == len(set([s.name for s in series_list]))
-    assert all([str(s.name) in fs_dict for s in series_list])
 
     # Default arg -&gt; set the chunk range margin to 2x the min-freq its period
     if chunk_range_margin is None:
-        chunk_range_margin = 2 / min([fs_dict[str(s.name)] for s in series_list])
+        if fs_dict is not None:
+            chunk_range_margin = 2 / min([fs_dict[str(s.name)] for s in series_list])
+        else:
+            raise ValueError(&#39;Chunk range margin must be set if fs_dict is not set!&#39;)
 
     chunk_range_margin = parse_time_arg(chunk_range_margin)
     assert chunk_range_margin.total_seconds() &gt; 0, &#34;chunk_range_margin must be &gt; 0&#34;
+
+    # if fs_dict is not set -&gt; set it to the max time-diff for the corresponding series
+    if fs_dict is None:
+        if verbose:
+            print(&#39;fs is none -&gt; using 1 / max time diff for each series as fs&#39;)
+        fs_dict = {
+            s.name: (1 / s.index.to_series().diff().max().total_seconds())
+            for s in series_list
+        }
+
+    # Assert the names reside in fs_dict
+    assert all([str(s.name) in fs_dict for s in series_list])
 
     # Some range asserts
     assert sub_chunk_overlap.total_seconds() &gt;= 0, f&#34;sub_chunk_overlap_s must be &gt; 0&#34;
@@ -539,14 +567,14 @@ This argument is only relevant if <code>max_chunk_dur_s</code> is set.</dd>
                     t_end_sc = t_begin_sc + max_chunk_dur
 
                     # Get the end and begin sub-chunk margin
-                    t_end_sc_m = t_end_sc + sub_chunk_overlap
+                    t_end_sc_m = t_end_sc + sub_chunk_overlap / 2
                     t_end_sc_m = min(t_end_c, t_end_sc_m)
 
-                    t_begin_sc_m = t_begin_sc - sub_chunk_overlap
+                    t_begin_sc_m = t_begin_sc - sub_chunk_overlap / 2
                     t_begin_sc_m = max(t_begin_c, t_begin_sc_m)
 
                     # Slice &amp; add the sub-chunk to the list
-                    insert_chunk(chunk=slice_time(series, t_begin_sc_m, t_end_sc_m), )
+                    insert_chunk(chunk=slice_time(series, t_begin_sc_m, t_end_sc_m))
 
                     # Update the condition&#39;s variable
                     t_begin_sc = t_end_sc
