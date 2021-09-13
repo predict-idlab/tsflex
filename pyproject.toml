@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "tsflex"
-version = "0.1.2.0"  # Do not forget to update the __init__.py __version__ variable
+version = "0.1.2.2"  # Do not forget to update the __init__.py __version__ variable
 description = "Toolkit for flexible processing & feature extraction on time-series data"
 authors = ["Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"]
 readme = "README.md"
