@@ -24,6 +24,8 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: ${{ matrix.python-version }}
+    - name: Install python mapper
+      run: sudo apt install python-is-python3
 
     - name: Install poetry
       uses: Gr1N/setup-poetry@v4
