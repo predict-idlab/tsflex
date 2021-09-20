@@ -45,5 +45,5 @@ We highlight how tsflex integrates conveniently with popular time series feature
 
 > As some of these time series feature extraction packages use different formats for their feature function, a wrapper function might be required to enable a convenient integration.  
 
-*We encourage users to add example notebooks for other feature extraction packages (and if necessary, add the required wrapper function in the [`tsflex.features.integration`](https://github.com/predict-idlab/tsflex/blob/main/tsflex/features/integrations.py) file.*  
+*We encourage users to add example notebooks for other feature extraction packages (and if necessary, add the required wrapper function in the [`tsflex.features.integrations`](https://github.com/predict-idlab/tsflex/blob/main/tsflex/features/integrations.py) file.*  
 => More info on **contributing** can be found [here](https://github.com/predict-idlab/tsflex/blob/main/CONTRIBUTING.md).
