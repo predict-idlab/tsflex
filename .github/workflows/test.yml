@@ -36,7 +36,7 @@ jobs:
     - run: poetry --version
     - name: Install dependencies
       run: poetry install
-      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+#      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
 
 #     - name: Lint with flake8
 #       run: |
