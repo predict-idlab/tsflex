@@ -28,7 +28,8 @@ jobs:
     - run: poetry --version
     - name: Install dependencies
       run: poetry install
-      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
+      # Do not use caching (anymore)
+#      if: steps.cached-poetry-dependencies.outputs.cache-hit != 'true'
     
     - name: Build docs
       run: poetry run pdoc3 --template-dir docs/pdoc_template/ --output-dir docs --html tsflex/
