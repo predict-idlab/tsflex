@@ -47,12 +47,14 @@ from __future__ import annotations  # Make typing work for the enclosing class
 __author__ = &#34;Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt&#34;
 
 import os
-import dill
-import pandas as pd
-import numpy as np
-
+import uuid
+from copy import deepcopy
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
+
+import dill
+import numpy as np
+import pandas as pd
 from pathos.multiprocessing import ProcessPool
 from tqdm.auto import tqdm
 
@@ -61,8 +63,8 @@ from .logger import logger
 from .strided_rolling import StridedRolling
 from ..features.function_wrapper import FuncWrapper
 from ..utils.data import to_list, to_series_list, flatten
-from ..utils.time import timedelta_to_str
 from ..utils.logging import delete_logging_handlers, add_logging_handler
+from ..utils.time import timedelta_to_str
 
 
 class FeatureCollection:
@@ -130,7 +132,7 @@ class FeatureCollection:
         &#34;&#34;&#34;
         series_win_stride_key = self._get_collection_key(feature)
         if series_win_stride_key in self._feature_desc_dict.keys():
-            added_output_names = flatten(                
+            added_output_names = flatten(
                 f.function.output_names
                 for f in self._feature_desc_dict[series_win_stride_key]
             )
@@ -322,7 +324,7 @@ class FeatureCollection:
         )
         nb_stroll_funcs = self._get_stroll_feat_length()
 
-        if n_jobs is None: 
+        if n_jobs is None:
             n_jobs = os.cpu_count()
         n_jobs = min(n_jobs, nb_stroll_funcs)
 
@@ -369,6 +371,74 @@ class FeatureCollection:
         &#34;&#34;&#34;
         with open(file_path, &#34;wb&#34;) as f:
             dill.dump(self, f, recurse=True)
+
+    def reduce(self, feat_cols_to_keep: List[str]) -&gt; FeatureCollection:
+        &#34;&#34;&#34;Create a reduced FeatureCollection instance based on feat_cols_to_keep.
+
+        For example, this is useful to optimize feature-extraction inference
+        (for your selected features) after performing a feature-selection procedure.
+
+        Parameters
+        ----------
+        feat_cols_to_keep: List[str]
+            A subset of the feature collection instance its column names.
+            This corresponds to the columns / names of the output from `calculate`
+            method that you want to keep.
+
+        Returns
+        -------
+        FeatureCollection
+            A new FeatureCollection object, which only withholds the FeatureDescriptors
+            which constitute the `feat_cols_to_keep` output.
+
+        Note
+        -----
+        Some FeatureDescriptor objects may have multiple **output-names**.&lt;br&gt;
+        Hence, if you only want to retain _a subset_ of that FeatureDescriptor its
+        feature outputs, you will still get **all features** as the new
+        FeatureCollection is constructed by applying a filter on de FeatureDescriptor
+        list and we thus not alter these FeatureDescriptor objects themselves.
+
+        &#34;&#34;&#34;
+        # dict in which we store all the { output_col_name : (UUID, FeatureDescriptor) }
+        # items of our current Featurecollection object
+        feat_col_fd_mapping: Dict[str, Tuple[str, FeatureDescriptor]] = {}
+        for (s_names, window, stride), fds in self._feature_desc_dict.items():
+            fd: FeatureDescriptor
+            for fd in fds:
+                # As a single FeatureDescriptor can have multiple output col names, we
+                # create a unique identifier for each FeatureDescriptor (on which we
+                # will apply set-like operations later on to only retain all the unique
+                # FeatureDescriptors)
+                uuid_str = str(uuid.uuid4())
+                for output_name in fd.function.output_names:
+                    # Reconstruct the feature column name
+                    feat_col_name = &#39;__&#39;.join([
+                        &#39;|&#39;.join(s_names) if isinstance(s_names, tuple) else s_names,
+                        output_name,
+                        f&#39;w={timedelta_to_str(window)}_s={timedelta_to_str(stride)}&#39;
+                    ])
+                    feat_col_fd_mapping[feat_col_name] = (uuid_str, fd)
+
+        assert all(fc in feat_col_fd_mapping for fc in feat_cols_to_keep)
+
+        # Collect (uuid, FeatureDescriptor) for the feat_cols_to_keep
+        fd_subset: List[Tuple[str, FeatureDescriptor]] = [
+            feat_col_fd_mapping[fc] for fc in feat_cols_to_keep
+        ]
+
+        # Reduce to unique feature descriptor objects (based on uuid) and create a new
+        # FeatureCollection for their deepcopy&#39;s.
+        seen_uuids = set()
+        return FeatureCollection(
+            feature_descriptors=[
+                deepcopy(unique_fd) for unique_fd in
+                {
+                    fd for (uuid_str, fd) in fd_subset
+                    if uuid_str not in seen_uuids and not seen_uuids.add(uuid_str)
+                }
+            ]
+        )
 
     def __repr__(self) -&gt; str:
         &#34;&#34;&#34;Representation string of a FeatureCollection.&#34;&#34;&#34;
@@ -478,7 +548,7 @@ class FeatureCollection:
         &#34;&#34;&#34;
         series_win_stride_key = self._get_collection_key(feature)
         if series_win_stride_key in self._feature_desc_dict.keys():
-            added_output_names = flatten(                
+            added_output_names = flatten(
                 f.function.output_names
                 for f in self._feature_desc_dict[series_win_stride_key]
             )
@@ -670,7 +740,7 @@ class FeatureCollection:
         )
         nb_stroll_funcs = self._get_stroll_feat_length()
 
-        if n_jobs is None: 
+        if n_jobs is None:
             n_jobs = os.cpu_count()
         n_jobs = min(n_jobs, nb_stroll_funcs)
 
@@ -717,6 +787,74 @@ class FeatureCollection:
         &#34;&#34;&#34;
         with open(file_path, &#34;wb&#34;) as f:
             dill.dump(self, f, recurse=True)
+
+    def reduce(self, feat_cols_to_keep: List[str]) -&gt; FeatureCollection:
+        &#34;&#34;&#34;Create a reduced FeatureCollection instance based on feat_cols_to_keep.
+
+        For example, this is useful to optimize feature-extraction inference
+        (for your selected features) after performing a feature-selection procedure.
+
+        Parameters
+        ----------
+        feat_cols_to_keep: List[str]
+            A subset of the feature collection instance its column names.
+            This corresponds to the columns / names of the output from `calculate`
+            method that you want to keep.
+
+        Returns
+        -------
+        FeatureCollection
+            A new FeatureCollection object, which only withholds the FeatureDescriptors
+            which constitute the `feat_cols_to_keep` output.
+
+        Note
+        -----
+        Some FeatureDescriptor objects may have multiple **output-names**.&lt;br&gt;
+        Hence, if you only want to retain _a subset_ of that FeatureDescriptor its
+        feature outputs, you will still get **all features** as the new
+        FeatureCollection is constructed by applying a filter on de FeatureDescriptor
+        list and we thus not alter these FeatureDescriptor objects themselves.
+
+        &#34;&#34;&#34;
+        # dict in which we store all the { output_col_name : (UUID, FeatureDescriptor) }
+        # items of our current Featurecollection object
+        feat_col_fd_mapping: Dict[str, Tuple[str, FeatureDescriptor]] = {}
+        for (s_names, window, stride), fds in self._feature_desc_dict.items():
+            fd: FeatureDescriptor
+            for fd in fds:
+                # As a single FeatureDescriptor can have multiple output col names, we
+                # create a unique identifier for each FeatureDescriptor (on which we
+                # will apply set-like operations later on to only retain all the unique
+                # FeatureDescriptors)
+                uuid_str = str(uuid.uuid4())
+                for output_name in fd.function.output_names:
+                    # Reconstruct the feature column name
+                    feat_col_name = &#39;__&#39;.join([
+                        &#39;|&#39;.join(s_names) if isinstance(s_names, tuple) else s_names,
+                        output_name,
+                        f&#39;w={timedelta_to_str(window)}_s={timedelta_to_str(stride)}&#39;
+                    ])
+                    feat_col_fd_mapping[feat_col_name] = (uuid_str, fd)
+
+        assert all(fc in feat_col_fd_mapping for fc in feat_cols_to_keep)
+
+        # Collect (uuid, FeatureDescriptor) for the feat_cols_to_keep
+        fd_subset: List[Tuple[str, FeatureDescriptor]] = [
+            feat_col_fd_mapping[fc] for fc in feat_cols_to_keep
+        ]
+
+        # Reduce to unique feature descriptor objects (based on uuid) and create a new
+        # FeatureCollection for their deepcopy&#39;s.
+        seen_uuids = set()
+        return FeatureCollection(
+            feature_descriptors=[
+                deepcopy(unique_fd) for unique_fd in
+                {
+                    fd for (uuid_str, fd) in fd_subset
+                    if uuid_str not in seen_uuids and not seen_uuids.add(uuid_str)
+                }
+            ]
+        )
 
     def __repr__(self) -&gt; str:
         &#34;&#34;&#34;Representation string of a FeatureCollection.&#34;&#34;&#34;
@@ -1009,7 +1147,7 @@ sequentially. Set the <code>n_jobs</code> to 0-1 if this matters.</li>
     )
     nb_stroll_funcs = self._get_stroll_feat_length()
 
-    if n_jobs is None: 
+    if n_jobs is None:
         n_jobs = os.cpu_count()
     n_jobs = min(n_jobs, nb_stroll_funcs)
 
@@ -1079,6 +1217,105 @@ the local scope, like lambdas.</strong></li>
         dill.dump(self, f, recurse=True)</code></pre>
 </details>
 </dd>
+<dt id="tsflex.features.feature_collection.FeatureCollection.reduce"><code class="name flex">
+<span>def <span class="ident">reduce</span></span>(<span>self, feat_cols_to_keep)</span>
+</code></dt>
+<dd>
+<div class="desc"><p>Create a reduced FeatureCollection instance based on feat_cols_to_keep.</p>
+<p>For example, this is useful to optimize feature-extraction inference
+(for your selected features) after performing a feature-selection procedure.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>feat_cols_to_keep</code></strong> :&ensp;<code>List[str]</code></dt>
+<dd>A subset of the feature collection instance its column names.
+This corresponds to the columns / names of the output from <code>calculate</code>
+method that you want to keep.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code><a title="tsflex.features.feature_collection.FeatureCollection" href="#tsflex.features.feature_collection.FeatureCollection">FeatureCollection</a></code></dt>
+<dd>A new FeatureCollection object, which only withholds the FeatureDescriptors
+which constitute the <code>feat_cols_to_keep</code> output.</dd>
+</dl>
+<h2 id="note">Note</h2>
+<p>Some FeatureDescriptor objects may have multiple <strong>output-names</strong>.<br>
+Hence, if you only want to retain <em>a subset</em> of that FeatureDescriptor its
+feature outputs, you will still get <strong>all features</strong> as the new
+FeatureCollection is constructed by applying a filter on de FeatureDescriptor
+list and we thus not alter these FeatureDescriptor objects themselves.</p></div>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def reduce(self, feat_cols_to_keep: List[str]) -&gt; FeatureCollection:
+    &#34;&#34;&#34;Create a reduced FeatureCollection instance based on feat_cols_to_keep.
+
+    For example, this is useful to optimize feature-extraction inference
+    (for your selected features) after performing a feature-selection procedure.
+
+    Parameters
+    ----------
+    feat_cols_to_keep: List[str]
+        A subset of the feature collection instance its column names.
+        This corresponds to the columns / names of the output from `calculate`
+        method that you want to keep.
+
+    Returns
+    -------
+    FeatureCollection
+        A new FeatureCollection object, which only withholds the FeatureDescriptors
+        which constitute the `feat_cols_to_keep` output.
+
+    Note
+    -----
+    Some FeatureDescriptor objects may have multiple **output-names**.&lt;br&gt;
+    Hence, if you only want to retain _a subset_ of that FeatureDescriptor its
+    feature outputs, you will still get **all features** as the new
+    FeatureCollection is constructed by applying a filter on de FeatureDescriptor
+    list and we thus not alter these FeatureDescriptor objects themselves.
+
+    &#34;&#34;&#34;
+    # dict in which we store all the { output_col_name : (UUID, FeatureDescriptor) }
+    # items of our current Featurecollection object
+    feat_col_fd_mapping: Dict[str, Tuple[str, FeatureDescriptor]] = {}
+    for (s_names, window, stride), fds in self._feature_desc_dict.items():
+        fd: FeatureDescriptor
+        for fd in fds:
+            # As a single FeatureDescriptor can have multiple output col names, we
+            # create a unique identifier for each FeatureDescriptor (on which we
+            # will apply set-like operations later on to only retain all the unique
+            # FeatureDescriptors)
+            uuid_str = str(uuid.uuid4())
+            for output_name in fd.function.output_names:
+                # Reconstruct the feature column name
+                feat_col_name = &#39;__&#39;.join([
+                    &#39;|&#39;.join(s_names) if isinstance(s_names, tuple) else s_names,
+                    output_name,
+                    f&#39;w={timedelta_to_str(window)}_s={timedelta_to_str(stride)}&#39;
+                ])
+                feat_col_fd_mapping[feat_col_name] = (uuid_str, fd)
+
+    assert all(fc in feat_col_fd_mapping for fc in feat_cols_to_keep)
+
+    # Collect (uuid, FeatureDescriptor) for the feat_cols_to_keep
+    fd_subset: List[Tuple[str, FeatureDescriptor]] = [
+        feat_col_fd_mapping[fc] for fc in feat_cols_to_keep
+    ]
+
+    # Reduce to unique feature descriptor objects (based on uuid) and create a new
+    # FeatureCollection for their deepcopy&#39;s.
+    seen_uuids = set()
+    return FeatureCollection(
+        feature_descriptors=[
+            deepcopy(unique_fd) for unique_fd in
+            {
+                fd for (uuid_str, fd) in fd_subset
+                if uuid_str not in seen_uuids and not seen_uuids.add(uuid_str)
+            }
+        ]
+    )</code></pre>
+</details>
+</dd>
 </dl>
 </dd>
 </dl>
@@ -1113,6 +1350,7 @@ alt="logo should be displayed here" style="width: 100%;"></a>
 <li><code><a title="tsflex.features.feature_collection.FeatureCollection.add" href="#tsflex.features.feature_collection.FeatureCollection.add">add</a></code></li>
 <li><code><a title="tsflex.features.feature_collection.FeatureCollection.calculate" href="#tsflex.features.feature_collection.FeatureCollection.calculate">calculate</a></code></li>
 <li><code><a title="tsflex.features.feature_collection.FeatureCollection.serialize" href="#tsflex.features.feature_collection.FeatureCollection.serialize">serialize</a></code></li>
+<li><code><a title="tsflex.features.feature_collection.FeatureCollection.reduce" href="#tsflex.features.feature_collection.FeatureCollection.reduce">reduce</a></code></li>
 </ul>
 </li>
 </ul>
