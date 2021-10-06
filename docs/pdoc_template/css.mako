@@ -12,15 +12,15 @@
 
   body {
     line-height: 1.5em;
-  }
-
-  #content {
-    padding: 20px;
+    padding-left: 1em;
+    padding-right: 1em;
   }
 
   #sidebar {
-    padding: 30px;
+    padding: 15px;
+    max-width: 25em;
     overflow: hidden;
+    min-width: 17em;
   }
     #sidebar > *:last-child {
       margin-bottom: 2cm;
@@ -301,18 +301,18 @@
 </%def>
 
 <%def name="desktop()" filter="minify_css">
-  @media screen and (min-width: 700px) {
+  @media screen and (min-width: 850px) {
     #sidebar {
-      width: 30%;
+      width: 25%;
       height: 100vh;
       overflow: auto;
       position: sticky;
       top: 0;
     }
     #content {
-      width: 70%;
-      max-width: 100ch;
-      padding: 3em 4em;
+      ## width: 70%;
+      max-width: 100%;
+      padding: 2em;
       border-left: 1px solid #ddd;
     }
     pre code {
@@ -328,7 +328,8 @@
     }
     .toc ul ul,
     #index ul {
-      padding-left: 1.5em;
+      padding-left: 1em;
+      padding-right: 0.5em;
     }
     .toc > ul > li {
       margin-top: .5em;
