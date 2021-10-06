@@ -11,12 +11,14 @@ from __future__ import annotations  # Make typing work for the enclosing class
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
 import os
-import dill
-import pandas as pd
-import numpy as np
-
+import uuid
+from copy import deepcopy
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
+
+import dill
+import numpy as np
+import pandas as pd
 from pathos.multiprocessing import ProcessPool
 from tqdm.auto import tqdm
 
@@ -25,8 +27,8 @@ from .logger import logger
 from .strided_rolling import StridedRolling
 from ..features.function_wrapper import FuncWrapper
 from ..utils.data import to_list, to_series_list, flatten
-from ..utils.time import timedelta_to_str
 from ..utils.logging import delete_logging_handlers, add_logging_handler
+from ..utils.time import timedelta_to_str
 
 
 class FeatureCollection:
@@ -94,7 +96,7 @@ class FeatureCollection:
         """
         series_win_stride_key = self._get_collection_key(feature)
         if series_win_stride_key in self._feature_desc_dict.keys():
-            added_output_names = flatten(                
+            added_output_names = flatten(
                 f.function.output_names
                 for f in self._feature_desc_dict[series_win_stride_key]
             )
@@ -286,7 +288,7 @@ class FeatureCollection:
         )
         nb_stroll_funcs = self._get_stroll_feat_length()
 
-        if n_jobs is None: 
+        if n_jobs is None:
             n_jobs = os.cpu_count()
         n_jobs = min(n_jobs, nb_stroll_funcs)
 
@@ -333,6 +335,52 @@ class FeatureCollection:
         """
         with open(file_path, "wb") as f:
             dill.dump(self, f, recurse=True)
+
+    def reduce(self, relevant_feat_cols: List[str]) -> FeatureCollection:
+        """
+
+        Parameters
+        ----------
+        relevant_feat_cols
+
+        Returns
+        -------
+
+        """
+        # dict in which we store all the { output_col_name : (UUID, FeatureDescriptor) }
+        # items of our current Featurecollection object
+        feat_col_fd_mapping: Dict[str, Tuple[str, FeatureDescriptor]] = {}
+        for (s_names, window, stride), fds in self._feature_desc_dict.items():
+            fd: FeatureDescriptor
+            for fd in fds:
+                # As a single FeatureDescriptor can have multiple output col names, we
+                # create a unique identifier for each FeatureDescriptor (on which we
+                # will apply set-like operations later on to only retain all the unique
+                # FeatureDescriptors)
+                uuid_str = str(uuid.uuid4())
+                for output_name in fd.function.output_names:
+                    # Reconstruct the feature column name
+                    feat_col_name = '__'.join([
+                        '|'.join(s_names) if isinstance(s_names, tuple) else s_names,
+                        output_name,
+                        f'w={timedelta_to_str(window)}_s={timedelta_to_str(stride)}'
+                    ])
+                    feat_col_fd_mapping[feat_col_name] = (uuid_str, fd)
+
+        fd_subset: List[Tuple[str, FeatureDescriptor]] = [
+            feat_col_fd_mapping[fc] for fc in relevant_feat_cols
+        ]
+
+        seen_uuids = set()
+        return FeatureCollection(
+            feature_descriptors=[
+                deepcopy(unique_fd) for unique_fd in
+                {
+                    fd for (uuid_str, fd) in fd_subset
+                    if uuid_str not in seen_uuids and not seen_uuids.add(uuid_str)
+                }
+            ]
+        )
 
     def __repr__(self) -> str:
         """Representation string of a FeatureCollection."""
