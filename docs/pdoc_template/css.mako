@@ -115,12 +115,12 @@
   h1 code { background: transparent }
 
   pre {
-    background: #f8f8f8;
+    background: #f1f3f9;
     border: 0;
     border-top: 1px solid #ccc;
     border-bottom: 1px solid #ccc;
-    margin: 1em 0;
-    padding: 1ex;
+    margin: 0.5em;
+    padding: 0px;
   }
 
   #http-server-module-list {
@@ -244,7 +244,8 @@
     }
     .source pre code {
       font-size: 12px;
-      overflow: visible;
+        max_width: 100%;
+        overflow: visible;
     }
   .hlist {
     list-style: none;
@@ -305,7 +306,7 @@
     #sidebar {
       width: 25%;
       height: 100vh;
-      overflow: auto;
+      overflow: hidden;
       position: sticky;
       top: 0;
     }
