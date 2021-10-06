@@ -2,6 +2,8 @@
 
 __author__ = "Jeroen Van Der Donckt, Emiel Deprost, Jonas Van Der Donckt"
 
+import random
+
 import pytest
 import warnings
 import pandas as pd
@@ -263,6 +265,65 @@ def test_featurecollection_feature_collection(dummy_data):
     assert all(res_df.index[1:] - res_df.index[:-1] == pd.to_timedelta(2.5, unit="s"))
 
 
+def test_featurecollection_reduce(dummy_data):
+    fc = FeatureCollection(
+        MultipleFeatureDescriptors(
+            functions=[np.max, np.min, np.std, np.sum],
+            series_names='EDA',
+            windows=['5s', '30s', '1min'],
+            strides='5s'
+        )
+    )
+    df_feat_tot = fc.calculate(data=dummy_data, return_df=True, show_progress=True)
+
+    for _ in range(5):
+        col_subset = random.sample(
+            list(df_feat_tot.columns),
+            random.randint(1, len(df_feat_tot.columns))
+        )
+        fc_reduced = fc.reduce(col_subset)
+        fc_reduced.calculate(dummy_data)
+
+    # also test the reduce function on a single column
+    fc_reduced = fc.reduce(random.sample(list(df_feat_tot.columns), 1))
+    fc_reduced.calculate(dummy_data)
+
+    # should also work when fc is deleted
+    del fc
+    fc_reduced.calculate(dummy_data)
+
+
+def test_featurecollection_reduce_multiple_feat_output(dummy_data):
+    def get_stats(series: np.ndarray):
+        return np.min(series), np.max(series)
+
+    fd = FeatureDescriptor(
+        function=FuncWrapper(get_stats, output_names=["min", "max"]),
+        series_name="EDA",
+        window="5s",
+        stride="5s",
+    )
+
+    fc = FeatureCollection(
+        [
+            MultipleFeatureDescriptors(
+                functions=[np.std, np.sum],
+                series_names='EDA',
+                windows=['5s', '30s', '1min'],
+                strides='5s'
+            ),
+            fd
+        ]
+    )
+    # df_feat_tot = fc.calculate(data=dummy_data, return_df=True, show_progress=True)
+
+    fc_reduce = fc.reduce(
+        feat_cols_to_keep=['EDA__min__w=5s_s=5s']
+    )
+    del fd
+    fc_reduce.calculate(dummy_data)
+
+
 def test_featurecollection_error_val(dummy_data):
     fd = FeatureDescriptor(
         function=np.max,
@@ -395,7 +456,7 @@ def test_series_funcs(dummy_data):
         return diff.min()*mult, diff.max()*mult
     def time_diff(x: pd.Series):
         return (x.index[-1] - x.index[0]).total_seconds()
-    
+
     def linear_trend_timewise(x):
         """
         Calculate a linear least-squares regression for the values of the time series versus the sequence from 0 to
@@ -428,9 +489,9 @@ def test_series_funcs(dummy_data):
 
     fc = FeatureCollection(
         MultipleFeatureDescriptors(
-            functions=[np.mean, np.sum, len, 
+            functions=[np.mean, np.sum, len,
                 FuncWrapper(
-                    min_max_time_diff, input_type=pd.Series, 
+                    min_max_time_diff, input_type=pd.Series,
                     output_names=["min_time_diff", "max_time_diff"], mult=3,
                 ),
                 FuncWrapper(

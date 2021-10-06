@@ -336,15 +336,30 @@ class FeatureCollection:
         with open(file_path, "wb") as f:
             dill.dump(self, f, recurse=True)
 
-    def reduce(self, relevant_feat_cols: List[str]) -> FeatureCollection:
-        """
+    def reduce(self, feat_cols_to_keep: List[str]) -> FeatureCollection:
+        """Create a reduced FeatureCollection instance based on feat_cols_to_keep.
+
+        For example, this is useful to optimize feature-extraction inference
+        (for your selected features) after performing a feature-selection procedure.
 
         Parameters
         ----------
-        relevant_feat_cols
+        feat_cols_to_keep: List[str]
+            A subset of the feature collection instance its column names.
 
         Returns
         -------
+        FeatureCollection
+            A new FeatureCollection object, which only withholds the FeatureDescriptors
+            which constitute the `feat_cols_to_keep` output columns.
+
+        Note
+        -----
+        Some FeatureDescriptor objects may have multiple **output-names**.<br>
+        Hence, if you only want to retain _a subset_ of that FeatureDescriptor its
+        feature outputs, you will still get **all features** as the new
+        FeatureCollection is constructed by applying a filter on de FeatureDescriptor
+        list and we thus not alter these FeatureDescriptor objects themselves.
 
         """
         # dict in which we store all the { output_col_name : (UUID, FeatureDescriptor) }
@@ -367,8 +382,10 @@ class FeatureCollection:
                     ])
                     feat_col_fd_mapping[feat_col_name] = (uuid_str, fd)
 
+        assert all(fc in feat_col_fd_mapping for fc in feat_cols_to_keep)
+
         fd_subset: List[Tuple[str, FeatureDescriptor]] = [
-            feat_col_fd_mapping[fc] for fc in relevant_feat_cols
+            feat_col_fd_mapping[fc] for fc in feat_cols_to_keep
         ]
 
         seen_uuids = set()
