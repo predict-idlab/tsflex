@@ -346,12 +346,14 @@ class FeatureCollection:
         ----------
         feat_cols_to_keep: List[str]
             A subset of the feature collection instance its column names.
+            This corresponds to the columns / names of the output from `calculate`
+            method that you want to keep.
 
         Returns
         -------
         FeatureCollection
             A new FeatureCollection object, which only withholds the FeatureDescriptors
-            which constitute the `feat_cols_to_keep` output columns.
+            which constitute the `feat_cols_to_keep` output.
 
         Note
         -----
@@ -384,10 +386,13 @@ class FeatureCollection:
 
         assert all(fc in feat_col_fd_mapping for fc in feat_cols_to_keep)
 
+        # Collect (uuid, FeatureDescriptor) for the feat_cols_to_keep
         fd_subset: List[Tuple[str, FeatureDescriptor]] = [
             feat_col_fd_mapping[fc] for fc in feat_cols_to_keep
         ]
 
+        # Reduce to unique feature descriptor objects (based on uuid) and create a new
+        # FeatureCollection for their deepcopy's.
         seen_uuids = set()
         return FeatureCollection(
             feature_descriptors=[
