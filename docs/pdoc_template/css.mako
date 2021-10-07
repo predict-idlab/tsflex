@@ -306,7 +306,7 @@
 </%def>
 
 <%def name="desktop()" filter="minify_css">
-  @media screen and (min-width: 700px) {
+  @media screen and (min-width: 850px) {
     .sidebar_container {
       display: flex;
       transition: 0.75s ease;
