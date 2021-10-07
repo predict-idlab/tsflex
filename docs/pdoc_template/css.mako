@@ -42,13 +42,13 @@
 
   #footer {
     font-size: .75em;
-    padding: 5px 30px;
+    ##padding: 5px 30px;
     border-top: 1px solid #ddd;
     text-align: right;
   }
     #footer p {
-      margin: 0 0 0 1em;
-      display: inline-block;
+      ##margin: 0 0 0 1em;
+      ##display: inline-block;
     }
     #footer p:last-child {
       margin-right: 30px;
