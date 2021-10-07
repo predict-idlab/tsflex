@@ -17,10 +17,10 @@
   }
 
   #sidebar {
-    padding: 15px;
-    max-width: 25em;
+    padding: 5px;
+    max-width: 24em;
     overflow: hidden;
-    min-width: 17em;
+    min-width: 19em;
   }
     #sidebar > *:last-child {
       margin-bottom: 2cm;
@@ -312,7 +312,7 @@
     }
     #content {
       ## width: 70%;
-      max-width: 100%;
+      max-width: 105ch;
       padding: 2em;
       border-left: 1px solid #ddd;
     }
