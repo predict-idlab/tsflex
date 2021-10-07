@@ -1,7 +1,7 @@
 <header>
-    <div style="text-align: center">
+    <div style="text-align: left; padding-top: 15px;">
         <a class="homelink" rel="home" title="tsflex home" href="/tsflex/">
-            <img src="https://cdn.discordapp.com/attachments/372491075153166338/852904976560554094/logo.png"
-                 alt="logo should be displayed here" style="width: 100%;"></a>
+            <img src="https://raw.githubusercontent.com/predict-idlab/tsflex/main/docs/_static/logo.png"
+                 alt="logo should be displayed here" width="95%"></a>
     </div>
 </header>
