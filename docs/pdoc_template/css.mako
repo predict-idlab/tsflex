@@ -16,14 +16,18 @@
     padding-right: 1em;
   }
 
+  button {
+    display: none;
+  }
+
   #sidebar {
-    padding: 5px;
-    max-width: 24em;
+    padding: 3px;
+    max-width: 20em;
     overflow: hidden;
-    min-width: 19em;
+    min-width: 19.8em;
   }
     #sidebar > *:last-child {
-      margin-bottom: 2cm;
+      margin-bottom: 1cm;
     }
 
   % if lunr_search is not None:
@@ -42,13 +46,13 @@
 
   #footer {
     font-size: .75em;
-    padding: 5px 30px;
+    ##padding: 5px 30px;
     border-top: 1px solid #ddd;
     text-align: right;
   }
     #footer p {
-      margin: 0 0 0 1em;
-      display: inline-block;
+      ##margin: 0 0 0 1em;
+      ##display: inline-block;
     }
     #footer p:last-child {
       margin-right: 30px;
@@ -303,12 +307,42 @@
 
 <%def name="desktop()" filter="minify_css">
   @media screen and (min-width: 850px) {
+    .sidebar_container {
+      display: flex;
+      transition: 0.75s ease;
+    }    
+    .sidebar_small {
+      width: 0;
+      margin: 0;
+      padding: 0;
+    }
+    .hide_content {
+      display: none;
+    }
+    button {
+      display: initial;
+      float: right;
+      position: fixed;
+      border: none;
+      height: 39px;
+      width: 39px;
+      border-radius: 50%;
+      box-shadow: 0px 1px 4px 1px rgba(0 ,0, 0, .3);
+      top: 5%;
+      right: 5%;
+      transform: translateX(-50%);
+      cursor: pointer;
+    }
     #sidebar {
       width: 25%;
       height: 100vh;
-      overflow: hidden;
+      overflow: auto;
       position: sticky;
       top: 0;
+      transition: 0.75s ease;
+    }
+    #index_button_img {
+      opacity: 0.65;
     }
     #content {
       ## width: 70%;
