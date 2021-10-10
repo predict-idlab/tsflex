@@ -115,6 +115,7 @@
     <dd>${show_desc(f)}</dd>
   </%def>
 
+  <button id="index_button_button"><img id="index_button_img"  src="https://image.flaticon.com/icons/png/512/56/56763.png"  alt="" width="33" height="25"></button>
   <header>
   % if http_server:
     <nav class="http-server-breadcrumbs">
@@ -129,9 +130,6 @@
   <h1 class="title">${'Namespace' if module.is_namespace else  \
                       'Package' if module.is_package and not module.supermodule else \
                       'Module'} <code>${module.name}</code></h1>
-
-  <button id="index_button_button"><img id="index_button_img" src="https://image.flaticon.com/icons/png/512/56/56763.png" alt="" width="33" height="25"></button>
-
   </header>
 
   <section id="section-intro">
