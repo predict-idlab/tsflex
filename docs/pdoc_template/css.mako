@@ -321,15 +321,15 @@
     }
     button {
       display: initial;
-      float: right;
-      position: fixed;
+      float: left;
+      position: sticky;
       border: none;
-      height: 39px;
-      width: 39px;
+      height: 5ch;
+      width: 5ch;
       border-radius: 50%;
-      box-shadow: 0px 1px 4px 1px rgba(0 ,0, 0, .3);
+      box-shadow: 0px 1px 4px 1px rgba(0 ,0, 0, .2);
       top: 5%;
-      right: 5%;
+      left: 100%;
       transform: translateX(-50%);
       cursor: pointer;
     }
