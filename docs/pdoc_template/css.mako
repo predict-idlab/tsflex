@@ -12,18 +12,22 @@
 
   body {
     line-height: 1.5em;
+    padding-left: 1em;
+    padding-right: 1em;
   }
 
-  #content {
-    padding: 20px;
+  button {
+    display: none;
   }
 
   #sidebar {
-    padding: 30px;
+    padding: 3px;
+    max-width: 20em;
     overflow: hidden;
+    min-width: 19.8em;
   }
     #sidebar > *:last-child {
-      margin-bottom: 2cm;
+      margin-bottom: 1cm;
     }
 
   % if lunr_search is not None:
@@ -42,13 +46,13 @@
 
   #footer {
     font-size: .75em;
-    padding: 5px 30px;
+    ##padding: 5px 30px;
     border-top: 1px solid #ddd;
     text-align: right;
   }
     #footer p {
-      margin: 0 0 0 1em;
-      display: inline-block;
+      ##margin: 0 0 0 1em;
+      ##display: inline-block;
     }
     #footer p:last-child {
       margin-right: 30px;
@@ -115,12 +119,12 @@
   h1 code { background: transparent }
 
   pre {
-    background: #f8f8f8;
+    background: #f1f3f9;
     border: 0;
     border-top: 1px solid #ccc;
     border-bottom: 1px solid #ccc;
-    margin: 1em 0;
-    padding: 1ex;
+    margin: 0.5em;
+    padding: 0px;
   }
 
   #http-server-module-list {
@@ -244,7 +248,8 @@
     }
     .source pre code {
       font-size: 12px;
-      overflow: visible;
+        max_width: 100%;
+        overflow: visible;
     }
   .hlist {
     list-style: none;
@@ -301,18 +306,48 @@
 </%def>
 
 <%def name="desktop()" filter="minify_css">
-  @media screen and (min-width: 700px) {
+  @media screen and (min-width: 850px) {
+    .sidebar_container {
+      display: flex;
+      transition: 0.75s ease;
+    }    
+    .sidebar_small {
+      width: 0;
+      margin: 0;
+      padding: 0;
+    }
+    .hide_content {
+      display: none;
+    }
+    button {
+      display: initial;
+      float: left;
+      position: sticky;
+      border: none;
+      height: 5ch;
+      width: 5ch;
+      border-radius: 50%;
+      box-shadow: 0px 1px 4px 1px rgba(0 ,0, 0, .2);
+      top: 5%;
+      left: 100%;
+      transform: translateX(-50%);
+      cursor: pointer;
+    }
     #sidebar {
-      width: 30%;
+      width: 25%;
       height: 100vh;
       overflow: auto;
       position: sticky;
       top: 0;
+      transition: 0.75s ease;
+    }
+    #index_button_img {
+      opacity: 0.65;
     }
     #content {
-      width: 70%;
-      max-width: 100ch;
-      padding: 3em 4em;
+      ## width: 70%;
+      max-width: 105ch;
+      padding: 2em;
       border-left: 1px solid #ddd;
     }
     pre code {
@@ -328,7 +363,8 @@
     }
     .toc ul ul,
     #index ul {
-      padding-left: 1.5em;
+      padding-left: 1em;
+      padding-right: 0.5em;
     }
     .toc > ul > li {
       margin-top: .5em;
