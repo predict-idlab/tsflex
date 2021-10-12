@@ -157,7 +157,7 @@ def test_window_idx_single_series_feature_collection(dummy_data):
     res_end = fc.calculate(dummy_data, return_df=True, n_jobs=None, window_idx="end")
     res_middle = fc.calculate(dummy_data, return_df=True, n_jobs=None, window_idx="middle")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(Exception):
         res_not_existing = fc.calculate(
             dummy_data, n_jobs=0, return_df=True, window_idx="somewhere")
 
@@ -339,7 +339,7 @@ def test_featurecollection_error_val(dummy_data):
     assert eda_data.isna().any() == False
     assert (eda_data.index[1:] - eda_data.index[:-1]).max() == pd.Timedelta("25 s")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(Exception):
         fc.calculate(eda_data, return_df=True, approve_sparsity=True)
 
 
@@ -361,7 +361,7 @@ def test_featurecollection_error_val_multiple_outputs(dummy_data):
     assert eda_data.isna().any() == False
     assert (eda_data.index[1:] - eda_data.index[:-1]).max() == pd.Timedelta("25 s")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(Exception):
         fc.calculate(eda_data, return_df=True, approve_sparsity=True)
 
 
@@ -449,6 +449,38 @@ def test_many_to_many_feature_collection(dummy_data):
     assert (res_df[expected_output_names[0]] != res_df[expected_output_names[1]]).any()
     assert (res_df[expected_output_names[0]] != res_df[expected_output_names[2]]).any()
 
+
+def test_cleared_pools_when_feature_error(dummy_data):
+    def mean_func(s: np.ndarray):
+        assert 0 == 1  # make the feature function throw an error
+        return np.mean(s)
+
+    fc = FeatureCollection(
+        MultipleFeatureDescriptors(
+            mean_func, ["EDA", "ACC_x"], ["30s", "45s", "1min", "2min"], '15s'
+        )
+    )
+
+    for n_jobs in [0, None]:
+        with pytest.raises(Exception):
+            out = fc.calculate(dummy_data, return_df=True, n_jobs=n_jobs)
+
+    # Now fix the error in the feature function & make sure that pools are cleared,
+    # i.e., the same error is not thrown again.
+    def mean_func(s: np.ndarray):
+        return np.mean(s)
+
+    fc = FeatureCollection(
+        MultipleFeatureDescriptors(
+            mean_func, ["EDA", "ACC_x"], ["30s", "45s", "1min", "2min"], '15s'
+        )
+    )
+
+    for n_jobs in [0, None]:
+        out = fc.calculate(dummy_data, return_df=True, n_jobs=n_jobs)
+        assert out.shape[0] > 0
+        assert out.shape[1] == 2*4
+    
 
 def test_series_funcs(dummy_data):
     def min_max_time_diff(x: pd.Series, mult=1):
@@ -618,7 +650,7 @@ def test_pass_by_value(dummy_data):
     )
 
     for n_jobs in [0, None]:
-        with pytest.raises(ValueError):
+        with pytest.raises(Exception):
             out = fc_gsr.calculate(dummy_data, return_df=True, n_jobs=n_jobs)
 
 
@@ -675,7 +707,7 @@ def test_one_to_many_wrong_np_funcwrapper_error_feature_collection(dummy_data):
         fc.calculate(dummy_data)
 
 
-def test_one_to_many_error_feature_collection(dummy_data):
+def test_many_to_one_error_feature_collection(dummy_data):
     def abs_mean_diff(sig1: pd.Series, sig2: pd.Series) -> float:
         # Note that this func only works when sig1 and sig2 have the same length
         return np.mean(np.abs(sig1 - sig2))

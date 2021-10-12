@@ -33,7 +33,7 @@ def test_unrobust_gap_features(dummy_data):
     assert eda_data.isna().any() == False
     assert (eda_data.index[1:] - eda_data.index[:-1]).max() == pd.Timedelta("25 s")
 
-    with pytest.raises(ValueError):
+    with pytest.raises(Exception):
         feature_collection.calculate(eda_data, approve_sparsity=True, n_jobs=0)
 
 
