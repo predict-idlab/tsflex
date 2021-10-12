@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
 import dill
+import traceback
 import numpy as np
 import pandas as pd
 from pathos.multiprocessing import ProcessPool
@@ -292,11 +293,15 @@ class FeatureCollection:
             n_jobs = os.cpu_count()
         n_jobs = min(n_jobs, nb_stroll_funcs)
 
+        calculated_feature_list = None
         if n_jobs in [0, 1]:
             idxs = range(nb_stroll_funcs)
             if show_progress:
                 idxs = tqdm(idxs)
-            calculated_feature_list = [self._executor(idx) for idx in idxs]
+            try:
+                calculated_feature_list = [self._executor(idx) for idx in idxs]
+            except:
+                traceback.print_exc()
         else:
             # https://pathos.readthedocs.io/en/latest/pathos.html#usage
             with ProcessPool(nodes=n_jobs, source=True) as pool:
@@ -306,12 +311,22 @@ class FeatureCollection:
                 )
                 if show_progress:
                     results = tqdm(results, total=self._get_stroll_feat_length())
-                calculated_feature_list = [f for f in results]
-                # Close & join - see: https://github.com/uqfoundation/pathos/issues/131
-                pool.close()
-                pool.join()
-                # Clear because: https://github.com/uqfoundation/pathos/issues/111
-                pool.clear()
+                try:
+                    calculated_feature_list = [f for f in results]
+                except:
+                    traceback.print_exc()
+                finally:
+                    # Close & join - see: https://github.com/uqfoundation/pathos/issues/131
+                    pool.close()
+                    pool.join()
+                    # Clear because: https://github.com/uqfoundation/pathos/issues/111
+                    pool.clear()
+
+        if calculated_feature_list is None:
+            raise RuntimeError(
+                "Feature Extraction halted due to error while extracting one (or multiple) feature(s)! " + 
+                "See stack trace above."
+                )
 
         if return_df:
             return pd.concat(calculated_feature_list, axis=1, join="outer", copy=False)
