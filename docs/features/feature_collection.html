@@ -56,6 +56,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
 import dill
+import traceback
 import numpy as np
 import pandas as pd
 from pathos.multiprocessing import ProcessPool
@@ -77,6 +78,23 @@ class FeatureCollection:
     ----------
     feature_descriptors : Union[FeatureDescriptor, MultipleFeatureDescriptors, List[Union[FeatureDescriptor, MultipleFeatureDescriptors]]], optional
         Initial (list of) feature(s) to add to collection, by default None
+
+
+    Notes
+    -----
+    * The `series_name` property of the `FeatureDescriptor`s should **not withhold a &#34;|&#34;
+      character**, since &#34;|&#34; is used to join the series names of features which use
+      multiple series as input).&lt;br&gt;
+      e.g.&lt;br&gt;
+        * `ACC|x` is **not** allowed as series name, as this is ambiguous and could
+          represent that this feature is constructed with a combination of the `ACC`
+          and `x` signal.&lt;br&gt;
+          Note that `max|feat` is allowed as feature output name.
+    * Both the `series_name` and `output_name` property of the `FeatureDescriptor`s
+      **should not withhold &#34;__&#34;** in its string representations. This constraint is
+      mainly made for readability purposes.
+
+    The two statements above will be asserted
 
     &#34;&#34;&#34;
 
@@ -133,6 +151,14 @@ class FeatureCollection:
             The feature that will be added to this feature collection.
 
         &#34;&#34;&#34;
+        # Check whether the `|` is not present in the series
+        assert not any(&#39;|&#39; in s_name for s_name in feature.get_required_series())
+        # Check whether the &#39;__&#34; is not present in the series and function output names
+        assert not any(
+            &#39;__&#39; in output_name for output_name in feature.function.output_names
+        )
+        assert not any(&#39;__&#39; in s_name for s_name in feature.get_required_series())
+
         series_win_stride_key = self._get_collection_key(feature)
         if series_win_stride_key in self._feature_desc_dict.keys():
             added_output_names = flatten(
@@ -152,7 +178,7 @@ class FeatureCollection:
     def add(
         self,
         features: Union[
-            FeatureDescriptor, 
+            FeatureDescriptor,
             MultipleFeatureDescriptors,
             FeatureCollection,
             List[
@@ -331,11 +357,15 @@ class FeatureCollection:
             n_jobs = os.cpu_count()
         n_jobs = min(n_jobs, nb_stroll_funcs)
 
+        calculated_feature_list = None
         if n_jobs in [0, 1]:
             idxs = range(nb_stroll_funcs)
             if show_progress:
                 idxs = tqdm(idxs)
-            calculated_feature_list = [self._executor(idx) for idx in idxs]
+            try:
+                calculated_feature_list = [self._executor(idx) for idx in idxs]
+            except:
+                traceback.print_exc()
         else:
             # https://pathos.readthedocs.io/en/latest/pathos.html#usage
             with ProcessPool(nodes=n_jobs, source=True) as pool:
@@ -345,12 +375,22 @@ class FeatureCollection:
                 )
                 if show_progress:
                     results = tqdm(results, total=self._get_stroll_feat_length())
-                calculated_feature_list = [f for f in results]
-                # Close &amp; join - see: https://github.com/uqfoundation/pathos/issues/131
-                pool.close()
-                pool.join()
-                # Clear because: https://github.com/uqfoundation/pathos/issues/111
-                pool.clear()
+                try:
+                    calculated_feature_list = [f for f in results]
+                except:
+                    traceback.print_exc()
+                finally:
+                    # Close &amp; join - see: https://github.com/uqfoundation/pathos/issues/131
+                    pool.close()
+                    pool.join()
+                    # Clear because: https://github.com/uqfoundation/pathos/issues/111
+                    pool.clear()
+
+        if calculated_feature_list is None:
+            raise RuntimeError(
+                &#34;Feature Extraction halted due to error while extracting one (or multiple) feature(s)! &#34; +
+                &#34;See stack trace above.&#34;
+                )
 
         if return_df:
             return pd.concat(calculated_feature_list, axis=1, join=&#34;outer&#34;, copy=False)
@@ -395,7 +435,7 @@ class FeatureCollection:
             which constitute the `feat_cols_to_keep` output.
 
         Note
-        -----
+        ----
         Some FeatureDescriptor objects may have multiple **output-names**.&lt;br&gt;
         Hence, if you only want to retain _a subset_ of that FeatureDescriptor its
         feature outputs, you will still get **all features** as the new
@@ -488,6 +528,23 @@ class FeatureCollection:
     feature_descriptors : Union[FeatureDescriptor, MultipleFeatureDescriptors, List[Union[FeatureDescriptor, MultipleFeatureDescriptors]]], optional
         Initial (list of) feature(s) to add to collection, by default None
 
+
+    Notes
+    -----
+    * The `series_name` property of the `FeatureDescriptor`s should **not withhold a &#34;|&#34;
+      character**, since &#34;|&#34; is used to join the series names of features which use
+      multiple series as input).&lt;br&gt;
+      e.g.&lt;br&gt;
+        * `ACC|x` is **not** allowed as series name, as this is ambiguous and could
+          represent that this feature is constructed with a combination of the `ACC`
+          and `x` signal.&lt;br&gt;
+          Note that `max|feat` is allowed as feature output name.
+    * Both the `series_name` and `output_name` property of the `FeatureDescriptor`s
+      **should not withhold &#34;__&#34;** in its string representations. This constraint is
+      mainly made for readability purposes.
+
+    The two statements above will be asserted
+
     &#34;&#34;&#34;
 
     def __init__(
@@ -543,6 +600,14 @@ class FeatureCollection:
             The feature that will be added to this feature collection.
 
         &#34;&#34;&#34;
+        # Check whether the `|` is not present in the series
+        assert not any(&#39;|&#39; in s_name for s_name in feature.get_required_series())
+        # Check whether the &#39;__&#34; is not present in the series and function output names
+        assert not any(
+            &#39;__&#39; in output_name for output_name in feature.function.output_names
+        )
+        assert not any(&#39;__&#39; in s_name for s_name in feature.get_required_series())
+
         series_win_stride_key = self._get_collection_key(feature)
         if series_win_stride_key in self._feature_desc_dict.keys():
             added_output_names = flatten(
@@ -562,7 +627,7 @@ class FeatureCollection:
     def add(
         self,
         features: Union[
-            FeatureDescriptor, 
+            FeatureDescriptor,
             MultipleFeatureDescriptors,
             FeatureCollection,
             List[
@@ -741,11 +806,15 @@ class FeatureCollection:
             n_jobs = os.cpu_count()
         n_jobs = min(n_jobs, nb_stroll_funcs)
 
+        calculated_feature_list = None
         if n_jobs in [0, 1]:
             idxs = range(nb_stroll_funcs)
             if show_progress:
                 idxs = tqdm(idxs)
-            calculated_feature_list = [self._executor(idx) for idx in idxs]
+            try:
+                calculated_feature_list = [self._executor(idx) for idx in idxs]
+            except:
+                traceback.print_exc()
         else:
             # https://pathos.readthedocs.io/en/latest/pathos.html#usage
             with ProcessPool(nodes=n_jobs, source=True) as pool:
@@ -755,12 +824,22 @@ class FeatureCollection:
                 )
                 if show_progress:
                     results = tqdm(results, total=self._get_stroll_feat_length())
-                calculated_feature_list = [f for f in results]
-                # Close &amp; join - see: https://github.com/uqfoundation/pathos/issues/131
-                pool.close()
-                pool.join()
-                # Clear because: https://github.com/uqfoundation/pathos/issues/111
-                pool.clear()
+                try:
+                    calculated_feature_list = [f for f in results]
+                except:
+                    traceback.print_exc()
+                finally:
+                    # Close &amp; join - see: https://github.com/uqfoundation/pathos/issues/131
+                    pool.close()
+                    pool.join()
+                    # Clear because: https://github.com/uqfoundation/pathos/issues/111
+                    pool.clear()
+
+        if calculated_feature_list is None:
+            raise RuntimeError(
+                &#34;Feature Extraction halted due to error while extracting one (or multiple) feature(s)! &#34; +
+                &#34;See stack trace above.&#34;
+                )
 
         if return_df:
             return pd.concat(calculated_feature_list, axis=1, join=&#34;outer&#34;, copy=False)
@@ -805,7 +884,7 @@ class FeatureCollection:
             which constitute the `feat_cols_to_keep` output.
 
         Note
-        -----
+        ----
         Some FeatureDescriptor objects may have multiple **output-names**.&lt;br&gt;
         Hence, if you only want to retain _a subset_ of that FeatureDescriptor its
         feature outputs, you will still get **all features** as the new
@@ -876,7 +955,24 @@ class FeatureCollection:
 <dl>
 <dt><strong><code>feature_descriptors</code></strong> :&ensp;<code>Union[FeatureDescriptor, MultipleFeatureDescriptors, List[Union[FeatureDescriptor, MultipleFeatureDescriptors]]]</code>, optional</dt>
 <dd>Initial (list of) feature(s) to add to collection, by default None</dd>
-</dl></div>
+</dl>
+<h2 id="notes">Notes</h2>
+<ul>
+<li>The <code>series_name</code> property of the <code>FeatureDescriptor</code>s should <strong>not withhold a "|"
+character</strong>, since "|" is used to join the series names of features which use
+multiple series as input).<br>
+e.g.<br><ul>
+<li><code>ACC|x</code> is <strong>not</strong> allowed as series name, as this is ambiguous and could
+represent that this feature is constructed with a combination of the <code>ACC</code>
+and <code>x</code> signal.<br>
+Note that <code>max|feat</code> is allowed as feature output name.</li>
+</ul>
+</li>
+<li>Both the <code>series_name</code> and <code>output_name</code> property of the <code>FeatureDescriptor</code>s
+<strong>should not withhold "__"</strong> in its string representations. This constraint is
+mainly made for readability purposes.</li>
+</ul>
+<p>The two statements above will be asserted</p></div>
 <h3>Methods</h3>
 <dl>
 <dt id="tsflex.features.feature_collection.FeatureCollection.get_required_series"><code class="name flex">
@@ -925,7 +1021,7 @@ collection.</p>
 <pre><code class="python">def add(
     self,
     features: Union[
-        FeatureDescriptor, 
+        FeatureDescriptor,
         MultipleFeatureDescriptors,
         FeatureCollection,
         List[
@@ -1084,11 +1180,15 @@ collection.</p>
         n_jobs = os.cpu_count()
     n_jobs = min(n_jobs, nb_stroll_funcs)
 
+    calculated_feature_list = None
     if n_jobs in [0, 1]:
         idxs = range(nb_stroll_funcs)
         if show_progress:
             idxs = tqdm(idxs)
-        calculated_feature_list = [self._executor(idx) for idx in idxs]
+        try:
+            calculated_feature_list = [self._executor(idx) for idx in idxs]
+        except:
+            traceback.print_exc()
     else:
         # https://pathos.readthedocs.io/en/latest/pathos.html#usage
         with ProcessPool(nodes=n_jobs, source=True) as pool:
@@ -1098,12 +1198,22 @@ collection.</p>
             )
             if show_progress:
                 results = tqdm(results, total=self._get_stroll_feat_length())
-            calculated_feature_list = [f for f in results]
-            # Close &amp; join - see: https://github.com/uqfoundation/pathos/issues/131
-            pool.close()
-            pool.join()
-            # Clear because: https://github.com/uqfoundation/pathos/issues/111
-            pool.clear()
+            try:
+                calculated_feature_list = [f for f in results]
+            except:
+                traceback.print_exc()
+            finally:
+                # Close &amp; join - see: https://github.com/uqfoundation/pathos/issues/131
+                pool.close()
+                pool.join()
+                # Clear because: https://github.com/uqfoundation/pathos/issues/111
+                pool.clear()
+
+    if calculated_feature_list is None:
+        raise RuntimeError(
+            &#34;Feature Extraction halted due to error while extracting one (or multiple) feature(s)! &#34; +
+            &#34;See stack trace above.&#34;
+            )
 
     if return_df:
         return pd.concat(calculated_feature_list, axis=1, join=&#34;outer&#34;, copy=False)
@@ -1248,7 +1358,7 @@ the local scope, like lambdas.</strong></li>
         which constitute the `feat_cols_to_keep` output.
 
     Note
-    -----
+    ----
     Some FeatureDescriptor objects may have multiple **output-names**.&lt;br&gt;
     Hence, if you only want to retain _a subset_ of that FeatureDescriptor its
     feature outputs, you will still get **all features** as the new
