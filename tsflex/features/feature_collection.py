@@ -40,6 +40,23 @@ class FeatureCollection:
     feature_descriptors : Union[FeatureDescriptor, MultipleFeatureDescriptors, List[Union[FeatureDescriptor, MultipleFeatureDescriptors]]], optional
         Initial (list of) feature(s) to add to collection, by default None
 
+
+    Notes
+    -----
+    * The `series_name` property of the `FeatureDescriptor`s should **not withhold a "|"
+      character**, since "|" is used to join the series names of features which use
+      multiple series as input).<br>
+      e.g.<br>
+        * `ACC|x` is **not** allowed as series name, as this is ambiguous and could
+          represent that this feature is constructed with a combination of the `ACC`
+          and `x` signal.<br>
+          Note that `max|feat` is allowed as feature output name.
+    * Both the `series_name` and `output_name` property of the `FeatureDescriptor`s
+      **should not withhold "__"** in its string representations. This constraint is
+      mainly made for readability purposes.
+
+    The two statements above will be asserted
+
     """
 
     def __init__(
@@ -95,6 +112,14 @@ class FeatureCollection:
             The feature that will be added to this feature collection.
 
         """
+        # Check whether the `|` is not present in the series
+        assert not any('|' in s_name for s_name in feature.get_required_series())
+        # Check whether the '__" is not present in the series and function output names
+        assert not any(
+            '__' in output_name for output_name in feature.function.output_names
+        )
+        assert not any('__' in s_name for s_name in feature.get_required_series())
+
         series_win_stride_key = self._get_collection_key(feature)
         if series_win_stride_key in self._feature_desc_dict.keys():
             added_output_names = flatten(
@@ -114,7 +139,7 @@ class FeatureCollection:
     def add(
         self,
         features: Union[
-            FeatureDescriptor, 
+            FeatureDescriptor,
             MultipleFeatureDescriptors,
             FeatureCollection,
             List[
@@ -324,7 +349,7 @@ class FeatureCollection:
 
         if calculated_feature_list is None:
             raise RuntimeError(
-                "Feature Extraction halted due to error while extracting one (or multiple) feature(s)! " + 
+                "Feature Extraction halted due to error while extracting one (or multiple) feature(s)! " +
                 "See stack trace above."
                 )
 
@@ -371,7 +396,7 @@ class FeatureCollection:
             which constitute the `feat_cols_to_keep` output.
 
         Note
-        -----
+        ----
         Some FeatureDescriptor objects may have multiple **output-names**.<br>
         Hence, if you only want to retain _a subset_ of that FeatureDescriptor its
         feature outputs, you will still get **all features** as the new

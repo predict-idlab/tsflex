@@ -365,6 +365,51 @@ def test_featurecollection_error_val_multiple_outputs(dummy_data):
         fc.calculate(eda_data, return_df=True, approve_sparsity=True)
 
 
+def test_feature_collection_invalid_series_names(dummy_data):
+    fd = FeatureDescriptor(
+        function=FuncWrapper(np.min, output_names=['min']),
+        series_name='EDA__col',  # invalid name, no '__' allowed
+        window='10s',
+        stride='5s'
+    )
+
+    with pytest.raises(Exception):
+        fc = FeatureCollection(feature_descriptors=fd)
+
+
+    fd = FeatureDescriptor(
+        function=FuncWrapper(np.min, output_names=['min']),
+        series_name='EDA|col',  # invalid name, no '|' allowed
+        window='10s',
+        stride='5s'
+    )
+
+    with pytest.raises(Exception):
+        fc = FeatureCollection(feature_descriptors=fd)
+
+
+def test_feature_collection_invalid_feature_output_names(dummy_data):
+    fd = FeatureDescriptor(
+        function=FuncWrapper(np.max, output_names=['max|feat']),
+        series_name='EDA',
+        window='10s',
+        stride='5s'
+    )
+
+    # this should work, no error should be raised
+    fc = FeatureCollection(feature_descriptors=fd)
+
+    fd = FeatureDescriptor(
+        function=FuncWrapper(np.max, output_names=['max__feat']), 
+        # invalid output_name, no '__' allowed
+        series_name='EDA',
+        window='10s',
+        stride='5s'
+    )
+
+    with pytest.raises(Exception):
+        fc = FeatureCollection(feature_descriptors=fd)
+
 ### Test various feature descriptor functions
 
 
