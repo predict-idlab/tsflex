@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Dict, List, Optional, Tuple, Union
 
 import dill
+import traceback
 import numpy as np
 import pandas as pd
 from pathos.multiprocessing import ProcessPool
@@ -38,6 +39,23 @@ class FeatureCollection:
     ----------
     feature_descriptors : Union[FeatureDescriptor, MultipleFeatureDescriptors, List[Union[FeatureDescriptor, MultipleFeatureDescriptors]]], optional
         Initial (list of) feature(s) to add to collection, by default None
+
+
+    Notes
+    -----
+    * The `series_name` property of the `FeatureDescriptor`s should **not withhold a "|"
+      character**, since "|" is used to join the series names of features which use
+      multiple series as input).<br>
+      e.g.<br>
+        * `ACC|x` is **not** allowed as series name, as this is ambiguous and could
+          represent that this feature is constructed with a combination of the `ACC`
+          and `x` signal.<br>
+          Note that `max|feat` is allowed as feature output name.
+    * Both the `series_name` and `output_name` property of the `FeatureDescriptor`s
+      **should not withhold "__"** in its string representations. This constraint is
+      mainly made for readability purposes.
+
+    The two statements above will be asserted
 
     """
 
@@ -94,6 +112,14 @@ class FeatureCollection:
             The feature that will be added to this feature collection.
 
         """
+        # Check whether the `|` is not present in the series
+        assert not any('|' in s_name for s_name in feature.get_required_series())
+        # Check whether the '__" is not present in the series and function output names
+        assert not any(
+            '__' in output_name for output_name in feature.function.output_names
+        )
+        assert not any('__' in s_name for s_name in feature.get_required_series())
+
         series_win_stride_key = self._get_collection_key(feature)
         if series_win_stride_key in self._feature_desc_dict.keys():
             added_output_names = flatten(
@@ -113,7 +139,7 @@ class FeatureCollection:
     def add(
         self,
         features: Union[
-            FeatureDescriptor, 
+            FeatureDescriptor,
             MultipleFeatureDescriptors,
             FeatureCollection,
             List[
@@ -292,11 +318,15 @@ class FeatureCollection:
             n_jobs = os.cpu_count()
         n_jobs = min(n_jobs, nb_stroll_funcs)
 
+        calculated_feature_list = None
         if n_jobs in [0, 1]:
             idxs = range(nb_stroll_funcs)
             if show_progress:
                 idxs = tqdm(idxs)
-            calculated_feature_list = [self._executor(idx) for idx in idxs]
+            try:
+                calculated_feature_list = [self._executor(idx) for idx in idxs]
+            except:
+                traceback.print_exc()
         else:
             # https://pathos.readthedocs.io/en/latest/pathos.html#usage
             with ProcessPool(nodes=n_jobs, source=True) as pool:
@@ -306,12 +336,22 @@ class FeatureCollection:
                 )
                 if show_progress:
                     results = tqdm(results, total=self._get_stroll_feat_length())
-                calculated_feature_list = [f for f in results]
-                # Close & join - see: https://github.com/uqfoundation/pathos/issues/131
-                pool.close()
-                pool.join()
-                # Clear because: https://github.com/uqfoundation/pathos/issues/111
-                pool.clear()
+                try:
+                    calculated_feature_list = [f for f in results]
+                except:
+                    traceback.print_exc()
+                finally:
+                    # Close & join - see: https://github.com/uqfoundation/pathos/issues/131
+                    pool.close()
+                    pool.join()
+                    # Clear because: https://github.com/uqfoundation/pathos/issues/111
+                    pool.clear()
+
+        if calculated_feature_list is None:
+            raise RuntimeError(
+                "Feature Extraction halted due to error while extracting one (or multiple) feature(s)! " +
+                "See stack trace above."
+                )
 
         if return_df:
             return pd.concat(calculated_feature_list, axis=1, join="outer", copy=False)
@@ -356,7 +396,7 @@ class FeatureCollection:
             which constitute the `feat_cols_to_keep` output.
 
         Note
-        -----
+        ----
         Some FeatureDescriptor objects may have multiple **output-names**.<br>
         Hence, if you only want to retain _a subset_ of that FeatureDescriptor its
         feature outputs, you will still get **all features** as the new
