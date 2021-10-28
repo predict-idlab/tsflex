@@ -587,6 +587,7 @@ def test_series_funcs(dummy_data):
     assert set(fc.get_required_series()) == set(["EDA", "TMP"])
 
     res_df = fc.calculate(dummy_data, return_df=True)
+    res_df_2 = fc.calculate(dummy_data, return_df=True, n_jobs=1)
     assert res_df.shape[1] == 2*10
     freq = pd.to_timedelta(pd.infer_freq(dummy_data.index)) / np.timedelta64(1, "s")
     stride_s = 2.5
