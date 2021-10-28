@@ -115,9 +115,9 @@ def to_list(x: Any) -> List:
         A list of `x` if `x` wasn't a list yet, otherwise `x`.
 
     """
-    if not isinstance(x, list):
+    if not isinstance(x, (list, np.ndarray)):
         return [x]
-    return x
+    return list(x)
 
 
 def to_tuple(x: Any) -> Tuple[Any, ...]:
