@@ -116,6 +116,27 @@ def test_series_output(dummy_data):
     assert np.issubdtype(res["TMP"], np.number)
 
 
+def test_numpy_list_series_names():
+    def to_numeric(series: pd.Series) -> pd.Series:
+        return pd.to_numeric(series)
+
+    processor = SeriesProcessor(series_names=np.array(["TMP"]), function=to_numeric)
+    assert set(processor.get_required_series()) == set(["TMP"])
+
+    processor = SeriesProcessor(
+        series_names=np.array(["TMP", "GSR"]), function=to_numeric
+    )
+    assert set(processor.get_required_series()) == set(["TMP", "GSR"])
+    
+
+def test_repr_():
+    def to_numeric(series: pd.Series) -> pd.Series:
+        return pd.to_numeric(series)
+
+    processor = SeriesProcessor(series_names=np.array(["TMP"]), function=to_numeric)
+    print(processor)
+
+
 def test_series_list_output(dummy_data):
     # Create series output function
     def to_numeric_abs(series: pd.Series) -> List[pd.Series]:
