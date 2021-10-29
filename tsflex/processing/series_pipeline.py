@@ -8,7 +8,6 @@ from typing import Dict, List, Optional, Union
 
 import dill
 import pandas as pd
-from itertools import chain
 
 from .logger import logger
 from .series_processor import SeriesProcessor
@@ -29,7 +28,7 @@ class SeriesPipeline:
         List of ``SeriesProcessor`` or ``SeriesPipeline`` instances that will be applied
         sequentially to the internal series dict, by default None.
         **The processing steps will be executed in the same order as passed in this
-        list**.
+        list.**
 
     """
 
@@ -40,15 +39,12 @@ class SeriesPipeline:
         if processors is not None:
             assert isinstance(processors, list)
 
-            def flatten(t):
-                return [item for sublist in t for item in sublist]
-
-            self.processing_steps = flatten(
+            self.processing_steps = list(flatten(
                 [
                     p.processing_steps if isinstance(p, SeriesPipeline) else [p]
                     for p in processors
                 ]
-            )
+            ))
 
     def get_required_series(self) -> List[str]:
         """Return all required series names for this pipeline.
