@@ -15,6 +15,7 @@ from .utils import dummy_data
 
 ## SeriesPipeline
 
+
 def test_single_signal_series_pipeline(dummy_data):
     def interpolate(series: pd.Series) -> pd.Series:
         return series.interpolate()
@@ -247,7 +248,45 @@ def test_pipeline_drop_keys_series_pipeline(dummy_data):
     assert set(res.columns) == set(["TMP", "EDA", "ACC_x", "ACC_y"])
 
 
+def test_pipeline_processors_are_pipelines(dummy_data):
+    def percentile_clip(series, l_perc=0.01, h_perc=0.99):
+        # Note: this func is useless in ML (data leakage; percentiles are not fitted)
+        l_thresh = np.percentile(series, l_perc * 100)
+        h_thresh = np.percentile(series, h_perc * 100)
+        return series.clip(l_thresh, h_thresh)
+
+    lower = 0.02
+    series_pipeline = SeriesPipeline(
+        processors=[
+            SeriesPipeline(
+                processors=[
+                    SeriesProcessor(
+                        series_names=["TMP", "EDA", "ACC_x"],
+                        function=percentile_clip,
+                        l_perc=lower,
+                    )
+                ]
+            )
+        ]
+    )
+
+    assert len(series_pipeline.get_required_series()) == 3
+    assert set(series_pipeline.get_required_series()) == set(["TMP", "EDA", "ACC_x"])
+    assert len(series_pipeline.processing_steps) == 1
+    assert series_pipeline.processing_steps[0].name == "percentile_clip"
+
+    res = series_pipeline.process(
+        dummy_data, return_all_series=True, drop_keys=["ACC_z"], return_df=True
+    )
+    assert len(res.columns) == 4
+    assert set(res.columns) == set(["TMP", "EDA", "ACC_x", "ACC_y"])
+    
+    # let's also test the repr string
+    print(series_pipeline)
+
+
 ### Test error use-case
+
 
 def test_error_input_dataframe_no_time_index_series_pipeline(dummy_data):
     def absx2(sig):
@@ -296,7 +335,6 @@ def test_error_output_dataframe_no_time_index_series_pipeline(dummy_data):
 
     with pytest.raises(_ProcessingError):
         _ = series_pipeline.process(dummy_data)
-
 
 
 # TODO: test serialize

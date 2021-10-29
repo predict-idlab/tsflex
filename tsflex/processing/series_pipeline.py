@@ -1,15 +1,16 @@
 """SeriesPipeline class for time-series data (pre-)processing pipeline."""
+from __future__ import annotations
 
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
-
-import dill
-import pandas as pd
 
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
-from .series_processor import SeriesProcessor
+import dill
+import pandas as pd
+
 from .logger import logger
+from .series_processor import SeriesProcessor
 from ..utils.data import series_dict_to_df, to_series_list, flatten
 from ..utils.logging import delete_logging_handlers, add_logging_handler
 
@@ -23,17 +24,27 @@ class SeriesPipeline:
 
     Parameters
     ----------
-    processors : List[SeriesProcessor], optional
-        List of ``SeriesProcessor`` objects that will be applied sequentially to the
-        internal series dict, by default None. **The processing steps will be
-        executed in the same order as passed in this list**.
+    processors : List[Union[SeriesProcessor, SeriesPipeline]], optional
+        List of ``SeriesProcessor`` or ``SeriesPipeline`` instances that will be applied
+        sequentially to the internal series dict, by default None.
+        **The processing steps will be executed in the same order as passed in this
+        list.**
 
     """
 
-    def __init__(self, processors: Optional[List[SeriesProcessor]] = None):
+    def __init__(
+        self, processors: Optional[List[Union[SeriesProcessor, SeriesPipeline]]] = None
+    ):
         self.processing_steps: List[SeriesProcessor] = []  # TODO: dit private of niet?
         if processors is not None:
-            self.processing_steps = processors
+            assert isinstance(processors, list)
+
+            self.processing_steps = list(flatten(
+                [
+                    p.processing_steps if isinstance(p, SeriesPipeline) else [p]
+                    for p in processors
+                ]
+            ))
 
     def get_required_series(self) -> List[str]:
         """Return all required series names for this pipeline.
@@ -99,7 +110,7 @@ class SeriesPipeline:
             **Remark**: each Series / DataFrame must have a ``pd.DatetimeIndex``.
             **Remark**: we assume that each name / column is unique.
         return_df : bool, optional
-            Whether the output needs to be a series list or a DataFrame, by default 
+            Whether the output needs to be a series list or a DataFrame, by default
             False.
             If True the output series will be combined to a DataFrame with an outer
             merge.
@@ -219,9 +230,7 @@ class SeriesPipeline:
 
     def __repr__(self):
         """Return formal representation of object."""
-        return (
-            "[\n" + "".join([f"\t{str(p)}\n" for p in self.processing_steps]) + "]"
-        )
+        return "[\n" + "".join([f"\t{str(p)}\n" for p in self.processing_steps]) + "]"
 
     def __str__(self):
         """Return informal representation of object."""

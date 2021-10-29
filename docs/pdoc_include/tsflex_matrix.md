@@ -198,6 +198,6 @@ The table below positions _tsflex_ among other relative packages.
 The visualization below compares `tsflex v0.1.2.3` against other eligible packages for the strided-rolling feature extraction use-case.<br>
 For reference, the in-memory data size when loaded in RAM was 96.4MB.
 
-The figure is constructed by using the [github.com/idlab-predict/tsflex-benchmarking](https://github.com/idlab-predict/tsflex-benchmarking) repo, we further refer to this repository for more details.
+The figure is constructed by using the [tsflex-benchmarking](https://github.com/predict-idlab/tsflex-benchmarking) repo, we further refer to this repository for more details.
 
 <iframe src="https://datapane.com/u/jonasvdd/reports/dkjVy5k/tsflex-benchmark-v2/embed/" width="100%" height="540px" style="border: none;" allowfullscreen>IFrame not supported</iframe><br>
