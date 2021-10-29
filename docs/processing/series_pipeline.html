@@ -36,17 +36,18 @@ alt="" width="33" height="25"></button>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">&#34;&#34;&#34;SeriesPipeline class for time-series data (pre-)processing pipeline.&#34;&#34;&#34;
+from __future__ import annotations
 
 __author__ = &#34;Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt&#34;
-
-import dill
-import pandas as pd
 
 from pathlib import Path
 from typing import Dict, List, Optional, Union
 
-from .series_processor import SeriesProcessor
+import dill
+import pandas as pd
+
 from .logger import logger
+from .series_processor import SeriesProcessor
 from ..utils.data import series_dict_to_df, to_series_list, flatten
 from ..utils.logging import delete_logging_handlers, add_logging_handler
 
@@ -60,17 +61,27 @@ class SeriesPipeline:
 
     Parameters
     ----------
-    processors : List[SeriesProcessor], optional
-        List of ``SeriesProcessor`` objects that will be applied sequentially to the
-        internal series dict, by default None. **The processing steps will be
-        executed in the same order as passed in this list**.
+    processors : List[Union[SeriesProcessor, SeriesPipeline]], optional
+        List of ``SeriesProcessor`` or ``SeriesPipeline`` instances that will be applied
+        sequentially to the internal series dict, by default None.
+        **The processing steps will be executed in the same order as passed in this
+        list.**
 
     &#34;&#34;&#34;
 
-    def __init__(self, processors: Optional[List[SeriesProcessor]] = None):
+    def __init__(
+        self, processors: Optional[List[Union[SeriesProcessor, SeriesPipeline]]] = None
+    ):
         self.processing_steps: List[SeriesProcessor] = []  # TODO: dit private of niet?
         if processors is not None:
-            self.processing_steps = processors
+            assert isinstance(processors, list)
+
+            self.processing_steps = list(flatten(
+                [
+                    p.processing_steps if isinstance(p, SeriesPipeline) else [p]
+                    for p in processors
+                ]
+            ))
 
     def get_required_series(self) -&gt; List[str]:
         &#34;&#34;&#34;Return all required series names for this pipeline.
@@ -136,7 +147,7 @@ class SeriesPipeline:
             **Remark**: each Series / DataFrame must have a ``pd.DatetimeIndex``.
             **Remark**: we assume that each name / column is unique.
         return_df : bool, optional
-            Whether the output needs to be a series list or a DataFrame, by default 
+            Whether the output needs to be a series list or a DataFrame, by default
             False.
             If True the output series will be combined to a DataFrame with an outer
             merge.
@@ -256,9 +267,7 @@ class SeriesPipeline:
 
     def __repr__(self):
         &#34;&#34;&#34;Return formal representation of object.&#34;&#34;&#34;
-        return (
-            &#34;[\n&#34; + &#34;&#34;.join([f&#34;\t{str(p)}\n&#34; for p in self.processing_steps]) + &#34;]&#34;
-        )
+        return &#34;[\n&#34; + &#34;&#34;.join([f&#34;\t{str(p)}\n&#34; for p in self.processing_steps]) + &#34;]&#34;
 
     def __str__(self):
         &#34;&#34;&#34;Return informal representation of object.&#34;&#34;&#34;
@@ -288,17 +297,27 @@ class SeriesPipeline:
 
     Parameters
     ----------
-    processors : List[SeriesProcessor], optional
-        List of ``SeriesProcessor`` objects that will be applied sequentially to the
-        internal series dict, by default None. **The processing steps will be
-        executed in the same order as passed in this list**.
+    processors : List[Union[SeriesProcessor, SeriesPipeline]], optional
+        List of ``SeriesProcessor`` or ``SeriesPipeline`` instances that will be applied
+        sequentially to the internal series dict, by default None.
+        **The processing steps will be executed in the same order as passed in this
+        list.**
 
     &#34;&#34;&#34;
 
-    def __init__(self, processors: Optional[List[SeriesProcessor]] = None):
+    def __init__(
+        self, processors: Optional[List[Union[SeriesProcessor, SeriesPipeline]]] = None
+    ):
         self.processing_steps: List[SeriesProcessor] = []  # TODO: dit private of niet?
         if processors is not None:
-            self.processing_steps = processors
+            assert isinstance(processors, list)
+
+            self.processing_steps = list(flatten(
+                [
+                    p.processing_steps if isinstance(p, SeriesPipeline) else [p]
+                    for p in processors
+                ]
+            ))
 
     def get_required_series(self) -&gt; List[str]:
         &#34;&#34;&#34;Return all required series names for this pipeline.
@@ -364,7 +383,7 @@ class SeriesPipeline:
             **Remark**: each Series / DataFrame must have a ``pd.DatetimeIndex``.
             **Remark**: we assume that each name / column is unique.
         return_df : bool, optional
-            Whether the output needs to be a series list or a DataFrame, by default 
+            Whether the output needs to be a series list or a DataFrame, by default
             False.
             If True the output series will be combined to a DataFrame with an outer
             merge.
@@ -484,9 +503,7 @@ class SeriesPipeline:
 
     def __repr__(self):
         &#34;&#34;&#34;Return formal representation of object.&#34;&#34;&#34;
-        return (
-            &#34;[\n&#34; + &#34;&#34;.join([f&#34;\t{str(p)}\n&#34; for p in self.processing_steps]) + &#34;]&#34;
-        )
+        return &#34;[\n&#34; + &#34;&#34;.join([f&#34;\t{str(p)}\n&#34; for p in self.processing_steps]) + &#34;]&#34;
 
     def __str__(self):
         &#34;&#34;&#34;Return informal representation of object.&#34;&#34;&#34;
@@ -495,10 +512,11 @@ class SeriesPipeline:
 <div class="desc"><p>Pipeline for applying <code>SeriesProcessor</code> objects sequentially.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>processors</code></strong> :&ensp;<code>List[SeriesProcessor]</code>, optional</dt>
-<dd>List of <code>SeriesProcessor</code> objects that will be applied sequentially to the
-internal series dict, by default None. <strong>The processing steps will be
-executed in the same order as passed in this list</strong>.</dd>
+<dt><strong><code>processors</code></strong> :&ensp;<code>List[Union[SeriesProcessor, <a title="tsflex.processing.series_pipeline.SeriesPipeline" href="#tsflex.processing.series_pipeline.SeriesPipeline">SeriesPipeline</a>]]</code>, optional</dt>
+<dd>List of <code>SeriesProcessor</code> or <code><a title="tsflex.processing.series_pipeline.SeriesPipeline" href="#tsflex.processing.series_pipeline.SeriesPipeline">SeriesPipeline</a></code> instances that will be applied
+sequentially to the internal series dict, by default None.
+<strong>The processing steps will be executed in the same order as passed in this
+list.</strong></dd>
 </dl></div>
 <h3>Methods</h3>
 <dl>
@@ -625,7 +643,7 @@ and index <code>len(pipeline)</code> is equivalent to appending the processor.</
         **Remark**: each Series / DataFrame must have a ``pd.DatetimeIndex``.
         **Remark**: we assume that each name / column is unique.
     return_df : bool, optional
-        Whether the output needs to be a series list or a DataFrame, by default 
+        Whether the output needs to be a series list or a DataFrame, by default
         False.
         If True the output series will be combined to a DataFrame with an outer
         merge.
