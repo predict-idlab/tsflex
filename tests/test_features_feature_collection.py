@@ -5,6 +5,7 @@ __author__ = "Jeroen Van Der Donckt, Emiel Deprost, Jonas Van Der Donckt"
 import random
 
 import pytest
+import math
 import warnings
 import pandas as pd
 import numpy as np
@@ -116,24 +117,28 @@ def test_featurecollection_repr(dummy_data):
         s2 = s2[:min_len]
         return np.corrcoef(s1, s2)[0][-1].astype(s1.dtype)
 
-    fc = FeatureCollection(feature_descriptors=[
-        FeatureDescriptor(
-            function=FuncWrapper(func=corr, output_names='corrcoef'),
-            series_name=("EDA", "TMP"),
-            window='30s',
-            stride='30s'
-        ),
-    ]
+    fc = FeatureCollection(
+        feature_descriptors=[
+            FeatureDescriptor(
+                function=FuncWrapper(func=corr, output_names="corrcoef"),
+                series_name=("EDA", "TMP"),
+                window="30s",
+                stride="30s",
+            ),
+        ]
     )
     fc_str: str = fc.__repr__()
     assert "EDA|TMP" in fc_str
-    assert fc_str == "EDA|TMP: (\n\twin: 30s   , stride: 30s: [\n\t\tFeatureDescriptor - func: FuncWrapper(corr, ['corrcoef'], {}),\n\t]\n)\n"
+    assert (
+        fc_str
+        == "EDA|TMP: (\n\twin: 30s   , stride: 30s: [\n\t\tFeatureDescriptor - func: FuncWrapper(corr, ['corrcoef'], {}),\n\t]\n)\n"
+    )
 
     out = fc.calculate(dummy_data, n_jobs=1, return_df=True)
-    assert out.columns[0] == 'EDA|TMP__corrcoef__w=30s_s=30s'
+    assert out.columns[0] == "EDA|TMP__corrcoef__w=30s_s=30s"
 
     out = fc.calculate(dummy_data, n_jobs=None, return_df=True)
-    assert out.columns[0] == 'EDA|TMP__corrcoef__w=30s_s=30s'
+    assert out.columns[0] == "EDA|TMP__corrcoef__w=30s_s=30s"
 
 
 def test_window_idx_single_series_feature_collection(dummy_data):
@@ -153,13 +158,18 @@ def test_window_idx_single_series_feature_collection(dummy_data):
     assert np.isclose(res_begin.values, res_end.values).all()
     assert np.isclose(res_begin.values, res_middle.values).all()
 
-    res_begin = fc.calculate(dummy_data, return_df=True, n_jobs=None, window_idx="begin")
+    res_begin = fc.calculate(
+        dummy_data, return_df=True, n_jobs=None, window_idx="begin"
+    )
     res_end = fc.calculate(dummy_data, return_df=True, n_jobs=None, window_idx="end")
-    res_middle = fc.calculate(dummy_data, return_df=True, n_jobs=None, window_idx="middle")
+    res_middle = fc.calculate(
+        dummy_data, return_df=True, n_jobs=None, window_idx="middle"
+    )
 
     with pytest.raises(Exception):
         res_not_existing = fc.calculate(
-            dummy_data, n_jobs=0, return_df=True, window_idx="somewhere")
+            dummy_data, n_jobs=0, return_df=True, window_idx="somewhere"
+        )
 
     assert np.isclose(res_begin.values, res_end.values).all()
     assert np.isclose(res_begin.values, res_middle.values).all()
@@ -269,17 +279,16 @@ def test_featurecollection_reduce(dummy_data):
     fc = FeatureCollection(
         MultipleFeatureDescriptors(
             functions=[np.max, np.min, np.std, np.sum],
-            series_names='EDA',
-            windows=['5s', '30s', '1min'],
-            strides='5s'
+            series_names="EDA",
+            windows=["5s", "30s", "1min"],
+            strides="5s",
         )
     )
     df_feat_tot = fc.calculate(data=dummy_data, return_df=True, show_progress=True)
 
     for _ in range(5):
         col_subset = random.sample(
-            list(df_feat_tot.columns),
-            random.randint(1, len(df_feat_tot.columns))
+            list(df_feat_tot.columns), random.randint(1, len(df_feat_tot.columns))
         )
         fc_reduced = fc.reduce(col_subset)
         fc_reduced.calculate(dummy_data)
@@ -308,18 +317,16 @@ def test_featurecollection_reduce_multiple_feat_output(dummy_data):
         [
             MultipleFeatureDescriptors(
                 functions=[np.std, np.sum],
-                series_names='EDA',
-                windows=['5s', '30s', '1min'],
-                strides='5s'
+                series_names="EDA",
+                windows=["5s", "30s", "1min"],
+                strides="5s",
             ),
-            fd
+            fd,
         ]
     )
     # df_feat_tot = fc.calculate(data=dummy_data, return_df=True, show_progress=True)
 
-    fc_reduce = fc.reduce(
-        feat_cols_to_keep=['EDA__min__w=5s_s=5s']
-    )
+    fc_reduce = fc.reduce(feat_cols_to_keep=["EDA__min__w=5s_s=5s"])
     del fd
     fc_reduce.calculate(dummy_data)
 
@@ -334,7 +341,7 @@ def test_featurecollection_error_val(dummy_data):
     fc = FeatureCollection(FeatureCollection(feature_descriptors=fd))
 
     eda_data = dummy_data["EDA"].dropna()
-    eda_data[2:1+25*4] = None # Leave gap of 25 s
+    eda_data[2 : 1 + 25 * 4] = None  # Leave gap of 25 s
     eda_data = eda_data.dropna()
     assert eda_data.isna().any() == False
     assert (eda_data.index[1:] - eda_data.index[:-1]).max() == pd.Timedelta("25 s")
@@ -356,7 +363,7 @@ def test_featurecollection_error_val_multiple_outputs(dummy_data):
     fc = FeatureCollection(FeatureCollection(feature_descriptors=fd))
 
     eda_data = dummy_data["EDA"].dropna()
-    eda_data[2:1+25*4] = None # Leave gap of 25 s
+    eda_data[2 : 1 + 25 * 4] = None  # Leave gap of 25 s
     eda_data = eda_data.dropna()
     assert eda_data.isna().any() == False
     assert (eda_data.index[1:] - eda_data.index[:-1]).max() == pd.Timedelta("25 s")
@@ -367,21 +374,20 @@ def test_featurecollection_error_val_multiple_outputs(dummy_data):
 
 def test_feature_collection_invalid_series_names(dummy_data):
     fd = FeatureDescriptor(
-        function=FuncWrapper(np.min, output_names=['min']),
-        series_name='EDA__col',  # invalid name, no '__' allowed
-        window='10s',
-        stride='5s'
+        function=FuncWrapper(np.min, output_names=["min"]),
+        series_name="EDA__col",  # invalid name, no '__' allowed
+        window="10s",
+        stride="5s",
     )
 
     with pytest.raises(Exception):
         fc = FeatureCollection(feature_descriptors=fd)
 
-
     fd = FeatureDescriptor(
-        function=FuncWrapper(np.min, output_names=['min']),
-        series_name='EDA|col',  # invalid name, no '|' allowed
-        window='10s',
-        stride='5s'
+        function=FuncWrapper(np.min, output_names=["min"]),
+        series_name="EDA|col",  # invalid name, no '|' allowed
+        window="10s",
+        stride="5s",
     )
 
     with pytest.raises(Exception):
@@ -390,25 +396,26 @@ def test_feature_collection_invalid_series_names(dummy_data):
 
 def test_feature_collection_invalid_feature_output_names(dummy_data):
     fd = FeatureDescriptor(
-        function=FuncWrapper(np.max, output_names=['max|feat']),
-        series_name='EDA',
-        window='10s',
-        stride='5s'
+        function=FuncWrapper(np.max, output_names=["max|feat"]),
+        series_name="EDA",
+        window="10s",
+        stride="5s",
     )
 
     # this should work, no error should be raised
     fc = FeatureCollection(feature_descriptors=fd)
 
     fd = FeatureDescriptor(
-        function=FuncWrapper(np.max, output_names=['max__feat']), 
+        function=FuncWrapper(np.max, output_names=["max__feat"]),
         # invalid output_name, no '__' allowed
-        series_name='EDA',
-        window='10s',
-        stride='5s'
+        series_name="EDA",
+        window="10s",
+        stride="5s",
     )
 
     with pytest.raises(Exception):
         fc = FeatureCollection(feature_descriptors=fd)
+
 
 ### Test various feature descriptor functions
 
@@ -502,7 +509,7 @@ def test_cleared_pools_when_feature_error(dummy_data):
 
     fc = FeatureCollection(
         MultipleFeatureDescriptors(
-            mean_func, ["EDA", "ACC_x"], ["30s", "45s", "1min", "2min"], '15s'
+            mean_func, ["EDA", "ACC_x"], ["30s", "45s", "1min", "2min"], "15s"
         )
     )
 
@@ -517,20 +524,21 @@ def test_cleared_pools_when_feature_error(dummy_data):
 
     fc = FeatureCollection(
         MultipleFeatureDescriptors(
-            mean_func, ["EDA", "ACC_x"], ["30s", "45s", "1min", "2min"], '15s'
+            mean_func, ["EDA", "ACC_x"], ["30s", "45s", "1min", "2min"], "15s"
         )
     )
 
     for n_jobs in [0, None]:
         out = fc.calculate(dummy_data, return_df=True, n_jobs=n_jobs)
         assert out.shape[0] > 0
-        assert out.shape[1] == 2*4
-    
+        assert out.shape[1] == 2 * 4
+
 
 def test_series_funcs(dummy_data):
     def min_max_time_diff(x: pd.Series, mult=1):
-        diff = x.index.to_series().diff().dt.total_seconds()#.max()
-        return diff.min()*mult, diff.max()*mult
+        diff = x.index.to_series().diff().dt.total_seconds()  # .max()
+        return diff.min() * mult, diff.max() * mult
+
     def time_diff(x: pd.Series):
         return (x.index[-1] - x.index[0]).total_seconds()
 
@@ -543,10 +551,10 @@ def test_series_funcs(dummy_data):
         The parameters control which of the characteristics are returned.
         Possible extracted attributes are "pvalue", "rvalue", "intercept", "slope", "stderr", see the documentation of
         linregress for more information.
-        
+
         :param x: the time series to calculate the feature of. The index must be datetime.
         :type x: pandas.Series
-        
+
         :param param: contains dictionaries {"attr": x} with x an string, the attribute name of the regression model
         :type param: list
 
@@ -563,20 +571,29 @@ def test_series_funcs(dummy_data):
         linReg = linregress(times_hours, x.values)
         return linReg.slope, linReg.intercept, linReg.rvalue
 
-
     fc = FeatureCollection(
         MultipleFeatureDescriptors(
-            functions=[np.mean, np.sum, len,
+            functions=[
+                np.mean,
+                np.sum,
+                len,
                 FuncWrapper(
-                    min_max_time_diff, input_type=pd.Series,
-                    output_names=["min_time_diff", "max_time_diff"], mult=3,
+                    min_max_time_diff,
+                    input_type=pd.Series,
+                    output_names=["min_time_diff", "max_time_diff"],
+                    mult=3,
                 ),
                 FuncWrapper(
-                    linear_trend_timewise, input_type=pd.Series,
-                    output_names=["timewise_regr_slope", "timewise_regr_intercept", "timewise_regr_r_value"]
+                    linear_trend_timewise,
+                    input_type=pd.Series,
+                    output_names=[
+                        "timewise_regr_slope",
+                        "timewise_regr_intercept",
+                        "timewise_regr_r_value",
+                    ],
                 ),
                 FuncWrapper(time_diff, input_type=pd.Series),
-                FuncWrapper(np.max, input_type=np.array)
+                FuncWrapper(np.max, input_type=np.array),
             ],
             series_names=["EDA", "TMP"],
             windows="5s",
@@ -585,15 +602,21 @@ def test_series_funcs(dummy_data):
     )
 
     assert set(fc.get_required_series()) == set(["EDA", "TMP"])
-
-    res_df = fc.calculate(dummy_data, return_df=True)
+    downscale_factor = 20
+    res_df = fc.calculate(
+        dummy_data[: int(len(dummy_data) / downscale_factor)], return_df=True
+    )
     # Note: testing this single-threaded allows the code-cov to fire
-    res_df_2 = fc.calculate(dummy_data, return_df=True, n_jobs=1)
-    assert res_df.shape[1] == 2*10
+    res_df_2 = fc.calculate(
+        dummy_data[: int(len(dummy_data) / downscale_factor)], return_df=True, n_jobs=1
+    )
+    assert res_df.shape[1] == 2 * 10
     freq = pd.to_timedelta(pd.infer_freq(dummy_data.index)) / np.timedelta64(1, "s")
     stride_s = 2.5
     window_s = 5
-    assert len(res_df) == (int(len(dummy_data) / (1 / freq)) - window_s) // stride_s
+    assert len(res_df) == math.ceil(
+        (int(len(dummy_data) / downscale_factor / (1 / freq)) - window_s) / stride_s
+    )
 
     expected_output_names = [
         "EDA|TMP__q_0.1_abs_diff__w=5s_s=2.5s",
@@ -602,8 +625,11 @@ def test_series_funcs(dummy_data):
     ]
     assert "EDA__min_time_diff__w=5s_s=2.5s" in res_df.columns
     assert "EDA__amax__w=5s_s=2.5s" in res_df.columns
-    assert all(res_df["EDA__min_time_diff__w=5s_s=2.5s"] == res_df["EDA__max_time_diff__w=5s_s=2.5s"])
-    assert all(res_df["EDA__min_time_diff__w=5s_s=2.5s"] == 0.25*3)
+    assert all(
+        res_df["EDA__min_time_diff__w=5s_s=2.5s"]
+        == res_df["EDA__max_time_diff__w=5s_s=2.5s"]
+    )
+    assert all(res_df["EDA__min_time_diff__w=5s_s=2.5s"] == 0.25 * 3)
 
 
 def test_categorical_funcs():
@@ -625,35 +651,34 @@ def test_categorical_funcs():
         func=count_categories,
         output_names=["count-" + str(cat) for cat in categories],
         # kwargs
-        categories=categories
+        categories=categories,
     )
 
     # construct the collection in which you add all your features
     fc = FeatureCollection(
         feature_descriptors=[
             FeatureDescriptor(
-                function=cat_count,
-                series_name='cat',
-                window='1day',
-                stride='12hours'
+                function=cat_count, series_name="cat", window="1day", stride="12hours"
             )
         ]
     )
 
     for n_jobs in [0, None]:
-        out = fc.calculate(data=categorical_data, approve_sparsity=True,
-                           n_jobs=n_jobs, return_df=True)
+        out = fc.calculate(
+            data=categorical_data, approve_sparsity=True, n_jobs=n_jobs, return_df=True
+        )
         for c in categories:
-            assert f'cat__count-{str(c)}__w=1D_s=12h' in out.columns
+            assert f"cat__count-{str(c)}__w=1D_s=12h" in out.columns
 
 
 def test_time_based_features():
     # create a time column
     time_value_series = (
-        pd.Series(index=pd.date_range("2021-07-01", freq="1h", periods=1000),
-                  dtype=object)
-            .index.to_series()
-            .rename("time")
+        pd.Series(
+            index=pd.date_range("2021-07-01", freq="1h", periods=1000), dtype=object
+        )
+        .index.to_series()
+        .rename("time")
     )
 
     # drop some data, as we don't make frequency assumptions
@@ -665,26 +690,30 @@ def test_time_based_features():
         # calcualtes the std in seconds
         if time_arr.shape[0] <= 3:
             return np.NaN
-        return np.std(np.diff(time_arr).astype("timedelta64[us]").astype(np.int64) / (
-                    60 * 60 * 1e6))
+        return np.std(
+            np.diff(time_arr).astype("timedelta64[us]").astype(np.int64)
+            / (60 * 60 * 1e6)
+        )
 
     fc = FeatureCollection(
         feature_descriptors=[
             FeatureDescriptor(
-                function=std_hour, series_name="time", window="6 hours",
-                stride="4 hours"
+                function=std_hour,
+                series_name="time",
+                window="6 hours",
+                stride="4 hours",
             )
         ]
     )
     out = fc.calculate(
         data=time_value_series, approve_sparsity=True, n_jobs=1, return_df=True
     )
-    assert out.columns[0] == 'time__std_hour__w=6h_s=4h'
+    assert out.columns[0] == "time__std_hour__w=6h_s=4h"
 
     out = fc.calculate(
         data=time_value_series, approve_sparsity=True, n_jobs=None, return_df=True
     )
-    assert out.columns[0] == 'time__std_hour__w=6h_s=4h'
+    assert out.columns[0] == "time__std_hour__w=6h_s=4h"
 
 
 def test_pass_by_value(dummy_data):
@@ -692,8 +721,15 @@ def test_pass_by_value(dummy_data):
         series_view[:5] = 0  # update the view -> error!
         return np.mean(series_view)
 
-    fc_gsr = FeatureCollection([
-        FeatureDescriptor(try_change_view, "EDA", '30s', '15s', )]
+    fc_gsr = FeatureCollection(
+        [
+            FeatureDescriptor(
+                try_change_view,
+                "EDA",
+                "30s",
+                "15s",
+            )
+        ]
     )
 
     for n_jobs in [0, None]:
@@ -703,10 +739,20 @@ def test_pass_by_value(dummy_data):
 
 def test_datatype_retention(dummy_data):
     for dtype in [np.float16, np.float32, np.int64, np.int32]:
+
         def mean_dtype(series_view: np.ndarray):
             return np.mean(series_view).astype(dtype)
 
-        fc_gsr = FeatureCollection([FeatureDescriptor(mean_dtype, "EDA", '30s','15s',)])
+        fc_gsr = FeatureCollection(
+            [
+                FeatureDescriptor(
+                    mean_dtype,
+                    "EDA",
+                    "30s",
+                    "15s",
+                )
+            ]
+        )
         for n_jobs in [0, 1, 2, None]:
             print(dtype, n_jobs)
             out = fc_gsr.calculate(dummy_data, return_df=True, n_jobs=n_jobs)

@@ -1,7 +1,7 @@
 """Tests for the strided rolling class"""
 
 from .utils import dummy_data
-from tsflex.features.strided_rolling import StridedRolling
+from tsflex.features.strided_rolling import TimeStridedRolling
 from tsflex.features import FuncWrapper
 from tsflex.utils.time import parse_time_arg
 import numpy as np
@@ -17,7 +17,7 @@ def test_bound_types(dummy_data):
     window = parse_time_arg('30s')
     stride = parse_time_arg('30s')
     for bound_method in ['inner', 'outer', 'first']:
-        stroll = StridedRolling(
+        stroll = TimeStridedRolling(
             data=dummy_data[['EDA', 'TMP']],
             window=window,
             stride=stride,
