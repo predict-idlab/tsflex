@@ -10,23 +10,28 @@
 
 """
 
+from __future__ import annotations
+
 __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
 
 import time
 import warnings
-import pandas as pd
-import numpy as np
-
+from abc import ABC, abstractmethod
 from collections import namedtuple
-from typing import Callable, Union, List, Tuple, Optional
+from typing import Union, List, Tuple, Optional, Any, TypeVar
+
+import numpy as np
+import pandas as pd
 
 from .function_wrapper import FuncWrapper
 from .logger import logger
 from ..utils.data import SUPPORTED_STROLL_TYPES, to_series_list
 from ..utils.time import timedelta_to_str
 
+T = TypeVar('T')  # Declare type variable
 
-class StridedRolling:
+
+class StridedRolling(ABC):
     """Custom time-based sliding window with stride.
 
     Parameters
@@ -73,7 +78,6 @@ class StridedRolling:
         The `bound_method`-argument must still be propagated to `FeatureCollection`
 
     """
-
     # Create the named tuple
     _NumpySeriesContainer = namedtuple(
         "SeriesContainer", ["values", "start_indexes", "end_indexes"]
@@ -82,89 +86,134 @@ class StridedRolling:
     def __init__(
             self,
             data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
-            window: pd.Timedelta,
-            stride: pd.Timedelta,
+            window: Union[int, float, pd.Timedelta],
+            stride: Union[int, float, pd.Timedelta],
             data_type: Optional[Union[np.array, pd.Series]] = np.array,
             window_idx: Optional[str] = "end",
             bound_method: Optional[str] = "inner",
             approve_sparsity: Optional[bool] = False,
     ):
-        self.window: pd.Timedelta = window
-        self.stride: pd.Timedelta = stride
-        
+        self.window = window
+        self.stride = stride
+
+        self.window_idx = window_idx
+        self.approve_sparsity = approve_sparsity
+        self.bound_method = bound_method
+
+        # TODO: add support for index-data tuple (faster alternative than pd.Series)
         assert data_type in SUPPORTED_STROLL_TYPES
         self.data_type = data_type
 
-        # 0. standardize the input
+        # 0. Standardize the input
         series_list: List[pd.Series] = to_series_list(data)
         self.series_key: Tuple[str, ...] = tuple([str(s.name) for s in series_list])
 
         # 1. Determine the bounds
-        t_start, t_end = self._determine_bounds(series_list, bound_method)
+        series_list: List[pd.Series] = to_series_list(data)
+        self.t_start, self.t_end = self._determine_bounds(series_list)
 
         # And slice **all** the series to these tightest bounds
-        assert (t_end - t_start) > window
+        assert (self.t_end - self.t_start) > window
         if len(series_list) > 1:
-            series_list = [s[t_start:t_end] for s in series_list]
+            series_list = [s[self.t_start:self.t_end] for s in series_list]
 
-        # 2. Create the time_index which will be used for DataFrame reconstruction
-        # 2.1 - and adjust the time_index
-        # note: this code can also be placed in the `apply_func` method (if we want to
-        #  make the bound window-idx setting feature specific).
-        if window_idx == "end":
-            window_idx_offset = window
-        elif window_idx == "middle":
-            window_idx_offset = window / 2
-        elif window_idx == "begin":
-            window_idx_offset = pd.Timedelta(seconds=0)
+        # 2. Create the new-index which will be used for DataFrame reconstruction
+        self.index = self._construct_output_index(series_list[0].index.name)
+
+        # 3. Store the series containers
+        np_start_times, np_end_times = self._construct_start_end_times()
+        self.series_containers = self._construct_series_containers(
+            series_list, np_start_times, np_end_times
+        )
+
+        # Finally, check the sparsity assumption
+        if not self.approve_sparsity:
+            last_container = self.series_containers[-1]
+            qs = [0, 0.1, 0.5, 0.9, 1]
+            series_idx_stats = np.quantile(
+                last_container.end_indexes - last_container.start_indexes, q=qs
+            )
+            q_str = ", ".join([f"q={q}: {v}" for q, v in zip(qs, series_idx_stats)])
+            if not all(series_idx_stats == series_idx_stats[-1]):  # min != max
+                warnings.warn(
+                    f"There are gaps in the time-series {series_list[-1].name}; "
+                    + f"\n \t Quantiles of nb values in window: {q_str}",
+                    RuntimeWarning,
+                )
+
+    # -------------------------------- PRIVATE METHODS ---------------------------------
+    def _determine_bounds(self, series_list: List[pd.Series]) -> Tuple[Any, Any]:
+        """Determine the bounds of the passed series.
+
+        Parameters
+        ----------
+        series_list : List[pd.Series]
+            The list of series for which the bounds are determined.
+
+        Returns
+        -------
+        Tuple[pd.Timestamp, pd.Timestamp]
+            The start & end timestamp, respectively.
+
+        """
+        if self.bound_method == "inner":
+            latest_start = series_list[0].index[0]
+            earliest_stop = series_list[0].index[-1]
+            for series in series_list[1:]:
+                latest_start = max(latest_start, series.index[0])
+                earliest_stop = min(earliest_stop, series.index[-1])
+            return latest_start, earliest_stop
+
+        if self.bound_method == "outer":
+            earliest_start = series_list[0].index[0]
+            latest_stop = series_list[0].index[-1]
+            for series in series_list[1:]:
+                earliest_start = min(earliest_start, series.index[0])
+                latest_stop = max(latest_stop, series.index[-1])
+            return earliest_start, latest_stop
+
+        elif self.bound_method == "first":
+            return series_list[0].index[0], series_list[0].index[-1]
+
+        else:
+            raise ValueError(f"invalid bound method string passed {self.bound_method}")
+
+    def _get_window_offset(self, window: T) -> T:
+        if self.window_idx == "end":
+            return window
+        elif self.window_idx == "middle":
+            return window / 2
+        elif self.window_idx == "begin":
+            if isinstance(window, pd.Timedelta):
+                return pd.Timedelta(seconds=0)
+            return 0
         else:
             raise ValueError(
-                f"window index {window_idx} must be either of: "
+                f"window index {self.window_idx} must be either of: "
                 "['end', 'middle', 'begin']"
             )
 
-        # use closed = left to exclude 'end' if it falls on the boundary
-        # note: the index automatically takes the timezone of `t_start` & `t_end`
-        # note: the index-name of the first passed series will be used
-        self.index = pd.date_range(
-            start=t_start + window_idx_offset,
-            end=t_end - window + window_idx_offset,
-            freq=stride,
-            name=series_list[0].index.name
-        )
+    def _construct_series_containers(
+            self,
+            series_list,
+            np_start_times,
+            np_end_times
+    ) -> List[StridedRolling._NumpySeriesContainer]:
 
-        # ---------- Efficient numpy code -------
-        # 1. Convert everything to int64
-        np_start = t_start.to_datetime64()
-        np_window = self.window.to_timedelta64()
-        np_stride = self.stride.to_timedelta64()
-
-        # 2. Precompute the start & end times (these remain the same for each series)
-        # note: this if equivalent to:
-        #   if `window` == 'begin":
-        #       start_times = self.index.values
-        np_start_times = np.arange(
-            start=np_start, stop=np_start + (len(self.index) * np_stride),
-            step=np_stride,
-            dtype=np.datetime64,
-        )
-        np_end_times = np_start_times + np_window
-
-        self.series_containers: List[StridedRolling._NumpySeriesContainer] = []
+        series_containers: List[StridedRolling._NumpySeriesContainer] = []
         for series in series_list:
             np_idx_times = series.index.values
-            series_name = series.name
-            if data_type is np.array:
+            if self.data_type is np.array:
                 # create a non-writeable view of the series
                 series = series.values
                 series.flags.writeable = False
-            elif data_type is pd.Series:
+            elif self.data_type is pd.Series:
                 series.values.flags.writeable = False
                 series.index.values.flags.writeable = False
             else:
                 raise ValueError("unsupported datatype")
 
-            self.series_containers.append(
+            series_containers.append(
                 StridedRolling._NumpySeriesContainer(
                     # TODO: maybe save the pd.Series instead of the np.series
                     values=series,
@@ -177,62 +226,7 @@ class StridedRolling:
                     end_indexes=np.searchsorted(np_idx_times, np_end_times, "left"),
                 )
             )
-
-            if not approve_sparsity:
-                last_container = self.series_containers[-1]
-                qs = [0, 0.1, 0.5, 0.9, 1]
-                series_idx_stats = np.quantile(
-                    last_container.end_indexes - last_container.start_indexes, q=qs
-                )
-                q_str = ", ".join([f"q={q}: {v}" for q, v in zip(qs, series_idx_stats)])
-                if not all(series_idx_stats == series_idx_stats[-1]):  # min != max
-                    warnings.warn(
-                        f"There are gaps in the time-series {series_name}; "
-                        + f"\n \t Quantiles of nb values in window: {q_str}",
-                        RuntimeWarning,
-                    )
-
-    @staticmethod
-    def _determine_bounds(
-            series_list: List[pd.Series], bound_method: str
-    ) -> Tuple[pd.Timestamp, pd.Timestamp]:
-        """Determine the bounds of the passed series.
-
-        Parameters
-        ----------
-        series_list : List[pd.Series]
-            The list of series for which the bounds are determined.
-
-        bound_method : str
-            The methodology which is used for the ``series_list`` bound determination
-
-        Returns
-        -------
-        Tuple[pd.Timestamp, pd.Timestamp]
-            The start & end timestamp, respectively.
-
-        """
-        if bound_method == "inner":
-            latest_start = series_list[0].index[0]
-            earliest_stop = series_list[0].index[-1]
-            for series in series_list[1:]:
-                latest_start = max(latest_start, series.index[0])
-                earliest_stop = min(earliest_stop, series.index[-1])
-            return latest_start, earliest_stop
-
-        if bound_method == "outer":
-            earliest_start = series_list[0].index[0]
-            latest_stop = series_list[0].index[-1]
-            for series in series_list[1:]:
-                earliest_start = min(earliest_start, series.index[0])
-                latest_stop = max(latest_stop, series.index[-1])
-            return earliest_start, latest_stop
-
-        elif bound_method == "first":
-            return series_list[0].index[0], series_list[0].index[-1]
-
-        else:
-            raise ValueError(f"invalid bound method string passed {bound_method}")
+        return series_containers
 
     def apply_func(self, func: FuncWrapper) -> pd.DataFrame:
         """Apply a function to the expanded time-series.
@@ -264,14 +258,6 @@ class StridedRolling:
           the ``output_names`` attributes of its constructor.
 
         """
-
-        # Convert win & stride to time-string if available :)
-        def create_feat_col_name(feat_name) -> str:
-            win_str = timedelta_to_str(self.window)
-            stride_str = timedelta_to_str(self.stride)
-            win_stride_str = f"w={win_str}_s={stride_str}"
-            return f"{'|'.join(self.series_key)}__{feat_name}__{win_stride_str}"
-
         feat_names = func.output_names
 
         t_start = time.time()
@@ -290,15 +276,16 @@ class StridedRolling:
         feat_out = {}
         if out.ndim == 1 or (out.ndim == 2 and out.shape[1] == 1):
             assert (
-                len(feat_names) == 1
+                    len(feat_names) == 1
             ), f"Func {func} returned more than 1 output!"
-            feat_out[create_feat_col_name(feat_names[0])] = out.flatten()
+            feat_out[self._create_feat_col_name(feat_names[0])] = out.flatten()
         if out.ndim == 2 and out.shape[1] > 1:
             assert (
-                len(feat_names) == out.shape[1]
+                    len(feat_names) == out.shape[1]
             ), f"Func {func} returned incorrect number of outputs ({out.shape[1]})!"
             for col_idx in range(out.shape[1]):
-                feat_out[create_feat_col_name(feat_names[col_idx])] = out[:, col_idx]
+                feat_out[self._create_feat_col_name(feat_names[col_idx])] = \
+                    out[:, col_idx]
 
         elapsed = time.time() - t_start
         logger.info(
@@ -308,3 +295,96 @@ class StridedRolling:
         )
 
         return pd.DataFrame(index=self.index, data=feat_out)
+
+    # ----------------------------- OVERRIDE THESE METHODS -----------------------------
+    @abstractmethod
+    def _construct_output_index(self, name: str) -> pd.Index:
+        raise NotImplementedError
+
+    @abstractmethod
+    def _create_feat_col_name(self, feat_name: str) -> str:
+        raise NotImplementedError
+
+    @abstractmethod
+    def _construct_start_end_times(self) -> Tuple[np.ndarray, np.ndarray]:
+        raise NotImplementedError
+
+
+class SequenceStridedRolling(StridedRolling):
+    def _construct_output_index(self, name: str) -> pd.Index:
+        # 2.1 - and adjust the time_index
+        # note: this code can also be placed in the `apply_func` method (if we want to
+        #  make the bound window-idx setting feature specific).
+        window_idx_offset = self._get_window_offset(self.window)
+
+        # use closed = left to exclude 'end' if it falls on the boundary
+        return pd.Index(
+            data=np.arange(
+                start=self.t_start + window_idx_offset,
+                stop=self.t_end - self.window + window_idx_offset,
+                step=self.stride,
+            ),
+            name=name,
+        )
+
+    def _create_feat_col_name(self, feat_name: str) -> str:
+        win_stride_str = f"w={self.window}_s={self.stride}"
+        return f"{'|'.join(self.series_key)}__{feat_name}__{win_stride_str}"
+
+    def _construct_start_end_times(self) -> Tuple[np.ndarray, np.ndarray]:
+        # ---------- Efficient numpy code -------
+        # 2. Precompute the start & end times (these remain the same for each series)
+        # note: this if equivalent to:
+        #   if `window` == 'begin":
+        #       start_times = self.index.values
+        np_start_times = np.arange(
+            start=self.t_start, stop=self.t_start + (len(self.index) * self.stride),
+            step=self.stride,
+            dtype=self.index.dtype,
+        )
+        np_end_times = np_start_times + self.window
+        return np_start_times, np_end_times
+
+
+class TimeStridedRolling(StridedRolling):
+    def _construct_output_index(self, name: str) -> pd.DatetimeIndex:
+        # 2.1 - and adjust the time_index
+        # note: this code can also be placed in the `apply_func` method (if we want to
+        #  make the bound window-idx setting feature specific).
+        window_idx_offset = self._get_window_offset(self.window)
+
+        # use closed = left to exclude 'end' if it falls on the boundary
+        # note: the index automatically takes the timezone of `t_start` & `t_end`
+        # note: the index-name of the first passed series will be used
+        return pd.date_range(
+            start=self.t_start + window_idx_offset,
+            end=self.t_end - self.window + window_idx_offset,
+            freq=self.stride,
+            name=name
+        )
+
+    def _create_feat_col_name(self, feat_name: str) -> str:
+        # Convert win & stride to time-string if available :)
+        win_str = timedelta_to_str(self.window)
+        stride_str = timedelta_to_str(self.stride)
+        win_stride_str = f"w={win_str}_s={stride_str}"
+        return f"{'|'.join(self.series_key)}__{feat_name}__{win_stride_str}"
+
+    def _construct_start_end_times(self) -> Tuple[np.ndarray, np.ndarray]:
+        # ---------- Efficient numpy code -------
+        # 1. Convert everything to int64
+        np_start = self.t_start.to_datetime64()
+        np_window = self.window.to_timedelta64()
+        np_stride = self.stride.to_timedelta64()
+
+        # 2. Precompute the start & end times (these remain the same for each series)
+        # note: this if equivalent to:
+        #   if `window` == 'begin":
+        #       start_times = self.index.values
+        np_start_times = np.arange(
+            start=np_start, stop=np_start + (len(self.index) * np_stride),
+            step=np_stride,
+            dtype=np.datetime64,
+        )
+        np_end_times = np_start_times + np_window
+        return np_start_times, np_end_times

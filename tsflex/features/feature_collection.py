@@ -25,7 +25,7 @@ from tqdm.auto import tqdm
 
 from .feature import FeatureDescriptor, MultipleFeatureDescriptors
 from .logger import logger
-from .strided_rolling import StridedRolling
+from .strided_rolling import StridedRolling, TimeStridedRolling
 from ..features.function_wrapper import FuncWrapper
 from ..utils.data import to_list, to_series_list, flatten
 from ..utils.logging import delete_logging_handlers, add_logging_handler
@@ -199,7 +199,7 @@ class FeatureCollection:
                 idx - lengths[key_idx]
             ]
             function: FuncWrapper = feature.function
-            stroll = StridedRolling(
+            stroll = TimeStridedRolling(
                 data=[series_dict[k] for k in key],
                 window=win,
                 stride=stride,
@@ -219,6 +219,7 @@ class FeatureCollection:
     def calculate(
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
+        bound_method: str, # TODO add this argument to the FC
         return_df: Optional[bool] = False,
         window_idx: Optional[str] = "end",
         approve_sparsity: Optional[bool] = False,
