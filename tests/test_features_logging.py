@@ -26,8 +26,8 @@ def test_simple_features_logging(dummy_data, logging_file_path):
         stride="2.5s",
     )
     fc = FeatureCollection(feature_descriptors=fd)
-    fc.add(MultipleFeatureDescriptors(np.min, series_names=["TMP","ACC_x"], windows=5, strides=2.5))
-    fc.add(FeatureDescriptor(np.min, series_name=("EDA",), window=5, stride=2.5))
+    fc.add(MultipleFeatureDescriptors(np.min, series_names=["TMP","ACC_x"], windows='5', strides='2.5'))
+    fc.add(FeatureDescriptor(np.min, series_name=("EDA",), window='5', stride='2.5'))
 
     assert set(fc.get_required_series()) == set(["EDA", "TMP", "ACC_x"])
     assert len(fc.get_required_series()) == 3

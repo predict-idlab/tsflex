@@ -28,6 +28,7 @@ def test_simple_feature_descriptor():
     assert fd.get_required_series() == ["EDA"]
     assert isinstance(fd.function, FuncWrapper)
 
+
 def test_simple_raw_np_func_feature_descriptor():
     fd = FeatureDescriptor(
         function=np.sum,
@@ -42,7 +43,10 @@ def test_simple_raw_np_func_feature_descriptor():
     assert fd.get_required_series() == ["EDA"]
     assert isinstance(fd.function, FuncWrapper)
 
-def test_simple_feature_descriptor_str_float_seconds():
+
+# TODO -> add new test in which floats represent the float position
+
+def test_simple_feature_descriptor_str_str_seconds():
     def sum_func(sig: np.ndarray) -> float:
         return sum(sig)
 
@@ -50,7 +54,7 @@ def test_simple_feature_descriptor_str_float_seconds():
         function=sum_func,
         series_name="EDA",
         window='5',
-        stride=2.5,
+        stride='2.5',
     )
 
     assert fd.series_name == tuple(["EDA"])
@@ -58,6 +62,7 @@ def test_simple_feature_descriptor_str_float_seconds():
     assert fd.stride == pd.Timedelta(2.5, unit='seconds')
     assert fd.get_required_series() == ["EDA"]
     assert isinstance(fd.function, FuncWrapper)
+
 
 def test_simple_feature_descriptor_func_wrapper():
     def sum_func(sig: np.ndarray) -> float:

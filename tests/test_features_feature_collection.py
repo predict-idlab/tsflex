@@ -2,8 +2,10 @@
 
 __author__ = "Jeroen Van Der Donckt, Emiel Deprost, Jonas Van Der Donckt"
 
+import os
 import random
 
+import dill
 import pytest
 import math
 import warnings
@@ -14,6 +16,7 @@ from tsflex.features import FuncWrapper
 from tsflex.features import FeatureDescriptor, MultipleFeatureDescriptors
 from tsflex.features import FeatureCollection
 
+from pathlib import Path
 from pandas.testing import assert_index_equal, assert_frame_equal
 from scipy.stats import linregress
 from typing import Tuple
@@ -55,8 +58,8 @@ def test_uneven_sampled_series_feature_collection(dummy_data):
         stride="2.5s",
     )
     fc = FeatureCollection(feature_descriptors=fd)
-    fc.add(FeatureDescriptor(np.min, series_name=("TMP",), window=5, stride=2.5))
-    fc.add(FeatureDescriptor(np.min, series_name=("EDA",), window=5, stride=2.5))
+    fc.add(FeatureDescriptor(np.min, series_name=("TMP",), window="5", stride="2.5"))
+    fc.add(FeatureDescriptor(np.min, series_name=("EDA",), window="5", stride="2.5"))
 
     assert set(fc.get_required_series()) == set(["EDA", "TMP"])
     assert len(fc.get_required_series()) == 2
@@ -82,7 +85,7 @@ def test_warning_uneven_sampled_series_feature_collection(dummy_data):
         stride="2.5s",
     )
     fc = FeatureCollection(feature_descriptors=fd)
-    fc.add(FeatureDescriptor(np.min, series_name=("TMP",), window=5, stride=2.5))
+    fc.add(FeatureDescriptor(np.min, series_name=("TMP",), window="5s", stride="2.5s"))
 
     assert set(fc.get_required_series()) == set(["EDA", "TMP"])
     assert len(fc.get_required_series()) == 2
@@ -300,6 +303,27 @@ def test_featurecollection_reduce(dummy_data):
     # should also work when fc is deleted
     del fc
     fc_reduced.calculate(dummy_data)
+
+
+def test_featurecollection_numeric_reduce(dummy_data):
+    fc = FeatureCollection(
+        feature_descriptors=[
+            MultipleFeatureDescriptors(
+                windows=[240, 480, 1000],
+                strides=240,
+                functions=[np.mean, np.min, np.max, np.std],
+                series_names=["TMP", "EDA"],
+            )
+        ]
+    )
+    df_tmp = dummy_data["TMP"].reset_index(drop=True)
+    df_eda = dummy_data["EDA"].reset_index(drop=True)
+    out = fc.calculate([df_tmp, df_eda], window_idx="end", return_df=True)
+
+    n_retain = 8
+    fc_reduced = fc.reduce(np.random.choice(out.columns, size=n_retain, replace=False))
+    out_2 = fc_reduced.calculate([df_tmp, df_eda], return_df=True)
+    assert out_2.shape[1] == n_retain
 
 
 def test_featurecollection_reduce_multiple_feat_output(dummy_data):
@@ -608,7 +632,10 @@ def test_series_funcs(dummy_data):
     )
     # Note: testing this single-threaded allows the code-cov to fire
     res_df_2 = fc.calculate(
-        dummy_data[: int(len(dummy_data) / downscale_factor)], return_df=True, n_jobs=1
+        dummy_data[: int(len(dummy_data) / downscale_factor)],
+        return_df=True,
+        n_jobs=1,
+        show_progress=True,
     )
     assert res_df.shape[1] == 2 * 10
     freq = pd.to_timedelta(pd.infer_freq(dummy_data.index)) / np.timedelta64(1, "s")
@@ -827,3 +854,68 @@ def test__error_same_output_feature_collection(dummy_data):
     )
     with pytest.raises(AssertionError):
         fc = FeatureCollection(feature_descriptors=mfd)
+
+
+def test_bound_method(dummy_data):
+    fc = FeatureCollection(
+        feature_descriptors=[
+            MultipleFeatureDescriptors(
+                windows=[480, 1000],
+                strides=480,
+                functions=[np.mean, np.min, np.max, np.std],
+                series_names=["TMP", "EDA"],
+            )
+        ]
+    )
+
+    df_tmp = dummy_data["TMP"].reset_index(drop=True)
+    df_eda = dummy_data["EDA"].reset_index(drop=True).astype(float)
+    df_eda.index += 100
+
+    for bound_method in ["inner", "outer", "first"]:
+        out = fc.calculate(
+            [df_tmp, df_eda],
+            window_idx="middle",
+            return_df=True,
+            bound_method=bound_method,
+        )
+
+    with pytest.raises(ValueError):
+        fc.calculate(
+            [df_tmp, df_eda],
+            window_idx="end",
+            return_df=True,
+            bound_method="invalid name",
+        )
+
+
+def test_serialization(dummy_data):
+    fc = FeatureCollection(
+        feature_descriptors=[
+            MultipleFeatureDescriptors(
+                windows=[480, 1000],
+                strides=480,
+                functions=[np.mean, np.min, np.max, np.std],
+                series_names=["TMP", "EDA"],
+            )
+        ]
+    )
+
+    df_tmp = dummy_data["TMP"].reset_index(drop=True)
+    df_eda = dummy_data["EDA"].reset_index(drop=True)
+    out = fc.calculate([df_tmp, df_eda], window_idx="end", return_df=True)
+    col_order = out.columns
+
+    save_path = Path("featurecollection.pkl")
+    if save_path.exists():
+        os.remove(save_path)
+    assert not save_path.exists()
+    fc.serialize(save_path)
+    assert save_path.exists() and save_path.is_file()
+
+    fc_deserialized = dill.load(open(save_path, "rb"))
+    out_deserialized = fc_deserialized.calculate([df_tmp, df_eda], return_df=True)
+    assert np.allclose(
+        out[col_order].values, out_deserialized[col_order].values, equal_nan=True
+    )
+    os.remove(save_path)
