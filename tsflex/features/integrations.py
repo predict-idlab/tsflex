@@ -5,7 +5,7 @@ __author__ = "Jeroen Van Der Donckt, Jonas Van Der Donckt"
 import pandas as pd
 import numpy as np
 
-from typing import Callable, Any, Optional, List, Dict, Union
+from typing import Callable, Optional, List, Dict, Union
 from .feature import FuncWrapper
 from .utils import _get_name
 
