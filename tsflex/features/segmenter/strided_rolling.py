@@ -218,16 +218,21 @@ class StridedRolling(ABC):
         # --- Future work ---
         # would be nice if we could optimize this double for loop with something
         # more vectorized
+        #
+        # As for now we use a map to apply the function (as this evaluates its 
+        # expression only once, whereas a list comprehension evaluates its expression
+        # every time).
+        # See more why: https://stackoverflow.com/a/59838723
         out = np.array(
-            [
-                func(
-                    *[
-                        sc.values[sc.start_indexes[idx] : sc.end_indexes[idx]]
-                        for sc in self.series_containers
-                    ],
+            list(
+                map(
+                    func,
+                    *[[sc.values[sc.start_indexes[idx]: sc.end_indexes[idx]]
+                     for idx in range(len(self.index))]
+                     for sc in self.series_containers
+                    ]
                 )
-                for idx in range(len(self.index))
-            ]
+            )
         )
 
         # Aggregate function output in a dictionary
