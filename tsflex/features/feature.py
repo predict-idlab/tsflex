@@ -32,17 +32,20 @@ class FeatureDescriptor(FrozenClass):
     series_name : Union[str, Tuple[str, ...]]
         The names of the series on which the feature function should be applied.
         This argument should match the `function` its input; \n
-        * If `series_name` is a string (or tuple of a single string), than 
+        * If `series_name` is a string (or tuple of a single string), than
             `function` should require just one series as input.
         * If `series_name` is a tuple of strings, than `function` should
             require `len(tuple)` series as input **and in exactly the same order**
+
     window : Union[float, str, pd.Timedelta]
         The window size, this argument supports multiple types: \n
-        * If the type is an `float`, it represents the series its window size in
-            **seconds**.
+        * If the type is an `float` or an `int`, it represents the series its
+          sequence-window size. The series **must have a sequence-index**
+          e.g. a range-index, float-index, or int-index, but **not a time-index**.
         * If the window's type is a `pd.Timedelta`, the window size represents
-            the window-time.
-        * If a `str`, it represents a window-time-string. \n
+            the window-time. The passed data **must have a time-index**.
+        * If a `str`, it represents a window-time-string. The **passed data must have
+          a time-index**. \n
             .. Note::
                 When no time-unit is present in the string, it represents the stride
                 size in **seconds**.
@@ -83,7 +86,7 @@ class FeatureDescriptor(FrozenClass):
 
     See Also
     --------
-    StridedRolling: As the window-stride (time) conversion takes place there.
+    StridedRolling: As the window-stride sequence conversion takes place there.
 
     """
 
@@ -95,8 +98,18 @@ class FeatureDescriptor(FrozenClass):
         stride: Union[float, str, pd.Timedelta],
     ):
         self.series_name: Tuple[str, ...] = to_tuple(series_name)
-        self.window: pd.Timedelta = parse_time_arg(window)
-        self.stride: pd.Timedelta = parse_time_arg(stride)
+        self.window = parse_time_arg(window) if isinstance(window, str) else window
+        self.stride = parse_time_arg(stride) if isinstance(stride, str) else stride
+
+        # Verify whether1 window and stride are either both numeric or pd.Timedelta
+        if not (
+            all([isinstance(v, pd.Timedelta) for v in [self.window, self.stride]])
+            or all([isinstance(v, (int, float)) for v in [self.window, self.stride]])
+        ):
+            raise TypeError(
+                f"a combination of window ({self.window} type={type(self.window)}) and"
+                f" stride ({self.stride} type={type(self.stride)}) is not supported!"
+            )
 
         # Order of if statements is important (as FuncWrapper also is a Callable)!
         if isinstance(function, FuncWrapper):
@@ -127,12 +140,14 @@ class FeatureDescriptor(FrozenClass):
             List of all the required series names.
 
         """
-        return list(set(self.series_name))        
+        return list(set(self.series_name))
 
     def __repr__(self) -> str:
         """Representation string of Feature."""
-        return f"{self.__class__.__name__}({self.series_name}, {self.window}, " \
-               f"{self.stride})"
+        return (
+            f"{self.__class__.__name__}({self.series_name}, {self.window}, "
+            f"{self.stride})"
+        )
 
 
 class MultipleFeatureDescriptors:
@@ -172,6 +187,7 @@ class MultipleFeatureDescriptors:
         All the strides.
 
     """
+
     def __init__(
         self,
         functions: Union[FuncWrapper, Callable, List[Union[FuncWrapper, Callable]]],
@@ -181,8 +197,9 @@ class MultipleFeatureDescriptors:
     ):
         # Cast functions to FuncWrapper, this avoids creating multiple
         # FuncWrapper objects for the same function in the FeatureDescriptor
-        def to_func_wrapper(f: Callable): 
+        def to_func_wrapper(f: Callable):
             return f if isinstance(f, FuncWrapper) else FuncWrapper(f)
+
         functions = [to_func_wrapper(f) for f in to_list(functions)]
         # Convert the series names to list of tuples
         series_names = [to_tuple(names) for names in to_list(series_names)]
