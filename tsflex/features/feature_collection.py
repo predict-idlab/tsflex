@@ -14,7 +14,7 @@ import os
 import uuid
 from copy import deepcopy
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union, Any
 
 import dill
 import traceback
@@ -25,7 +25,8 @@ from tqdm.auto import tqdm
 
 from .feature import FeatureDescriptor, MultipleFeatureDescriptors
 from .logger import logger
-from .strided_rolling import StridedRolling, TimeStridedRolling
+from .segmenter import StridedRollingFactory, StridedRolling
+from .utils import _determine_bounds
 from ..features.function_wrapper import FuncWrapper
 from ..utils.data import to_list, to_series_list, flatten
 from ..utils.logging import delete_logging_handlers, add_logging_handler
@@ -99,7 +100,7 @@ class FeatureCollection:
     @staticmethod
     def _get_collection_key(
         feature: FeatureDescriptor,
-    ) -> Tuple[tuple, pd.Timedelta, pd.Timedelta]:
+    ) -> Tuple[tuple, Union[pd.Timedelta, int, float], Union[pd.Timedelta, int, float]]:
         # Note: `window` & `stride` properties can either be a pd.Timedelta or an int
         return feature.series_name, feature.window, feature.stride
 
@@ -113,12 +114,12 @@ class FeatureCollection:
 
         """
         # Check whether the `|` is not present in the series
-        assert not any('|' in s_name for s_name in feature.get_required_series())
+        assert not any("|" in s_name for s_name in feature.get_required_series())
         # Check whether the '__" is not present in the series and function output names
         assert not any(
-            '__' in output_name for output_name in feature.function.output_names
+            "__" in output_name for output_name in feature.function.output_names
         )
-        assert not any('__' in s_name for s_name in feature.get_required_series())
+        assert not any("__" in s_name for s_name in feature.get_required_series())
 
         series_win_stride_key = self._get_collection_key(feature)
         if series_win_stride_key in self._feature_desc_dict.keys():
@@ -182,7 +183,11 @@ class FeatureCollection:
         return stroll.apply_func(function)
 
     def _stroll_feat_generator(
-        self, series_dict: Dict[str, pd.Series], window_idx: str, approve_sparsity: bool
+        self,
+        series_dict: Dict[str, pd.Series],
+        start_idx: Any,
+        window_idx: str,
+        approve_sparsity: bool,
     ) -> List[Tuple[StridedRolling, FuncWrapper]]:
         # --- Future work ---
         # We could also make the StridedRolling creation multithreaded
@@ -199,10 +204,12 @@ class FeatureCollection:
                 idx - lengths[key_idx]
             ]
             function: FuncWrapper = feature.function
-            stroll = TimeStridedRolling(
+            # The factory method will instantiate the right StridedRolling object
+            stroll = StridedRollingFactory.get_segmenter(
                 data=[series_dict[k] for k in key],
                 window=win,
                 stride=stride,
+                start_idx=start_idx,
                 window_idx=window_idx,
                 approve_sparsity=approve_sparsity,
                 data_type=function.input_type,
@@ -219,9 +226,9 @@ class FeatureCollection:
     def calculate(
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
-        bound_method: str, # TODO add this argument to the FC
         return_df: Optional[bool] = False,
         window_idx: Optional[str] = "end",
+        bound_method: Optional[str] = "inner",
         approve_sparsity: Optional[bool] = False,
         show_progress: Optional[bool] = False,
         logging_file_path: Optional[Union[str, Path]] = None,
@@ -243,8 +250,10 @@ class FeatureCollection:
         data : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
             Dataframe or Series or list thereof, with all the required data for the
             feature calculation. \n
-            **Remark**: each Series / DataFrame must have a `pd.DatetimeIndex`.
-            **Remark**: we assume that each name / column is unique.
+            **Remark**: each Series / DataFrame must have a monotonically 
+            increasing index. This index represents the sequence position of the 
+            corresponding values.<br>
+            **Remark**: we assume that each series-name / column-name is unique.
         return_df : bool, optional
             Whether the output needs to be a dataframe list or a DataFrame, by default
             False.
@@ -255,6 +264,15 @@ class FeatureCollection:
             feature_window aggregation. Must be either of: ['begin', 'middle', 'end'],
             by default 'end'. All features in this collection will use the same
             window_idx.
+        bound_method: str, optional
+            The start-end bound methodology which is used to generate the slice ranges
+            when ``data`` consists of multiple series / columns.
+            Must be either of: ['inner', 'outer', 'first'], by default 'inner'.
+
+            * if ``inner``, the inner-bounds of the series are used
+            * if ``outer``, the inner-bounds of the series are used
+            * if ``first``, the first-series it's bound will be used
+
         approve_sparsity: bool, optional
             Bool indicating whether the user acknowledges that there may be sparsity
             (i.e., irregularly sampled data), by default False.
@@ -302,16 +320,22 @@ class FeatureCollection:
         series_dict: Dict[str, pd.Series] = {}
         for s in to_series_list(data):
             # Assert the assumptions we make!
-            assert isinstance(s.index, pd.DatetimeIndex)
             assert s.index.is_monotonic_increasing
 
             if s.name in self.get_required_series():
                 series_dict[str(s.name)] = s
 
+        # slice the bounds of the series dict
+        start, end = _determine_bounds(bound_method, list(series_dict.values()))
+        series_dict = {
+            k: v[v.index.dtype.type(start): v.index.dtype.type(end)]
+            for k, v in series_dict.items()
+        }
+
         # Note: this variable has a global scope so this is shared in multiprocessing
         global get_stroll_func
         get_stroll_func = self._stroll_feat_generator(
-            series_dict, window_idx, approve_sparsity
+            series_dict, start, window_idx, approve_sparsity
         )
         nb_stroll_funcs = self._get_stroll_feat_length()
 
@@ -331,10 +355,7 @@ class FeatureCollection:
         else:
             # https://pathos.readthedocs.io/en/latest/pathos.html#usage
             with ProcessPool(nodes=n_jobs, source=True) as pool:
-                results = pool.uimap(
-                    self._executor,
-                    range(nb_stroll_funcs)
-                )
+                results = pool.uimap(self._executor, range(nb_stroll_funcs))
                 if show_progress:
                     results = tqdm(results, total=self._get_stroll_feat_length())
                 try:
@@ -350,9 +371,9 @@ class FeatureCollection:
 
         if calculated_feature_list is None:
             raise RuntimeError(
-                "Feature Extraction halted due to error while extracting one (or multiple) feature(s)! " +
-                "See stack trace above."
-                )
+                "Feature Extraction halted due to error while extracting one (or multiple) feature(s)! "
+                + "See stack trace above."
+            )
 
         if return_df:
             return pd.concat(calculated_feature_list, axis=1, join="outer", copy=False)
@@ -418,11 +439,15 @@ class FeatureCollection:
                 uuid_str = str(uuid.uuid4())
                 for output_name in fd.function.output_names:
                     # Reconstruct the feature column name
-                    feat_col_name = '__'.join([
-                        '|'.join(s_names) if isinstance(s_names, tuple) else s_names,
-                        output_name,
-                        f'w={timedelta_to_str(window)}_s={timedelta_to_str(stride)}'
-                    ])
+                    feat_col_name = "__".join(
+                        [
+                            "|".join(s_names)
+                            if isinstance(s_names, tuple)
+                            else s_names,
+                            output_name,
+                            f"w={self._ws_to_str(window)}_s={self._ws_to_str(stride)}",
+                        ]
+                    )
                     feat_col_fd_mapping[feat_col_name] = (uuid_str, fd)
 
         assert all(fc in feat_col_fd_mapping for fc in feat_cols_to_keep)
@@ -437,13 +462,21 @@ class FeatureCollection:
         seen_uuids = set()
         return FeatureCollection(
             feature_descriptors=[
-                deepcopy(unique_fd) for unique_fd in
-                {
-                    fd for (uuid_str, fd) in fd_subset
+                deepcopy(unique_fd)
+                for unique_fd in {
+                    fd
+                    for (uuid_str, fd) in fd_subset
                     if uuid_str not in seen_uuids and not seen_uuids.add(uuid_str)
                 }
             ]
         )
+
+    @staticmethod
+    def _ws_to_str(window_or_stride) -> str:
+        if isinstance(window_or_stride, pd.Timedelta):
+            return timedelta_to_str(window_or_stride)
+        else:
+            return str(window_or_stride)
 
     def __repr__(self) -> str:
         """Representation string of a FeatureCollection."""
@@ -454,9 +487,9 @@ class FeatureCollection:
             keys = (x for x in self._feature_desc_dict.keys() if x[0] == feature_key)
             for _, win_size, stride in keys:
                 output_str += f"\n\twin: "
-                win_str = timedelta_to_str(win_size)
-                stride_str = timedelta_to_str(stride)
-                output_str += f"{str(win_str):<6}, stride: {str(stride_str)}: ["
+                win_str = self._ws_to_str(win_size)
+                stride_str = self._ws_to_str(stride)
+                output_str += f"{win_str:<6}, stride: {stride_str}: ["
                 for feat_desc in self._feature_desc_dict[feature_key, win_size, stride]:
                     output_str += f"\n\t\t{feat_desc._func_str},"
                 output_str += "\n\t]"
