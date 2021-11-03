@@ -42,7 +42,8 @@ def test_sequence_stroll(dummy_data):
 
     for window_idx in ["begin", "middle", "end"]:
         stroll = SequenceStridedRolling(
-            data=tmp_series, window=4 * 30, stride=4 * 10, window_idx=window_idx
+            data=tmp_series, window=4 * 30, stride=4 * 10, window_idx=window_idx,
+            approve_sparsity=True,
         )
 
         f = FuncWrapper(np.mean, output_names="numpy_mean")
