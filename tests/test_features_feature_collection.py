@@ -951,6 +951,31 @@ def test_bound_method_uneven_index_datetime(dummy_data):
     assert out_outer.index[0] == earliest_start
 
 
+def test_not_sorted_fc(dummy_data):
+    fc = FeatureCollection(
+        feature_descriptors=[
+            MultipleFeatureDescriptors(
+                windows=[480, 1000],
+                strides=480,
+                functions=[np.min, np.max],
+                series_names=["TMP", "EDA"],
+            )
+        ]
+    )
+
+    df_tmp = dummy_data["TMP"].reset_index(drop=True)
+    df_eda = dummy_data["EDA"].reset_index(drop=True).sample(frac=1)
+    assert not df_eda.index.is_monotonic_increasing
+    out = fc.calculate([df_tmp, df_eda], window_idx="end", return_df=True)
+    assert not df_eda.index.is_monotonic_increasing
+    
+    df_eda.index = df_eda.index.astype(float)
+    assert not df_eda.index.is_monotonic_increasing
+    out = fc.calculate([df_tmp, df_eda], window_idx="end", return_df=True)
+    assert not df_eda.index.is_monotonic_increasing
+
+    
+
 def test_serialization(dummy_data):
     fc = FeatureCollection(
         feature_descriptors=[

@@ -325,7 +325,7 @@ class FeatureCollection:
         for s in to_series_list(data):
             if not s.index.is_monotonic_increasing:
                 # TODO -> maybe raise a warning?
-                s.sort_index(ascending=True, inplace=True, ignore_index=False)
+                s = s.sort_index(ascending=True, inplace=False, ignore_index=False)
 
             # Assert the assumptions we make!
             assert s.index.is_monotonic_increasing
