@@ -101,7 +101,7 @@ def test_warning_uneven_sampled_series_feature_collection(dummy_data):
         # Verify the warning
         assert len(w) == 2
         assert all([issubclass(warn.category, RuntimeWarning) for warn in w])
-        assert all(["gaps in the time-series" in str(warn) for warn in w])
+        assert all(["gaps in the sequence" in str(warn) for warn in w])
         # Check the output
         assert res_df.shape[1] == 2
         freq = pd.to_timedelta(pd.infer_freq(dummy_data.index)) / np.timedelta64(1, "s")
@@ -870,13 +870,14 @@ def test_bound_method(dummy_data):
 
     df_tmp = dummy_data["TMP"].reset_index(drop=True)
     df_eda = dummy_data["EDA"].reset_index(drop=True).astype(float)
-    df_eda.index += 100
+    df_tmp.index += 2
 
     for bound_method in ["inner", "outer", "first", "inner-outer"]:
-        out = fc.calculate(
+        fc.calculate(
             [df_tmp, df_eda],
             window_idx="middle",
             return_df=True,
+            approve_sparsity=True,
             bound_method=bound_method,
         )
 
