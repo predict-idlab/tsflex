@@ -872,7 +872,7 @@ def test_bound_method(dummy_data):
     df_eda = dummy_data["EDA"].reset_index(drop=True).astype(float)
     df_eda.index += 100
 
-    for bound_method in ["inner", "outer", "first"]:
+    for bound_method in ["inner", "outer", "first", "inner-outer"]:
         out = fc.calculate(
             [df_tmp, df_eda],
             window_idx="middle",
@@ -887,6 +887,67 @@ def test_bound_method(dummy_data):
             return_df=True,
             bound_method="invalid name",
         )
+
+
+def test_bound_method_uneven_index_numeric(dummy_data):
+    fc = FeatureCollection(
+        feature_descriptors=[
+            MultipleFeatureDescriptors(
+                windows=1000,
+                strides=500,
+                functions=[np.min, np.max],
+                series_names=["TMP", "EDA"],
+            )
+        ]
+    )
+
+    df_tmp_ = dummy_data["TMP"].reset_index(drop=True)
+    df_eda_ = dummy_data["EDA"].reset_index(drop=True)
+    df_eda_.index = df_eda_.index.astype(float)
+    df_eda_.index += 2.33
+
+    latest_start = df_eda_.index[0]
+    earliest_start = df_tmp_.index[0]
+
+    out_inner = fc.calculate(
+        [df_tmp_, df_eda_], bound_method='inner', window_idx='begin', return_df=True
+    )
+    assert out_inner.index[0] == latest_start
+
+    out_outer = fc.calculate(
+        [df_tmp_, df_eda_], bound_method='outer', window_idx='begin', return_df=True
+    )
+    assert out_outer.index[0] == earliest_start
+
+
+def test_bound_method_uneven_index_datetime(dummy_data):
+    fc = FeatureCollection(
+        feature_descriptors=[
+            MultipleFeatureDescriptors(
+                windows='5min',
+                strides='3min',
+                functions=[np.min, np.max],
+                series_names=["TMP", "EDA"],
+            )
+        ]
+    )
+
+    df_tmp = dummy_data["TMP"]
+    df_eda = dummy_data["EDA"]
+    df_eda.index += pd.Timedelta(seconds=10)
+
+    latest_start = df_eda.index[0]
+    earliest_start = df_tmp.index[0]
+
+    out_inner = fc.calculate(
+        [df_tmp, df_eda], bound_method='inner', window_idx='begin', return_df=True
+    )
+    assert out_inner.index[0] == latest_start
+
+    out_outer = fc.calculate(
+        [df_tmp, df_eda], bound_method='outer', window_idx='begin', return_df=True
+    )
+    assert out_outer.index[0] == earliest_start
 
 
 def test_serialization(dummy_data):
