@@ -75,7 +75,7 @@ class StridedRolling(ABC):
 
     # Create the named tuple
     _NumpySeriesContainer = namedtuple(
-        "SeriesContainer", ["values", "start_indexes", "end_indexes"]
+        "SeriesContainer", ["name", "values", "start_indexes", "end_indexes"]
     )
 
     def __init__(
