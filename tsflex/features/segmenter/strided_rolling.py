@@ -126,19 +126,19 @@ class StridedRolling(ABC):
 
         # 4. Check the sparsity assumption
         if not self.approve_sparsity:
-            last_container = self.series_containers[-1]
             qs = [0, 0.1, 0.5, 0.9, 1]
-            series_idx_stats = np.quantile(
-                last_container.end_indexes - last_container.start_indexes, q=qs
-            )
-            q_str = ", ".join([f"q={q}: {v}" for q, v in zip(qs, series_idx_stats)])
-            # Warn when min != max
-            if not all(series_idx_stats == series_idx_stats[-1]):
-                warnings.warn(
-                    f"There are gaps in the time-series {series_list[-1].name}; "
-                    + f"\n \t Quantiles of nb values in window: {q_str}",
-                    RuntimeWarning,
+            for container in self.series_containers:
+                series_idx_stats = np.quantile(
+                    container.end_indexes - container.start_indexes, q=qs
                 )
+                q_str = ", ".join([f"q={q}: {v}" for q, v in zip(qs, series_idx_stats)])
+                # Warn when min != max
+                if not all(series_idx_stats == series_idx_stats[-1]):
+                    warnings.warn(
+                        f"There are gaps in the sequence of the {container.name}"
+                        f"-series;\n \t Quantiles of nb values in window: {q_str}",
+                        RuntimeWarning,
+                    )
 
     def _get_window_offset(self, window: T) -> T:
         if self.window_idx == "end":
@@ -162,6 +162,7 @@ class StridedRolling(ABC):
         series_containers: List[StridedRolling._NumpySeriesContainer] = []
         for series in series_list:
             np_idx_times = series.index.values
+            series_name = series.name
             if self.data_type is np.array:
                 # create a non-writeable view of the series
                 series = series.values
@@ -174,7 +175,7 @@ class StridedRolling(ABC):
 
             series_containers.append(
                 StridedRolling._NumpySeriesContainer(
-                    # TODO: maybe save the pd.Series instead of the np.series
+                    name=series_name,
                     values=series,
                     # the slicing will be performed on [ t_start, t_end [
                     # TODO: this can maybe be optimized -> further look into this
