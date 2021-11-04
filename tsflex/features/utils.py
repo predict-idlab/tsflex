@@ -17,6 +17,8 @@ def _determine_bounds(bound_method, series_list: List[pd.Series]) -> Tuple[Any, 
 
     Parameters
     ----------
+    bound_method: str
+
     series_list : List[pd.Series]
         The list of series for which the bounds are determined.
 
@@ -33,6 +35,13 @@ def _determine_bounds(bound_method, series_list: List[pd.Series]) -> Tuple[Any, 
             latest_start = max(latest_start, series.index[0])
             earliest_stop = min(earliest_stop, series.index[-1])
         return latest_start, earliest_stop
+    elif bound_method == 'inner-outer':
+        latest_start = series_list[0].index[0]
+        latest_stop = series_list[0].index[-1]
+        for series in series_list[1:]:
+            latest_start = max(latest_start, series.index[0])
+            latest_stop = max(latest_stop, series.index[-1])
+        return latest_start, latest_stop
     elif bound_method == "outer":
         earliest_start = series_list[0].index[0]
         latest_stop = series_list[0].index[-1]

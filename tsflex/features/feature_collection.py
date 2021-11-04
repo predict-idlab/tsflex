@@ -186,6 +186,7 @@ class FeatureCollection:
         self,
         series_dict: Dict[str, pd.Series],
         start_idx: Any,
+        end_idx: Any,
         window_idx: str,
         approve_sparsity: bool,
     ) -> List[Tuple[StridedRolling, FuncWrapper]]:
@@ -210,6 +211,7 @@ class FeatureCollection:
                 window=win,
                 stride=stride,
                 start_idx=start_idx,
+                end_idx=end_idx,
                 window_idx=window_idx,
                 approve_sparsity=approve_sparsity,
                 data_type=function.input_type,
@@ -270,9 +272,11 @@ class FeatureCollection:
             when ``data`` consists of multiple series / columns.
             Must be either of: ['inner', 'outer', 'first'], by default 'inner'.
 
-            * if ``inner``, the inner-bounds of the series are used
-            * if ``outer``, the inner-bounds of the series are used
-            * if ``first``, the first-series it's bound will be used
+            * if ``inner``, the inner-bounds of the series are returned.
+            * if ``inner-outer``, the left-inner and right-outer bounds of the series
+              are returned.
+            * if ``outer``, the outer-bounds of the series are returned.
+            * if ``first``, the first-series it's bound will be returned.
 
         approve_sparsity: bool, optional
             Bool indicating whether the user acknowledges that there may be sparsity
@@ -326,17 +330,13 @@ class FeatureCollection:
             if s.name in self.get_required_series():
                 series_dict[str(s.name)] = s
 
-        # slice the bounds of the series dict
+        # determing the bounds of the series dict items
         start, end = _determine_bounds(bound_method, list(series_dict.values()))
-        series_dict = {
-            k: v[v.index.dtype.type(start): v.index.dtype.type(end)]
-            for k, v in series_dict.items()
-        }
 
         # Note: this variable has a global scope so this is shared in multiprocessing
         global get_stroll_func
         get_stroll_func = self._stroll_feat_generator(
-            series_dict, start, window_idx, approve_sparsity
+            series_dict, start, end, window_idx, approve_sparsity
         )
         nb_stroll_funcs = self._get_stroll_feat_length()
 

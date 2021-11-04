@@ -84,6 +84,7 @@ class StridedRolling(ABC):
         window: T,
         stride: T,
         start_idx: Optional[T] = None,
+        end_idx: Optional[T] = None,
         data_type: Optional[Union[np.array, pd.Series]] = np.array,
         window_idx: Optional[str] = "end",
         approve_sparsity: Optional[bool] = False,
@@ -103,10 +104,13 @@ class StridedRolling(ABC):
         self.series_key: Tuple[str, ...] = tuple([str(s.name) for s in series_list])
 
         # 1. Determine the start index
-        self.start = start_idx
-        start, self.end = _determine_bounds("inner", series_list)
-        # update self.start if it was not passed
-        self.start = start if self.start is None else self.start
+        self.start, self.end = start_idx, end_idx
+        if self.start is None or self.end is None:
+            start, end = _determine_bounds("inner", series_list)
+
+            # update self.start & self.end if it was not passed
+            self.start = start if self.start is None else self.start
+            self.end = end if self.end is None else self.end
 
         # 2. Create a new-index which will be used for DataFrame reconstruction
         # note: this code can also be placed in the `apply_func` method (if we want to
