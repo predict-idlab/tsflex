@@ -38,15 +38,15 @@ class StridedRolling(ABC):
     Parameters
     ----------
     data : Union[pd.Series, pd.DataFrame]
-        ``pd.Series`` or ``pd.DataFrame`` to slide over, the index must be either 
+        ``pd.Series`` or ``pd.DataFrame`` to slide over, the index must be either
         numeric or a (time-zone-aware) ``pd.DatetimeIndex`.
     window : Union[int, float, pd.Timedelta]
-        Either an int, float, or ``pd.Timedelta``, representing the sliding window size 
-        in terms of steps on the index (in case of a int or float) or the 
+        Either an int, float, or ``pd.Timedelta``, representing the sliding window size
+        in terms of steps on the index (in case of a int or float) or the
         sliding window duration (in case of ``pd.Timedelta``).
     stride : Union[int, pd.Timedelta]
         Either an int, float, or ``pd.Timedelta``, representing the stride size in terms
-        of steps on the index (in case of a int or float) or the stride duration (in 
+        of steps on the index (in case of a int or float) or the stride duration (in
         case of ``pd.Timedelta``).
     start_idx: Union[int, float, pd.Timedelta], optional
         The start-index which will be used for each series passed to `data`. This is
@@ -226,7 +226,7 @@ class StridedRolling(ABC):
         # would be nice if we could optimize this double for loop with something
         # more vectorized
         #
-        # As for now we use a map to apply the function (as this evaluates its 
+        # As for now we use a map to apply the function (as this evaluates its
         # expression only once, whereas a list comprehension evaluates its expression
         # every time).
         # See more why: https://stackoverflow.com/a/59838723
@@ -234,10 +234,13 @@ class StridedRolling(ABC):
             list(
                 map(
                     func,
-                    *[[sc.values[sc.start_indexes[idx]: sc.end_indexes[idx]]
-                     for idx in range(len(self.index))]
-                     for sc in self.series_containers
-                    ]
+                    *[
+                        [
+                            sc.values[sc.start_indexes[idx] : sc.end_indexes[idx]]
+                            for idx in range(len(self.index))
+                        ]
+                        for sc in self.series_containers
+                    ],
                 )
             )
         )
@@ -293,11 +296,14 @@ class SequenceStridedRolling(StridedRolling):
         super().__init__(data, window, stride, *args, **kwargs)
 
     def _construct_output_index(self, name: str) -> pd.Index:
-        window_idx_offset = self._get_window_offset(self.window)
+        window_offset = self._get_window_offset(self.window)
+        # bool which indicates whether the `end` lies on the a boundary
+        # and as arange does not include the right boundary -> use it to enlarge `stop`
+        boundary = (self.end - self.start - self.window) % self.stride == 0
         return pd.Index(
             data=np.arange(
-                start=self.start + window_idx_offset,
-                stop=self.end - self.window + window_idx_offset,
+                start=self.start + window_offset,
+                stop=self.end - self.window + window_offset + self.stride * boundary,
                 step=self.stride,
             ),
             name=name,
@@ -339,15 +345,14 @@ class TimeStridedRolling(StridedRolling):
         super().__init__(data, window, stride, *args, **kwargs)
 
     def _construct_output_index(self, name: str) -> pd.DatetimeIndex:
-        window_idx_offset = self._get_window_offset(self.window)
-
-        # use closed = left to exclude 'end' if it falls on the boundary
         # note: the index automatically takes the timezone of `start` & `end`
+        window_offset = self._get_window_offset(self.window)
         return pd.date_range(
-            start=self.start + window_idx_offset,
-            end=self.end - self.window + window_idx_offset,
+            start=self.start + window_offset,
+            end=self.end - self.window + window_offset,
             freq=self.stride,
             name=name,
+            closed=None,
         )
 
     def _create_feat_col_name(self, feat_name: str) -> str:
