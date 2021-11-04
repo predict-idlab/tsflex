@@ -40,27 +40,33 @@ class FeatureDescriptor(FrozenClass):
     window : Union[float, str, pd.Timedelta]
         The window size, this argument supports multiple types: \n
         * If the type is an `float` or an `int`, it represents the series its
-          sequence-window size. The series **must have a sequence-index**
+          sequence-window size. The series **must have a sequence-index**,
           e.g. a range-index, float-index, or int-index, but **not a time-index**.
         * If the window's type is a `pd.Timedelta`, the window size represents
-            the window-time. The passed data **must have a time-index**.
+          the window-time. The passed data **must have a time-index**.
         * If a `str`, it represents a window-time-string. The **passed data must have
           a time-index**. \n
             .. Note::
-                When no time-unit is present in the string, it represents the stride
+                When no time-unit is present in the string, it represents the window
                 size in **seconds**.
 
     stride : Union[int, str, pd.Timedelta]
-        The stride of the window rolling process, supports multiple types: \n
-        * If the type is `float`, it represents the stride size in **seconds**
-        * If the type is `pd.Timedelta`, it represents the stride-roll timedelta.
-        * If a type is `str`, it represents a stride-roll-time-string. \n
+        The stride size, this argument supports multiple types: \n
+        * If the type is an `float` or an `int`, it represents the series its
+          sequence-stride size. The series **must have a sequence-index**,
+          e.g. a range-index, float-index, or int-index, but **not a time-index**.
+        * If the stride's type is a `pd.Timedelta`, the stride size represents
+          the stride-time. The passed data **must have a time-index**.
+        * If a `str`, it represents a stride-time-string. The **passed data must have
+          a time-index**. \n
             .. Note::
                 When no time-unit is present in the string, it represents the stride
                 size in **seconds**.
 
     Notes
     -----
+    * The `window` and `stride` argument should be either both numeric or 
+      ``pd.Timedelta`` (depending on de index datatype).
     * For each `function` - `input`(-series) - `window` - stride combination, one needs
       to create a distinct `FeatureDescriptor`. Hence it is more convenient to
       create a `MultipleFeatureDescriptors` when `function` - `window` - `stride`
@@ -181,10 +187,15 @@ class MultipleFeatureDescriptors:
         have the same type, i.e, either \n
         * all a str
         * or, all a tuple _with same length_. \n
-    windows : Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
+    windows : Union[int, float, str, pd.Timedelta, List[Union[int, float, str, pd.Timedelta]]],
         All the window sizes.
-    strides : Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
+    strides : Union[int, float, str, pd.Timedelta, List[Union[int, float, str, pd.Timedelta]]],
         All the strides.
+
+    Note
+    ----
+    The `windows` and `strides` argument should be either both numeric or 
+    ``pd.Timedelta`` (depending on de index datatype).
 
     """
 
@@ -192,8 +203,8 @@ class MultipleFeatureDescriptors:
         self,
         functions: Union[FuncWrapper, Callable, List[Union[FuncWrapper, Callable]]],
         series_names: Union[str, Tuple[str, ...], List[str], List[Tuple[str, ...]]],
-        windows: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
-        strides: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
+        windows: Union[int, float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
+        strides: Union[int, float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
     ):
         # Cast functions to FuncWrapper, this avoids creating multiple
         # FuncWrapper objects for the same function in the FeatureDescriptor

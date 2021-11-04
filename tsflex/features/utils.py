@@ -11,6 +11,7 @@ from .feature import FuncWrapper
 
 
 # ---------------------------------- PRIVATE METHODS ----------------------------------
+
 def _determine_bounds(bound_method, series_list: List[pd.Series]) -> Tuple[Any, Any]:
     """Determine the bounds of the passed series.
 
@@ -70,6 +71,7 @@ def _get_name(func: Callable) -> str:
 
 
 # ---------------------------------- PUBLIC METHODS -----------------------------------
+
 def make_robust(
     func: Callable,
     min_nb_samples: int = 1,

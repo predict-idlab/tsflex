@@ -252,7 +252,8 @@ class FeatureCollection:
             feature calculation. \n
             **Remark**: each Series / DataFrame must have a monotonically 
             increasing index. This index represents the sequence position of the 
-            corresponding values.<br>
+            corresponding values, the index can be either numeric or a 
+            ``pd.DatetimeIndex``.<br>
             **Remark**: we assume that each series-name / column-name is unique.
         return_df : bool, optional
             Whether the output needs to be a dataframe list or a DataFrame, by default
@@ -472,7 +473,7 @@ class FeatureCollection:
         )
 
     @staticmethod
-    def _ws_to_str(window_or_stride) -> str:
+    def _ws_to_str(window_or_stride: Any) -> str:
         if isinstance(window_or_stride, pd.Timedelta):
             return timedelta_to_str(window_or_stride)
         else:

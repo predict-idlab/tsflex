@@ -1,5 +1,5 @@
 """
-Withholds a (rather) fast implementation of a **time-based** strided rolling window.
+Withholds a (rather) fast implementation of a **index-based** strided rolling window.
 
 .. TODO::
 
@@ -38,15 +38,17 @@ class StridedRolling(ABC):
     Parameters
     ----------
     data : Union[pd.Series, pd.DataFrame]
-        ``pd.Series`` or ``pd.DataFrame`` to slide over, the index must be a
-        (time-zone-aware) ``pd.DatetimeIndex``.
-    window : Union[int, pd.Timedelta]
-        Either an int or ``pd.Timedelta``, representing the sliding window length in
-        samples or the sliding window duration, respectively.
+        ``pd.Series`` or ``pd.DataFrame`` to slide over, the index must be either 
+        numeric or a (time-zone-aware) ``pd.DatetimeIndex`.
+    window : Union[int, float, pd.Timedelta]
+        Either an int, float, or ``pd.Timedelta``, representing the sliding window size 
+        in terms of steps on the index (in case of a int or float) or the 
+        sliding window duration (in case of ``pd.Timedelta``).
     stride : Union[int, pd.Timedelta]
-        Either an int or ``pd.Timedelta``, representing the stride size in samples or
-        the stride duration, respectively.
-    start_idx: Union[int, pd.Timedelta], optional
+        Either an int, float, or ``pd.Timedelta``, representing the stride size in terms
+        of steps on the index (in case of a int or float) or the stride duration (in 
+        case of ``pd.Timedelta``).
+    start_idx: Union[int, float, pd.Timedelta], optional
         The start-index which will be used for each series passed to `data`. This is
         especially useful if multiple `StridedRolling` instances are created and the
         user want to ensure same (start-)indexes for each of them.
@@ -104,7 +106,7 @@ class StridedRolling(ABC):
         self.start = start_idx
         start, self.end = _determine_bounds("inner", series_list)
         # update self.start if it was not passed
-        self.start = start if self.start is None else start
+        self.start = start if self.start is None else self.start
 
         # 2. Create a new-index which will be used for DataFrame reconstruction
         # note: this code can also be placed in the `apply_func` method (if we want to
