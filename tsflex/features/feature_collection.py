@@ -276,7 +276,6 @@ class FeatureCollection:
             * if ``inner-outer``, the left-inner and right-outer bounds of the series
               are returned.
             * if ``outer``, the outer-bounds of the series are returned.
-            * if ``first``, the first-series it's bound will be returned.
 
         approve_sparsity: bool, optional
             Bool indicating whether the user acknowledges that there may be sparsity
@@ -324,6 +323,10 @@ class FeatureCollection:
         # Convert the data to a series_dict
         series_dict: Dict[str, pd.Series] = {}
         for s in to_series_list(data):
+            if not s.index.is_monotonic_increasing:
+                # TODO -> maybe raise a warning?
+                s.sort_index(ascending=True, inplace=True, ignore_index=False)
+
             # Assert the assumptions we make!
             assert s.index.is_monotonic_increasing
 

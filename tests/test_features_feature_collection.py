@@ -872,7 +872,7 @@ def test_bound_method(dummy_data):
     df_eda = dummy_data["EDA"].reset_index(drop=True).astype(float)
     df_tmp.index += 2
 
-    for bound_method in ["inner", "outer", "first", "inner-outer"]:
+    for bound_method in ["inner", "outer", "inner-outer"]:
         fc.calculate(
             [df_tmp, df_eda],
             window_idx="middle",

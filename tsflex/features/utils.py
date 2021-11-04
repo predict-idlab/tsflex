@@ -49,9 +49,6 @@ def _determine_bounds(bound_method, series_list: List[pd.Series]) -> Tuple[Any, 
             earliest_start = min(earliest_start, series.index[0])
             latest_stop = max(latest_stop, series.index[-1])
         return earliest_start, latest_stop
-    elif bound_method == "first":
-        return series_list[0].index[0], series_list[0].index[-1]
-
     else:
         raise ValueError(f"invalid bound method string passed {bound_method}")
 
