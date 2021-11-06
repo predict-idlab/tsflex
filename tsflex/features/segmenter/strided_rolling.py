@@ -297,7 +297,7 @@ class SequenceStridedRolling(StridedRolling):
 
     def _construct_output_index(self, name: str) -> pd.Index:
         window_offset = self._get_window_offset(self.window)
-        # bool which indicates whether the `end` lies on the a boundary
+        # bool which indicates whether the `end` lies on the boundary
         # and as arange does not include the right boundary -> use it to enlarge `stop`
         boundary = (self.end - self.start - self.window) % self.stride == 0
         return pd.Index(
