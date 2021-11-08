@@ -37,12 +37,12 @@ The table below positions _tsflex_ among other relative packages.
     <td class="tg-c3ow"></td>
   </tr>
   <tr>
-    <td class="tg-0pky">Time column requirements</td>
-    <td class="tg-c3ow">datetime-index</td>
-    <td class="tg-c3ow">Any - assumes is sorted<br></td>
+    <td class="tg-0pky">Sequence index requirements</td>
     <td class="tg-c3ow">Any - sortable</td>
-    <td class="tg-c3ow">Any - assumes is sorted</td>
-    <td class="tg-c3ow">datetiem index</td>
+    <td class="tg-c3ow">Any - assumes sorted<br></td>
+    <td class="tg-c3ow">Any - sortable</td>
+    <td class="tg-c3ow">Any - assumes sorted</td>
+    <td class="tg-c3ow">datetime index</td>
   </tr>
   <tr>
     <td class="tg-0pky">Multivariate time-series</td>
@@ -61,7 +61,7 @@ The table below positions _tsflex_ among other relative packages.
     <td class="tg-c3ow">✔️</td>
   </tr>
   <tr>
-    <td class="tg-0pky">Time column maintenance</td>
+    <td class="tg-0pky">Sequence column maintenance</td>
     <td class="tg-c3ow">✔️</td>
     <td class="tg-c3ow">❌</td>
     <td class="tg-c3ow">✔️</td>
