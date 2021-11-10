@@ -2,6 +2,7 @@
 
 __author__ = "Jeroen Van Der Donckt, Jonas Van Der Donckt"
 
+import importlib
 import pandas as pd
 import numpy as np
 
@@ -79,3 +80,62 @@ def tsfresh_combiner_wrapper(func: Callable, param: List[Dict]) -> FuncWrapper:
         output_names=[func.__name__ + "_" + str(p) for p in param],
         input_type=input_type,
     )
+
+
+# from tsfresh.feature_extraction.settings import PickeableSettings
+# TODO: update this to PicklableSettings, once they approve my PR
+
+
+def tsfresh_settings_wrapper(settings) -> List[Callable]:
+    """Wrapper enabling compatibility with tsfresh feature extraction settings.
+
+    [tsfresh feature extraction settings](https://tsfresh.readthedocs.io/en/latest/text/feature_extraction_settings.html)
+    is how tsfresh represents a collection of features.<br>
+
+    By using this wrapper, we can plug in the features (that are present in the 
+    tsfresh feature extraction settings) in a tsflex ``FeatureCollection``. 
+    This enables to easily extract (a collection of) tsfresh features while leveraging
+    the flexibility of tsflex.
+
+    Example
+    -------
+
+    ```python
+    from tsflex.features import FeatureCollection, MultipleFeatureDescriptors
+    from tsflex.features.integrations import tsfresh_settings_wrapper
+    from tsfresh.feature_extraction import MinimalFCParameters
+
+    minimal_tsfresh_feats = MultipleFeatureDescriptors(
+        functions=tsfresh_settings_wrapper(MinimalFCParameters()),
+        series_names=["sig_0", "sig_1"],  # list of signal names
+        windows="15min", strides="2min",
+    )
+
+    fc = FeatureCollection(minimal_tsfresh_feats)
+    fc.calculate(data)  # calculate the features on your data
+    ```
+
+    Parameters
+    ----------
+    settings: PicklableSettings
+        The tsfresh base object for feature settings (which is a dict).
+
+    Returns
+    -------
+    List[Callable]
+        List of the (wrapped) tsfresh functions that are now directly compatible with
+        with tsflex.
+ 
+    """
+    functions = []
+    tsfresh_mod = importlib.import_module("tsfresh.feature_extraction.feature_calculators") 
+    for func_name, param in settings.items():
+        func = getattr(tsfresh_mod, func_name) 
+        if param is None:
+            functions.append(func)
+        elif getattr(func, "fctype") == "combiner":
+            functions.append(tsfresh_combiner_wrapper(func, param))
+        else:
+            for kwargs in param:
+                functions.append(FuncWrapper(func, output_names=f"{func.__name__}_{str(kwargs)}", **kwargs))
+    return functions

@@ -17,6 +17,7 @@ from tsflex.features import (
 from tsflex.features.integrations import (
     seglearn_wrapper,
     tsfresh_combiner_wrapper,
+    tsfresh_settings_wrapper,
 )
 
 
@@ -128,6 +129,37 @@ def test_tsfresh_combiner_features(dummy_data):
     assert res_df.shape[1] == (3 + 3 + 5 + 2) * 2
     assert res_df.shape[0] > 0
     assert res_df.isna().any().any() == False
+
+def test_tsfresh_settings_wrapper(dummy_data):
+    from tsfresh.feature_extraction.settings import EfficientFCParameters
+
+    slow_funcs = [
+    "matrix_profile",
+    "number_cwt_peaks",
+    "augmented_dickey_fuller",
+    "partial_autocorrelation",
+    "agg_linear_trend",
+    "lempel_ziv_complexity",
+    "benford_correlation",
+    "ar_coefficient",
+    "permutation_entropy",
+    "friedrich_coefficients",
+    ]
+
+    settings = EfficientFCParameters()
+    for f in slow_funcs:
+        del settings[f]
+
+    efficient_tsfresh_feats = MultipleFeatureDescriptors(
+        functions=tsfresh_settings_wrapper(settings),
+        series_names=["ACC_x", "EDA", "TMP"],
+        windows="30min", strides="15min",
+    )
+    feature_collection = FeatureCollection(efficient_tsfresh_feats)
+
+    res_df = feature_collection.calculate(dummy_data, return_df=True)
+    assert (res_df.shape[0] > 0) and (res_df.shape[1]) > 0
+
 
 
 ## TSFEL
