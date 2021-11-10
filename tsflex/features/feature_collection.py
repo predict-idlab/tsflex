@@ -107,7 +107,7 @@ class FeatureCollection:
     @staticmethod
     def _get_collection_key(
         feature: FeatureDescriptor,
-    ) -> Tuple[tuple, Union[pd.Timedelta, int, float], Union[pd.Timedelta, int, float]]:
+    ) -> Tuple[tuple, Union[pd.Timedelta, float], Union[pd.Timedelta, float]]:
         # Note: `window` & `stride` properties can either be a pd.Timedelta or an int
         return feature.series_name, feature.window, feature.stride
 

@@ -307,8 +307,8 @@ class SequenceStridedRolling(StridedRolling):
     def __init__(
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
-        window: Union[int, float],
-        stride: Union[int, float],
+        window: float,
+        stride: float,
         *args,
         **kwargs,
     ):

@@ -187,9 +187,9 @@ class MultipleFeatureDescriptors:
         have the same type, i.e, either \n
         * all a str
         * or, all a tuple _with same length_. \n
-    windows : Union[int, float, str, pd.Timedelta, List[Union[int, float, str, pd.Timedelta]]],
+    windows : Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
         All the window sizes.
-    strides : Union[int, float, str, pd.Timedelta, List[Union[int, float, str, pd.Timedelta]]],
+    strides : Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
         All the strides.
 
     Note
@@ -203,8 +203,8 @@ class MultipleFeatureDescriptors:
         self,
         functions: Union[FuncWrapper, Callable, List[Union[FuncWrapper, Callable]]],
         series_names: Union[str, Tuple[str, ...], List[str], List[Tuple[str, ...]]],
-        windows: Union[int, float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
-        strides: Union[int, float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
+        windows: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
+        strides: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
     ):
         # Cast functions to FuncWrapper, this avoids creating multiple
         # FuncWrapper objects for the same function in the FeatureDescriptor
