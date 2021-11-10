@@ -53,11 +53,13 @@ class StridedRollingFactory:
         """
         data_dtype = AttributeParser.determine_type(data)
         args_dtype = AttributeParser.determine_type([window, stride])
+
         if data_dtype.value == args_dtype.value:
             return StridedRollingFactory._datatype_to_stroll[data_dtype](
                 data, window, stride, **kwargs
             )
         elif data_dtype == DataType.TIME and args_dtype == DataType.SEQUENCE:
+            # Note: this is very niche and thus requires advanced knowledge
             return TimeIndexSequenceStridedRolling(data, window, stride, **kwargs)
         elif data_dtype == DataType.SEQUENCE and args_dtype == DataType.TIME:
             raise ValueError("Cannot segment a sequence-series with a time window")
