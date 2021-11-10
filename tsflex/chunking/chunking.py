@@ -8,12 +8,12 @@ from typing import Dict, List, Union, Tuple, Optional
 
 import pandas as pd
 
+from ..utils.attribute_parsing import AttributeParser, DataType
 from ..utils.data import to_series_list
 from ..utils.time import parse_time_arg
-from ..utils.attribute_parsing import AttributeParser, DataType
+
 
 def _chunk_time_data(
-    # TODO -> add support for a Dataframe Dict
     series_list: List[pd.Series],
     fs_dict: Optional[Dict[str, float]] = None,
     chunk_range_margin: Optional[Union[str, pd.Timedelta]] = None,
@@ -202,8 +202,9 @@ _dtype_to_chunk_method = {
      DataType.SEQUENCE: _chunk_sequence_data
 }
 
+
 def chunk_data(
-    data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
+    data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]], Dict[str, pd.DataFrame]],
     fs_dict: Optional[Dict[str, float]] = None,
     chunk_range_margin: Optional[Union[float, str, pd.Timedelta]] = None,
     min_chunk_dur: Optional[Union[float, str, pd.Timedelta]] = None,
@@ -231,9 +232,19 @@ def chunk_data(
     * The term `sub-chunk` refers to the chunks who exceed the `max_chunk_duration`
       parameter and are therefore further divided into sub-chunks.
 
+    Example
+    -------
+
+    ```python
+    df_acc  # df with cols ['ACC_x', 'ACC_y`, 'ACC_z`, 'ACC_SMV`] - 32 Hz
+    df_gyro # df with cols ['gyro_x', 'gyro_y`, 'gyro_z`, 'gyro_area`] - 10 Hz
+    "By passing an df-dict we can easily set the `fs` for each column"
+    chunk_data({'acc': df_acc, 'g': df_gyro}, fs_dict={'acc': 32, 'g': 10})
+    ```
+
     Parameters
-    ----------
-    data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
+    -----------
+    data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]], Dict[str, pd.DataFrame]]
         The sequence data which will be chunked. Each item in `data` must have a
         monotonically increasing index.
         The assumption is made that each `item` in data has a _nearly-constant_ sample
@@ -241,6 +252,10 @@ def chunk_data(
     fs_dict: Dict[str, int], optional
         The sample frequency dict. If set, this dict must at least withhold all the keys
         from the items in `data`.
+        .. note::
+            if you passed a **_DataFrame-dict_** (i.e., a dict with key=str -
+            value=DataFrame) to `data`, then you can **use** the **corresponding
+            dataframe str-key** to describe the `fs` for all the DataFrame its columns.
     chunk_range_margin: Union[float, str, pd.Timedelta], optional
         The allowed margin (in seconds if a float) between same time-range chunks their
         start and end time. If `None` the margin will be set as:
@@ -274,7 +289,19 @@ def chunk_data(
     List[List[pd.Series]]
         A list of same time range chunks.
 
+
     """
+    if isinstance(data, dict):
+        if isinstance(fs_dict, dict):
+            out_dict = {}
+            for k, fs in fs_dict.items():
+                if k in data and isinstance(data[k], pd.DataFrame):
+                    out_dict.update({c_name: fs for c_name in data[k].columns})
+            fs_dict.update(out_dict)
+
+        # make `data` `to_series_list` convertable()
+        data = list(data.values())
+
     # Convert the input data
     series_list = to_series_list(data)
 
@@ -285,7 +312,7 @@ def chunk_data(
     assert all(s.index.is_monotonic_increasing for s in series_list)
 
     return _dtype_to_chunk_method[AttributeParser.determine_type(data)](
-        series_list,
+            series_list,
             fs_dict,
             chunk_range_margin,
             min_chunk_dur,

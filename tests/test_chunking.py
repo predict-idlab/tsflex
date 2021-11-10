@@ -185,3 +185,20 @@ def test_chunking_univariate_gaps():
     series = series.drop(series.index[2:8])
     out = chunk_data(data=series, fs_dict={"1hz_series": 1}, copy=True, verbose=True)
     assert len(out) == 2
+
+
+def test_chunking_dataframe_input_fs_dict():
+    df_acc = pd.DataFrame(
+        index=pd.date_range(datetime.now(), periods=10_000, freq="1s"),
+        data=np.ones((10_000, 3)),
+    columns=['ACC_x', 'ACC_y', 'ACC_z']
+    )
+
+    df_gyro = pd.DataFrame(
+        index=pd.date_range(datetime.now(), periods=20_000, freq="500ms"),
+        data=np.ones((20_000, 3)),
+    columns=['Gyro_x', 'Gyro_y', 'Gyro_z']
+    )
+
+    out = chunk_data({'acc': df_acc, 'gyro': df_gyro}, fs_dict={'acc': 1, 'gyro': 2})
+    assert len(out) == 1
