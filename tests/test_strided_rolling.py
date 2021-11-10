@@ -8,6 +8,7 @@ from .utils import dummy_data
 from tsflex.features.segmenter.strided_rolling import (
     TimeStridedRolling,
     SequenceStridedRolling,
+    TimeIndexSequenceStridedRolling,
     StridedRolling,
 )
 from tsflex.features import FuncWrapper
@@ -42,7 +43,10 @@ def test_sequence_stroll(dummy_data):
 
     for window_idx in ["begin", "middle", "end"]:
         stroll = SequenceStridedRolling(
-            data=tmp_series, window=4 * 30, stride=4 * 10, window_idx=window_idx,
+            data=tmp_series,
+            window=4 * 30,
+            stride=4 * 10,
+            window_idx=window_idx,
             approve_sparsity=True,
         )
 
@@ -52,10 +56,10 @@ def test_sequence_stroll(dummy_data):
 
 
 def test_sequence_stroll_last_window_full(dummy_data):
-    df_eda = dummy_data['EDA'].reset_index(drop=True)
+    df_eda = dummy_data["EDA"].reset_index(drop=True)
 
     def stroll_apply_dummy_func(data, window, stride) -> pd.DataFrame:
-        stroll = SequenceStridedRolling(data, window, stride, window_idx='end')
+        stroll = SequenceStridedRolling(data, window, stride, window_idx="end")
         return stroll.apply_func(FuncWrapper(np.min))
 
     out = stroll_apply_dummy_func(df_eda[:2201], window=1000, stride=200)
@@ -75,34 +79,42 @@ def test_sequence_stroll_last_window_full(dummy_data):
 
 
 def test_time_stroll_last_window_full(dummy_data):
-    df_eda = dummy_data['EDA']
+    df_eda = dummy_data["EDA"]
     fs = 4
 
     def stroll_apply_dummy_func(data, window, stride) -> pd.DataFrame:
-        stroll = TimeStridedRolling(data, window, stride, window_idx='end')
+        stroll = TimeStridedRolling(data, window, stride, window_idx="end")
         return stroll.apply_func(FuncWrapper(np.min))
 
-    window_s = pd.Timedelta('30s')
-    stride_s = pd.Timedelta('10s')
-    out = stroll_apply_dummy_func(df_eda[:fs*401], window=window_s, stride=stride_s)
+    window_s = pd.Timedelta("30s")
+    stride_s = pd.Timedelta("10s")
+    out = stroll_apply_dummy_func(df_eda[: fs * 401], window=window_s, stride=stride_s)
     assert out.index[-1] == df_eda.index[fs * 400]
 
-    out = stroll_apply_dummy_func(df_eda[:fs*409], window=window_s, stride=stride_s)
+    out = stroll_apply_dummy_func(df_eda[: fs * 409], window=window_s, stride=stride_s)
     assert out.index[-1] == df_eda.index[fs * 400]
 
     # -> slicing is include left bound, discard right bound -> so UNTIL index 410
     # i.e. last index in sequence is just without 410 -> last valid full range 400
-    out = stroll_apply_dummy_func(df_eda[:fs*410], window=window_s, stride=stride_s)
+    out = stroll_apply_dummy_func(df_eda[: fs * 410], window=window_s, stride=stride_s)
     assert out.index[-1] == df_eda.index[fs * 400]
 
-    out = stroll_apply_dummy_func(df_eda[:fs*411], window=window_s, stride=stride_s)
-    assert out.index[-1] == df_eda.index[fs*410]
-    out = stroll_apply_dummy_func(df_eda[:fs*526], window=window_s, stride=stride_s)
-    assert out.index[-1] == df_eda.index[fs*520]
+    out = stroll_apply_dummy_func(df_eda[: fs * 411], window=window_s, stride=stride_s)
+    assert out.index[-1] == df_eda.index[fs * 410]
+    out = stroll_apply_dummy_func(df_eda[: fs * 526], window=window_s, stride=stride_s)
+    assert out.index[-1] == df_eda.index[fs * 520]
 
 
 def test_abstract_class(dummy_data):
     tmp_series = dummy_data["TMP"].reset_index(drop=True)
 
     with pytest.raises(TypeError):
-        StridedRolling(data=tmp_series, window=400, stride=100)
+        StridedRolling(data=tmp_series, window=400, stride=400)
+
+
+def test_time_index_sequence_stroll(dummy_data):
+    df_eda = dummy_data["EDA"]
+    stroll = TimeIndexSequenceStridedRolling(
+        df_eda, window=1000, stride=50, window_idx="end"
+    )
+    return stroll.apply_func(FuncWrapper(np.min))

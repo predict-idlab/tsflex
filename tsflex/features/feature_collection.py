@@ -6,7 +6,8 @@ Example notebooks and model serialization documentation.
 
 """
 
-from __future__ import annotations  # Make typing work for the enclosing class
+from __future__ import annotations
+
 
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
@@ -40,7 +41,7 @@ class FeatureCollection:
     ----------
     feature_descriptors : Union[FeatureDescriptor, MultipleFeatureDescriptors, List[Union[FeatureDescriptor, MultipleFeatureDescriptors]]], optional
         Initial (list of) feature(s) to add to collection, by default None
-
+    TODO -> segmenter docs
 
     Notes
     -----
@@ -60,6 +61,8 @@ class FeatureCollection:
 
     """
 
+    _SUPPORTED_SEGMENTERS = ["stroll-infer", "stroll-sequence", "stroll-time"]
+
     def __init__(
         self,
         feature_descriptors: Optional[
@@ -69,6 +72,7 @@ class FeatureCollection:
                 List[Union[FeatureDescriptor, MultipleFeatureDescriptors]],
             ]
         ] = None,
+        # segmenter="stroll-infer",  # TODO
     ):
         # The feature collection is a dict with keys of type:
         #   tuple(tuple(str), float OR pd.timedelta, float OR pd.timedelta)
@@ -76,6 +80,9 @@ class FeatureCollection:
         self._feature_desc_dict: Dict[
             Tuple[Tuple[str, ...], pd.Timedelta, pd.Timedelta], List[FeatureDescriptor]
         ] = {}
+
+        # assert segmenter.lower() in self._SUPPORTED_SEGMENTERS
+        # self._segmenter = segmenter.lower()
 
         if feature_descriptors:
             self.add(feature_descriptors)
@@ -206,7 +213,7 @@ class FeatureCollection:
             ]
             function: FuncWrapper = feature.function
             # The factory method will instantiate the right StridedRolling object
-            stroll = StridedRollingFactory.get_segmenter(
+            stroll_arg_dict = dict(
                 data=[series_dict[k] for k in key],
                 window=win,
                 stride=stride,
@@ -214,8 +221,9 @@ class FeatureCollection:
                 end_idx=end_idx,
                 window_idx=window_idx,
                 approve_sparsity=approve_sparsity,
-                data_type=function.input_type,
+                func_data_type=function.input_type,
             )
+            stroll = StridedRollingFactory.get_segmenter(**stroll_arg_dict)
             return stroll, function
 
         return get_stroll_function
@@ -252,9 +260,9 @@ class FeatureCollection:
         data : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
             Dataframe or Series or list thereof, with all the required data for the
             feature calculation. \n
-            **Remark**: each Series / DataFrame must have a monotonically 
-            increasing index. This index represents the sequence position of the 
-            corresponding values, the index can be either numeric or a 
+            **Remark**: each Series / DataFrame must have a monotonically
+            increasing index. This index represents the sequence position of the
+            corresponding values, the index can be either numeric or a
             ``pd.DatetimeIndex``.<br>
             **Remark**: we assume that each series-name / column-name is unique.
         return_df : bool, optional
@@ -333,8 +341,12 @@ class FeatureCollection:
             if s.name in self.get_required_series():
                 series_dict[str(s.name)] = s
 
-        # determing the bounds of the series dict items
+        # determing the bounds of the series dict items and slice on them
         start, end = _determine_bounds(bound_method, list(series_dict.values()))
+        series_dict = {
+            n: s[s.index.dtype.type(start) : s.index.dtype.type(end)]
+            for n, s, in series_dict.items()
+        }
 
         # Note: this variable has a global scope so this is shared in multiprocessing
         global get_stroll_func
