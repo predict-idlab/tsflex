@@ -1,7 +1,7 @@
-This is the documentation of [**tsflex**](https://github.com/predict-idlab/tsflex), which is a `time-series first` Python toolkit for 
+This is the documentation of [**tsflex**](https://github.com/predict-idlab/tsflex); a `time-series first` Python toolkit for 
 **processing & feature extraction**, making few assumptions about input data.
 
-This makes _tsflex_ suitable for use-cases such as inference on streaming data, performing operations on irregularly sampled time-series, and dealing with time-gaps.
+This makes _tsflex_ suitable for use-cases such as inference on streaming data, performing operations on irregularly sampled series, a holistic approach for operating on multivariate asynchronous data, and dealing with time-gaps.
 
 > ~ _**With great flexibility comes great responsiblity, read our docs!**_ - the tsflex devs
 
@@ -30,10 +30,11 @@ This makes _tsflex_ suitable for use-cases such as inference on streaming data, 
 
 ## Getting started 🚀
 
-*tsflex* serves two main functionalities; time-series _processing_ and _feature extraction_:
+*tsflex* serves three main functionalities; time-series _processing_,  _feature extraction_ and _chunking_:
 
 * The [processing](/tsflex/processing) module withholds a `SeriesPipeline` in which uni- and multivariate data processing operations can be defined.
 * The [feature extraction](/tsflex/features) module defines a `FeatureCollection` which does the bookkeeping of the defined features for the data.
+* The [chunking](/tsflex/chunking) module withholds `chunk_data()` a method which can deal with.
 
 <br>
 
