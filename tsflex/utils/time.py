@@ -46,20 +46,16 @@ def timedelta_to_str(td: pd.Timedelta) -> str:
     return out_str
 
 
-def parse_time_arg(arg: Union[float, str, pd.Timedelta]) -> pd.Timedelta:
+def parse_time_arg(arg: Union[str, pd.Timedelta]) -> pd.Timedelta:
     """Parse the `window`/`stride` arg into a fixed set of types.
 
     Parameters
     ----------
     arg : Union[float, str, pd.Timedelta]
         The arg that will be parsed. \n
-        * If the type is an `int` or `float`, it should represent the timedelta in
-          **seconds**.
         * If the type is a `pd.Timedelta`, nothing will happen.
         * If the type is a `str`, `arg` should represent a time-string, and will be
           converted to a `pd.Timedelta`.
-          Note: if there is no time-unit in the string, it should represent the
-          timedelta in **seconds**.
 
     Returns
     -------
@@ -75,15 +71,8 @@ def parse_time_arg(arg: Union[float, str, pd.Timedelta]) -> pd.Timedelta:
     """
     if isinstance(arg, pd.Timedelta):
         return arg
-
-    try:
-        # Cast a string without time units to float (or cast an int to float)
-        arg = float(arg)
-    except:
-        pass
-
-    if isinstance(arg, float):
-        return pd.Timedelta(seconds=arg)
     elif isinstance(arg, str):
+        if arg.isnumeric():
+            raise ValueError(f"time-string arg {arg} must contain a unit")
         return pd.Timedelta(arg)
     raise TypeError(f"arg type {type(arg)} is not supported!")

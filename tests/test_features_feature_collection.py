@@ -17,7 +17,7 @@ from tsflex.features import FeatureDescriptor, MultipleFeatureDescriptors
 from tsflex.features import FeatureCollection
 
 from pathlib import Path
-from pandas.testing import assert_index_equal, assert_frame_equal
+from pandas.testing import assert_frame_equal
 from scipy.stats import linregress
 from typing import Tuple
 from .utils import dummy_data
@@ -30,8 +30,8 @@ def test_single_series_feature_collection(dummy_data):
     fd = FeatureDescriptor(
         function=np.sum,
         series_name="EDA",
-        window="5s",
-        stride="2.5s",
+        window="10s",
+        stride="5s",
     )
     fc = FeatureCollection(feature_descriptors=fd)
 
@@ -44,22 +44,29 @@ def test_single_series_feature_collection(dummy_data):
     assert isinstance(res_df, pd.DataFrame)
     assert_frame_equal(res_list[0], res_df)
     freq = pd.to_timedelta(pd.infer_freq(dummy_data.index)) / np.timedelta64(1, "s")
-    stride_s = 2.5
-    window_s = 5
-    assert len(res_df) == (int(len(dummy_data) / (1 / freq)) - window_s) // stride_s
-    assert all(res_df.index[1:] - res_df.index[:-1] == pd.to_timedelta(2.5, unit="s"))
+    stride_s = 5
+    window_s = 10
+    assert len(res_df) == math.ceil((int(len(dummy_data) / (1 / freq)) - window_s) / stride_s)
+    assert all(res_df.index[1:] - res_df.index[:-1] == pd.to_timedelta(5, unit="s"))
 
 
 def test_uneven_sampled_series_feature_collection(dummy_data):
     fd = FeatureDescriptor(
         function=np.sum,
         series_name="EDA",
-        window="5s",
-        stride="2.5s",
+        window="10s",
+        stride="16s",
     )
     fc = FeatureCollection(feature_descriptors=fd)
-    fc.add(FeatureDescriptor(np.min, series_name=("TMP",), window="5", stride="2.5"))
-    fc.add(FeatureDescriptor(np.min, series_name=("EDA",), window="5", stride="2.5"))
+    with pytest.raises(ValueError):
+        fc.add(FeatureDescriptor(np.min, series_name=("TMP",), window="10", stride="6"))
+    with pytest.raises(ValueError):
+        fc.add(FeatureDescriptor(np.min, series_name=("TMP",), window="5s", stride="6"))
+    with pytest.raises(ValueError):
+        fc.add(FeatureDescriptor(np.min, series_name=("TMP",), window="5", stride="6s"))
+
+    fc.add(FeatureDescriptor(np.min, series_name=("TMP",), window="10s", stride="16s"))
+    fc.add(FeatureDescriptor(np.min, series_name=("EDA",), window="10s", stride="16s"))
 
     assert set(fc.get_required_series()) == set(["EDA", "TMP"])
     assert len(fc.get_required_series()) == 2
@@ -71,10 +78,12 @@ def test_uneven_sampled_series_feature_collection(dummy_data):
 
     assert res_df.shape[1] == 3
     freq = pd.to_timedelta(pd.infer_freq(dummy_data.index)) / np.timedelta64(1, "s")
-    stride_s = 2.5
-    window_s = 5
-    assert len(res_df) == (int(len(dummy_data) / (1 / freq)) - window_s) // stride_s
-    assert all(res_df.index[1:] - res_df.index[:-1] == pd.to_timedelta(2.5, unit="s"))
+    stride_s = 16
+    window_s = 10
+    assert len(res_df) == math.ceil((int(len(dummy_data) / (1 / freq)) - window_s) / stride_s)
+    assert all(
+        res_df.index[1:] - res_df.index[:-1] == pd.to_timedelta(stride_s, unit="s")
+    )
 
 
 def test_warning_uneven_sampled_series_feature_collection(dummy_data):
@@ -107,7 +116,7 @@ def test_warning_uneven_sampled_series_feature_collection(dummy_data):
         freq = pd.to_timedelta(pd.infer_freq(dummy_data.index)) / np.timedelta64(1, "s")
         stride_s = 2.5
         window_s = 5
-        assert len(res_df) == (int(len(dummy_data) / (1 / freq)) - window_s) // stride_s
+        assert len(res_df) == math.ceil((int(len(dummy_data) / (1 / freq)) - window_s) / stride_s)
         assert all(
             res_df.index[1:] - res_df.index[:-1] == pd.to_timedelta(2.5, unit="s")
         )
@@ -149,7 +158,7 @@ def test_window_idx_single_series_feature_collection(dummy_data):
         function=np.sum,
         series_name="EDA",
         window="5s",
-        stride="2.5s",
+        stride="12.5s",
     )
     fc = FeatureCollection(feature_descriptors=fd)
 
@@ -179,15 +188,16 @@ def test_window_idx_single_series_feature_collection(dummy_data):
 
     assert res_begin.index[0] == dummy_data.index[0]
     assert res_end.index[0] == dummy_data.index[0] + pd.to_timedelta(5, unit="s")
+    # 2.5 -> refers to window / 2
     assert res_middle.index[0] == dummy_data.index[0] + pd.to_timedelta(2.5, unit="s")
 
     for res_df in [res_begin, res_end, res_middle]:
         freq = pd.to_timedelta(pd.infer_freq(dummy_data.index)) / np.timedelta64(1, "s")
-        stride_s = 2.5
+        stride_s = 12.5
         window_s = 5
-        assert len(res_df) == (int(len(dummy_data) / (1 / freq)) - window_s) // stride_s
+        assert len(res_df) == math.ceil((int(len(dummy_data) / (1 / freq)) - window_s) / stride_s)
         assert all(
-            res_df.index[1:] - res_df.index[:-1] == pd.to_timedelta(2.5, unit="s")
+            res_df.index[1:] - res_df.index[:-1] == pd.to_timedelta(12.5, unit="s")
         )
 
 
@@ -227,6 +237,7 @@ def test_multiplefeaturedescriptors_feature_collection(dummy_data):
     expected_output_names = expected_output_names[0] + expected_output_names[1]
     assert set(res_df.columns) == set(expected_output_names)
 
+
     # No NaNs when returning a list of calculated featured
     assert all([~res.isna().values.any() for res in res_list])
     # NaNs when merging to a df (for  some cols)
@@ -236,7 +247,7 @@ def test_multiplefeaturedescriptors_feature_collection(dummy_data):
     stride_s = 2.5
     window_s = 5
     freq = pd.to_timedelta(pd.infer_freq(dummy_data.index)) / np.timedelta64(1, "s")
-    expected_length = (int(len(dummy_data) / (1 / freq)) - window_s) // stride_s
+    expected_length = math.ceil((int(len(dummy_data) / (1 / freq)) - window_s) / stride_s)
     assert all(
         [
             len(res) == expected_length - 1
@@ -274,7 +285,7 @@ def test_featurecollection_feature_collection(dummy_data):
     freq = pd.to_timedelta(pd.infer_freq(dummy_data.index)) / np.timedelta64(1, "s")
     stride_s = 2.5
     window_s = 5
-    assert len(res_df) == (int(len(dummy_data) / (1 / freq)) - window_s) // stride_s
+    assert len(res_df) == math.ceil((int(len(dummy_data) / (1 / freq)) - window_s) / stride_s)
     assert all(res_df.index[1:] - res_df.index[:-1] == pd.to_timedelta(2.5, unit="s"))
 
 
@@ -457,7 +468,7 @@ def test_one_to_many_feature_collection(dummy_data):
     freq = pd.to_timedelta(pd.infer_freq(dummy_data.index)) / np.timedelta64(1, "s")
     stride_s = 2.5
     window_s = 5
-    assert len(res_df) == (int(len(dummy_data) / (1 / freq)) - window_s) // stride_s
+    assert len(res_df) == math.ceil((int(len(dummy_data) / (1 / freq)) - window_s) / stride_s)
 
     expected_output_names = [
         "EDA__q_0.1__w=5s_s=2.5s",
@@ -486,7 +497,7 @@ def test_many_to_one_feature_collection(dummy_data):
     freq = pd.to_timedelta(pd.infer_freq(dummy_data.index)) / np.timedelta64(1, "s")
     stride_s = 2.5
     window_s = 5
-    assert len(res_df) == (int(len(dummy_data) / (1 / freq)) - window_s) // stride_s
+    assert len(res_df) == math.ceil((int(len(dummy_data) / (1 / freq)) - window_s) / stride_s)
 
     expected_output_name = "EDA|TMP__abs_mean_diff__w=5s_s=2.5s"
     assert res_df.columns.values[0] == expected_output_name
@@ -503,7 +514,7 @@ def test_many_to_many_feature_collection(dummy_data):
         output_names=["q_0.1_abs_diff", "q_0.5_abs_diff", "q_0.9_abs_diff"],
     )
     fd = FeatureDescriptor(
-        q_func, series_name=("EDA", "TMP"), window="5s", stride="2.5s"
+        q_func, series_name=("EDA", "TMP"), window="5s", stride="13.5s"
     )
     fc = FeatureCollection(fd)
 
@@ -512,14 +523,14 @@ def test_many_to_many_feature_collection(dummy_data):
     res_df = fc.calculate(dummy_data, return_df=True)
     assert res_df.shape[1] == 3
     freq = pd.to_timedelta(pd.infer_freq(dummy_data.index)) / np.timedelta64(1, "s")
-    stride_s = 2.5
+    stride_s = 13.5
     window_s = 5
-    assert len(res_df) == (int(len(dummy_data) / (1 / freq)) - window_s) // stride_s
+    assert len(res_df) == math.ceil((int(len(dummy_data) / (1 / freq)) - window_s) / stride_s)
 
     expected_output_names = [
-        "EDA|TMP__q_0.1_abs_diff__w=5s_s=2.5s",
-        "EDA|TMP__q_0.5_abs_diff__w=5s_s=2.5s",
-        "EDA|TMP__q_0.9_abs_diff__w=5s_s=2.5s",
+        "EDA|TMP__q_0.1_abs_diff__w=5s_s=13.5s",
+        "EDA|TMP__q_0.5_abs_diff__w=5s_s=13.5s",
+        "EDA|TMP__q_0.9_abs_diff__w=5s_s=13.5s",
     ]
     assert set(res_df.columns.values) == set(expected_output_names)
     assert (res_df[expected_output_names[0]] != res_df[expected_output_names[1]]).any()
@@ -911,12 +922,12 @@ def test_bound_method_uneven_index_numeric(dummy_data):
     earliest_start = df_tmp_.index[0]
 
     out_inner = fc.calculate(
-        [df_tmp_, df_eda_], bound_method='inner', window_idx='begin', return_df=True
+        [df_tmp_, df_eda_], bound_method="inner", window_idx="begin", return_df=True
     )
     assert out_inner.index[0] == latest_start
 
     out_outer = fc.calculate(
-        [df_tmp_, df_eda_], bound_method='outer', window_idx='begin', return_df=True
+        [df_tmp_, df_eda_], bound_method="outer", window_idx="begin", return_df=True
     )
     assert out_outer.index[0] == earliest_start
 
@@ -925,8 +936,8 @@ def test_bound_method_uneven_index_datetime(dummy_data):
     fc = FeatureCollection(
         feature_descriptors=[
             MultipleFeatureDescriptors(
-                windows='5min',
-                strides='3min',
+                windows="5min",
+                strides="3min",
                 functions=[np.min, np.max],
                 series_names=["TMP", "EDA"],
             )
@@ -941,12 +952,12 @@ def test_bound_method_uneven_index_datetime(dummy_data):
     earliest_start = df_tmp.index[0]
 
     out_inner = fc.calculate(
-        [df_tmp, df_eda], bound_method='inner', window_idx='begin', return_df=True
+        [df_tmp, df_eda], bound_method="inner", window_idx="begin", return_df=True
     )
     assert out_inner.index[0] == latest_start
 
     out_outer = fc.calculate(
-        [df_tmp, df_eda], bound_method='outer', window_idx='begin', return_df=True
+        [df_tmp, df_eda], bound_method="outer", window_idx="begin", return_df=True
     )
     assert out_outer.index[0] == earliest_start
 
@@ -968,13 +979,12 @@ def test_not_sorted_fc(dummy_data):
     assert not df_eda.index.is_monotonic_increasing
     out = fc.calculate([df_tmp, df_eda], window_idx="end", return_df=True)
     assert not df_eda.index.is_monotonic_increasing
-    
+
     df_eda.index = df_eda.index.astype(float)
     assert not df_eda.index.is_monotonic_increasing
     out = fc.calculate([df_tmp, df_eda], window_idx="end", return_df=True)
     assert not df_eda.index.is_monotonic_increasing
 
-    
 
 def test_serialization(dummy_data):
     fc = FeatureCollection(

@@ -32,7 +32,9 @@ def _chunk_time_data(
     # Default arg -> set the chunk range margin to 2x the min-freq its period
     if chunk_range_margin is None:
         if fs_dict is not None:
-            chunk_range_margin = 2 / min([fs_dict[str(s.name)] for s in series_list])
+            chunk_range_margin = pd.Timedelta(
+                seconds=2 / min([fs_dict[str(s.name)] for s in series_list])
+            )
         else:
             raise ValueError("Chunk range margin must be set if fs_dict is not set!")
 
@@ -198,13 +200,18 @@ def _chunk_sequence_data(
 
 
 _dtype_to_chunk_method = {
-     DataType.TIME: _chunk_time_data,
-     DataType.SEQUENCE: _chunk_sequence_data
+    DataType.TIME: _chunk_time_data,
+    DataType.SEQUENCE: _chunk_sequence_data,
 }
 
 
 def chunk_data(
-    data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]], Dict[str, pd.DataFrame]],
+    data: Union[
+        pd.Series,
+        pd.DataFrame,
+        List[Union[pd.Series, pd.DataFrame]],
+        Dict[str, pd.DataFrame],
+    ],
     fs_dict: Optional[Dict[str, float]] = None,
     chunk_range_margin: Optional[Union[float, str, pd.Timedelta]] = None,
     min_chunk_dur: Optional[Union[float, str, pd.Timedelta]] = None,
@@ -312,13 +319,12 @@ def chunk_data(
     assert all(s.index.is_monotonic_increasing for s in series_list)
 
     return _dtype_to_chunk_method[AttributeParser.determine_type(data)](
-            series_list,
-            fs_dict,
-            chunk_range_margin,
-            min_chunk_dur,
-            max_chunk_dur,
-            sub_chunk_overlap,
-            copy,
-            verbose,
+        series_list,
+        fs_dict,
+        chunk_range_margin,
+        min_chunk_dur,
+        max_chunk_dur,
+        sub_chunk_overlap,
+        copy,
+        verbose,
     )
-

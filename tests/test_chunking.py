@@ -112,8 +112,8 @@ def test_chunking_multivariate_continuous():
         data=[hz_series, twohz_series],
         fs_dict={"1hz_series": 1, "2hz_series": 2},
         copy=True,
-        max_chunk_dur=60 * 60,
-        sub_chunk_overlap=30,
+        max_chunk_dur='1hour',
+        sub_chunk_overlap='30s',
         verbose=True,
     )
 
@@ -135,9 +135,9 @@ def test_chunking_multivariate_continuous():
         data=[hz_series, twohz_series],
         fs_dict={"1hz_series": 1, "2hz_series": 2},
         copy=True,
-        max_chunk_dur=60 * 60,
-        sub_chunk_overlap=30,
-        min_chunk_dur=30,
+        max_chunk_dur='3600s',
+        sub_chunk_overlap='30s',
+        min_chunk_dur='30s',
         verbose=True,
     )
 
@@ -175,7 +175,7 @@ def test_chunking_univariate_gaps():
         fs_dict={"1hz_series": 1},
         copy=True,
         verbose=True,
-        min_chunk_dur=30,
+        min_chunk_dur='30s',
     )
     assert len(out) == 2
 
