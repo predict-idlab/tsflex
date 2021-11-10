@@ -2,17 +2,16 @@
 
 The following sections will explain the feature extraction module in detail.
 
-<!-- <div style="text-align: center;"> -->
+<div style="text-align: center;">
 <h3><b><a href="#header-submodules">Jump to API reference</a></b></h3>
-<!-- </div> -->
+</div>
 <br>
 
 ## Working example ✅
 
 _tsflex_ is built to be intuitive, so we encourage you to copy-paste this code and toy with some parameters! <br>
 
-This executable example creates a feature-collection that contains 2 features (skewness and minimum). <br>
-**Note**: we do not make any assumptions about the sampling rate of the time-series data.
+This executable example creates a feature-collection that contains 2 features (skewness and minimum). Note that _tsflex_ does not make any assumptions about the sampling rate of the time-series data.
 
 ```python
 import pandas as pd; import scipy.stats as ss; import numpy as np
@@ -37,8 +36,7 @@ fc = FeatureCollection(
 fc.add(FeatureDescriptor(np.min, "TMP", '2.5min', '2.5min'))
 
 # 3 -------- Calculate features --------
-fc.calculate(data=data, return_df=True)
-# which outputs:
+>>> fc.calculate(data=data, return_df=True)  # which outputs:
 ```
 | timestamp                 |   TMP__amin__w=1m_s=30s |   TMP__skew__w=2m_s=1m |
 |:--------------------------|------------------------:|-----------------------:|
@@ -68,11 +66,13 @@ As shown above, there are 3 relevant classes for feature-extraction.
 2. [FeatureDescriptor](/tsflex/features/#tsflex.features.FeatureDescriptor): an instance of this class describes a _feature_. <br>Features are defined by:
       * `series_name`: the names of the input series on which the feature-function will operate 
       * `function`: the _Callable_ feature-function - e.g. _np.mean_
-      * `window`: the _time-based_ window -  e.g. _"1hour"_
-      * `stride`: the _time-based_ stride - e.g. _"2days"_
-3. [FuncWrapper](/tsflex/features/#tsflex.features.FuncWrapper): a wrapper around _Callable_ functions, intended for advanced feature-function definitions, such as:
-    * features with multiple output columns
-    * passing _**kwargs_ to feature functions
+      * `window`: the _sample_ or _time-based_ window -  e.g. _200_ or _"2days"_
+      * `stride`: the _sample_ or _time-based_ stride - e.g. _15_ or _"1hour"_
+3. [FuncWrapper](/tsflex/features/#tsflex.features.FuncWrapper): a wrapper around _Callable_ functions, intended for advanced feature-function definitions. A funcwrapper is defined by:
+    * `func`: The wrapped feature function
+    * `output_names`: set custom and/or multiple feature output names
+    * `input_type`: define the feature its datatype; e.g., a pd.Series or np.array
+    * _**kwargs_: additional keyword argument which are passed to `func`
 
 The snippet below shows how the `FeatureCollection` & `FeatureDescriptor` components work together:
 

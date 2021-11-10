@@ -1,6 +1,6 @@
 # Comparison 🔎
 
-The table below positions _tsflex_ among other relative packages.
+The table below positions _tsflex_ among other relative Python packages.
 
 <style type="text/css">
 .tg  {border-collapse:collapse;border-color:#ccc;border-spacing:0;}
@@ -110,7 +110,7 @@ The table below positions _tsflex_ among other relative packages.
   </tr>
   <tr>
     <td class="tg-0pky">Strided-window definition format</td>
-    <td class="tg-c3ow">time-based</td>
+    <td class="tg-c3ow">time- & sample-based</td>
     <td class="tg-c3ow">sample-based</td>
     <td class="tg-c3ow">sample-based</td>
     <td class="tg-c3ow">sample-based</td>
@@ -195,8 +195,8 @@ The table below positions _tsflex_ among other relative packages.
 
 # Benchmark 📊
 
-The visualization below compares `tsflex v0.1.2.3` against other eligible packages for the strided-rolling feature extraction use-case.<br>
-For reference, the in-memory data size when loaded in RAM was 96.4MB.
+The visualization below compares `tsflex v0.1.2.5` against other eligible packages for the strided-rolling feature extraction use-case.<br>
+As a reference, the data size when loaded in RAM was 96.4MB.
 
 The figure is constructed by using the [tsflex-benchmarking](https://github.com/predict-idlab/tsflex-benchmarking) repo, we further refer to this repository for more details.
 
