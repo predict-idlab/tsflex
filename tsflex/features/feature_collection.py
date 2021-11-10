@@ -7,6 +7,7 @@ Example notebooks and model serialization documentation.
 """
 
 from __future__ import annotations
+import warnings
 
 
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
@@ -29,6 +30,7 @@ from .logger import logger
 from .segmenter import StridedRollingFactory, StridedRolling
 from .utils import _determine_bounds
 from ..features.function_wrapper import FuncWrapper
+from ..utils.attribute_parsing import AttributeParser
 from ..utils.data import to_list, to_series_list, flatten
 from ..utils.logging import delete_logging_handlers, add_logging_handler
 from ..utils.time import timedelta_to_str
@@ -111,6 +113,22 @@ class FeatureCollection:
         # Note: `window` & `stride` properties can either be a pd.Timedelta or an int
         return feature.series_name, feature.window, feature.stride
 
+    def _check_feature_descriptors(self):
+        """Verify whether all added FeatureDescriptors imply the same-input data type.
+
+        If this condition is not met, a warning will be raised.
+        """
+        dtype_set = set(
+            AttributeParser.determine_type([win, stride])
+            for _, win, stride in self._feature_desc_dict.keys()
+        )
+        if len(dtype_set) > 1:
+            warnings.warn(
+                "There are multiple FeatureDescriptor window-stride "
+                + f"datatypes present in this FeatureCollection, i.e.: {dtype_set}",
+                category=RuntimeWarning
+            )
+
     def _add_feature(self, feature: FeatureDescriptor):
         """Add a `FeatureDescriptor` instance to the collection.
 
@@ -182,6 +200,8 @@ class FeatureCollection:
                 self.add(list(flatten(feature._feature_desc_dict.values())))
             else:
                 raise TypeError(f"type: {type(feature)} is not supported - {feature}")
+        
+        self._check_feature_descriptors()
 
     @staticmethod
     def _executor(idx: int):

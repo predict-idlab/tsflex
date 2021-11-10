@@ -797,6 +797,61 @@ def test_datatype_retention(dummy_data):
             assert out.values.dtype == dtype
 
 
+### Test the various input data types combinations
+
+def test_time_based_features_sequence_based_data_error(dummy_data):
+    df_eda = dummy_data['EDA'].reset_index()
+    df_tmp = dummy_data['TMP'].reset_index()
+
+    fs = 4  # The sample frequency in Hz
+    fc = FeatureCollection(
+    feature_descriptors=[
+        FeatureDescriptor(np.min, 'EDA', f'{250}s', f'{75}s'),
+        FeatureDescriptor(np.min, 'TMP', 250 * fs, 75 * fs)
+        ]
+    )
+
+    # cannot use time-based win-stride configurations on sequence based data
+    with pytest.raises(RuntimeError):
+        fc.calculate([df_eda, df_tmp])
+
+    with pytest.raises(RuntimeError):
+        fc.calculate([df_eda, df_tmp], n_jobs=0)
+
+
+def test_mixed_featuredescriptors_time_data(dummy_data):
+    df_eda = dummy_data['EDA']
+    df_tmp = dummy_data['TMP']
+
+    fs = 4  # The sample frequency in Hz
+    with warnings.catch_warnings(record=True) as w:
+        # generate the warning by adding mixed FeatureDescriptors
+        fc = FeatureCollection(
+        feature_descriptors=[
+            # same data range -> so when we perform an outer merge we do not suspect a
+            # nan error
+            FeatureDescriptor(np.min, 'EDA', f'{250}s', f'{75}s'),
+            FeatureDescriptor(np.min, 'EDA', 250 * fs, 75 * fs)
+            ]
+        )
+        assert len(w) == 1
+        assert all([issubclass(warn.category, RuntimeWarning) for warn in w])
+        assert all(["There are multiple FeatureDescriptor window-stride datatypes" in str(warn) for warn in w])
+
+
+    with warnings.catch_warnings(record=True) as w:
+        # generate the warning by adding mixed FeatureDescriptors
+        fc.add(FeatureDescriptor(np.std, 'EDA', 250 * fs, 75 * fs))
+        assert len(w) == 1
+        assert all([issubclass(warn.category, RuntimeWarning) for warn in w])
+        assert all(["There are multiple FeatureDescriptor window-stride datatypes" in str(warn) for warn in w])
+
+
+
+
+    out = fc.calculate([df_eda, df_tmp], return_df=True)
+    assert all(out.notna().sum(axis=0))
+
 ### Test 'error' use-cases
 
 
@@ -853,7 +908,7 @@ def test_many_to_one_error_feature_collection(dummy_data):
         fc.calculate(dummy_data)
 
 
-def test__error_same_output_feature_collection(dummy_data):
+def test_error_same_output_feature_collection(dummy_data):
     def sum_func(sig: np.ndarray) -> float:
         return sum(sig)
 
@@ -938,6 +993,36 @@ def test_bound_method_uneven_index_datetime(dummy_data):
             MultipleFeatureDescriptors(
                 windows="5min",
                 strides="3min",
+                functions=[np.min, np.max],
+                series_names=["TMP", "EDA"],
+            )
+        ]
+    )
+
+    df_tmp = dummy_data["TMP"]
+    df_eda = dummy_data["EDA"]
+    df_eda.index += pd.Timedelta(seconds=10)
+
+    latest_start = df_eda.index[0]
+    earliest_start = df_tmp.index[0]
+
+    out_inner = fc.calculate(
+        [df_tmp, df_eda], bound_method="inner", window_idx="begin", return_df=True
+    )
+    assert out_inner.index[0] == latest_start
+
+    out_outer = fc.calculate(
+        [df_tmp, df_eda], bound_method="outer", window_idx="begin", return_df=True
+    )
+    assert out_outer.index[0] == earliest_start
+
+
+def test_bound_method_uneven_index_datetime_sequence(dummy_data):
+    fc = FeatureCollection(
+        feature_descriptors=[
+            MultipleFeatureDescriptors(
+                windows=300,  # Sample based -> TimeIndexSampleStridedRolling
+                strides=180,
                 functions=[np.min, np.max],
                 series_names=["TMP", "EDA"],
             )
