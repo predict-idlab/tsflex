@@ -73,6 +73,9 @@ def parse_time_arg(arg: Union[float, str, pd.Timedelta]) -> pd.Timedelta:
         `pd.Timedelta`.
 
     """
+    if isinstance(arg, pd.Timedelta):
+        return arg
+
     try:
         # Cast a string without time units to float (or cast an int to float)
         arg = float(arg)
