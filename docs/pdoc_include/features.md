@@ -33,10 +33,11 @@ fc = FeatureCollection(
     ]
 )
 # -- 2.1. Add features to your feature collection
+# NOTE: tsflex allows features to have different windows and strides
 fc.add(FeatureDescriptor(np.min, "TMP", '2.5min', '2.5min'))
 
 # 3 -------- Calculate features --------
->>> fc.calculate(data=data, return_df=True)  # which outputs:
+fc.calculate(data=data, return_df=True)  # which outputs:
 ```
 | timestamp                 |   TMP__amin__w=1m_s=30s |   TMP__skew__w=2m_s=1m |
 |:--------------------------|------------------------:|-----------------------:|
@@ -63,13 +64,15 @@ The feature-extraction functionality of _tsflex_ is provided by a `FeatureCollec
 As shown above, there are 3 relevant classes for feature-extraction.
 
 1. [FeatureCollection](/tsflex/features/#tsflex.features.FeatureCollection): serves as a registry, withholding the to-be-calculated _features_
-2. [FeatureDescriptor](/tsflex/features/#tsflex.features.FeatureDescriptor): an instance of this class describes a _feature_. <br>Features are defined by:
-      * `series_name`: the names of the input series on which the feature-function will operate 
+2. [FeatureDescriptor](/tsflex/features/#tsflex.features.FeatureDescriptor): an instance of this class describes a _feature_.
+    <br>Features are defined by:
+      * `series_name`: the names of the input series on which the feature-function will operate
       * `function`: the _Callable_ feature-function - e.g. _np.mean_
       * `window`: the _sample_ or _time-based_ window -  e.g. _200_ or _"2days"_
       * `stride`: the _sample_ or _time-based_ stride - e.g. _15_ or _"1hour"_
-3. [FuncWrapper](/tsflex/features/#tsflex.features.FuncWrapper): a wrapper around _Callable_ functions, intended for advanced feature-function definitions. A funcwrapper is defined by:
-    * `func`: The wrapped feature function
+3. [FuncWrapper](/tsflex/features/#tsflex.features.FuncWrapper): wraps _Callable_ feature functions, and is intended for feature function configuration.
+    <br>FuncWrappers are defined by:
+    * `func`: The wrapped feature-function
     * `output_names`: set custom and/or multiple feature output names
     * `input_type`: define the feature its datatype; e.g., a pd.Series or np.array
     * _**kwargs_: additional keyword argument which are passed to `func`
@@ -81,8 +84,8 @@ import numpy as np; import scipy.stats as ss
 from tsflex.features import FeatureDescriptor, FeatureCollection
 
 # The FeatureCollection takes a List[FeatureDescriptor] as input
+# There is no need for using a FuncWrapper when dealing with simple feature functions
 fc = FeatureCollection(feature_descriptors=[
-        # There is no need for FuncWrapper when using "simple" features
         FeatureDescriptor(np.mean, "series_a", "1hour", "15min"),
         FeatureDescriptor(ss.skew, "series_b", "3hours", "5min")
     ]
@@ -97,33 +100,34 @@ fc.calculate(...)
 
 ### Feature functions
 
-The function that processes the series should match this prototype:
+A feature function needs to match this prototype:
 
     function(*series: Union[np.ndarray, pd.Series], **kwargs)
         -> Union[Any, List[Any]]
 
-Hence, the feature function should take one (or multiple) arrays as input, these may be followed by some keyword arguments. The output of a feature function can be rather versatile (e.g., a float, an integer, a string, a bool, ... or a list thereof). <br>
-Note that the feature function may also take one (or multiple) series as input. In this case, the feature function should be wrapped in a ``FuncWrapper``, with the `input_type` argument set to `pd.Series`.
+Hence, feature functions should take one (or multiple) arrays as first input. This can be followed by some keyword arguments.<br>
+The output of a feature function can be rather versatile (e.g., a float, integer, string, bool, ... or a list thereof). <br><br>
+Note that the feature function may also take more than one series as input. In this case, the feature function should be wrapped in a ``FuncWrapper``, with the `input_type` argument set to `pd.Series`.
 
-In [this section](#advanced-usage) you can find more info on advanced usage of feature functions.
+In the [advanced usage](#advanced-usage) section, more info is given on these feature-function.
 
 ### Multiple feature descriptors
 
-Sometimes it can get overly verbose when the same feature is shared over multiple series, windows and/or strides. To solve this problem, we introduce the `MultipleFeatureDescriptors`, this component allows to **create multiple feature descriptors for all** the ``function - series_name(s) - window - stride`` **combinations**.
+Sometimes it can get overly verbose when the same feature is shared over multiple series, windows and/or strides. To solve this problem, we introduce the `MultipleFeatureDescriptors`. This component allows to **create multiple feature descriptors for all** the ``function - series_name(s) - window - stride`` **combinations**.
 
-A `MultipleFeatureDescriptors` instance can be added a `FeatureCollection`.
+As shown in the example below, a `MultipleFeatureDescriptors` instance can be added a `FeatureCollection`.
 
-Example
 ```python
 import numpy as np; import scipy.stats as ss
 from tsflex.features import FeatureDescriptor, FeatureCollection
 from tsflex.features import MultipleFeatureDescriptors
 
-# The FeatureCollection takes a List[FeatureDescriptor] as input
+# There is no need for using a FuncWrapper when dealing with simple feature functions
 fc = FeatureCollection(feature_descriptors=[
-        # There is no need for FuncWrapper when using "simple" features
         FeatureDescriptor(np.mean, "series_a", "1hour", "15min"),
         FeatureDescriptor(ss.skew, "series_b", "3hours", "5min"),
+        # Expands to a feature-descriptor list, withholding the combination of all 
+        # The feature-window-stride arguments above.
         MultipleFeatureDescriptors(
             functions=[np.min, np.max, np.std, ss.skew],
             series_names=["series_a", "series_b", "series_c"],
@@ -138,11 +142,13 @@ fc.calculate(...)
 ```
 
 ### Output format
-The output of the `FeatureCollection` its `calculate` method is a (list of) **`time-indexed pd.DataFrame`** with column names<br>
+The output of the `FeatureCollection` its `FeatureCollection.calculate()` is a (list of) **`sequence-indexed pd.DataFrames`** with column names:
 
 > **`<SERIES-NAME>__<FEAT-NAME>__w=<WINDOW>__s=<STRIDE>`**.
 
-The column-name for the feature defined on the penultimate line in the snipped above will thus be `series_a__std__w=1h__s=15m`.
+The column-name for the first feature defined in the snippet above will thus be `series_a__std__w=1h__s=15m`.
+
+When the windows and strides are defined in a sample based-manner (which is mandatory for non datetime-indexed data), a possible output column would be `series_a__std__w=100_s=15`, where the window and stride are defined in samples and thus not in time-strings.
 
 !!!note
     You can find more information about the **input data-formats** in [this section](/tsflex/#data-formats) and read more about the (obvious) **limitations** in the next section.
@@ -155,9 +161,11 @@ It is important to note that there a still some, albeit logical, **limitations**
 
 These limitations are:
 
-1. Each [`ts`](/tsflex/#data-formats) must have a <b style="color:red">`pd.DatetimeIndex` that increases monotonically</b>
-      - **Countermeasure**: Apply _[sort_index()](https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.sort_index.html)_ on your not-monotonically increasing data
-2. <b style="color:red">No duplicate</b> `ts` <b style="color:red">names</b> are allowed
+1. Each [`ts`](/tsflex/#data-formats) must be in the **<span style="color:darkred">flat/wide</span> data format** and they all need to have the **<span style="color:darkred">same sequence index dtype</span>**, which needs to be **sortable**.
+    - It just doesn't make sense to have a mix of different sequence index dtypes.<br>
+    Imagine a FeatureCollection to which a `ts` with a `pd.DatetimeIndex` is passed, but a `ts` with a `pd.RangeIndex` is also passed. Both indexes aren't comparable, which thus is counterintuitive.
+2. tsflex has **no support** for <b style="color:darkred">multi-indexes & multi-columns</b>
+3. tsflex assumes that each `ts` has a unique name. Hence <b style="color:darkred">no duplicate</b> `ts` <b style="color:darkred">names</b> are allowed
       - **Countermeasure**: rename your `ts`
 
 <br>
@@ -165,7 +173,7 @@ These limitations are:
 
 ## Important notes 📢
 
-- We support various data-types. e.g. (np.float32, string-data, time-based data). However, it is the end-users responsibility to use a function which interplays nicely with the data its format.
+We support various data-types. e.g. (np.float32, string-data, time-based data). However, it is the end-users responsibility to use a function which interplays nicely with the data its format.
 
 <br>
 
@@ -202,10 +210,11 @@ fd = FeatureDescriptor(
     The function should (usually) not be wrapped in a ``FuncWrapper``. <br> 
     Note that now the `series_name` argument requires a tuple of the ordered input series names.
 
-    Example
+    Example:
 ```python
 def abs_sum_diff(s1: np.array, s2: np.array) -> float:
-    return np.sum(np.abs(s1 - s2))
+    min_len = min(len(s1), len(s2))
+    return np.sum(np.abs(s1[:min_len] - s2[:min_len]))
 
 fd = FeatureDescriptor(
     abs_sum_diff, series_name=("series_1", "series_2"), 
@@ -219,7 +228,7 @@ fd = FeatureDescriptor(
 
     The function should be wrapped in a ``FuncWrapper`` to log its multiple output names.
 
-    Example
+    Example:
 ```python
 def abs_stats(s: np.array) -> Tuple[float]:
     s_abs = np.abs(s)
@@ -238,10 +247,11 @@ fd = FeatureDescriptor(
 
     The function should be wrapped in a ``FuncWrapper`` to log its multiple output names.
 
-    Example
+    Example:
 ```python
 def abs_stats_diff(s1: np.array, s2: np.array) -> Tuple[float]:
-    s_abs_diff = np.abs(s1 - s2)
+    min_len = min(len(s1), len(s2))
+    s_abs_diff = np.sum(np.abs(s1[:min_len] - s2[:min_len]))
     return np.min(s_abs_diff), np.max(s_abs_diff), np.mean(s_abs_diff)
 
 output_names = ["abs_diff_min", "abs_diff_max", "abs_diff_mean"]
@@ -255,35 +265,55 @@ fd = FeatureDescriptor(
     As visible in the [feature function prototype](#feature-functions), both `np.array` and `pd.Series` are supported function input types.
     If your feature function requires `pd.Series` as input (instead of the default `np.array`), the function should be wrapped in a ``FuncWrapper`` with the `input_type` argument set to `pd.Series`.
 
+An example of a function that leverages the pd.Series datatype:
 
-<!-- TODO: tot hier geraakt -->
+```python
+def linear_trend_timewise(s: pd.Series):
+    # Get differences between each timestamp and the first timestamp in hour float
+    # Then convert to hours and reshape for linear regression
+    times_hours = np.asarray((s.index - s.index[0]).total_seconds() / 3600)
+    linReg = linregress(times_hours, s.values)
+    return linReg.slope, linReg.intercept, linReg.rvalue
 
+fd = FeatureDescriptor(
+     FuncWrapper(
+        linear_trend_timewise,
+        ["twise_regr_slope", "twise_regr_intercept", "twise_regr_r_value"],
+        input_type=pd.Series, 
+    ),
+)
+```
+<!-- TODO: review Jeroen! -->
 ### Multivariate-data
-There are no assumptions made about the `data` its `time-ranges`.<br>
-However, the end-user must take some things in consideration.
+
+There are no assumptions made about the `data` its `sequence-ranges`. However, the end-user must take some things in consideration.
+
+* By using the `bound_method` argument of `FeatureCollection.calculate`, the end-user can specify whether the "inner" or "outer" data-bounds will be used for generating the slice-ranges.
+* All `ts` must-have the same data-index dtype. this makes them comparable and allows for generating same-range slices on multivariate data.
 
 ### Irregularly sampled data
 
-This case may cause that not all windows on which features are calculated have the same amount of samples.<br>
+Strided-rolling feature extraction on irregularly sampled data results in varying feature-segment sizes.<br>
 
-When using multivariate data, with either different sample rates or with an irregular data-rate, you cannot make the assumption that all windows will have the same length. Your feature extraction method should thus be:
+When using multivariate data, with either different sample rates or with an irregular data-rate, <span style="color:darkred">you cannot make the assumption that all windows will have the same length</span>. Your feature extraction method should thus be:
 >
 * robust for varying length windows
 * robust for (possible) empty windows
 
-For conveniently creating such robust features we suggest using the [``make_robust``](integrations#tsflex.features.integrations.make_robust) function.
+!!!tip
+    For conveniently creating such **robust features** we suggest using the [``make_robust``](integrations#tsflex.features.integrations.make_robust) function.
 
 !!!note
-    A warning will be raised when irregular sampled data is observed. <br>
-    In order to avoid this warning, the user should explicitly approve that there may be sparsity in the data by setting the `approve_sparsity` flag to True in the ``FeatureCollection.calculate`` method.
+    A `warning` will be raised when irregular sampled data is observed. <br>
+    In order to avoid this warning, the user should explicitly approve that there may be sparsity in the data by setting the **`approve_sparsity`** flag to True in the ``FeatureCollection.calculate`` method.
 
 ### Logging
 
-When a `logging_file_path` is passed to the ``FeatureCollection`` its `calculate` method, the execution times of the feature functions will be logged.
+When a `logging_file_path` is passed to the ``FeatureCollection`` its `FeatureCollection.calculate` method, the execution times of the feature functions will be logged.
 
-[More info](#tsflex.features.get_feature_logs)
+This is especially useful to identify which feature functions take a long time to compute.
 
-
+[More info about logging](#tsflex.features.get_feature_logs).
 
 <br>
 
