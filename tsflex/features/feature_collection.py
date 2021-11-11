@@ -398,7 +398,7 @@ class FeatureCollection:
                     traceback.print_exc()
                     pool.terminate()
                 finally:
-                    # Close & join
+                    # Close & join because: https://github.com/uqfoundation/pathos/issues/131
                     pool.close()
                     pool.join()
 

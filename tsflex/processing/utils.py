@@ -8,7 +8,7 @@ import traceback
 from typing import List, Any, Optional, Union
 
 import pandas as pd
-from pathos.multiprocessing import ProcessPool
+from multiprocess import Pool
 from tqdm.auto import tqdm
 
 from .series_pipeline import SeriesPipeline
@@ -64,17 +64,18 @@ def process_chunks_multithreaded(
             traceback.print_exc()
             return pd.DataFrame()
 
-    processed_out = []
-    with ProcessPool(nodes=min(n_jobs, len(same_range_chunks_list)),
-                     source=True) as pool:
+    processed_out = None
+    with Pool(processes=min(n_jobs, len(same_range_chunks_list))) as pool:
         results = pool.imap(_executor, same_range_chunks_list)
         if show_progress:
             results = tqdm(results, total=len(same_range_chunks_list))
-        for f in results:
-            processed_out.append(f)
-        # Close & join because: https://github.com/uqfoundation/pathos/issues/131
-        pool.close()
-        pool.join()
-        # Clear because: https://github.com/uqfoundation/pathos/issues/111
-        pool.clear()
+        try:
+            processed_out = [f for f in results]
+        except:
+            traceback.print_exc()
+            pool.terminate()
+        finally:
+            # Close & join because: https://github.com/uqfoundation/pathos/issues/131
+            pool.close()
+            pool.join()
     return processed_out
