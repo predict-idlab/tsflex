@@ -200,7 +200,7 @@ class FeatureCollection:
                 self.add(list(flatten(feature._feature_desc_dict.values())))
             else:
                 raise TypeError(f"type: {type(feature)} is not supported - {feature}")
-        
+
         self._check_feature_descriptors()
 
     @staticmethod
@@ -298,7 +298,7 @@ class FeatureCollection:
         bound_method: str, optional
             The start-end bound methodology which is used to generate the slice ranges
             when ``data`` consists of multiple series / columns.
-            Must be either of: ['inner', 'outer', 'first'], by default 'inner'.
+            Must be either of: ['inner', 'inner-outer', 'outer'], by default 'inner'.
 
             * if ``inner``, the inner-bounds of the series are returned.
             * if ``inner-outer``, the left-inner and right-outer bounds of the series
@@ -324,12 +324,10 @@ class FeatureCollection:
             trace will be more comprehensible.
 
             .. tip::
-                * It takes on avg. _300ms_ to schedule everything with
-                  multiprocessing. So if your feature extraction code runs faster than
-                  ~1.5s, it might not be worth it to parallelize the process
-                  (and thus better set the `n_jobs` to 0-1).
-                * This method its memory peaks are significantly lower when executed
-                  sequentially. Set the `n_jobs` to 0-1 if this matters.
+                It takes on avg. _300ms_ to schedule everything with
+                multiprocessing. So if your sequential feature extraction code runs
+                faster than ~1.5s, it might not be worth it to parallelize the process
+                (and thus better leave `n_jobs` to 0-1).
 
         Returns
         -------

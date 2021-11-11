@@ -3,7 +3,7 @@
 
 __author__ = "Jonas Van Der Donckt"
 
-from .strided_rolling import StridedRolling #TimeStridedRolling, SequenceStridedRolling
+from .strided_rolling import StridedRolling
 from .strided_rolling_factory import StridedRollingFactory
 
 __all__ = [
