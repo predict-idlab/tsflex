@@ -22,7 +22,7 @@ import dill
 import traceback
 import numpy as np
 import pandas as pd
-from pathos.multiprocessing import ProcessPool
+from multiprocess import Pool
 from tqdm.auto import tqdm
 
 from .feature import FeatureDescriptor, MultipleFeatureDescriptors
@@ -367,6 +367,7 @@ class FeatureCollection:
         }
 
         # Note: this variable has a global scope so this is shared in multiprocessing
+        # TODO: try to make this more efficient
         global get_stroll_func
         get_stroll_func = self._stroll_feat_generator(
             series_dict, start, end, window_idx, approve_sparsity
@@ -387,21 +388,19 @@ class FeatureCollection:
             except:
                 traceback.print_exc()
         else:
-            # https://pathos.readthedocs.io/en/latest/pathos.html#usage
-            with ProcessPool(nodes=n_jobs, source=True) as pool:
-                results = pool.uimap(self._executor, range(nb_stroll_funcs))
+            with Pool(processes=n_jobs) as pool:
+                results = pool.imap_unordered(self._executor, range(nb_stroll_funcs))
                 if show_progress:
                     results = tqdm(results, total=self._get_stroll_feat_length())
                 try:
                     calculated_feature_list = [f for f in results]
                 except:
                     traceback.print_exc()
+                    pool.terminate()
                 finally:
-                    # Close & join - see: https://github.com/uqfoundation/pathos/issues/131
+                    # Close & join
                     pool.close()
                     pool.join()
-                    # Clear because: https://github.com/uqfoundation/pathos/issues/111
-                    pool.clear()
 
         if calculated_feature_list is None:
             raise RuntimeError(
