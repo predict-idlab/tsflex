@@ -179,6 +179,8 @@ We support various data-types. e.g. (np.float32, string-data, time-based data). 
 
 ## Advanced usage 👀
 
+Also take a look at the `FeatureCollection.reduce()` and `FeatureCollection.serialize()` methods.
+
 ### Versatile functions
 
 As [explained above](#feature-functions) _tsflex_ is rather versatile in terms of function input and output.

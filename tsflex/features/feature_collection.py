@@ -1,8 +1,8 @@
 """FeatureCollection class for bookkeeping and calculation of time-series features.
 
-See Also
---------
-Example notebooks and model serialization documentation.
+Methods, next to `FeatureCollection.calculate()`, worth looking at: \n
+* `FeatureCollection.serialize()` - serialize the FeatureCollection to a file
+* `FeatureCollection.reduce()` - reduce the number of features after feature selection
 
 """
 
@@ -43,7 +43,6 @@ class FeatureCollection:
     ----------
     feature_descriptors : Union[FeatureDescriptor, MultipleFeatureDescriptors, List[Union[FeatureDescriptor, MultipleFeatureDescriptors]]], optional
         Initial (list of) feature(s) to add to collection, by default None
-    TODO -> segmenter docs
 
     Notes
     -----
@@ -63,8 +62,6 @@ class FeatureCollection:
 
     """
 
-    _SUPPORTED_SEGMENTERS = ["stroll-infer", "stroll-sequence", "stroll-time"]
-
     def __init__(
         self,
         feature_descriptors: Optional[
@@ -74,17 +71,16 @@ class FeatureCollection:
                 List[Union[FeatureDescriptor, MultipleFeatureDescriptors]],
             ]
         ] = None,
-        # segmenter="stroll-infer",  # TODO
     ):
         # The feature collection is a dict with keys of type:
         #   tuple(tuple(str), float OR pd.timedelta, float OR pd.timedelta)
         # The outer tuple's values correspond to (series_key(s), window, stride)
         self._feature_desc_dict: Dict[
-            Tuple[Tuple[str, ...], pd.Timedelta, pd.Timedelta], List[FeatureDescriptor]
+            Tuple[
+                Tuple[str, ...], Union[float, pd.Timedelta], Union[float, pd.Timedelta]
+            ],
+            List[FeatureDescriptor],
         ] = {}
-
-        # assert segmenter.lower() in self._SUPPORTED_SEGMENTERS
-        # self._segmenter = segmenter.lower()
 
         if feature_descriptors:
             self.add(feature_descriptors)
@@ -117,6 +113,7 @@ class FeatureCollection:
         """Verify whether all added FeatureDescriptors imply the same-input data type.
 
         If this condition is not met, a warning will be raised.
+
         """
         dtype_set = set(
             AttributeParser.determine_type([win, stride])
@@ -126,7 +123,7 @@ class FeatureCollection:
             warnings.warn(
                 "There are multiple FeatureDescriptor window-stride "
                 + f"datatypes present in this FeatureCollection, i.e.: {dtype_set}",
-                category=RuntimeWarning
+                category=RuntimeWarning,
             )
 
     def _add_feature(self, feature: FeatureDescriptor):
@@ -201,6 +198,7 @@ class FeatureCollection:
             else:
                 raise TypeError(f"type: {type(feature)} is not supported - {feature}")
 
+        # After adding the features, check whether the descriptors are compatible
         self._check_feature_descriptors()
 
     @staticmethod
@@ -268,7 +266,7 @@ class FeatureCollection:
 
         Notes
         ------
-        * The (column-)names of the series in `data` represent the names in the keys.
+        * The (column-)names of the series in `data` represent the `series_names`.
         * If a `logging_file_path` is provided, the execution (time) info can be
           retrieved by calling `logger.get_feature_logs(logging_file_path)`.
           Be aware that the `logging_file_path` gets cleared before the logger pushes
@@ -280,31 +278,30 @@ class FeatureCollection:
         data : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
             Dataframe or Series or list thereof, with all the required data for the
             feature calculation. \n
-            **Remark**: each Series / DataFrame must have a monotonically
-            increasing index. This index represents the sequence position of the
-            corresponding values, the index can be either numeric or a
-            ``pd.DatetimeIndex``.<br>
-            **Remark**: we assume that each series-name / column-name is unique.
+            **Assumptions**: \n
+            * each Series / DataFrame must have a sortable index. This index represents 
+            the sequence position of the corresponding values, the index can be either 
+            numeric or a ``pd.DatetimeIndex``.
+            * each Series / DataFrame index must be comparable.with all others
+            * we assume that each series-name / dataframe-column-name is unique.
         return_df : bool, optional
-            Whether the output needs to be a dataframe list or a DataFrame, by default
-            False.
-            If `True` the output dataframes will be merged to a DataFrame with an outer
-            merge.
+            Whether the output needs to be a DataFrame or a list thereof, by default
+            False. If `True` the output dataframes will be merged to a DataFrame with an 
+            outer merge.
         window_idx : str, optional
             The window's index position which will be used as index for the
-            feature_window aggregation. Must be either of: ['begin', 'middle', 'end'],
-            by default 'end'. All features in this collection will use the same
+            feature_window aggregation. Must be either of: `["begin", "middle", "end"]`.
+            by default "end". All features in this collection will use the same 
             window_idx.
         bound_method: str, optional
             The start-end bound methodology which is used to generate the slice ranges
             when ``data`` consists of multiple series / columns.
-            Must be either of: ['inner', 'inner-outer', 'outer'], by default 'inner'.
+            Must be either of: `["inner", "inner-outer", "outer"]`, by default "inner".
 
             * if ``inner``, the inner-bounds of the series are returned.
             * if ``inner-outer``, the left-inner and right-outer bounds of the series
               are returned.
             * if ``outer``, the outer-bounds of the series are returned.
-
         approve_sparsity: bool, optional
             Bool indicating whether the user acknowledges that there may be sparsity
             (i.e., irregularly sampled data), by default False.
@@ -315,10 +312,10 @@ class FeatureCollection:
             The file path where the logged messages are stored. If `None`, then no
             logging `FileHandler` will be used and the logging messages are only pushed
             to stdout. Otherwise, a logging `FileHandler` will write the logged messages
-            to the given file path.
+            to the given file path. See also the `tsflex.features.logger` module.
         n_jobs : int, optional
             The number of processes used for the feature calculation. If `None`, then
-            the number returned by `os.cpu_count()` is used, by default None. \n
+            the number returned by _os.cpu_count()_ is used, by default None. \n
             If n_jobs is either 0 or 1, the code will be executed sequentially without
             creating a process pool. This is very useful when debugging, as the stack
             trace will be more comprehensible.
@@ -327,7 +324,7 @@ class FeatureCollection:
                 It takes on avg. _300ms_ to schedule everything with
                 multiprocessing. So if your sequential feature extraction code runs
                 faster than ~1.5s, it might not be worth it to parallelize the process
-                (and thus better leave `n_jobs` to 0-1).
+                (and thus better leave `n_jobs` to 0 or 1).
 
         Returns
         -------
@@ -414,25 +411,25 @@ class FeatureCollection:
             return calculated_feature_list
 
     def serialize(self, file_path: Union[str, Path]):
-        """Serialize this `FeatureCollection` instance.
+        """Serialize this FeatureCollection instance.
 
         Parameters
         ----------
         file_path : Union[str, Path]
             The path where the `FeatureCollection` will be serialized.
 
-        Notes
+        Note
         -----
-        * As we use [Dill](https://github.com/uqfoundation/dill){:target="_blank"} to
-          serialize the files, we can **also serialize functions which are defined in
-          the local scope, like lambdas.**
+        As we use [Dill](https://github.com/uqfoundation/dill){:target="_blank"} to
+        serialize the files, we can **also serialize functions which are defined in
+        the local scope, like lambdas.**
 
         """
         with open(file_path, "wb") as f:
             dill.dump(self, f, recurse=True)
 
     def reduce(self, feat_cols_to_keep: List[str]) -> FeatureCollection:
-        """Create a reduced FeatureCollection instance based on feat_cols_to_keep.
+        """Create a reduced FeatureCollection instance based on `feat_cols_to_keep`.
 
         For example, this is useful to optimize feature-extraction inference
         (for your selected features) after performing a feature-selection procedure.

@@ -3,7 +3,7 @@
 Factory class for creating the proper StridedRolling instances.
 
 .. TODO::
-    Maybe also create a (SegmenterFactory) which the StridedRollingFactory implements
+    Also create a (SegmenterFactory) which the StridedRollingFactory implements
 
 """
 __author__ = "Jonas Van Der Donckt"
@@ -34,16 +34,25 @@ class StridedRollingFactory:
         data : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
             The data to segment.
         window: Union[float, pd.TimeDelta]
-             Either an int, float, or ``pd.Timedelta``, representing the sliding window
-             size in terms of steps on the index (in case of a int or float) or the
-             sliding window duration (in case of ``pd.Timedelta``).
+             The window size to use for the segmentation.
         stride: Union[float, pd.TimeDelta]
-            Either an int, float, or ``pd.Timedelta``, representing the sliding window
-            size in terms of steps on the index (in case of a int or float) or the
-            sliding window duration (in case of ``pd.Timedelta``).
+            The stride to use for the segmentation
         **kwargs:
             Additional keyword arguments, see the `StridedRolling` its documentation
             for more info.
+
+        .. Note::
+            When passing `time-based` data, but **int**-based window & stride params,
+            the strided rolling will be `TimeIndexSequenceStridedRolling`. This class
+            **assumes** that **all data series** _roughly_ have the 
+            **same sample frequency**, as  the windows and strides are interpreted in 
+            terms of **number of samples**
+
+        Raises
+        ------
+        ValueError
+            When incompatible data & window-stride data types are passed (e.g. time 
+            window-stride args on sequence data).
 
         Returns
         -------

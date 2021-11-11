@@ -1,17 +1,17 @@
 """
-Withholds a (rather) fast implementation of a **index-based** strided rolling window.
+Withholds a (rather) fast implementation of an **index-based** strided rolling window.
 
 .. TODO::
 
-    Look into the implementation of a new data-type that is a Tuple[index, values]
-    This should be multitudes faster than using the series-datatype and the user can
-    still leverage the index-awareness of the values.
+    Look into the implementation of a new func-input-data-type that is a
+    Tuple[index, values]. This should be multitudes faster than using the
+    series-datatype and the user can still leverage the index-awareness of the values.
 
 """
 
 from __future__ import annotations
 
-__author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
+__author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt"
 
 import time
 import warnings
@@ -40,42 +40,47 @@ class StridedRolling(ABC):
     ----------
     data : Union[pd.Series, pd.DataFrame]
         ``pd.Series`` or ``pd.DataFrame`` to slide over, the index must be either
-        numeric or a (time-zone-aware) ``pd.DatetimeIndex`.
+        numeric or a ``pd.DatetimeIndex`.
     window : Union[float, pd.Timedelta]
         Either an int, float, or ``pd.Timedelta``, representing the sliding window size
-        in terms of steps on the index (in case of a int or float) or the
-        sliding window duration (in case of ``pd.Timedelta``).
+        in terms of the index (in case of a int or float) or the sliding window duration
+        (in case of ``pd.Timedelta``).
     stride : Union[float, pd.Timedelta]
         Either an int, float, or ``pd.Timedelta``, representing the stride size in terms
-        of steps on the index (in case of a int or float) or the stride duration (in
-        case of ``pd.Timedelta``).
-    start_idx: Union[int, float, pd.Timestamp], optional
+        of the index (in case of a int or float) or the stride duration (in case of
+        ``pd.Timedelta``).
+    start_idx: Union[float, pd.Timestamp], optional
         The start-index which will be used for each series passed to `data`. This is
         especially useful if multiple `StridedRolling` instances are created and the
         user want to ensure same (start-)indexes for each of them.
+    end_idx: Union[float, pd.Timestamp], optional
+        The end-index which will be used as sliding end-limit for each series passed to
+        `data`.
+    func_data_type: Union[np.array, pd.Series], optional
+        The data type of the stroll (either np.array or pd.Series), by default np.array.
+        <br>
+        .. Note::
+            Make sure to only set this argument to pd.Series when this is really
+            required, since pd.Series strided-rolling is significantly less efficient.
+            For a np.array it is possible to create very efficient views, but there is no
+            such thing as a pd.Series view. Thus, for each stroll, a new series is created.
     window_idx : str, optional
         The window's index position which will be used as index for the
-        feature_window aggregation. Must be either of: ['begin', 'middle', 'end'], by
-        default 'end'.
+        feature_window aggregation. Must be either of: `["begin", "middle", "end"]`, by
+        default "end".
     approve_sparsity: bool, optional
         Bool indicating whether the user acknowledges that there may be sparsity (i.e.,
         irregularly sampled data), by default False.
         If False and sparsity is observed, a warning is raised.
-    func_data_type: Union[np.array, pd.Series], optional
-        The data type of the stroll (either np.array or pd.Series), by default np.array.
-        Note: Make sure to only set this argument to pd.Series when this is really
-        required, since pd.Series strided-rolling is significantly less efficient.
-        For a np.array it is possible to create very efficient views, but there is no
-        such thing as a pd.Series view. Thus, for each stroll, a new series is created.
 
     Notes
     -----
     * This instance withholds a **read-only**-view of the data its values.
 
     """
-    # Parameters which are used by sub-classes
-    input_type: DataType
-    reset_series_index_b4_slicing: bool = False
+    # Class variables which are used by sub-classes
+    win_str_type: DataType
+    reset_series_index_b4_segmenting: bool = False
 
     # Create the named tuple
     _NumpySeriesContainer = namedtuple(
@@ -97,12 +102,11 @@ class StridedRolling(ABC):
         self.stride = stride
 
         # Note: the sub-class should set the self.func_data_type attribute
-        assert AttributeParser.check_expected_type([window, stride], self.input_type)
+        assert AttributeParser.check_expected_type([window, stride], self.win_str_type)
 
         self.window_idx = window_idx
         self.approve_sparsity = approve_sparsity
 
-        # TODO: add support for index-data tuple (faster alternative than pd.Series)
         assert func_data_type in SUPPORTED_STROLL_TYPES
         self.data_type = func_data_type
 
@@ -119,15 +123,13 @@ class StridedRolling(ABC):
             # update self.start & self.end if it was not passed
             self.start = start if self.start is None else self.start
             self.end = end if self.end is None else self.end
-        
-        # Especially useful for when the index type differs from the stroll-type
+
+        # Especially useful when the index dtype differs from the win-stride-dtype
         # e.g. -> performing a int-based stroll on time-indexed data
         self._update_start_end_indices_to_stroll_type(series_list)
 
         # 2. Create a new-index which will be used for DataFrame reconstruction
-        # note: this code can also be placed in the `apply_func` method (if we want to
-        #  make the bound window-idx setting feature specific).
-        # note: the index-name of the first passed series will be used as index-name
+        # Note: the index-name of the first passed series will be re-used as index-name
         self.index = self._construct_output_index(series_list[0])
 
         # 3. Construct the index ranges and store the series containers
@@ -173,11 +175,11 @@ class StridedRolling(ABC):
 
         series_containers: List[StridedRolling._NumpySeriesContainer] = []
         for series in series_list:
-            if not self.reset_series_index_b4_slicing:
+            if not self.reset_series_index_b4_segmenting:
                 np_idx_times = series.index.values
             else:
                 np_idx_times = np.arange(len(series))
-            
+
             series_name = series.name
             if self.data_type is np.array:
                 # create a non-writeable view of the series
@@ -205,7 +207,7 @@ class StridedRolling(ABC):
         return series_containers
 
     def apply_func(self, func: FuncWrapper) -> pd.DataFrame:
-        """Apply a function to the expanded time-series.
+        """Apply a function to the segmented series.
 
         Parameters
         ----------
@@ -229,7 +231,7 @@ class StridedRolling(ABC):
         * If ``func`` is only a callable argument, with no additional logic, this
           will only work for a one-to-one mapping, i.e., no multiple feature-output
           columns are supported for this case!<br>
-          If you want to calculate one-to-many, ``func`` should be
+        * If you want to calculate one-to-many, ``func`` should be
           a ``FuncWrapper`` instance and explicitly use
           the ``output_names`` attributes of its constructor.
 
@@ -310,7 +312,7 @@ class SequenceStridedRolling(StridedRolling):
         *args,
         **kwargs,
     ):
-        self.input_type = DataType.SEQUENCE
+        self.win_str_type = DataType.SEQUENCE
         super().__init__(data, window, stride, *args, **kwargs)
 
     # ------------------------------ Overridden methods ------------------------------
@@ -359,7 +361,7 @@ class TimeStridedRolling(StridedRolling):
         *args,
         **kwargs,
     ):
-        self.input_type = DataType.TIME
+        self.win_str_type = DataType.TIME
         super().__init__(data, window, stride, *args, **kwargs)
 
     # ---------------------------- Overridden methods ------------------------------
@@ -411,15 +413,15 @@ class TimeIndexSequenceStridedRolling(SequenceStridedRolling):
         *args,
         **kwargs,
     ):
-        # We want to reset the index as its type differs from the passed win-stride 
+        # We want to reset the index as its type differs from the passed win-stride
         # configs
-        self.reset_series_index_b4_slicing = True
+        self.reset_series_index_b4_segmenting = True
 
-        self.input_type = DataType.SEQUENCE
+        self.win_str_type = DataType.SEQUENCE
         super().__init__(data, window, stride, *args, **kwargs)
-        
+
         assert self.series_dtype == DataType.TIME
-        
+
         # we want to assure that the window-stride arguments are integers (samples)
         assert all(isinstance(p, int) for p in [self.window, self.stride])
 
