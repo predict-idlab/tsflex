@@ -100,7 +100,7 @@ def test_error_function_simple_feature_descriptor():
 def test_error_time_arg_simple_feature_descriptor():
     invalid_stride = pd.to_datetime('13000101', format='%Y%m%d', errors='ignore')
 
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         _ = FeatureDescriptor(
             function=np.sum,
             series_name="EDA",
