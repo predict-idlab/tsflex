@@ -6,6 +6,7 @@ Factory class for creating the proper StridedRolling instances.
     Also create a (SegmenterFactory) which the StridedRollingFactory implements
 
 """
+
 __author__ = "Jonas Van Der Donckt"
 
 from .strided_rolling import (
@@ -18,6 +19,8 @@ from ...utils.attribute_parsing import AttributeParser, DataType
 
 
 class StridedRollingFactory:
+    """Factory class for creating the appropriate StridedRolling segmenter."""
+
     _datatype_to_stroll = {
         DataType.TIME: TimeStridedRolling,
         DataType.SEQUENCE: SequenceStridedRolling,
@@ -33,11 +36,11 @@ class StridedRollingFactory:
         ----------
         data : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
             The data to segment.
-        window: Union[float, pd.TimeDelta]
+        window : Union[float, pd.TimeDelta]
              The window size to use for the segmentation.
-        stride: Union[float, pd.TimeDelta]
-            The stride to use for the segmentation
-        **kwargs:
+        stride : Union[float, pd.TimeDelta]
+            The stride to use for the segmentation.
+        **kwargs : dict, optional
             Additional keyword arguments, see the `StridedRolling` its documentation
             for more info.
 
@@ -46,13 +49,13 @@ class StridedRollingFactory:
             the strided rolling will be `TimeIndexSampleStridedRolling`. This class
             **assumes** that **all data series** _roughly_ have the 
             **same sample frequency**, as  the windows and strides are interpreted in 
-            terms of **number of samples**
+            terms of **number of samples**.
 
         Raises
         ------
         ValueError
             When incompatible data & window-stride data types are passed (e.g. time 
-            window-stride args on sequence data).
+            window-stride args on sequence data-index).
 
         Returns
         -------

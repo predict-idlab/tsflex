@@ -27,8 +27,11 @@ class FeatureDescriptor(FrozenClass):
         The function that calculates the feature(s).
         The prototype of the function should match: \n
 
-            function(*series: np.ndarray)
+            function(*series: Union[np.array, pd.Series])
                 -> Union[Any, List[Any]]
+
+        Note that when the input type is ``pd.Series``, the function should be wrapped in
+        a `FuncWrapper` with `input_type` = ``pd.Series``.
 
     series_name : Union[str, Tuple[str, ...]]
         The names of the series on which the feature function should be applied.

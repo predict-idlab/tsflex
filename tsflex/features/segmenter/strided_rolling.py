@@ -40,7 +40,7 @@ class StridedRolling(ABC):
     ----------
     data : Union[pd.Series, pd.DataFrame]
         ``pd.Series`` or ``pd.DataFrame`` to slide over, the index must be either
-        numeric or a ``pd.DatetimeIndex`.
+        numeric or a ``pd.DatetimeIndex``.
     window : Union[float, pd.Timedelta]
         Either an int, float, or ``pd.Timedelta``, representing the sliding window size
         in terms of the index (in case of a int or float) or the sliding window duration
@@ -78,6 +78,7 @@ class StridedRolling(ABC):
     * This instance withholds a **read-only**-view of the data its values.
 
     """
+
     # Class variables which are used by sub-classes
     win_str_type: DataType
     reset_series_index_b4_segmenting: bool = False
@@ -126,6 +127,7 @@ class StridedRolling(ABC):
 
         # Especially useful when the index dtype differs from the win-stride-dtype
         # e.g. -> performing a int-based stroll on time-indexed data
+        # Note: this is very niche and thus requires advanced knowledge
         self._update_start_end_indices_to_stroll_type(series_list)
 
         # 2. Create a new-index which will be used for DataFrame reconstruction
