@@ -12,12 +12,12 @@ This makes _tsflex_ suitable for use-cases such as inference on streaming data, 
         <a title="tsflex on PyPI" href="https://pypi.org/project/tsflex/" style="margin-right:.8em; background-color: #48c774; border-color: transparent; color: #fff; padding: 0.75rem; border-radius: 4px;"
                    itemprop="downloadUrl" data-ga-event-category="PyPI">
                     <span class="icon"><i class="fa fa-download"></i></span>
-                    <span>PyPI</span>
+                    <span><b>PyPI</b></span>
                 </a> &nbsp;
                 <a title="tsflex on GitHub" href="https://github.com/predict-idlab/tsflex" style="color: #4a4a4a; background-color: #f5f5f5 !important; font-size: 1em; font-weight: 400; line-height: 1.5; border-radius: 4px; padding: 0.75rem; "
                    data-ga-event-category="GitHub">
                     <span class="icon"><i class="fab fa-github"></i></span>
-                    <span>GitHub</span>
+                    <span><b>GitHub</b></span>
                 </a>
 </div>
 <br>
