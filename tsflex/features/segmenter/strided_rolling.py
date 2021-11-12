@@ -413,12 +413,30 @@ class TimeIndexSequenceStridedRolling(SequenceStridedRolling):
         *args,
         **kwargs,
     ):
+        """
+        .. Warning::
+            When `data` consists of multiple independently sampled series
+            (e.g. feature functions which take multiple series as input),
+            The time-**index of each series**: \n
+            - must _roughly_ **share** the same **sample frequency**.
+            - will be first time-aligned before transitioning to sample-segmentation by
+              using the inner bounds
+
+        """
         # We want to reset the index as its type differs from the passed win-stride
         # configs
         self.reset_series_index_b4_segmenting = True
 
-        self.win_str_type = DataType.SEQUENCE
-        super().__init__(data, window, stride, *args, **kwargs)
+        series_list = to_series_list(data)
+        if isinstance(data, list) and len(data) > 1:
+            # Slice data into its inner range so that the start position
+            # is aligned (when we will use sample-based methodologies)
+            start, end = _determine_bounds("inner", series_list)
+            series_list = [s[start:end] for s in series_list]
+            kwargs.update({"start_idx": start, "end_idx": end})
+
+        # pass the sliced series list instead of data
+        super().__init__(series_list, window, stride, *args, **kwargs)
 
         assert self.series_dtype == DataType.TIME
 
