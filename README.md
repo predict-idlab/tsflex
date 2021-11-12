@@ -54,7 +54,7 @@ fc = FeatureCollection(
 fc.calculate(data=[df_tmp, df_acc, df_ibi], approve_sparsity=True)
 ```
 
-Note that the feature-extraction is performed on multivariate data with varying sample rates.
+Note that the feature extraction is performed on multivariate data with varying sample rates.
 | signal | columns | sample rate |
 |:-------|:-------|------------------:|
 | df_tmp | ["TMP"]| 4Hz |
