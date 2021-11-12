@@ -12,7 +12,7 @@ from .strided_rolling import (
     StridedRolling,
     TimeStridedRolling,
     SequenceStridedRolling,
-    TimeIndexSequenceStridedRolling,
+    TimeIndexSampleStridedRolling,
 )
 from ...utils.attribute_parsing import AttributeParser, DataType
 
@@ -43,7 +43,7 @@ class StridedRollingFactory:
 
         .. Note::
             When passing `time-based` data, but **int**-based window & stride params,
-            the strided rolling will be `TimeIndexSequenceStridedRolling`. This class
+            the strided rolling will be `TimeIndexSampleStridedRolling`. This class
             **assumes** that **all data series** _roughly_ have the 
             **same sample frequency**, as  the windows and strides are interpreted in 
             terms of **number of samples**
@@ -69,6 +69,6 @@ class StridedRollingFactory:
             )
         elif data_dtype == DataType.TIME and args_dtype == DataType.SEQUENCE:
             # Note: this is very niche and thus requires advanced knowledge
-            return TimeIndexSequenceStridedRolling(data, window, stride, **kwargs)
+            return TimeIndexSampleStridedRolling(data, window, stride, **kwargs)
         elif data_dtype == DataType.SEQUENCE and args_dtype == DataType.TIME:
             raise ValueError("Cannot segment a sequence-series with a time window")

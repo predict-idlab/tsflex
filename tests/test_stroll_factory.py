@@ -8,7 +8,7 @@ import pytest
 
 from tsflex.features.segmenter import StridedRollingFactory
 from tsflex.features import FuncWrapper
-from tsflex.features.segmenter.strided_rolling import TimeIndexSequenceStridedRolling
+from tsflex.features.segmenter.strided_rolling import TimeIndexSampleStridedRolling
 from tsflex.utils.time import parse_time_arg
 
 from .utils import dummy_data
@@ -102,7 +102,7 @@ def test_stroll_timeindex_sequence(dummy_data):
     eda_data = dummy_data['EDA']
     tmp_data = dummy_data['TMP']
 
-    # we should get a TimeIndexSequenceStridedRolling segmenter
+    # we should get a TimeIndexSampleStridedRolling segmenter
     window = 3000
     stride = 1000
     stroll = StridedRollingFactory.get_segmenter(
@@ -111,7 +111,7 @@ def test_stroll_timeindex_sequence(dummy_data):
         stride=stride
     )
 
-    assert isinstance(stroll, TimeIndexSequenceStridedRolling)
+    assert isinstance(stroll, TimeIndexSampleStridedRolling)
 
     def corr(s1, s2):
         min_len = min(len(s1), len(s2))

@@ -404,7 +404,7 @@ class TimeStridedRolling(StridedRolling):
         return f"{'|'.join(self.series_key)}__{feat_name}__{win_stride_str}"
 
 
-class TimeIndexSequenceStridedRolling(SequenceStridedRolling):
+class TimeIndexSampleStridedRolling(SequenceStridedRolling):
     def __init__(
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],

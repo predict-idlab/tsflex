@@ -8,7 +8,7 @@ from .utils import dummy_data
 from tsflex.features.segmenter.strided_rolling import (
     TimeStridedRolling,
     SequenceStridedRolling,
-    TimeIndexSequenceStridedRolling,
+    TimeIndexSampleStridedRolling,
     StridedRolling,
 )
 from tsflex.features import FuncWrapper
@@ -114,7 +114,7 @@ def test_abstract_class(dummy_data):
 
 def test_time_index_sequence_stroll(dummy_data):
     df_eda = dummy_data["EDA"]
-    stroll = TimeIndexSequenceStridedRolling(
+    stroll = TimeIndexSampleStridedRolling(
         df_eda, window=1000, stride=50, window_idx="end"
     )
     return stroll.apply_func(FuncWrapper(np.min))
