@@ -220,13 +220,13 @@ def chunk_data(
     copy=True,
     verbose=False,
 ) -> List[List[pd.Series]]:
-    r"""Divide the time-series `data` in same time/sequence-range chunks.
+    """Divide the time-series `data` in same time/sequence-range chunks.
 
     Does 2 things:
 
     1. Detecting gaps in the `data`(-list) sequence series.
     2. Divides the `data` into chunks, according to the parameter
-        configuration and the detected gaps.
+       configuration and the detected gaps.
 
     Notes
     -----
@@ -241,50 +241,65 @@ def chunk_data(
 
     Example
     -------
-
     ```python
-    df_acc  # df with cols ['ACC_x', 'ACC_y`, 'ACC_z`, 'ACC_SMV`] - 32 Hz
-    df_gyro # df with cols ['gyro_x', 'gyro_y`, 'gyro_z`, 'gyro_area`] - 10 Hz
-    "By passing an df-dict we can easily set the `fs` for each column"
-    chunk_data({'acc': df_acc, 'g': df_gyro}, fs_dict={'acc': 32, 'g': 10})
+    df_acc  # cols ['ACC_x', 'ACC_y`, 'ACC_z`, 'ACC_SMV`] - 32 Hz
+    df_gyro # cols ['gyro_x', 'gyro_y`, 'gyro_z`, 'gyro_area`] - 100 Hz
+    chunk_data({'acc': df_acc, 'g': df_gyro}, fs_dict={'acc': 32, 'g': 100})
     ```
+    <br>
+
+    .. Note::
+        If `chunk_range_margin` / `min_chunk_dur` / `max_chunk_dur` / 
+        `sub_chunk_overlap` is a int/float, it will be interpreted as numerical
+        sequence range  and a numerical-indexed `data` will be assumed.
+        **These attributes must be all either time-based or numerical and match
+        the data its index dtype**
 
     Parameters
     -----------
     data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]], Dict[str, pd.DataFrame]]
         The sequence data which will be chunked. Each item in `data` must have a
-        monotonically increasing index.
-        The assumption is made that each `item` in data has a _nearly-constant_ sample
-        frequency (when there are no gaps).
+        monotonically increasing index. We assume that each `item` in data
+        has a _nearly-constant_ sample frequency (when there are no gaps) and all 
+        indices have the same dtype.
     fs_dict: Dict[str, int], optional
         The sample frequency dict. If set, this dict must at least withhold all the keys
         from the items in `data`.
         .. note::
-            if you passed a **_DataFrame-dict_** (i.e., a dict with key=str -
+            if you passed a **_DataFrame-dict_** (i.e., a dict with key=str;
             value=DataFrame) to `data`, then you can **use** the **corresponding
-            dataframe str-key** to describe the `fs` for all the DataFrame its columns.
+            dataframe str-key** to describe the `fs` for all the DataFrame its columns
+            with the `fs_dict` attribute. See also the example above
     chunk_range_margin: Union[float, str, pd.Timedelta], optional
-        The allowed margin (in seconds if a float) between same time-range chunks their
-        start and end time. If `None` the margin will be set as:
+        The allowed margin for each `ts` chunk their start and end time to be seen as 
+        same time-range chunks with other `ts`. If `None` the margin will be set as:
 
             2 / min(fs_dict.intersection(data.names).values())
 
-         Which is equivalent to twice the min-fs (= max-period) of the passed `data`,
-         by default None.
+        Which is equivalent to twice the min-fs (= max-period) of the passed `data`,
+        by default None.\n
+        * if `pd.Timedelta`, it will be interpreted as a time-range margin
+        * if `int` or `float`, it will be interpreted as a numerical range margin
     min_chunk_dur : Union[float, str, pd.Timedelta], optional
-        The minimal duration of a chunk (in seconds if a float), by default None
-        Chunks with durations smaller than this will be discarded (and not returned).
+        The minimum duration of a chunk, by default None.
+        Chunks with durations smaller than this will be discarded (and not returned).\n
+        * if `pd.Timedelta`, it will be interpreted as a time-range margin
+        * if `int` or `float`, it will be interpreted as a numerical range margin
     max_chunk_dur : Union[float, str, pd.Timedelta], optional
-        The maximal duration of a chunk (in seconds if a float), by default None
+        The maximum duration of a chunk, by default None.
         Chunks with durations larger than this will be chunked in smaller `sub_chunks`
-        where each sub-chunk has a maximal duration of `max_chunk_dur`.
+        where each sub-chunk has a maximum duration of `max_chunk_dur`.\n
+        * if `pd.Timedelta`, it will be interpreted as a time-range margin
+        * if `int` or `float`, it will be interpreted as a numerical range margin
     sub_chunk_overlap: Union[float, str, pd.Timedelta], optional
-        The sub-chunk boundary overlap (in seconds if a float). If available, **this
-        margin / 2 will be added to either side of the `sub_chunk`**. \n
+        The sub-chunk boundary overlap. If available, **this
+        margin / 2 will be added to either side of the `sub_chunk`**.
         This is especially useful to not lose inter-`sub_chunk` data (as each
         `sub_chunk` is in fact a continuous chunk) when window-based aggregations
-        are performed on these same time range output (sub_)chunks. \n
-        This argument is only relevant if `max_chunk_dur` is set.
+        are performed on these same time range output (sub_)chunks.
+        This argument is only relevant if `max_chunk_dur` is set.\n
+        * if `pd.Timedelta`, it will be interpreted as a time-range margin
+        * if `int` or `float`, it will be interpreted as a numerical range margin
     copy: boolean, optional
         If set True will return a new view (on which you won't get a
         `SettingWithCopyWarning` if you change the content), by default False.
@@ -295,7 +310,6 @@ def chunk_data(
     -------
     List[List[pd.Series]]
         A list of same time range chunks.
-
 
     """
     if isinstance(data, dict):
