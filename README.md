@@ -120,6 +120,6 @@ If you use `tsflex` in a scientific publication, we would highly appreciate citi
 
 ---
 
-<p style="text-align: center">
+<p align="center">
 👤 <i>Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost</i>
 </p>
