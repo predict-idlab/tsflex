@@ -11,6 +11,7 @@ from .feature import FeatureDescriptor, MultipleFeatureDescriptors
 from .feature_collection import FeatureCollection
 from .function_wrapper import FuncWrapper
 from .logger import get_feature_logs, get_function_stats, get_series_names_stats
+from .segmenter import StridedRollingFactory
 
 __pdoc__["FuncWrapper.__call__"] = True
 
@@ -19,6 +20,7 @@ __all__ = [
     "MultipleFeatureDescriptors",
     "FeatureCollection",
     "FuncWrapper",
+    "StridedRollingFactory",
     "get_feature_logs",
     "get_function_stats",
     "get_series_names_stats",

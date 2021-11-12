@@ -1,6 +1,6 @@
 # Comparison 🔎
 
-The table below positions _tsflex_ among other relative packages.
+The table below positions _tsflex_ among other relative Python packages.
 
 <style type="text/css">
 .tg  {border-collapse:collapse;border-color:#ccc;border-spacing:0;}
@@ -37,12 +37,12 @@ The table below positions _tsflex_ among other relative packages.
     <td class="tg-c3ow"></td>
   </tr>
   <tr>
-    <td class="tg-0pky">Time column requirements</td>
-    <td class="tg-c3ow">datetime-index</td>
-    <td class="tg-c3ow">Any - assumes is sorted<br></td>
+    <td class="tg-0pky">Sequence index requirements</td>
     <td class="tg-c3ow">Any - sortable</td>
-    <td class="tg-c3ow">Any - assumes is sorted</td>
-    <td class="tg-c3ow">datetiem index</td>
+    <td class="tg-c3ow">Any - assumes sorted<br></td>
+    <td class="tg-c3ow">Any - sortable</td>
+    <td class="tg-c3ow">Any - assumes sorted</td>
+    <td class="tg-c3ow">datetime index</td>
   </tr>
   <tr>
     <td class="tg-0pky">Multivariate time-series</td>
@@ -61,7 +61,7 @@ The table below positions _tsflex_ among other relative packages.
     <td class="tg-c3ow">✔️</td>
   </tr>
   <tr>
-    <td class="tg-0pky">Time column maintenance</td>
+    <td class="tg-0pky">Sequence column maintenance</td>
     <td class="tg-c3ow">✔️</td>
     <td class="tg-c3ow">❌</td>
     <td class="tg-c3ow">✔️</td>
@@ -110,7 +110,7 @@ The table below positions _tsflex_ among other relative packages.
   </tr>
   <tr>
     <td class="tg-0pky">Strided-window definition format</td>
-    <td class="tg-c3ow">time-based</td>
+    <td class="tg-c3ow">time- & sample-based</td>
     <td class="tg-c3ow">sample-based</td>
     <td class="tg-c3ow">sample-based</td>
     <td class="tg-c3ow">sample-based</td>
@@ -195,8 +195,8 @@ The table below positions _tsflex_ among other relative packages.
 
 # Benchmark 📊
 
-The visualization below compares `tsflex v0.1.2.3` against other eligible packages for the strided-rolling feature extraction use-case.<br>
-For reference, the in-memory data size when loaded in RAM was 96.4MB.
+The visualization below compares `tsflex v0.1.2.5` against other eligible packages for the strided-rolling feature extraction use-case.<br>
+As a reference, the data size when loaded in RAM was 96.4MB.
 
 The figure is constructed by using the [tsflex-benchmarking](https://github.com/predict-idlab/tsflex-benchmarking) repo, we further refer to this repository for more details.
 

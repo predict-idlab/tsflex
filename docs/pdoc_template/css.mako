@@ -296,7 +296,7 @@
     .admonition.warning,
     .admonition.versionchanged,
     .admonition.deprecated {
-      background: #fd4;
+      background: #ffddcc;
     }
     .admonition.error,
     .admonition.danger,

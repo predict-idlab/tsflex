@@ -28,6 +28,7 @@ def test_simple_feature_descriptor():
     assert fd.get_required_series() == ["EDA"]
     assert isinstance(fd.function, FuncWrapper)
 
+
 def test_simple_raw_np_func_feature_descriptor():
     fd = FeatureDescriptor(
         function=np.sum,
@@ -42,22 +43,26 @@ def test_simple_raw_np_func_feature_descriptor():
     assert fd.get_required_series() == ["EDA"]
     assert isinstance(fd.function, FuncWrapper)
 
-def test_simple_feature_descriptor_str_float_seconds():
+
+# TODO -> add new test in which floats represent the float position
+
+def test_simple_feature_descriptor_str_str_seconds():
     def sum_func(sig: np.ndarray) -> float:
         return sum(sig)
 
     fd = FeatureDescriptor(
         function=sum_func,
         series_name="EDA",
-        window='5',
-        stride=2.5,
+        window='5s',
+        stride='3s',
     )
 
     assert fd.series_name == tuple(["EDA"])
     assert fd.window == pd.Timedelta(5, unit='seconds')
-    assert fd.stride == pd.Timedelta(2.5, unit='seconds')
+    assert fd.stride == pd.Timedelta(3, unit='seconds')
     assert fd.get_required_series() == ["EDA"]
     assert isinstance(fd.function, FuncWrapper)
+
 
 def test_simple_feature_descriptor_func_wrapper():
     def sum_func(sig: np.ndarray) -> float:
@@ -68,7 +73,7 @@ def test_simple_feature_descriptor_func_wrapper():
     fd = FeatureDescriptor(
         function=sum_func_wrapped,
         series_name="EDA",
-        window='5',
+        window='5s',
         stride='2.5s',
     )
 
@@ -88,18 +93,18 @@ def test_error_function_simple_feature_descriptor():
         _ = FeatureDescriptor(
             function=invalid_func,
             series_name="EDA",
-            window=5,
+            window='5s',
             stride='2.5s',
         )
 
 def test_error_time_arg_simple_feature_descriptor():
     invalid_stride = pd.to_datetime('13000101', format='%Y%m%d', errors='ignore')
 
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         _ = FeatureDescriptor(
             function=np.sum,
             series_name="EDA",
-            window=5,
+            window='5s',
             stride=invalid_stride,
         )
 

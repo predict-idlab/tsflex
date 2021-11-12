@@ -2,15 +2,19 @@
 
 __author__ = "Jeroen Van Der Donckt, Emiel Deprost, Jonas Van Der Donckt"
 
+import os
 import pytest
 import pandas as pd
 import numpy as np
+import dill
 
 from tsflex.processing import dataframe_func
 from tsflex.processing import SeriesProcessor, SeriesPipeline
 from tsflex.processing.series_pipeline import _ProcessingError
 
 from .utils import dummy_data
+
+from pathlib import Path
 
 
 ## SeriesPipeline
@@ -280,7 +284,7 @@ def test_pipeline_processors_are_pipelines(dummy_data):
     )
     assert len(res.columns) == 4
     assert set(res.columns) == set(["TMP", "EDA", "ACC_x", "ACC_y"])
-    
+
     # let's also test the repr string
     print(series_pipeline)
 
@@ -337,4 +341,51 @@ def test_error_output_dataframe_no_time_index_series_pipeline(dummy_data):
         _ = series_pipeline.process(dummy_data)
 
 
-# TODO: test serialize
+def test_serialization(dummy_data):
+    def drop_nans(series: pd.Series) -> pd.Series:
+        return series.dropna()
+
+    def percentile_clip(series, l_perc=0.01, h_perc=0.99):
+        # Note: this func is useless in ML (data leakage; percentiles are not fitted)
+        l_thresh = np.percentile(series, l_perc * 100)
+        h_thresh = np.percentile(series, h_perc * 100)
+        return series.clip(l_thresh, h_thresh)
+
+    inp = dummy_data.copy()
+    inp.loc[inp["TMP"] > 31.5, "TMP"] = pd.NA
+    assert any(inp["TMP"].isna())
+    assert all(~inp["EDA"].isna())
+    lower = 0.02
+    upper = 0.99  # The default value => do not pass
+    series_pipeline = SeriesPipeline(
+        [
+            SeriesProcessor(series_names=["TMP"], function=drop_nans),
+            SeriesProcessor(
+                series_names=["TMP", "EDA"],
+                function=percentile_clip,
+                l_perc=lower,
+                h_perc=upper,
+            ),
+        ]
+    )
+
+    res_df_all = series_pipeline.process(inp, return_all_series=False, return_df=True)
+    col_order = res_df_all.columns
+
+    save_path = Path("series_pipeline.pkl")
+    if save_path.exists():
+        os.remove(save_path)
+    assert not save_path.exists()
+    series_pipeline.serialize(save_path)
+    assert save_path.exists() and save_path.is_file()
+
+    sp_deserialized: SeriesPipeline = dill.load(open(save_path, "rb"))
+    out_deserialized = sp_deserialized.process(
+        inp, return_all_series=False, return_df=True
+    )
+    assert np.allclose(
+        res_df_all[col_order].values.astype(float),
+        out_deserialized[col_order].values.astype(float),
+        equal_nan=True,
+    )
+    os.remove(save_path)
