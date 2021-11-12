@@ -1,9 +1,9 @@
-This is the documentation of [**tsflex**](https://github.com/predict-idlab/tsflex); a `time-series first` Python toolkit for 
+This is the documentation of [**tsflex**](https://github.com/predict-idlab/tsflex); a `time-index first` Python toolkit for 
 **processing & feature extraction**, making few assumptions about input data.
 
 This makes _tsflex_ suitable for use-cases such as inference on streaming data, performing operations on irregularly sampled series, a holistic approach for operating on multivariate asynchronous data, and dealing with time-gaps.
 
-> ~ _**With great flexibility comes great responsiblity, read our docs!**_ &nbsp;&nbsp;&nbsp;&nbsp; _- the tsflex devs_</span>
+> ~ _**With great flexibility comes great responsibility, read our docs!**_ &nbsp;&nbsp;&nbsp;&nbsp; _- the tsflex devs_</span>
 
 <link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.2/css/all.min.css" integrity="sha512-HK5fgLBL+xu6dm/Ii3z4xhlSUyZgTT9tuc/hSrtw6uzJOvgRr2a9jyxxT1ely+B+xFAmJKVSTbpM/CuL7qxO8w==" crossorigin>
 
@@ -32,7 +32,7 @@ This makes _tsflex_ suitable for use-cases such as inference on streaming data, 
 *tsflex* serves three main functionalities; series processing, feature extraction and chunking:
 
 * The [processing](/tsflex/processing) module withholds a `SeriesPipeline` in which uni- and multivariate data processing operations can be defined.
-* The [feature extraction](/tsflex/features) module defines a `FeatureCollection` which mainly serves as a registry of defined features and allows to perform highly-customizable strided-rolling feature extraction.
+* The [feature extraction](/tsflex/features) module defines a `FeatureCollection` which mainly serves as a registry of defined features and allows performing highly-customizable strided-rolling feature extraction.
 * The [chunking](/tsflex/chunking) module withholds `chunk_data()`; a method which returns continuous data-chunks, based on passed arguments such as _min\_chunk\_dur_. The user can then use these data-chunks for either processing or feature extraction.
 
 <br>
@@ -46,7 +46,7 @@ import pandas as pd; from typing import Union, List
 data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
 ```
 
-For brevity, we call an item from `data`, i.e., series or dataframe-colum, a time-series (`ts`).
+For brevity, we call an item from `data`, i.e., series or dataframe-column, a time-series (`ts`).
 
 <!-- > _tsflex_ was mainly <span style="color: darkred">intended to work on **_flat data_**</span> such as a **list of series** or a **wide-dataframe**. -->
 
