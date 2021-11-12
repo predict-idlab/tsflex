@@ -23,9 +23,7 @@ This makes _tsflex_ suitable for use-cases such as inference on streaming data, 
 <br>
 <hr style="height: 1px; border: none; border-top: 1px solid darkgrey;">
 
-<div style="text-align: center;">
 <h3><b><a href="#header-submodules">Jump to API reference</a></b></h3>
-</div>
 
 ## Getting started 🚀
 

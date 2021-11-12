@@ -5,7 +5,6 @@
 [![support-version](https://img.shields.io/pypi/pyversions/tsflex)](https://img.shields.io/pypi/pyversions/tsflex)
 [![codecov](https://img.shields.io/codecov/c/github/predict-idlab/tsflex?logo=codecov)](https://codecov.io/gh/predict-idlab/tsflex)
 [![Code quality](https://img.shields.io/lgtm/grade/python/github/predict-idlab/tsflex?label=code%20quality&logo=lgtm)](https://lgtm.com/projects/g/predict-idlab/tsflex/context:python)
-![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?color=black)
 [![Downloads](https://pepy.tech/badge/tsflex)](https://pepy.tech/project/tsflex)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?)](http://makeapullrequest.com)
 [![Documentation](https://github.com/predict-idlab/tsflex/actions/workflows/deploy-docs.yml/badge.svg)](https://github.com/predict-idlab/tsflex/actions/workflows/deploy-docs.yml)
@@ -66,22 +65,25 @@ fc.calculate(data=[data_tmp, data_acc])
 * `Flexible`:
     * handles multivariate/multimodal time series
     * versatile function support
-      => **integrates natively** with many packages for:
+      => **integrates** with many packages for:
       * processing (e.g., [scipy.signal](https://docs.scipy.org/doc/scipy/reference/tutorial/signal.html), [statsmodels.tsa](https://www.statsmodels.org/stable/tsa.html#time-series-filters))
-      * feature extraction (e.g., [numpy](https://numpy.org/doc/stable/reference/routines.html), [scipy.stats](https://docs.scipy.org/doc/scipy/reference/tutorial/stats.html), [seglearn](https://dmbee.github.io/seglearn/feature_functions.html)¹, [tsfresh](https://tsfresh.readthedocs.io/en/latest/text/list_of_features.html)¹, [tsfel](https://tsfel.readthedocs.io/en/latest/descriptions/feature_list.html)¹)
+      * feature extraction (e.g., [numpy](https://numpy.org/doc/stable/reference/routines.html), [scipy.stats](https://docs.scipy.org/doc/scipy/reference/tutorial/stats.html), [seglearn](https://dmbee.github.io/seglearn/feature_functions.html)¹, [**tsfresh**](https://tsfresh.readthedocs.io/en/latest/text/list_of_features.html)¹, [tsfel](https://tsfel.readthedocs.io/en/latest/descriptions/feature_list.html)¹)
     * feature-extraction handles **multiple strides & window sizes**
 * `Efficient`:<br>
-  uses view-based operations for feature extraction => extremely **low memory peak** & **fast execution time**<br>
-  * see: [benchmark visualization](https://predict-idlab.github.io/tsflex/#benchmark)
-* `Maintains the sequence-index` of the data & constructs `interpretable output column names`.
-* `few assumptions` about the sequence data:
+  * view-based operations for processing & feature extraction => extremely **low memory peak** & **fast execution time**<br>
+    * see: [feature extraction benchmark visualization](https://predict-idlab.github.io/tsflex/#benchmark)
+* `Intuitive`:<br>
+  * maintains the sequence-index of the data
+  * feature-extraction constructs interpretable output column names
+  * intuitive API
+* `Few assumptions` about the sequence data:
   * no assumptions about sampling rate
   * able to deal with multivariate asynchronous data<br>i.e. data with small time-offsets between the modalities
-* `Many advanced functionalities`:
-  * Feature extraction - [reduce]()
-  * Feature function execution time [logging]() & processing steps execution time [logging]()
-  * embedded [serialization]() of local scope functions
-  * time series [chunking]()
+* `Advanced functionalities`:
+  * apply [FeatureCollection.**reduce**](https://predict-idlab.github.io/tsflex/features/index.html#tsflex.features.FeatureCollection.reduce) after feature selection for faster inference
+  * use **function execution time logging** to discover feature-extraction and processing bottlenecks
+  * embedded [FeatureCollection](https://predict-idlab.github.io/tsflex/features/index.html#tsflex.features.FeatureCollection.serialize) & [SeriesPipeline](http://predict-idlab.github.io/tsflex/processing/#tsflex.processing.SeriesPipeline.serialize) **serialization**
+  * time series [**chunking**](https://predict-idlab.github.io/tsflex/chunking/index.html)
 
 ¹ These integrations are shown in [integration-example notebooks](https://github.com/predict-idlab/tsflex/tree/main/examples).
 ## Future work 🔨
