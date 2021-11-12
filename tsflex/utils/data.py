@@ -108,7 +108,7 @@ def to_list(x: Any) -> List:
     ----------
     x : Any
         The input that needs to be convert to a list.
-    
+
     Returns
     -------
     List
@@ -127,7 +127,7 @@ def to_tuple(x: Any) -> Tuple[Any, ...]:
     ----------
     x : Any
         The input that needs to be convert to a tuple.
-    
+
     Returns
     -------
     List
@@ -154,3 +154,26 @@ def flatten(data: Iterable) -> Iterator:
 
     """
     return itertools.chain.from_iterable(data)
+
+
+def load_empatica_data(f_names: Union[str, List[str]]) -> List[pd.DataFrame]:
+    """load example empatica data from the github repository.
+
+    Parameters
+    ----------
+    f_names : List[str]k
+        The name-prefixes of the files, must be one or more from
+
+            ["acc", "gsr", "tmp", "ibi"]
+
+    Returns
+    -------
+    List[pd.DataFrame]
+        Returns the empatica time-indexed data files in the same order as `f_names`
+    """
+    url = "https://github.com/predict-idlab/tsflex/raw/main/examples/data/empatica/"
+    f_names = [f_names] if isinstance(f_names, str) else f_names
+    return [
+        pd.read_parquet(url + f"{f_name.lower()}.parquet").set_index("timestamp")
+        for f_name in f_names
+    ]

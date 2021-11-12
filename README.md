@@ -35,27 +35,31 @@ _tsflex_ is built to be intuitive, so we encourage you to copy-paste this code a
 ```python
 import pandas as pd; import numpy as np; import scipy.stats as ss
 from tsflex.features import MultipleFeatureDescriptors, FeatureCollection
+from tsflex.utils.data import load_empatica_data
 
-# 1. -------- Get your time-indexed data --------
-url = "https://github.com/predict-idlab/tsflex/raw/main/examples/data/empatica/"
-# Contains 1 column; ["TMP"] - 4 Hz sampling rate
-data_tmp = pd.read_parquet(url+"tmp.parquet").set_index("timestamp")
-# Contains 3 columns; ["ACC_x", "ACC_y", "ACC_z"] - 32 Hz sampling rate
-data_acc = pd.read_parquet(url+"acc.parquet").set_index("timestamp")
+# 1. Load sequence-indexed data (in this case a time-index)
+df_tmp, df_acc, df_ibi = load_empatica_data(['tmp', 'acc', 'ibi'])
 
-# 2. -------- Construct your feature collection --------
+# 2. Construct your feature extraction configuration
 fc = FeatureCollection(
     MultipleFeatureDescriptors(
-          functions=[np.min, np.max, np.mean, np.std, np.median, ss.skew, ss.kurtosis],
-          series_names=["TMP", "ACC_x", "ACC_y"], # Use 3 multimodal signals
-          windows=["5min", "7.5min"],  # Use 5 minutes and 7.5 minutes
-          strides="2.5min",  # With steps of 2.5 minutes
+          functions=[np.min, np.mean, np.std, ss.skew, ss.kurtosis],
+          series_names=["TMP", "ACC_x", "ACC_y", "IBI"],
+          windows=["15min", "30min"],
+          strides="15min",
     )
 )
 
-# 3. -------- Calculate features --------
-fc.calculate(data=[data_tmp, data_acc])
+# 3. Extract features
+fc.calculate(data=[df_tmp, df_acc, df_ibi], approve_sparsity=True)
 ```
+
+Note that the feature extraction is performed on multivariate data with varying sample rates.
+| signal | columns | sample rate |
+|:-------|:-------|------------------:|
+| df_tmp | ["TMP"]| 4Hz |
+| df_acc | ["ACC_x", "ACC_y", "ACC_z" ]| 32Hz |
+| df_ibi | ["IBI"]| irregularly sampled |
 
 ### <a href="https://predict-idlab.github.io/tsflex/processing/index.html#getting-started">Processing</a>
 `TODO`

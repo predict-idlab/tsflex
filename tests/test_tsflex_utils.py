@@ -5,6 +5,7 @@ __author__ = "Jeroen Van Der Donckt, Emiel Deprost, Jonas Van Der Donckt"
 import pandas as pd
 
 from tsflex.utils.time import timedelta_to_str
+from tsflex.utils.data import load_empatica_data
 
 
 def test_timedelta_to_str():
@@ -43,3 +44,11 @@ def test_timedelta_to_str():
     assert timedelta_to_str(to_td('- 30 milliseconds')) == 'NEG_0.03s'
     assert timedelta_to_str(to_td('- 1000microseconds')) == 'NEG_0.001s'
     assert timedelta_to_str(to_td('- 1000000 nanoseconds')) == 'NEG_0.001s'
+
+
+def test_load_empatica_data():
+    df_ibi = load_empatica_data("ibi")[0]
+    assert "IBI" in df_ibi.columns
+    
+    df_ibi, df_gsr = load_empatica_data(["IBI", "gsr"])
+    assert "EDA" in df_gsr.columns
