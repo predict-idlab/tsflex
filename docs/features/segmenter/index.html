@@ -1,0 +1,763 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.9.2" />
+<title>tsflex.features.segmenter API documentation</title>
+<meta name="description" content="Series segmentation submodule." />
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/sanitize.min.css" integrity="sha256-PK9q560IAAa6WVRRh76LtCaI8pjTJ2z11v0miyNNjrs=" crossorigin>
+<link rel="preload stylesheet" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/11.0.1/typography.min.css" integrity="sha256-7l/o7C8jubJiy74VsKTidCy1yBkRtiUGbVkYBylBqUg=" crossorigin>
+<link rel="stylesheet preload" as="style" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/styles/foundation.min.css" crossorigin>
+<style>:root{--highlight-color:#fe9}.flex{display:flex !important}body{line-height:1.5em;padding-left:1em;padding-right:1em}button{display:none}#sidebar{padding:3px;max-width:20em;overflow:hidden;min-width:19.8em}#sidebar > *:last-child{margin-bottom:1cm}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;border-top:1px solid #ddd;text-align:right}#footer p{}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}h1:target,h2:target,h3:target,h4:target,h5:target,h6:target{background:var(--highlight-color);padding:.2em 0}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f1f3f9;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:0.5em;padding:0px}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{margin-top:.6em;font-weight:bold}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}dt:target .name{background:var(--highlight-color)}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;max_width:100%;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}td{padding:0 .5em}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#ebf3ff}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#edfcf4}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#ffddcc}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:850px){.sidebar_container{display:flex;transition:0.75s ease}.sidebar_small{width:0;margin:0;padding:0}.hide_content{display:none}button{display:initial;float:left;position:sticky;border:none;height:5ch;width:5ch;border-radius:50%;box-shadow:0px 1px 4px 1px rgba(0,0,0,.2);top:5%;left:100%;transform:translateX(-50%);cursor:pointer}#sidebar{width:25%;height:100vh;overflow:auto;position:sticky;top:0;transition:0.75s ease}#index_button_img{opacity:0.65}#content{max-width:105ch;padding:2em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1em;padding-right:0.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+<script>
+window.ga=window.ga||function(){(ga.q=ga.q||[]).push(arguments)};ga.l=+new Date;
+ga('create', 'G-PJSDXV11S0', 'auto'); ga('send', 'pageview');
+</script><script async src='https://www.google-analytics.com/analytics.js'></script>
+<script defer src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/10.1.1/highlight.min.js" integrity="sha256-Uv3H6lx7dJmRfRvH8TH6kJD1TSK1aFcwgx+mdg3epi8=" crossorigin></script>
+<script>window.addEventListener('DOMContentLoaded', () => hljs.initHighlighting())</script>
+<link rel="icon" href="https://media.discordapp.net/attachments/372491075153166338/852906324417445908/icon.png">
+</head>
+<body>
+<main>
+<article id="content">
+<button id="index_button_button"><img id="index_button_img"
+src="https://image.flaticon.com/icons/png/512/56/56763.png"
+alt="" width="33" height="25"></button>
+<header>
+<h1 class="title">Module <code>tsflex.features.segmenter</code></h1>
+</header>
+<section id="section-intro">
+<p>Series segmentation submodule.</p>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python"># -*- coding: utf-8 -*-
+&#34;&#34;&#34;Series segmentation submodule.&#34;&#34;&#34;
+
+__author__ = &#34;Jonas Van Der Donckt&#34;
+
+from .strided_rolling import StridedRolling
+from .strided_rolling_factory import StridedRollingFactory
+
+__all__ = [
+    &#34;StridedRolling&#34;,
+    &#34;StridedRollingFactory&#34;,
+]</code></pre>
+</details>
+</section>
+<section>
+<h2 class="section-title" id="header-submodules">API reference of <code>tsflex.features.segmenter</code></h2>
+<dl>
+<dt><code class="name"><a title="tsflex.features.segmenter.strided_rolling" href="strided_rolling.html">.strided_rolling</a></code></dt>
+<dd>
+<div class="desc"><p>Withholds a (rather) fast implementation of an <strong>index-based</strong> strided rolling window …</p></div>
+</dd>
+<dt><code class="name"><a title="tsflex.features.segmenter.strided_rolling_factory" href="strided_rolling_factory.html">.strided_rolling_factory</a></code></dt>
+<dd>
+<div class="desc"><p>Factory class for creating the proper StridedRolling instances …</p></div>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="tsflex.features.segmenter.StridedRolling"><code class="flex name class">
+<span>class <span class="ident">StridedRolling</span></span>
+<span>(</span><span>data, window, stride, start_idx=None, end_idx=None, func_data_type=&lt;built-in function array&gt;, window_idx='end', approve_sparsity=False)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class StridedRolling(ABC):
+    &#34;&#34;&#34;Custom time-based sliding window with stride.
+
+    Parameters
+    ----------
+    data : Union[pd.Series, pd.DataFrame]
+        ``pd.Series`` or ``pd.DataFrame`` to slide over, the index must be either
+        numeric or a ``pd.DatetimeIndex``.
+    window : Union[float, pd.Timedelta]
+        Either an int, float, or ``pd.Timedelta``, representing the sliding window size
+        in terms of the index (in case of a int or float) or the sliding window duration
+        (in case of ``pd.Timedelta``).
+    stride : Union[float, pd.Timedelta]
+        Either an int, float, or ``pd.Timedelta``, representing the stride size in terms
+        of the index (in case of a int or float) or the stride duration (in case of
+        ``pd.Timedelta``).
+    start_idx: Union[float, pd.Timestamp], optional
+        The start-index which will be used for each series passed to `data`. This is
+        especially useful if multiple `StridedRolling` instances are created and the
+        user want to ensure same (start-)indexes for each of them.
+    end_idx: Union[float, pd.Timestamp], optional
+        The end-index which will be used as sliding end-limit for each series passed to
+        `data`.
+    func_data_type: Union[np.array, pd.Series], optional
+        The data type of the stroll (either np.array or pd.Series), by default np.array.
+        &lt;br&gt;
+        .. Note::
+            Make sure to only set this argument to pd.Series when this is really
+            required, since pd.Series strided-rolling is significantly less efficient.
+            For a np.array it is possible to create very efficient views, but there is no
+            such thing as a pd.Series view. Thus, for each stroll, a new series is created.
+    window_idx : str, optional
+        The window&#39;s index position which will be used as index for the
+        feature_window aggregation. Must be either of: `[&#34;begin&#34;, &#34;middle&#34;, &#34;end&#34;]`, by
+        default &#34;end&#34;.
+    approve_sparsity: bool, optional
+        Bool indicating whether the user acknowledges that there may be sparsity (i.e.,
+        irregularly sampled data), by default False.
+        If False and sparsity is observed, a warning is raised.
+
+    Notes
+    -----
+    * This instance withholds a **read-only**-view of the data its values.
+
+    &#34;&#34;&#34;
+
+    # Class variables which are used by sub-classes
+    win_str_type: DataType
+    reset_series_index_b4_segmenting: bool = False
+
+    # Create the named tuple
+    _NumpySeriesContainer = namedtuple(
+        &#34;SeriesContainer&#34;, [&#34;name&#34;, &#34;values&#34;, &#34;start_indexes&#34;, &#34;end_indexes&#34;]
+    )
+
+    def __init__(
+        self,
+        data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
+        window: T,
+        stride: T,
+        start_idx: Optional[T] = None,
+        end_idx: Optional[T] = None,
+        func_data_type: Optional[Union[np.array, pd.Series]] = np.array,
+        window_idx: Optional[str] = &#34;end&#34;,
+        approve_sparsity: Optional[bool] = False,
+    ):
+        self.window = window
+        self.stride = stride
+
+        # Note: the sub-class should set the self.func_data_type attribute
+        assert AttributeParser.check_expected_type([window, stride], self.win_str_type)
+
+        self.window_idx = window_idx
+        self.approve_sparsity = approve_sparsity
+
+        assert func_data_type in SUPPORTED_STROLL_TYPES
+        self.data_type = func_data_type
+
+        # 0. Standardize the input
+        series_list: List[pd.Series] = to_series_list(data)
+        self.series_dtype = AttributeParser.determine_type(series_list)
+        self.series_key: Tuple[str, ...] = tuple([str(s.name) for s in series_list])
+
+        # 1. Determine the start index
+        self.start, self.end = start_idx, end_idx
+        if self.start is None or self.end is None:
+            start, end = _determine_bounds(&#34;inner&#34;, series_list)
+
+            # update self.start &amp; self.end if it was not passed
+            self.start = start if self.start is None else self.start
+            self.end = end if self.end is None else self.end
+
+        # Especially useful when the index dtype differs from the win-stride-dtype
+        # e.g. -&gt; performing a int-based stroll on time-indexed data
+        # Note: this is very niche and thus requires advanced knowledge
+        self._update_start_end_indices_to_stroll_type(series_list)
+
+        # 2. Create a new-index which will be used for DataFrame reconstruction
+        # Note: the index-name of the first passed series will be re-used as index-name
+        self.index = self._construct_output_index(series_list[0])
+
+        # 3. Construct the index ranges and store the series containers
+        np_start_times, np_end_times = self._construct_start_end_times()
+        self.series_containers = self._construct_series_containers(
+            series_list, np_start_times, np_end_times
+        )
+
+        # 4. Check the sparsity assumption
+        if not self.approve_sparsity:
+            qs = [0, 0.1, 0.5, 0.9, 1]
+            for container in self.series_containers:
+                series_idx_stats = np.quantile(
+                    container.end_indexes - container.start_indexes, q=qs
+                )
+                q_str = &#34;, &#34;.join([f&#34;q={q}: {v}&#34; for q, v in zip(qs, series_idx_stats)])
+                # Warn when min != max
+                if not all(series_idx_stats == series_idx_stats[-1]):
+                    warnings.warn(
+                        f&#34;There are gaps in the sequence of the {container.name}&#34;
+                        f&#34;-series;\n \t Quantiles of nb values in window: {q_str}&#34;,
+                        RuntimeWarning,
+                    )
+
+    def _get_window_offset(self, window: T) -&gt; T:
+        if self.window_idx == &#34;end&#34;:
+            return window
+        elif self.window_idx == &#34;middle&#34;:
+            return window / 2
+        elif self.window_idx == &#34;begin&#34;:
+            if isinstance(window, pd.Timedelta):
+                return pd.Timedelta(seconds=0)
+            return 0
+        else:
+            raise ValueError(
+                f&#34;window index {self.window_idx} must be either of: &#34;
+                &#34;[&#39;end&#39;, &#39;middle&#39;, &#39;begin&#39;]&#34;
+            )
+
+    def _construct_series_containers(
+        self, series_list, np_start_times, np_end_times
+    ) -&gt; List[StridedRolling._NumpySeriesContainer]:
+
+        series_containers: List[StridedRolling._NumpySeriesContainer] = []
+        for series in series_list:
+            if not self.reset_series_index_b4_segmenting:
+                np_idx_times = series.index.values
+            else:
+                np_idx_times = np.arange(len(series))
+
+            series_name = series.name
+            if self.data_type is np.array:
+                # create a non-writeable view of the series
+                series = series.values
+                series.flags.writeable = False
+            elif self.data_type is pd.Series:
+                series.values.flags.writeable = False
+                series.index.values.flags.writeable = False
+            else:
+                raise ValueError(&#34;unsupported datatype&#34;)
+
+            series_containers.append(
+                StridedRolling._NumpySeriesContainer(
+                    name=series_name,
+                    values=series,
+                    # the slicing will be performed on [ t_start, t_end [
+                    # TODO: this can maybe be optimized -&gt; further look into this
+                    # np_idx_times, np_start_times, &amp; np_end_times are all sorted!
+                    # as we assume &amp; check that the time index is monotonically
+                    # increasing &amp; the latter 2 are created using `np.arange()`
+                    start_indexes=np.searchsorted(np_idx_times, np_start_times, &#34;left&#34;),
+                    end_indexes=np.searchsorted(np_idx_times, np_end_times, &#34;left&#34;),
+                )
+            )
+        return series_containers
+
+    def apply_func(self, func: FuncWrapper) -&gt; pd.DataFrame:
+        &#34;&#34;&#34;Apply a function to the segmented series.
+
+        Parameters
+        ----------
+        func : FuncWrapper
+            The Callable wrapped function which will be applied.
+
+        Returns
+        -------
+        pd.DataFrame
+            The merged output of the function applied to every column in a
+            new DataFrame. The DataFrame&#39;s column-names have the format:
+                `&lt;series_col_name(s)&gt;_&lt;feature_name&gt;__w=&lt;window&gt;_s=&lt;stride&gt;`.
+
+        Raises
+        ------
+        ValueError
+            If the passed ``func`` tries to adjust the data its read-only view.
+
+        Notes
+        -----
+        * If ``func`` is only a callable argument, with no additional logic, this
+          will only work for a one-to-one mapping, i.e., no multiple feature-output
+          columns are supported for this case!&lt;br&gt;
+        * If you want to calculate one-to-many, ``func`` should be
+          a ``FuncWrapper`` instance and explicitly use
+          the ``output_names`` attributes of its constructor.
+
+        &#34;&#34;&#34;
+        feat_names = func.output_names
+
+        t_start = time.time()
+
+        # --- Future work ---
+        # would be nice if we could optimize this double for loop with something
+        # more vectorized
+        #
+        # As for now we use a map to apply the function (as this evaluates its
+        # expression only once, whereas a list comprehension evaluates its expression
+        # every time).
+        # See more why: https://stackoverflow.com/a/59838723
+        out = np.array(
+            list(
+                map(
+                    func,
+                    *[
+                        [
+                            sc.values[sc.start_indexes[idx]: sc.end_indexes[idx]]
+                            for idx in range(len(self.index))
+                        ]
+                        for sc in self.series_containers
+                    ],
+                )
+            )
+        )
+
+        # Aggregate function output in a dictionary
+        feat_out = {}
+        if out.ndim == 1 or (out.ndim == 2 and out.shape[1] == 1):
+            assert len(feat_names) == 1, f&#34;Func {func} returned more than 1 output!&#34;
+            feat_out[self._create_feat_col_name(feat_names[0])] = out.flatten()
+        if out.ndim == 2 and out.shape[1] &gt; 1:
+            assert (
+                len(feat_names) == out.shape[1]
+            ), f&#34;Func {func} returned incorrect number of outputs ({out.shape[1]})!&#34;
+            for col_idx in range(out.shape[1]):
+                feat_out[self._create_feat_col_name(feat_names[col_idx])] = out[
+                    :, col_idx
+                ]
+
+        elapsed = time.time() - t_start
+        logger.info(
+            f&#34;Finished function [{func.func.__name__}] on &#34;
+            f&#34;{[self.series_key]} with window-stride &#34;
+            f&#34;[{self.window}, {self.stride}] in [{elapsed} seconds]!&#34;
+        )
+
+        return pd.DataFrame(index=self.index, data=feat_out)
+
+    def _update_start_end_indices_to_stroll_type(self, series_list: List[pd.Series]):
+        pass
+
+    # ----------------------------- OVERRIDE THESE METHODS -----------------------------
+    @abstractmethod
+    def _construct_output_index(self, series: pd.Series) -&gt; pd.Index:
+        raise NotImplementedError
+
+    @abstractmethod
+    def _construct_start_end_times(self) -&gt; Tuple[np.ndarray, np.ndarray]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def _create_feat_col_name(self, feat_name: str) -&gt; str:
+        raise NotImplementedError</code></pre>
+</details>
+<div class="desc"><p>Custom time-based sliding window with stride.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>data</code></strong> :&ensp;<code>Union[pd.Series, pd.DataFrame]</code></dt>
+<dd><code>pd.Series</code> or <code>pd.DataFrame</code> to slide over, the index must be either
+numeric or a <code>pd.DatetimeIndex</code>.</dd>
+<dt><strong><code>window</code></strong> :&ensp;<code>Union[float, pd.Timedelta]</code></dt>
+<dd>Either an int, float, or <code>pd.Timedelta</code>, representing the sliding window size
+in terms of the index (in case of a int or float) or the sliding window duration
+(in case of <code>pd.Timedelta</code>).</dd>
+<dt><strong><code>stride</code></strong> :&ensp;<code>Union[float, pd.Timedelta]</code></dt>
+<dd>Either an int, float, or <code>pd.Timedelta</code>, representing the stride size in terms
+of the index (in case of a int or float) or the stride duration (in case of
+<code>pd.Timedelta</code>).</dd>
+<dt><strong><code>start_idx</code></strong> :&ensp;<code>Union[float, pd.Timestamp]</code>, optional</dt>
+<dd>The start-index which will be used for each series passed to <code>data</code>. This is
+especially useful if multiple <code><a title="tsflex.features.segmenter.StridedRolling" href="#tsflex.features.segmenter.StridedRolling">StridedRolling</a></code> instances are created and the
+user want to ensure same (start-)indexes for each of them.</dd>
+<dt><strong><code>end_idx</code></strong> :&ensp;<code>Union[float, pd.Timestamp]</code>, optional</dt>
+<dd>The end-index which will be used as sliding end-limit for each series passed to
+<code>data</code>.</dd>
+<dt><strong><code>func_data_type</code></strong> :&ensp;<code>Union[np.array, pd.Series]</code>, optional</dt>
+<dd>The data type of the stroll (either np.array or pd.Series), by default np.array.
+<br><div class="admonition note">
+<p class="admonition-title">Note</p>
+Make sure to only set this argument to pd.Series when this is really
+required, since pd.Series strided-rolling is significantly less efficient.
+For a np.array it is possible to create very efficient views, but there is no
+such thing as a pd.Series view. Thus, for each stroll, a new series is created.</div>
+</dd>
+<dt><strong><code>window_idx</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>The window's index position which will be used as index for the
+feature_window aggregation. Must be either of: <code>["begin", "middle", "end"]</code>, by
+default "end".</dd>
+<dt><strong><code>approve_sparsity</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>Bool indicating whether the user acknowledges that there may be sparsity (i.e.,
+irregularly sampled data), by default False.
+If False and sparsity is observed, a warning is raised.</dd>
+</dl>
+<h2 id="notes">Notes</h2>
+<ul>
+<li>This instance withholds a <strong>read-only</strong>-view of the data its values.</li>
+</ul></div>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>abc.ABC</li>
+</ul>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="tsflex.features.segmenter.strided_rolling.SequenceStridedRolling" href="strided_rolling.html#tsflex.features.segmenter.strided_rolling.SequenceStridedRolling">SequenceStridedRolling</a></li>
+<li><a title="tsflex.features.segmenter.strided_rolling.TimeStridedRolling" href="strided_rolling.html#tsflex.features.segmenter.strided_rolling.TimeStridedRolling">TimeStridedRolling</a></li>
+</ul>
+<h3>Class variables</h3>
+<dl>
+<dt id="tsflex.features.segmenter.StridedRolling.win_str_type"><code class="name">var <span class="ident">win_str_type</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+<dt id="tsflex.features.segmenter.StridedRolling.reset_series_index_b4_segmenting"><code class="name">var <span class="ident">reset_series_index_b4_segmenting</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Methods</h3>
+<dl>
+<dt id="tsflex.features.segmenter.StridedRolling.apply_func"><code class="name flex">
+<span>def <span class="ident">apply_func</span></span>(<span>self, func)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def apply_func(self, func: FuncWrapper) -&gt; pd.DataFrame:
+    &#34;&#34;&#34;Apply a function to the segmented series.
+
+    Parameters
+    ----------
+    func : FuncWrapper
+        The Callable wrapped function which will be applied.
+
+    Returns
+    -------
+    pd.DataFrame
+        The merged output of the function applied to every column in a
+        new DataFrame. The DataFrame&#39;s column-names have the format:
+            `&lt;series_col_name(s)&gt;_&lt;feature_name&gt;__w=&lt;window&gt;_s=&lt;stride&gt;`.
+
+    Raises
+    ------
+    ValueError
+        If the passed ``func`` tries to adjust the data its read-only view.
+
+    Notes
+    -----
+    * If ``func`` is only a callable argument, with no additional logic, this
+      will only work for a one-to-one mapping, i.e., no multiple feature-output
+      columns are supported for this case!&lt;br&gt;
+    * If you want to calculate one-to-many, ``func`` should be
+      a ``FuncWrapper`` instance and explicitly use
+      the ``output_names`` attributes of its constructor.
+
+    &#34;&#34;&#34;
+    feat_names = func.output_names
+
+    t_start = time.time()
+
+    # --- Future work ---
+    # would be nice if we could optimize this double for loop with something
+    # more vectorized
+    #
+    # As for now we use a map to apply the function (as this evaluates its
+    # expression only once, whereas a list comprehension evaluates its expression
+    # every time).
+    # See more why: https://stackoverflow.com/a/59838723
+    out = np.array(
+        list(
+            map(
+                func,
+                *[
+                    [
+                        sc.values[sc.start_indexes[idx]: sc.end_indexes[idx]]
+                        for idx in range(len(self.index))
+                    ]
+                    for sc in self.series_containers
+                ],
+            )
+        )
+    )
+
+    # Aggregate function output in a dictionary
+    feat_out = {}
+    if out.ndim == 1 or (out.ndim == 2 and out.shape[1] == 1):
+        assert len(feat_names) == 1, f&#34;Func {func} returned more than 1 output!&#34;
+        feat_out[self._create_feat_col_name(feat_names[0])] = out.flatten()
+    if out.ndim == 2 and out.shape[1] &gt; 1:
+        assert (
+            len(feat_names) == out.shape[1]
+        ), f&#34;Func {func} returned incorrect number of outputs ({out.shape[1]})!&#34;
+        for col_idx in range(out.shape[1]):
+            feat_out[self._create_feat_col_name(feat_names[col_idx])] = out[
+                :, col_idx
+            ]
+
+    elapsed = time.time() - t_start
+    logger.info(
+        f&#34;Finished function [{func.func.__name__}] on &#34;
+        f&#34;{[self.series_key]} with window-stride &#34;
+        f&#34;[{self.window}, {self.stride}] in [{elapsed} seconds]!&#34;
+    )
+
+    return pd.DataFrame(index=self.index, data=feat_out)</code></pre>
+</details>
+<div class="desc"><p>Apply a function to the segmented series.</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>func</code></strong> :&ensp;<code>FuncWrapper</code></dt>
+<dd>The Callable wrapped function which will be applied.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>pd.DataFrame</code></dt>
+<dd>The merged output of the function applied to every column in a
+new DataFrame. The DataFrame's column-names have the format:
+<code>&lt;series_col_name(s)&gt;_&lt;feature_name&gt;__w=&lt;window&gt;_s=&lt;stride&gt;</code>.</dd>
+</dl>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>ValueError</code></dt>
+<dd>If the passed <code>func</code> tries to adjust the data its read-only view.</dd>
+</dl>
+<h2 id="notes">Notes</h2>
+<ul>
+<li>If <code>func</code> is only a callable argument, with no additional logic, this
+will only work for a one-to-one mapping, i.e., no multiple feature-output
+columns are supported for this case!<br></li>
+<li>If you want to calculate one-to-many, <code>func</code> should be
+a <code>FuncWrapper</code> instance and explicitly use
+the <code>output_names</code> attributes of its constructor.</li>
+</ul></div>
+</dd>
+</dl>
+</dd>
+<dt id="tsflex.features.segmenter.StridedRollingFactory"><code class="flex name class">
+<span>class <span class="ident">StridedRollingFactory</span></span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class StridedRollingFactory:
+    &#34;&#34;&#34;Factory class for creating the appropriate StridedRolling segmenter.&#34;&#34;&#34;
+
+    _datatype_to_stroll = {
+        DataType.TIME: TimeStridedRolling,
+        DataType.SEQUENCE: SequenceStridedRolling,
+    }
+
+    @staticmethod
+    def get_segmenter(data, window, stride, **kwargs) -&gt; StridedRolling:
+        &#34;&#34;&#34;Get the appropriate StridedRolling instance for the passed data.
+
+        The returned instance will be determined by the data its index type
+
+        Parameters
+        ----------
+        data : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
+            The data to segment.
+        window : Union[float, pd.TimeDelta]
+             The window size to use for the segmentation.
+        stride : Union[float, pd.TimeDelta]
+            The stride to use for the segmentation.
+        **kwargs : dict, optional
+            Additional keyword arguments, see the `StridedRolling` its documentation
+            for more info.
+
+        .. Note::
+            When passing `time-based` data, but **int**-based window &amp; stride params,
+            the strided rolling will be `TimeIndexSampleStridedRolling`. This class
+            **assumes** that **all data series** _roughly_ have the 
+            **same sample frequency**, as  the windows and strides are interpreted in 
+            terms of **number of samples**.
+
+        Raises
+        ------
+        ValueError
+            When incompatible data &amp; window-stride data types are passed (e.g. time 
+            window-stride args on sequence data-index).
+
+        Returns
+        -------
+        StridedRolling
+            The constructed StridedRolling instance.
+
+        &#34;&#34;&#34;
+        data_dtype = AttributeParser.determine_type(data)
+        args_dtype = AttributeParser.determine_type([window, stride])
+
+        if data_dtype.value == args_dtype.value:
+            return StridedRollingFactory._datatype_to_stroll[data_dtype](
+                data, window, stride, **kwargs
+            )
+        elif data_dtype == DataType.TIME and args_dtype == DataType.SEQUENCE:
+            # Note: this is very niche and thus requires advanced knowledge
+            return TimeIndexSampleStridedRolling(data, window, stride, **kwargs)
+        elif data_dtype == DataType.SEQUENCE and args_dtype == DataType.TIME:
+            raise ValueError(&#34;Cannot segment a sequence-series with a time window&#34;)</code></pre>
+</details>
+<div class="desc"><p>Factory class for creating the appropriate StridedRolling segmenter.</p></div>
+<h3>Static methods</h3>
+<dl>
+<dt id="tsflex.features.segmenter.StridedRollingFactory.get_segmenter"><code class="name flex">
+<span>def <span class="ident">get_segmenter</span></span>(<span>data, window, stride, **kwargs)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def get_segmenter(data, window, stride, **kwargs) -&gt; StridedRolling:
+    &#34;&#34;&#34;Get the appropriate StridedRolling instance for the passed data.
+
+    The returned instance will be determined by the data its index type
+
+    Parameters
+    ----------
+    data : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
+        The data to segment.
+    window : Union[float, pd.TimeDelta]
+         The window size to use for the segmentation.
+    stride : Union[float, pd.TimeDelta]
+        The stride to use for the segmentation.
+    **kwargs : dict, optional
+        Additional keyword arguments, see the `StridedRolling` its documentation
+        for more info.
+
+    .. Note::
+        When passing `time-based` data, but **int**-based window &amp; stride params,
+        the strided rolling will be `TimeIndexSampleStridedRolling`. This class
+        **assumes** that **all data series** _roughly_ have the 
+        **same sample frequency**, as  the windows and strides are interpreted in 
+        terms of **number of samples**.
+
+    Raises
+    ------
+    ValueError
+        When incompatible data &amp; window-stride data types are passed (e.g. time 
+        window-stride args on sequence data-index).
+
+    Returns
+    -------
+    StridedRolling
+        The constructed StridedRolling instance.
+
+    &#34;&#34;&#34;
+    data_dtype = AttributeParser.determine_type(data)
+    args_dtype = AttributeParser.determine_type([window, stride])
+
+    if data_dtype.value == args_dtype.value:
+        return StridedRollingFactory._datatype_to_stroll[data_dtype](
+            data, window, stride, **kwargs
+        )
+    elif data_dtype == DataType.TIME and args_dtype == DataType.SEQUENCE:
+        # Note: this is very niche and thus requires advanced knowledge
+        return TimeIndexSampleStridedRolling(data, window, stride, **kwargs)
+    elif data_dtype == DataType.SEQUENCE and args_dtype == DataType.TIME:
+        raise ValueError(&#34;Cannot segment a sequence-series with a time window&#34;)</code></pre>
+</details>
+<div class="desc"><p>Get the appropriate StridedRolling instance for the passed data.</p>
+<p>The returned instance will be determined by the data its index type</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>data</code></strong> :&ensp;<code>Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]</code></dt>
+<dd>The data to segment.</dd>
+<dt><strong><code>window</code></strong> :&ensp;<code>Union[float, pd.TimeDelta]</code></dt>
+<dd>The window size to use for the segmentation.</dd>
+<dt><strong><code>stride</code></strong> :&ensp;<code>Union[float, pd.TimeDelta]</code></dt>
+<dd>The stride to use for the segmentation.</dd>
+<dt><strong><code>**kwargs</code></strong> :&ensp;<code>dict</code>, optional</dt>
+<dd>Additional keyword arguments, see the <code><a title="tsflex.features.segmenter.StridedRolling" href="#tsflex.features.segmenter.StridedRolling">StridedRolling</a></code> its documentation
+for more info.</dd>
+</dl>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When passing <code>time-based</code> data, but <strong>int</strong>-based window &amp; stride params,
+the strided rolling will be <code>TimeIndexSampleStridedRolling</code>. This class
+<strong>assumes</strong> that <strong>all data series</strong> <em>roughly</em> have the
+<strong>same sample frequency</strong>, as
+the windows and strides are interpreted in
+terms of <strong>number of samples</strong>.</p>
+</div>
+<h2 id="raises">Raises</h2>
+<dl>
+<dt><code>ValueError</code></dt>
+<dd>When incompatible data &amp; window-stride data types are passed (e.g. time
+window-stride args on sequence data-index).</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code><a title="tsflex.features.segmenter.StridedRolling" href="#tsflex.features.segmenter.StridedRolling">StridedRolling</a></code></dt>
+<dd>The constructed StridedRolling instance.</dd>
+</dl></div>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc" title="pdoc: Python API documentation generator"><cite>pdoc</cite> 0.9.2</a>.</p>
+</footer>
+</article>
+<div class="sidebar_container">
+<nav id="sidebar">
+<div id="sidebar_content">
+<header>
+<div style="text-align: left; padding-top: 15px;">
+<a class="homelink" rel="home" title="tsflex home" href="/tsflex/">
+<img src="https://raw.githubusercontent.com/predict-idlab/tsflex/main/docs/_static/logo.png"
+alt="logo should be displayed here" width="95%"></a>
+</div>
+</header>
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="tsflex.features" href="../index.html">.features</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-submodules">tsflex.features.segmenter: API reference</a></h3>
+<ul>
+<li><code><a title="tsflex.features.segmenter.strided_rolling" href="strided_rolling.html">.strided_rolling</a></code></li>
+<li><code><a title="tsflex.features.segmenter.strided_rolling_factory" href="strided_rolling_factory.html">.strided_rolling_factory</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="tsflex.features.segmenter.StridedRolling" href="#tsflex.features.segmenter.StridedRolling">StridedRolling</a></code></h4>
+<ul class="">
+<li><code><a title="tsflex.features.segmenter.StridedRolling.apply_func" href="#tsflex.features.segmenter.StridedRolling.apply_func">apply_func</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="tsflex.features.segmenter.StridedRollingFactory" href="#tsflex.features.segmenter.StridedRollingFactory">StridedRollingFactory</a></code></h4>
+<ul class="">
+<li><code><a title="tsflex.features.segmenter.StridedRollingFactory.get_segmenter" href="#tsflex.features.segmenter.StridedRollingFactory.get_segmenter">get_segmenter</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</div>
+</nav>
+</div>
+</main>
+<script>
+const sidebar = document.querySelector("body > main > div");
+const sidebar_nav = document.querySelector("body > main > div > nav");
+const sidebar_content = document.getElementById("sidebar_content");
+document.getElementById("index_button_button").onclick = function () {
+sidebar.classList.toggle('sidebar_small');
+sidebar_nav.classList.toggle('hide_content');
+sidebar_content.classList.toggle('hide_content');
+}
+</script>
+</body>
+</html>
