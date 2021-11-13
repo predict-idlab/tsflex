@@ -39,9 +39,9 @@ The table below positions _tsflex_ among other relative Python packages.
   <tr>
     <td class="tg-0pky">Sequence index requirements</td>
     <td class="tg-c3ow">Any - sortable</td>
-    <td class="tg-c3ow">Any - assumes sorted<br></td>
+    <td class="tg-c3ow">Any - is sorted<br></td>
     <td class="tg-c3ow">Any - sortable</td>
-    <td class="tg-c3ow">Any - assumes sorted</td>
+    <td class="tg-c3ow">Any - is sorted</td>
     <td class="tg-c3ow">datetime index</td>
   </tr>
   <tr>
@@ -110,11 +110,11 @@ The table below positions _tsflex_ among other relative Python packages.
   </tr>
   <tr>
     <td class="tg-0pky">Strided-window definition format</td>
-    <td class="tg-c3ow">sequence index range</td>
-    <td class="tg-c3ow">sample-based</td>
-    <td class="tg-c3ow">sample-based</td>
-    <td class="tg-c3ow">sample-based</td>
-    <td class="tg-c3ow">sample-based</td>
+    <td class="tg-c3ow">Sequence index range</td>
+    <td class="tg-c3ow">Sample-based</td>
+    <td class="tg-c3ow">Sample-based</td>
+    <td class="tg-c3ow">Sample-based</td>
+    <td class="tg-c3ow">na.</td>
   </tr>
   <tr>
     <td class="tg-0pky">Strided-window feature extraction</td>
