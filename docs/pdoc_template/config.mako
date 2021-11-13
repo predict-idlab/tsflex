@@ -42,7 +42,7 @@
 
     # If set, insert Google Analytics tracking code. Value is GA
     # tracking id (UA-XXXXXX-Y).
-    google_analytics = 'G-PJSDXV11S0'
+    google_analytics = 'UA-212611910-1'
 
     # If set, insert Google Custom Search search bar widget above the sidebar index.
     # The whitespace-separated tokens represent arbitrary extra queries (at least one
