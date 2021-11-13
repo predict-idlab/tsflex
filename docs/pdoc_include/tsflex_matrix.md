@@ -20,7 +20,7 @@ The table below positions _tsflex_ among other relative Python packages.
 <thead>
   <tr>
     <th class="tg-70uo"></th>
-    <th class="tg-p7qa"><b>tsflex</b> </th>
+    <th class="tg-p7qa"><b>tsflex</b> <a href="https://github.com/predict-idlab/tsflex/releases/tag/v0.2.2">v0.2.2</a> </th>
     <th class="tg-p7qa"><b><a href="https://github.com/dmbee/seglearn">seglearn</a></b> <a href="https://pypi.org/project/seglearn/1.2.3/">v1.2.3</a> </th>
     <th class="tg-p7qa"><b><a href="https://tsfresh.readthedocs.io/en/v0.18.0/">tsfresh</a></b> <a href="https://github.com/blue-yonder/tsfresh/releases/tag/v0.18.0">v.0.18.0</a></th>
     <th class="tg-p7qa"><b><a href="https://tsfel.readthedocs.io/en/latest/">TSFEL</a></b><a href="https://github.com/fraunhoferportugal/tsfel/releases/tag/v0.1.4"> v0.1.4</a><br></th>
@@ -110,7 +110,7 @@ The table below positions _tsflex_ among other relative Python packages.
   </tr>
   <tr>
     <td class="tg-0pky">Strided-window definition format</td>
-    <td class="tg-c3ow">time- & sample-based</td>
+    <td class="tg-c3ow">sequence index range</td>
     <td class="tg-c3ow">sample-based</td>
     <td class="tg-c3ow">sample-based</td>
     <td class="tg-c3ow">sample-based</td>
@@ -195,8 +195,8 @@ The table below positions _tsflex_ among other relative Python packages.
 
 # Benchmark 📊
 
-The visualization below compares `tsflex v0.1.2.5` against other eligible packages for the strided-rolling feature extraction use-case.<br>
-As a reference, the data size when loaded in RAM was 96.4MB.
+The visualization below compares `tsflex v0.2.2` against other eligible packages for the strided-rolling feature extraction use-case.<br>
+As a reference, the data size when loaded in RAM was 96.4MB. The shaded areas represent the lower an upper quantile range (q=[0.1, 0.9]) of the runs.
 
 The figure is constructed by using the [tsflex-benchmarking](https://github.com/predict-idlab/tsflex-benchmarking) repo, we further refer to this repository for more details.
 
