@@ -42,7 +42,7 @@ The table below positions _tsflex_ among other relative Python packages.
     <td class="tg-c3ow">Any - is sorted<br></td>
     <td class="tg-c3ow">Any - sortable</td>
     <td class="tg-c3ow">Any - is sorted</td>
-    <td class="tg-c3ow">datetime index</td>
+    <td class="tg-c3ow">Datetime index</td>
   </tr>
   <tr>
     <td class="tg-0pky">Multivariate time-series</td>
@@ -114,7 +114,7 @@ The table below positions _tsflex_ among other relative Python packages.
     <td class="tg-c3ow">Sample-based</td>
     <td class="tg-c3ow">Sample-based</td>
     <td class="tg-c3ow">Sample-based</td>
-    <td class="tg-c3ow">na.</td>
+    <td class="tg-c3ow">Na.</td>
   </tr>
   <tr>
     <td class="tg-0pky">Strided-window feature extraction</td>
@@ -181,7 +181,7 @@ The table below positions _tsflex_ among other relative Python packages.
     <td class="tg-c3ow">❌</td>
   </tr>
   <tr>
-    <td class="tg-0pky">Input data datatype retention</td>
+    <td class="tg-0pky">Input datatype preservation</td>
     <td class="tg-c3ow">✔️</td>
     <td class="tg-c3ow">❌</td>
     <td class="tg-c3ow">❌</td>
