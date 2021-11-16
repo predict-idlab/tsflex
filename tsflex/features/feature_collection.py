@@ -406,7 +406,9 @@ class FeatureCollection:
             )
 
         if return_df:
-            return pd.concat(calculated_feature_list, axis=1, join="outer", copy=False)
+            # concatenate & sort the columns
+            df = pd.concat(calculated_feature_list, axis=1, join="outer", copy=False)
+            return df.reindex(sorted(df.columns), axis=1)
         else:
             return calculated_feature_list
 

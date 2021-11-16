@@ -289,6 +289,22 @@ def test_featurecollection_feature_collection(dummy_data):
     assert all(res_df.index[1:] - res_df.index[:-1] == pd.to_timedelta(2.5, unit="s"))
 
 
+def test_feature_collection_column_sorted(dummy_data):
+    fc = FeatureCollection(
+        MultipleFeatureDescriptors(
+            functions=[np.max, np.min, len, np.sum, np.median, np.mean, np.std],
+            series_names="EDA",
+            windows=["5s", "30s", "2min"],
+            strides="5s",
+        )
+    )
+    df_eda = dummy_data["EDA"].first('5min')
+    out_cols = fc.calculate(df_eda, return_df=True, n_jobs=None).columns.values
+
+    for _ in range(10):
+        assert all(out_cols == fc.calculate(df_eda, return_df=True).columns.values)
+
+
 def test_featurecollection_reduce(dummy_data):
     fc = FeatureCollection(
         MultipleFeatureDescriptors(
