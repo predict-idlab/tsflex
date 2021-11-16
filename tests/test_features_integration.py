@@ -16,6 +16,8 @@ from tsflex.features import (
 )
 from tsflex.features.integrations import (
     seglearn_wrapper,
+    seglearn_feature_dict_wrapper,
+    tsfel_feature_dict_wrapper,
     tsfresh_combiner_wrapper,
     tsfresh_settings_wrapper,
 )
@@ -41,21 +43,17 @@ def test_seglearn_basic_features(dummy_data):
     assert res_df.isna().any().any() == False
 
 
-def test_seglearn_all_features(dummy_data):
+def test_seglearn_feature_dict_wrapper(dummy_data):
+    # Tests if we integrate with ALL seglearn features
     all_features = seglearn.feature_functions.all_features
 
-    all_feats = MultipleFeatureDescriptors(
-        functions=[
-            seglearn_wrapper(f, k) for k, f in all_features().items() if k != "hist4"
-        ]
-        + [
-            seglearn_wrapper(all_features()["hist4"], [f"hist{i}" for i in range(1, 5)])
-        ],
+    all_seglearn_feats = MultipleFeatureDescriptors(
+        functions=seglearn_feature_dict_wrapper(all_features()),
         series_names=["TMP", "EDA"],
         windows="5min",
-        strides="2min",
+        strides="5min",
     )
-    feature_collection = FeatureCollection(all_feats)
+    feature_collection = FeatureCollection(all_seglearn_feats)
 
     res_df = feature_collection.calculate(dummy_data, return_df=True)
     assert res_df.shape[1] == (len(all_features()) - 1 + 4) * 2
@@ -121,7 +119,7 @@ def test_tsfresh_combiner_features(dummy_data):
         ],
         series_names=["ACC_x", "EDA"],
         windows="5min",
-        strides="2min",
+        strides="5min",
     )
     feature_collection = FeatureCollection(combiner_feats)
 
@@ -130,36 +128,22 @@ def test_tsfresh_combiner_features(dummy_data):
     assert res_df.shape[0] > 0
     assert res_df.isna().any().any() == False
 
+
 def test_tsfresh_settings_wrapper(dummy_data):
-    from tsfresh.feature_extraction.settings import EfficientFCParameters
+    # Tests if we integrate with ALL tsfresh features
+    from tsfresh.feature_extraction.settings import ComprehensiveFCParameters
 
-    slow_funcs = [
-    "matrix_profile",
-    "number_cwt_peaks",
-    "augmented_dickey_fuller",
-    "partial_autocorrelation",
-    "agg_linear_trend",
-    "lempel_ziv_complexity",
-    "benford_correlation",
-    "ar_coefficient",
-    "permutation_entropy",
-    "friedrich_coefficients",
-    ]
-
-    settings = EfficientFCParameters()
-    for f in slow_funcs:
-        del settings[f]
+    settings = ComprehensiveFCParameters()
 
     efficient_tsfresh_feats = MultipleFeatureDescriptors(
         functions=tsfresh_settings_wrapper(settings),
-        series_names=["ACC_x", "EDA", "TMP"],
-        windows="30min", strides="15min",
+        series_names=["EDA", "TMP"],
+        windows="2.5min", strides="10min",
     )
     feature_collection = FeatureCollection(efficient_tsfresh_feats)
 
-    res_df = feature_collection.calculate(dummy_data, return_df=True)
+    res_df = feature_collection.calculate(dummy_data.first("15min"), return_df=True)
     assert (res_df.shape[0] > 0) and (res_df.shape[1]) > 0
-
 
 
 ## TSFEL
@@ -206,7 +190,7 @@ def test_tsfel_basic_features(dummy_data):
         functions=basic_funcs,
         series_names=["ACC_x", "EDA"],
         windows="5min",
-        strides="2min",
+        strides="5min",
     )
     feature_collection = FeatureCollection(basic_feats)
 
@@ -273,11 +257,27 @@ def test_tsfel_advanced_features(dummy_data):
         ],
         series_names=["ACC_x", "EDA"],
         windows="5min",
-        strides="2min",
+        strides="10min",
     )
     feature_collection = FeatureCollection(advanced_feats)
 
-    res_df = feature_collection.calculate(dummy_data, return_df=True)
+    res_df = feature_collection.calculate(dummy_data.first("15min"), return_df=True)
     assert res_df.shape[1] == (5 + 4 + 10 + 2 + 8 + 6 + 8 + 9 + 9 + 4) * 2
     assert res_df.shape[0] > 0
     assert res_df.isna().any().any() == False
+
+
+def test_tsfel_feature_dict_wrapper(dummy_data):
+    # Tests if we integrate with ALL tsfel features
+    from tsfel.feature_extraction import get_features_by_domain
+
+    all_tsfel_feats = MultipleFeatureDescriptors(
+        functions=tsfel_feature_dict_wrapper(get_features_by_domain()),
+        series_names=["TMP", "EDA"],
+        windows="5min",
+        strides="10min",
+    )
+    feature_collection = FeatureCollection(all_tsfel_feats)
+
+    res_df = feature_collection.calculate(dummy_data.first("15min"), return_df=True)
+    assert (res_df.shape[0] > 0) and (res_df.shape[1]) > 0
