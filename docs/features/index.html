@@ -1382,7 +1382,9 @@ have the same type, i.e, either </p>
             )
 
         if return_df:
-            return pd.concat(calculated_feature_list, axis=1, join=&#34;outer&#34;, copy=False)
+            # concatenate &amp; sort the columns
+            df = pd.concat(calculated_feature_list, axis=1, join=&#34;outer&#34;, copy=False)
+            return df.reindex(sorted(df.columns), axis=1)
         else:
             return calculated_feature_list
 
@@ -1788,7 +1790,9 @@ collection.</p>
         )
 
     if return_df:
-        return pd.concat(calculated_feature_list, axis=1, join=&#34;outer&#34;, copy=False)
+        # concatenate &amp; sort the columns
+        df = pd.concat(calculated_feature_list, axis=1, join=&#34;outer&#34;, copy=False)
+        return df.reindex(sorted(df.columns), axis=1)
     else:
         return calculated_feature_list</code></pre>
 </details>
