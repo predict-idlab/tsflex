@@ -53,7 +53,7 @@ from .utils import _get_name
 
 
 # ------------------------------------- SEGLEARN -------------------------------------
-def seglearn_wrapper(func: Callable, output_names: Optional[str] = None) -&gt; FuncWrapper:
+def seglearn_wrapper(func: Callable, func_name: Optional[str] = None) -&gt; FuncWrapper:
     &#34;&#34;&#34;Wrapper enabling compatibility with seglearn functions.
     
     As [seglearn feature-functions](https://github.com/dmbee/seglearn/blob/master/seglearn/feature_functions.py) 
@@ -65,8 +65,9 @@ def seglearn_wrapper(func: Callable, output_names: Optional[str] = None) -&gt; F
     ----------
     func: Callable
         The seglearn function.
-    output_names: str, optional
-        The output name for the function its output.
+    func_name: str, optional
+        The name for the passed function. This will be used when constructing the output
+        names.
 
     Returns
     -------
@@ -79,8 +80,133 @@ def seglearn_wrapper(func: Callable, output_names: Optional[str] = None) -&gt; F
         return out.flatten()
 
     wrap_func.__name__ = &#34;[seglearn_wrapped]__&#34; + _get_name(func)
-    output_names = _get_name(func) if output_names is None else output_names
+    output_names = _get_name(func) if func_name is None else func_name
+    # A bit hacky (hard coded), bc hist is only func that returns multiple values
+    if hasattr(func, &#34;bins&#34;):
+        output_names = [output_names+f&#34;_bin{idx}&#34; for idx in range(1, func.bins+1)]
     return FuncWrapper(wrap_func, output_names=output_names)
+
+
+def seglearn_feature_dict_wrapper(features_dict: Dict) -&gt; List[Callable]:
+    &#34;&#34;&#34;Wrapper enabling compatibility with seglearn feature dictionaries.
+
+    seglearn represents a collection of features as a dictionary. 
+
+    By using this wrapper, we can plug in the features (that are present in the 
+    dictionary) in a tsflex ``FeatureCollection``. 
+    This enables to easily extract (a collection of) seglearn features while leveraging
+    the flexibility of tsflex.
+
+    .. Note::
+        This wrapper wraps the output of seglearn functions that return feature
+        dictionaries;  
+        - [base_features()](https://dmbee.github.io/seglearn/feature_functions.html#seglearn.feature_functions.base_features)  
+        - [emg_features()](https://dmbee.github.io/seglearn/feature_functions.html#seglearn.feature_functions.emg_features)  
+        - [hudgins_features()](https://dmbee.github.io/seglearn/feature_functions.html#seglearn.feature_functions.hudgins_features)  
+        - [all_features()](https://dmbee.github.io/seglearn/feature_functions.html#seglearn.feature_functions.all_features)  
+
+    Example
+    -------
+    ```python
+    from tsflex.features import FeatureCollection, MultipleFeatureDescriptors
+    from tsflex.features.integrations import seglearn_feature_dict_wrapper
+    from seglearn.feature_functions import base_features
+
+    basic_seglearn_feats = MultipleFeatureDescriptors(
+        functions=seglearn_feature_dict_wrapper(base_features()),
+        series_names=[&#34;sig_0&#34;, &#34;sig_1&#34;],  # list of signal names
+        windows=&#34;15min&#34;, strides=&#34;2min&#34;,
+    )
+
+    fc = FeatureCollection(basic_seglearn_feats)
+    fc.calculate(data)  # calculate the features on your data
+    ```
+
+    Parameters
+    ----------
+    features_dict: Dictionary
+        The seglearn collection of features (which is a dict).
+
+    Returns
+    -------
+    List[Callable]
+        List of the (wrapped) seglearn functions that are now directly compatible with
+        with tsflex.
+ 
+    &#34;&#34;&#34;
+    return [seglearn_wrapper(func) for func in features_dict.values()]
+    
+
+# -------------------------------------- TSFEL --------------------------------------
+def tsfel_feature_dict_wrapper(features_dict: Dict) -&gt; List[Callable]:
+    &#34;&#34;&#34;Wrapper enabling compatibility with tsfel feature extraction configurations.
+
+    tsfel represents a collection of features as a dictionary, see more [here](https://tsfel.readthedocs.io/en/latest/descriptions/get_started.html#set-up-the-feature-extraction-config-file).
+
+    By using this wrapper, we can plug in the features (that are present in the 
+    tsfel feature extraction configuration) in a tsflex ``FeatureCollection``. 
+    This enables to easily extract (a collection of) tsfel features while leveraging
+    the flexibility of tsflex.
+
+    .. Note::
+        This wrapper wraps the output of tsfel its `get_features_by_domain` or
+        `get_features_by_tag`. &lt;br&gt;
+        Se more [here](https://github.com/fraunhoferportugal/tsfel/blob/master/tsfel/feature_extraction/features_settings.py).
+
+    Example
+    -------
+    ```python
+    from tsflex.features import FeatureCollection, MultipleFeatureDescriptors
+    from tsflex.features.integrations import tsfel_feature_dict_wrapper
+    from tsfel.feature_extraction import get_features_by_domain
+
+    stat_tsfel_feats = MultipleFeatureDescriptors(
+        functions=tsfel_feature_dict_wrapper(get_features_by_domain(&#34;statistical&#34;)),
+        series_names=[&#34;sig_0&#34;, &#34;sig_1&#34;],  # list of signal names
+        windows=&#34;15min&#34;, strides=&#34;2min&#34;,
+    )
+
+    fc = FeatureCollection(stat_tsfel_feats)
+    fc.calculate(data)  # calculate the features on your data
+    ```
+
+    Parameters
+    ----------
+    features_dict: Dictionary
+        The tsfel collection of features (which is a dict).
+
+    Returns
+    -------
+    List[Callable]
+        List of the (wrapped) tsfel functions that are now directly compatible with
+        with tsflex.
+ 
+    &#34;&#34;&#34;
+    def get_output_names(config: dict):  
+        &#34;&#34;&#34;Create the output_names based on the configuration.&#34;&#34;&#34;
+        nb_outputs = config[&#34;n_features&#34;]
+        func_name = config[&#34;function&#34;].split(&#34;.&#34;)[-1]
+        if isinstance(nb_outputs, str) and isinstance(config[&#34;parameters&#34;][nb_outputs], int):
+            nb_outputs = config[&#34;parameters&#34;][nb_outputs]
+        if func_name == &#34;lpcc&#34;:  # Because https://github.com/fraunhoferportugal/tsfel/issues/103
+            nb_outputs += 1
+        if isinstance(nb_outputs, int):
+            if nb_outputs == 1:
+                return func_name
+            else:
+                return [func_name+f&#34;_{idx}&#34; for idx in range(1,nb_outputs+1)]
+        output_param = eval(config[&#34;parameters&#34;][nb_outputs])
+        return [func_name+f&#34;_{nb_outputs}=v&#34; for v in output_param]
+
+    functions = []
+    tsfel_mod = importlib.import_module(&#34;tsfel.feature_extraction&#34;)
+    for donain_feats in features_dict.values():  # Iterate over feature domains
+        for config in donain_feats.values():  # Iterate over function configs
+            func = getattr(tsfel_mod, config[&#34;function&#34;].split(&#34;.&#34;)[-1])
+            params = config[&#34;parameters&#34;] if config[&#34;parameters&#34;] else {}
+            output_names = get_output_names(config)
+            functions.append(FuncWrapper(func, output_names, **params))
+    return functions
 
 
 # ------------------------------------- TSFRESH -------------------------------------
@@ -123,24 +249,25 @@ def tsfresh_combiner_wrapper(func: Callable, param: List[Dict]) -&gt; FuncWrappe
     )
 
 
-# from tsfresh.feature_extraction.settings import PickeableSettings
-# TODO: update this to PicklableSettings, once they approve my PR
-
-
-def tsfresh_settings_wrapper(settings) -&gt; List[Callable]:
+def tsfresh_settings_wrapper(settings: Dict) -&gt; List[Callable]:
     &#34;&#34;&#34;Wrapper enabling compatibility with tsfresh feature extraction settings.
 
     [tsfresh feature extraction settings](https://tsfresh.readthedocs.io/en/latest/text/feature_extraction_settings.html)
-    is how tsfresh represents a collection of features.&lt;br&gt;
+    is how tsfresh represents a collection of features (as a dict).&lt;br&gt;
 
     By using this wrapper, we can plug in the features (that are present in the 
     tsfresh feature extraction settings) in a tsflex ``FeatureCollection``. 
     This enables to easily extract (a collection of) tsfresh features while leveraging
     the flexibility of tsflex.
 
+    .. Note::
+        This wrapper wraps the output of tsfresh its `MinimalFCParameters()`, 
+        `EfficientFCParameters()`, `IndexBasedFCParameters()`, 
+        `TimeBasedFCParameters()`, or `ComprehensiveFCParameters()`. &lt;br&gt;
+        Se more [here](https://github.com/blue-yonder/tsfresh/blob/main/tsfresh/feature_extraction/settings.py).
+
     Example
     -------
-
     ```python
     from tsflex.features import FeatureCollection, MultipleFeatureDescriptors
     from tsflex.features.integrations import tsfresh_settings_wrapper
@@ -190,14 +317,14 @@ def tsfresh_settings_wrapper(settings) -&gt; List[Callable]:
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="tsflex.features.integrations.seglearn_wrapper"><code class="name flex">
-<span>def <span class="ident">seglearn_wrapper</span></span>(<span>func, output_names=None)</span>
+<span>def <span class="ident">seglearn_wrapper</span></span>(<span>func, func_name=None)</span>
 </code></dt>
 <dd>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def seglearn_wrapper(func: Callable, output_names: Optional[str] = None) -&gt; FuncWrapper:
+<pre><code class="python">def seglearn_wrapper(func: Callable, func_name: Optional[str] = None) -&gt; FuncWrapper:
     &#34;&#34;&#34;Wrapper enabling compatibility with seglearn functions.
     
     As [seglearn feature-functions](https://github.com/dmbee/seglearn/blob/master/seglearn/feature_functions.py) 
@@ -209,8 +336,9 @@ def tsfresh_settings_wrapper(settings) -&gt; List[Callable]:
     ----------
     func: Callable
         The seglearn function.
-    output_names: str, optional
-        The output name for the function its output.
+    func_name: str, optional
+        The name for the passed function. This will be used when constructing the output
+        names.
 
     Returns
     -------
@@ -223,7 +351,10 @@ def tsfresh_settings_wrapper(settings) -&gt; List[Callable]:
         return out.flatten()
 
     wrap_func.__name__ = &#34;[seglearn_wrapped]__&#34; + _get_name(func)
-    output_names = _get_name(func) if output_names is None else output_names
+    output_names = _get_name(func) if func_name is None else func_name
+    # A bit hacky (hard coded), bc hist is only func that returns multiple values
+    if hasattr(func, &#34;bins&#34;):
+        output_names = [output_names+f&#34;_bin{idx}&#34; for idx in range(1, func.bins+1)]
     return FuncWrapper(wrap_func, output_names=output_names)</code></pre>
 </details>
 <div class="desc"><p>Wrapper enabling compatibility with seglearn functions.</p>
@@ -235,13 +366,228 @@ This wrapper converts <code>1D np.array</code> to a <code>2D np.array</code> wit
 <dl>
 <dt><strong><code>func</code></strong> :&ensp;<code>Callable</code></dt>
 <dd>The seglearn function.</dd>
-<dt><strong><code>output_names</code></strong> :&ensp;<code>str</code>, optional</dt>
-<dd>The output name for the function its output.</dd>
+<dt><strong><code>func_name</code></strong> :&ensp;<code>str</code>, optional</dt>
+<dd>The name for the passed function. This will be used when constructing the output
+names.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><code>FuncWrapper</code></dt>
 <dd>The wrapped seglearn function that is compatible with tsflex.</dd>
+</dl></div>
+</dd>
+<dt id="tsflex.features.integrations.seglearn_feature_dict_wrapper"><code class="name flex">
+<span>def <span class="ident">seglearn_feature_dict_wrapper</span></span>(<span>features_dict)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def seglearn_feature_dict_wrapper(features_dict: Dict) -&gt; List[Callable]:
+    &#34;&#34;&#34;Wrapper enabling compatibility with seglearn feature dictionaries.
+
+    seglearn represents a collection of features as a dictionary. 
+
+    By using this wrapper, we can plug in the features (that are present in the 
+    dictionary) in a tsflex ``FeatureCollection``. 
+    This enables to easily extract (a collection of) seglearn features while leveraging
+    the flexibility of tsflex.
+
+    .. Note::
+        This wrapper wraps the output of seglearn functions that return feature
+        dictionaries;  
+        - [base_features()](https://dmbee.github.io/seglearn/feature_functions.html#seglearn.feature_functions.base_features)  
+        - [emg_features()](https://dmbee.github.io/seglearn/feature_functions.html#seglearn.feature_functions.emg_features)  
+        - [hudgins_features()](https://dmbee.github.io/seglearn/feature_functions.html#seglearn.feature_functions.hudgins_features)  
+        - [all_features()](https://dmbee.github.io/seglearn/feature_functions.html#seglearn.feature_functions.all_features)  
+
+    Example
+    -------
+    ```python
+    from tsflex.features import FeatureCollection, MultipleFeatureDescriptors
+    from tsflex.features.integrations import seglearn_feature_dict_wrapper
+    from seglearn.feature_functions import base_features
+
+    basic_seglearn_feats = MultipleFeatureDescriptors(
+        functions=seglearn_feature_dict_wrapper(base_features()),
+        series_names=[&#34;sig_0&#34;, &#34;sig_1&#34;],  # list of signal names
+        windows=&#34;15min&#34;, strides=&#34;2min&#34;,
+    )
+
+    fc = FeatureCollection(basic_seglearn_feats)
+    fc.calculate(data)  # calculate the features on your data
+    ```
+
+    Parameters
+    ----------
+    features_dict: Dictionary
+        The seglearn collection of features (which is a dict).
+
+    Returns
+    -------
+    List[Callable]
+        List of the (wrapped) seglearn functions that are now directly compatible with
+        with tsflex.
+ 
+    &#34;&#34;&#34;
+    return [seglearn_wrapper(func) for func in features_dict.values()]</code></pre>
+</details>
+<div class="desc"><p>Wrapper enabling compatibility with seglearn feature dictionaries.</p>
+<p>seglearn represents a collection of features as a dictionary. </p>
+<p>By using this wrapper, we can plug in the features (that are present in the
+dictionary) in a tsflex <code>FeatureCollection</code>.
+This enables to easily extract (a collection of) seglearn features while leveraging
+the flexibility of tsflex.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This wrapper wraps the output of seglearn functions that return feature
+dictionaries;<br>
+- <a href="https://dmbee.github.io/seglearn/feature_functions.html#seglearn.feature_functions.base_features">base_features()</a><br>
+- <a href="https://dmbee.github.io/seglearn/feature_functions.html#seglearn.feature_functions.emg_features">emg_features()</a><br>
+- <a href="https://dmbee.github.io/seglearn/feature_functions.html#seglearn.feature_functions.hudgins_features">hudgins_features()</a><br>
+- <a href="https://dmbee.github.io/seglearn/feature_functions.html#seglearn.feature_functions.all_features">all_features()</a></p>
+</div>
+<h2 id="example">Example</h2>
+<pre><code class="language-python">from tsflex.features import FeatureCollection, MultipleFeatureDescriptors
+from tsflex.features.integrations import seglearn_feature_dict_wrapper
+from seglearn.feature_functions import base_features
+
+basic_seglearn_feats = MultipleFeatureDescriptors(
+    functions=seglearn_feature_dict_wrapper(base_features()),
+    series_names=[&quot;sig_0&quot;, &quot;sig_1&quot;],  # list of signal names
+    windows=&quot;15min&quot;, strides=&quot;2min&quot;,
+)
+
+fc = FeatureCollection(basic_seglearn_feats)
+fc.calculate(data)  # calculate the features on your data
+</code></pre>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>features_dict</code></strong> :&ensp;<code>Dictionary</code></dt>
+<dd>The seglearn collection of features (which is a dict).</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>List[Callable]</code></dt>
+<dd>List of the (wrapped) seglearn functions that are now directly compatible with
+with tsflex.</dd>
+</dl></div>
+</dd>
+<dt id="tsflex.features.integrations.tsfel_feature_dict_wrapper"><code class="name flex">
+<span>def <span class="ident">tsfel_feature_dict_wrapper</span></span>(<span>features_dict)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def tsfel_feature_dict_wrapper(features_dict: Dict) -&gt; List[Callable]:
+    &#34;&#34;&#34;Wrapper enabling compatibility with tsfel feature extraction configurations.
+
+    tsfel represents a collection of features as a dictionary, see more [here](https://tsfel.readthedocs.io/en/latest/descriptions/get_started.html#set-up-the-feature-extraction-config-file).
+
+    By using this wrapper, we can plug in the features (that are present in the 
+    tsfel feature extraction configuration) in a tsflex ``FeatureCollection``. 
+    This enables to easily extract (a collection of) tsfel features while leveraging
+    the flexibility of tsflex.
+
+    .. Note::
+        This wrapper wraps the output of tsfel its `get_features_by_domain` or
+        `get_features_by_tag`. &lt;br&gt;
+        Se more [here](https://github.com/fraunhoferportugal/tsfel/blob/master/tsfel/feature_extraction/features_settings.py).
+
+    Example
+    -------
+    ```python
+    from tsflex.features import FeatureCollection, MultipleFeatureDescriptors
+    from tsflex.features.integrations import tsfel_feature_dict_wrapper
+    from tsfel.feature_extraction import get_features_by_domain
+
+    stat_tsfel_feats = MultipleFeatureDescriptors(
+        functions=tsfel_feature_dict_wrapper(get_features_by_domain(&#34;statistical&#34;)),
+        series_names=[&#34;sig_0&#34;, &#34;sig_1&#34;],  # list of signal names
+        windows=&#34;15min&#34;, strides=&#34;2min&#34;,
+    )
+
+    fc = FeatureCollection(stat_tsfel_feats)
+    fc.calculate(data)  # calculate the features on your data
+    ```
+
+    Parameters
+    ----------
+    features_dict: Dictionary
+        The tsfel collection of features (which is a dict).
+
+    Returns
+    -------
+    List[Callable]
+        List of the (wrapped) tsfel functions that are now directly compatible with
+        with tsflex.
+ 
+    &#34;&#34;&#34;
+    def get_output_names(config: dict):  
+        &#34;&#34;&#34;Create the output_names based on the configuration.&#34;&#34;&#34;
+        nb_outputs = config[&#34;n_features&#34;]
+        func_name = config[&#34;function&#34;].split(&#34;.&#34;)[-1]
+        if isinstance(nb_outputs, str) and isinstance(config[&#34;parameters&#34;][nb_outputs], int):
+            nb_outputs = config[&#34;parameters&#34;][nb_outputs]
+        if func_name == &#34;lpcc&#34;:  # Because https://github.com/fraunhoferportugal/tsfel/issues/103
+            nb_outputs += 1
+        if isinstance(nb_outputs, int):
+            if nb_outputs == 1:
+                return func_name
+            else:
+                return [func_name+f&#34;_{idx}&#34; for idx in range(1,nb_outputs+1)]
+        output_param = eval(config[&#34;parameters&#34;][nb_outputs])
+        return [func_name+f&#34;_{nb_outputs}=v&#34; for v in output_param]
+
+    functions = []
+    tsfel_mod = importlib.import_module(&#34;tsfel.feature_extraction&#34;)
+    for donain_feats in features_dict.values():  # Iterate over feature domains
+        for config in donain_feats.values():  # Iterate over function configs
+            func = getattr(tsfel_mod, config[&#34;function&#34;].split(&#34;.&#34;)[-1])
+            params = config[&#34;parameters&#34;] if config[&#34;parameters&#34;] else {}
+            output_names = get_output_names(config)
+            functions.append(FuncWrapper(func, output_names, **params))
+    return functions</code></pre>
+</details>
+<div class="desc"><p>Wrapper enabling compatibility with tsfel feature extraction configurations.</p>
+<p>tsfel represents a collection of features as a dictionary, see more <a href="https://tsfel.readthedocs.io/en/latest/descriptions/get_started.html#set-up-the-feature-extraction-config-file">here</a>.</p>
+<p>By using this wrapper, we can plug in the features (that are present in the
+tsfel feature extraction configuration) in a tsflex <code>FeatureCollection</code>.
+This enables to easily extract (a collection of) tsfel features while leveraging
+the flexibility of tsflex.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This wrapper wraps the output of tsfel its <code>get_features_by_domain</code> or
+<code>get_features_by_tag</code>. <br>
+Se more <a href="https://github.com/fraunhoferportugal/tsfel/blob/master/tsfel/feature_extraction/features_settings.py">here</a>.</p>
+</div>
+<h2 id="example">Example</h2>
+<pre><code class="language-python">from tsflex.features import FeatureCollection, MultipleFeatureDescriptors
+from tsflex.features.integrations import tsfel_feature_dict_wrapper
+from tsfel.feature_extraction import get_features_by_domain
+
+stat_tsfel_feats = MultipleFeatureDescriptors(
+    functions=tsfel_feature_dict_wrapper(get_features_by_domain(&quot;statistical&quot;)),
+    series_names=[&quot;sig_0&quot;, &quot;sig_1&quot;],  # list of signal names
+    windows=&quot;15min&quot;, strides=&quot;2min&quot;,
+)
+
+fc = FeatureCollection(stat_tsfel_feats)
+fc.calculate(data)  # calculate the features on your data
+</code></pre>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>features_dict</code></strong> :&ensp;<code>Dictionary</code></dt>
+<dd>The tsfel collection of features (which is a dict).</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>List[Callable]</code></dt>
+<dd>List of the (wrapped) tsfel functions that are now directly compatible with
+with tsflex.</dd>
 </dl></div>
 </dd>
 <dt id="tsflex.features.integrations.tsfresh_combiner_wrapper"><code class="name flex">
@@ -324,20 +670,25 @@ function.</dd>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def tsfresh_settings_wrapper(settings) -&gt; List[Callable]:
+<pre><code class="python">def tsfresh_settings_wrapper(settings: Dict) -&gt; List[Callable]:
     &#34;&#34;&#34;Wrapper enabling compatibility with tsfresh feature extraction settings.
 
     [tsfresh feature extraction settings](https://tsfresh.readthedocs.io/en/latest/text/feature_extraction_settings.html)
-    is how tsfresh represents a collection of features.&lt;br&gt;
+    is how tsfresh represents a collection of features (as a dict).&lt;br&gt;
 
     By using this wrapper, we can plug in the features (that are present in the 
     tsfresh feature extraction settings) in a tsflex ``FeatureCollection``. 
     This enables to easily extract (a collection of) tsfresh features while leveraging
     the flexibility of tsflex.
 
+    .. Note::
+        This wrapper wraps the output of tsfresh its `MinimalFCParameters()`, 
+        `EfficientFCParameters()`, `IndexBasedFCParameters()`, 
+        `TimeBasedFCParameters()`, or `ComprehensiveFCParameters()`. &lt;br&gt;
+        Se more [here](https://github.com/blue-yonder/tsfresh/blob/main/tsfresh/feature_extraction/settings.py).
+
     Example
     -------
-
     ```python
     from tsflex.features import FeatureCollection, MultipleFeatureDescriptors
     from tsflex.features.integrations import tsfresh_settings_wrapper
@@ -380,11 +731,18 @@ function.</dd>
 </details>
 <div class="desc"><p>Wrapper enabling compatibility with tsfresh feature extraction settings.</p>
 <p><a href="https://tsfresh.readthedocs.io/en/latest/text/feature_extraction_settings.html">tsfresh feature extraction settings</a>
-is how tsfresh represents a collection of features.<br></p>
+is how tsfresh represents a collection of features (as a dict).<br></p>
 <p>By using this wrapper, we can plug in the features (that are present in the
 tsfresh feature extraction settings) in a tsflex <code>FeatureCollection</code>.
 This enables to easily extract (a collection of) tsfresh features while leveraging
 the flexibility of tsflex.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This wrapper wraps the output of tsfresh its <code>MinimalFCParameters()</code>,
+<code>EfficientFCParameters()</code>, <code>IndexBasedFCParameters()</code>,
+<code>TimeBasedFCParameters()</code>, or <code>ComprehensiveFCParameters()</code>. <br>
+Se more <a href="https://github.com/blue-yonder/tsfresh/blob/main/tsfresh/feature_extraction/settings.py">here</a>.</p>
+</div>
 <h2 id="example">Example</h2>
 <pre><code class="language-python">from tsflex.features import FeatureCollection, MultipleFeatureDescriptors
 from tsflex.features.integrations import tsfresh_settings_wrapper
@@ -442,6 +800,8 @@ alt="logo should be displayed here" width="95%"></a>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
 <li><code><a title="tsflex.features.integrations.seglearn_wrapper" href="#tsflex.features.integrations.seglearn_wrapper">seglearn_wrapper</a></code></li>
+<li><code><a title="tsflex.features.integrations.seglearn_feature_dict_wrapper" href="#tsflex.features.integrations.seglearn_feature_dict_wrapper">seglearn_feature_dict_wrapper</a></code></li>
+<li><code><a title="tsflex.features.integrations.tsfel_feature_dict_wrapper" href="#tsflex.features.integrations.tsfel_feature_dict_wrapper">tsfel_feature_dict_wrapper</a></code></li>
 <li><code><a title="tsflex.features.integrations.tsfresh_combiner_wrapper" href="#tsflex.features.integrations.tsfresh_combiner_wrapper">tsfresh_combiner_wrapper</a></code></li>
 <li><code><a title="tsflex.features.integrations.tsfresh_settings_wrapper" href="#tsflex.features.integrations.tsfresh_settings_wrapper">tsfresh_settings_wrapper</a></code></li>
 </ul>
