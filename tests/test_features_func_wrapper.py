@@ -2,6 +2,7 @@
 
 __author__ = "Jeroen Van Der Donckt, Emiel Deprost, Jonas Van Der Donckt"
 
+import pytest
 import pandas as pd
 import numpy as np
 
@@ -82,3 +83,8 @@ def test_series_func_wrapper_with_kwargs(dummy_data):
     assert func2.output_names == ['MAX_DIFF']
     assert func1(dummy_data["EDA"]) == 0.25
     assert func2(dummy_data["EDA"]) == 0.25*3
+
+
+def test_error_func_wrapper_wrong_outputnames_type(dummy_data):
+    with pytest.raises(TypeError):
+        FuncWrapper(np.min, output_names=5)
