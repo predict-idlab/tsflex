@@ -10,6 +10,7 @@ from .utils import dummy_data
 from tsflex.features import (
     MultipleFeatureDescriptors,
     FeatureCollection,
+    FuncWrapper
 )
 from tsflex.features.utils import make_robust
 
@@ -94,7 +95,7 @@ def test_robust_gap_features_multi_output(dummy_data):
         return np.mean(x), np.std(x)
 
     feats = MultipleFeatureDescriptors(
-        functions=make_robust(mean_std, min_nb_samples=2, output_names=["mean", "std"]),
+        functions=make_robust(FuncWrapper(mean_std, output_names=["mean", "std"]), min_nb_samples=2),
         series_names="EDA",
         windows="10s",
         strides="5s",
@@ -117,8 +118,7 @@ def test_robust_gap_features_multi_output(dummy_data):
 def test_unrobust_pass_through_features(dummy_data):
     # here we set the passtrough-nans attribute to True
     feats = MultipleFeatureDescriptors(
-        functions=[make_robust(f, min_nb_samples=1, passthrough_nans=True) 
-                   for f in [np.mean, np.min]],
+        functions=make_robust([np.mean, np.min], min_nb_samples=1, passthrough_nans=True),
         series_names="EDA",
         windows="10s",
         strides="5s",
@@ -135,7 +135,7 @@ def test_unrobust_pass_through_features(dummy_data):
 def test_robust_pass_through_features(dummy_data):
     # here we set the passtrough-nans attribute to false
     feats = MultipleFeatureDescriptors(
-        functions=[make_robust(f, passthrough_nans=False) for f in [np.mean, np.min]],
+        functions=make_robust([np.mean, FuncWrapper(np.min)], passthrough_nans=False),
         series_names="EDA",
         windows="10s",
         strides="5s",
@@ -145,5 +145,5 @@ def test_robust_pass_through_features(dummy_data):
     eda_data = dummy_data["EDA"].dropna()
     eda_data[np.random.choice(dummy_data.index[1:-1], 10, replace=False)] = np.nan
 
-    res_df = feature_collection.calculate(eda_data, return_df=True)
+    res_df = feature_collection.calculate(eda_data, return_df=True, n_jobs=0)
     assert res_df.isna().any().any() == False
