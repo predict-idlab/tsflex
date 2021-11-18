@@ -37,7 +37,7 @@ def test_seglearn_basic_features(dummy_data):
     )
     feature_collection = FeatureCollection(basic_feats)
 
-    res_df = feature_collection.calculate(dummy_data, return_df=True)
+    res_df = feature_collection.calculate(dummy_data, return_df=True, n_jobs=0)
     assert res_df.shape[1] == len(base_features()) * 2
     assert res_df.shape[0] > 0
     assert res_df.isna().any().any() == False
@@ -81,7 +81,7 @@ def test_tsfresh_simple_features(dummy_data):
         ],
         series_names=["ACC_x", "EDA"],
         windows="5min",
-        strides="2min",
+        strides="5min",
     )
     feature_collection = FeatureCollection(simple_feats)
 
@@ -123,7 +123,7 @@ def test_tsfresh_combiner_features(dummy_data):
     )
     feature_collection = FeatureCollection(combiner_feats)
 
-    res_df = feature_collection.calculate(dummy_data, return_df=True)
+    res_df = feature_collection.calculate(dummy_data, return_df=True, n_jobs=0)
     assert res_df.shape[1] == (3 + 3 + 5 + 2) * 2
     assert res_df.shape[0] > 0
     assert res_df.isna().any().any() == False

@@ -108,6 +108,17 @@ def test_error_time_arg_simple_feature_descriptor():
             stride=invalid_stride,
         )
 
+def test_error_different_args_simple_feature_descriptor():
+    invalid_window, invalid_stride = 15, "5s"  # Invalid combination
+
+    with pytest.raises(TypeError):
+        _ = FeatureDescriptor(
+            function=np.sum,
+            series_name="EDA",
+            window=invalid_window,
+            stride=invalid_stride,
+        )
+
 
 ### MultipleFeatureDescriptors
 
