@@ -35,7 +35,7 @@ def _determine_bounds(bound_method, series_list: List[pd.Series]) -> Tuple[Any, 
             latest_start = max(latest_start, series.index[0])
             earliest_stop = min(earliest_stop, series.index[-1])
         return latest_start, earliest_stop
-    elif bound_method == 'inner-outer':
+    elif bound_method == "inner-outer":
         latest_start = series_list[0].index[0]
         latest_stop = series_list[0].index[-1]
         for series in series_list[1:]:
@@ -81,7 +81,7 @@ def _make_single_func_robust(
     min_nb_samples: int,
     error_val: Any,
     passthrough_nans: bool,
-    ) -> FuncWrapper:
+) -> FuncWrapper:
     """Decorate a single`func` into a robust FuncWrapper.
 
     Parameters
@@ -106,14 +106,14 @@ def _make_single_func_robust(
     assert isinstance(func, FuncWrapper) or isinstance(func, Callable)
 
     # Extract the keyword arguments from the function wrapper
-    func_wrapper_kwargs = {}  
+    func_wrapper_kwargs = {}
     if isinstance(func, FuncWrapper):
         _func = func
         func = _func.func
         func_wrapper_kwargs["output_names"] = _func.output_names
         func_wrapper_kwargs["input_type"] = _func.input_type
         func_wrapper_kwargs.update(_func.kwargs)
-    
+
     output_names = func_wrapper_kwargs.get("output_names")
 
     def wrap_func(*series: Union[np.ndarray, pd.Series], **kwargs) -> FuncWrapper:
@@ -128,7 +128,7 @@ def _make_single_func_robust(
     wrap_func.__name__ = "[robust]__" + _get_name(func)
     if not "output_names" in func_wrapper_kwargs.keys():
         func_wrapper_kwargs["output_names"] = _get_name(func)
-        
+
     return FuncWrapper(wrap_func, **func_wrapper_kwargs)
 
 
@@ -146,7 +146,7 @@ def make_robust(
      * `np.NaN` data input propagation / filtering
      *  `min_nb_samples` checking before feeding to `func`
         (if not met, returns `error_val`)\n
-     Note: this wrapper is useful for functions that should be robust for empty or 
+     Note: this wrapper is useful for functions that should be robust for empty or
      sparse windows and/or nans in the data.
 
     Parameters
@@ -154,11 +154,11 @@ def make_robust(
     funcs: Union[Callable, FuncWrapper, List[Union[Callable, FuncWrapper]]]
         The function which will be made robust.
     min_nb_samples: int, optional
-        The minimum number of samples that are needed for `func` to be applied, by 
+        The minimum number of samples that are needed for `func` to be applied, by
         default 1.
         successfully.
     error_val: Any, optional
-        The error *return* value if the `min_nb_samples` requirement is not met, by 
+        The error *return* value if the `min_nb_samples` requirement is not met, by
         default `np.NaN`.
     passthrough_nans: bool, optional
         If set to true, `np.NaN` values, which occur in the data will be passed through.
@@ -168,10 +168,15 @@ def make_robust(
     Returns
     -------
     Union[FuncWrapper, List[FuncWrapper]]
-        The robust FuncWrapper if a single func is passed or a list of robust 
+        The robust FuncWrapper if a single func is passed or a list of robust
         FuncWrappers when a list of functions is passed.
 
     """
     if isinstance(funcs, Callable) or isinstance(funcs, FuncWrapper):
-        return _make_single_func_robust(funcs, min_nb_samples, error_val, passthrough_nans)
-    return [_make_single_func_robust(func, min_nb_samples, error_val, passthrough_nans) for func in funcs] 
+        return _make_single_func_robust(
+            funcs, min_nb_samples, error_val, passthrough_nans
+        )
+    return [
+        _make_single_func_robust(func, min_nb_samples, error_val, passthrough_nans)
+        for func in funcs
+    ]
