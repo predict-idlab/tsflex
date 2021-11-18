@@ -76,7 +76,7 @@ def _determine_bounds(bound_method, series_list: List[pd.Series]) -&gt; Tuple[An
             latest_start = max(latest_start, series.index[0])
             earliest_stop = min(earliest_stop, series.index[-1])
         return latest_start, earliest_stop
-    elif bound_method == &#39;inner-outer&#39;:
+    elif bound_method == &#34;inner-outer&#34;:
         latest_start = series_list[0].index[0]
         latest_stop = series_list[0].index[-1]
         for series in series_list[1:]:
@@ -117,44 +117,26 @@ def _get_name(func: Callable) -&gt; str:
         return type(func).__name__
 
 
-# ---------------------------------- PUBLIC METHODS -----------------------------------
-
-def make_robust(
-    func: Callable,
-    min_nb_samples: int = 1,
-    error_val: Any = np.nan,
-    output_names: Optional[Union[str, List[str]]] = None,
-    passthrough_nans: bool = True,
-    **kwargs,
+def _make_single_func_robust(
+    func: Union[Callable, FuncWrapper],
+    min_nb_samples: int,
+    error_val: Any,
+    passthrough_nans: bool,
 ) -&gt; FuncWrapper:
-    &#34;&#34;&#34;Decorates `func` into a robust funcwrapper.
-
-     More specifically this method does:\n
-     * `np.NaN` data input propagation / filtering
-     *  `min_nb_samples` checking before feeding to `func`
-        (if not met, returns `error_val`)\n
-     Note: this wrapper is useful for functions that should be robust for empty or sparse
-     windows and/or nans in the data.
+    &#34;&#34;&#34;Decorate a single`func` into a robust FuncWrapper.
 
     Parameters
     ----------
-    func: Callable
-        The function which will be made robust.
+    func: Union[Callable, FuncWrapper]
+        The function that should be made robust.
     min_nb_samples: int
         The minimum number of samples that are needed for `func` to be applied
         successfully.
     error_val: Any
         The error *return* value if the `min_nb_samples` requirement is not met.
-    output_names: Union[str, List[str]]
-        The `func` its output_names
-        .. note::
-            This value must be set if `func` returns more than 1 output!
     passthrough_nans: bool
         If set to true, `np.NaN` values, which occur in the data will be passed through.
-        Otherwise, the `np.NaN` values will be masked out before being passed to `func`,
-        by default True.
-    **kwargs:
-        Additional keyword arguments
+        Otherwise, the `np.NaN` values will be masked out before being passed to `func`.
 
     Returns
     -------
@@ -162,6 +144,18 @@ def make_robust(
         The robust FuncWrapper.
 
     &#34;&#34;&#34;
+    assert isinstance(func, FuncWrapper) or isinstance(func, Callable)
+
+    # Extract the keyword arguments from the function wrapper
+    func_wrapper_kwargs = {}
+    if isinstance(func, FuncWrapper):
+        _func = func
+        func = _func.func
+        func_wrapper_kwargs[&#34;output_names&#34;] = _func.output_names
+        func_wrapper_kwargs[&#34;input_type&#34;] = _func.input_type
+        func_wrapper_kwargs.update(_func.kwargs)
+
+    output_names = func_wrapper_kwargs.get(&#34;output_names&#34;)
 
     def wrap_func(*series: Union[np.ndarray, pd.Series], **kwargs) -&gt; FuncWrapper:
         if not passthrough_nans:
@@ -173,8 +167,60 @@ def make_robust(
         return func(*series, **kwargs)
 
     wrap_func.__name__ = &#34;[robust]__&#34; + _get_name(func)
-    output_names = _get_name(func) if output_names is None else output_names
-    return FuncWrapper(wrap_func, output_names=output_names, **kwargs)</code></pre>
+    if not &#34;output_names&#34; in func_wrapper_kwargs.keys():
+        func_wrapper_kwargs[&#34;output_names&#34;] = _get_name(func)
+
+    return FuncWrapper(wrap_func, **func_wrapper_kwargs)
+
+
+# ---------------------------------- PUBLIC METHODS -----------------------------------
+
+def make_robust(
+    funcs: Union[Callable, FuncWrapper, List[Union[Callable, FuncWrapper]]],
+    min_nb_samples: Optional[int] = 1,
+    error_val: Optional[Any] = np.nan,
+    passthrough_nans: Optional[bool] = True,
+) -&gt; Union[FuncWrapper, List[FuncWrapper]]:
+    &#34;&#34;&#34;Decorate `funcs` into one or multiple robust FuncWrappers.
+
+     More specifically this method does:\n
+     * `np.NaN` data input propagation / filtering
+     *  `min_nb_samples` checking before feeding to `func`
+        (if not met, returns `error_val`)\n
+     Note: this wrapper is useful for functions that should be robust for empty or
+     sparse windows and/or nans in the data.
+
+    Parameters
+    ----------
+    funcs: Union[Callable, FuncWrapper, List[Union[Callable, FuncWrapper]]]
+        The function which will be made robust.
+    min_nb_samples: int, optional
+        The minimum number of samples that are needed for `func` to be applied, by
+        default 1.
+        successfully.
+    error_val: Any, optional
+        The error *return* value if the `min_nb_samples` requirement is not met, by
+        default `np.NaN`.
+    passthrough_nans: bool, optional
+        If set to true, `np.NaN` values, which occur in the data will be passed through.
+        Otherwise, the `np.NaN` values will be masked out before being passed to `func`,
+        by default True.
+
+    Returns
+    -------
+    Union[FuncWrapper, List[FuncWrapper]]
+        The robust FuncWrapper if a single func is passed or a list of robust
+        FuncWrappers when a list of functions is passed.
+
+    &#34;&#34;&#34;
+    if isinstance(funcs, Callable) or isinstance(funcs, FuncWrapper):
+        return _make_single_func_robust(
+            funcs, min_nb_samples, error_val, passthrough_nans
+        )
+    return [
+        _make_single_func_robust(func, min_nb_samples, error_val, passthrough_nans)
+        for func in funcs
+    ]</code></pre>
 </details>
 </section>
 <section>
@@ -185,7 +231,7 @@ def make_robust(
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="tsflex.features.utils.make_robust"><code class="name flex">
-<span>def <span class="ident">make_robust</span></span>(<span>func, min_nb_samples=1, error_val=nan, output_names=None, passthrough_nans=True, **kwargs)</span>
+<span>def <span class="ident">make_robust</span></span>(<span>funcs, min_nb_samples=1, error_val=nan, passthrough_nans=True)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -193,96 +239,82 @@ def make_robust(
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def make_robust(
-    func: Callable,
-    min_nb_samples: int = 1,
-    error_val: Any = np.nan,
-    output_names: Optional[Union[str, List[str]]] = None,
-    passthrough_nans: bool = True,
-    **kwargs,
-) -&gt; FuncWrapper:
-    &#34;&#34;&#34;Decorates `func` into a robust funcwrapper.
+    funcs: Union[Callable, FuncWrapper, List[Union[Callable, FuncWrapper]]],
+    min_nb_samples: Optional[int] = 1,
+    error_val: Optional[Any] = np.nan,
+    passthrough_nans: Optional[bool] = True,
+) -&gt; Union[FuncWrapper, List[FuncWrapper]]:
+    &#34;&#34;&#34;Decorate `funcs` into one or multiple robust FuncWrappers.
 
      More specifically this method does:\n
      * `np.NaN` data input propagation / filtering
      *  `min_nb_samples` checking before feeding to `func`
         (if not met, returns `error_val`)\n
-     Note: this wrapper is useful for functions that should be robust for empty or sparse
-     windows and/or nans in the data.
+     Note: this wrapper is useful for functions that should be robust for empty or
+     sparse windows and/or nans in the data.
 
     Parameters
     ----------
-    func: Callable
+    funcs: Union[Callable, FuncWrapper, List[Union[Callable, FuncWrapper]]]
         The function which will be made robust.
-    min_nb_samples: int
-        The minimum number of samples that are needed for `func` to be applied
+    min_nb_samples: int, optional
+        The minimum number of samples that are needed for `func` to be applied, by
+        default 1.
         successfully.
-    error_val: Any
-        The error *return* value if the `min_nb_samples` requirement is not met.
-    output_names: Union[str, List[str]]
-        The `func` its output_names
-        .. note::
-            This value must be set if `func` returns more than 1 output!
-    passthrough_nans: bool
+    error_val: Any, optional
+        The error *return* value if the `min_nb_samples` requirement is not met, by
+        default `np.NaN`.
+    passthrough_nans: bool, optional
         If set to true, `np.NaN` values, which occur in the data will be passed through.
         Otherwise, the `np.NaN` values will be masked out before being passed to `func`,
         by default True.
-    **kwargs:
-        Additional keyword arguments
 
     Returns
     -------
-    FuncWrapper
-        The robust FuncWrapper.
+    Union[FuncWrapper, List[FuncWrapper]]
+        The robust FuncWrapper if a single func is passed or a list of robust
+        FuncWrappers when a list of functions is passed.
 
     &#34;&#34;&#34;
-
-    def wrap_func(*series: Union[np.ndarray, pd.Series], **kwargs) -&gt; FuncWrapper:
-        if not passthrough_nans:
-            series = [s[~np.isnan(s)] for s in series]
-        if any([len(s) &lt; min_nb_samples for s in series]):
-            if not isinstance(output_names, list):
-                return error_val
-            return tuple([error_val] * len(output_names))
-        return func(*series, **kwargs)
-
-    wrap_func.__name__ = &#34;[robust]__&#34; + _get_name(func)
-    output_names = _get_name(func) if output_names is None else output_names
-    return FuncWrapper(wrap_func, output_names=output_names, **kwargs)</code></pre>
+    if isinstance(funcs, Callable) or isinstance(funcs, FuncWrapper):
+        return _make_single_func_robust(
+            funcs, min_nb_samples, error_val, passthrough_nans
+        )
+    return [
+        _make_single_func_robust(func, min_nb_samples, error_val, passthrough_nans)
+        for func in funcs
+    ]</code></pre>
 </details>
-<div class="desc"><p>Decorates <code>func</code> into a robust funcwrapper.</p>
+<div class="desc"><p>Decorate <code>funcs</code> into one or multiple robust FuncWrappers.</p>
 <p>More specifically this method does:</p>
 <ul>
 <li><code>np.NaN</code> data input propagation / filtering</li>
 <li><code>min_nb_samples</code> checking before feeding to <code>func</code>
 (if not met, returns <code>error_val</code>)</li>
 </ul>
-<p>Note: this wrapper is useful for functions that should be robust for empty or sparse
-windows and/or nans in the data.</p>
+<p>Note: this wrapper is useful for functions that should be robust for empty or
+sparse windows and/or nans in the data.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>func</code></strong> :&ensp;<code>Callable</code></dt>
+<dt><strong><code>funcs</code></strong> :&ensp;<code>Union[Callable, FuncWrapper, List[Union[Callable, FuncWrapper]]]</code></dt>
 <dd>The function which will be made robust.</dd>
-<dt><strong><code>min_nb_samples</code></strong> :&ensp;<code>int</code></dt>
-<dd>The minimum number of samples that are needed for <code>func</code> to be applied
+<dt><strong><code>min_nb_samples</code></strong> :&ensp;<code>int</code>, optional</dt>
+<dd>The minimum number of samples that are needed for <code>func</code> to be applied, by
+default 1.
 successfully.</dd>
-<dt><strong><code>error_val</code></strong> :&ensp;<code>Any</code></dt>
-<dd>The error <em>return</em> value if the <code>min_nb_samples</code> requirement is not met.</dd>
-<dt><strong><code>output_names</code></strong> :&ensp;<code>Union[str, List[str]]</code></dt>
-<dd>The <code>func</code> its output_names<div class="admonition note">
-<p class="admonition-title">Note</p>
-This value must be set if <code>func</code> returns more than 1 output!</div>
-</dd>
-<dt><strong><code>passthrough_nans</code></strong> :&ensp;<code>bool</code></dt>
+<dt><strong><code>error_val</code></strong> :&ensp;<code>Any</code>, optional</dt>
+<dd>The error <em>return</em> value if the <code>min_nb_samples</code> requirement is not met, by
+default <code>np.NaN</code>.</dd>
+<dt><strong><code>passthrough_nans</code></strong> :&ensp;<code>bool</code>, optional</dt>
 <dd>If set to true, <code>np.NaN</code> values, which occur in the data will be passed through.
 Otherwise, the <code>np.NaN</code> values will be masked out before being passed to <code>func</code>,
 by default True.</dd>
 </dl>
-<p>**kwargs:
-Additional keyword arguments</p>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>FuncWrapper</code></dt>
-<dd>The robust FuncWrapper.</dd>
+<dt><code>Union[FuncWrapper, List[FuncWrapper]]</code></dt>
+<dd>The robust FuncWrapper if a single func is passed or a list of robust
+FuncWrappers when a list of functions is passed.</dd>
 </dl></div>
 </dd>
 </dl>
