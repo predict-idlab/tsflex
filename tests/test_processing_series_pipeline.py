@@ -178,6 +178,53 @@ def test_multi_signal_series_pipeline(dummy_data):
     assert max(res_list_all[tmp_idx_all]) == inp["TMP"].quantile(upper)
 
 
+def test_pipeline_append_pipeline(dummy_data):
+    pipe_a = SeriesPipeline(
+        processors=[
+            SeriesProcessor(lambda x: x.rolling("5min").mean(), series_names=["TMP"])
+        ]
+    )
+    pipe_b = SeriesPipeline(
+        processors=[
+            SeriesProcessor(lambda x: x.rolling("5min").sum(), series_names=["TMP"])
+        ]
+    )
+
+    with pytest.raises(TypeError):
+        # we do not allow appending lists, must be a single item
+        pipe_b.append([pipe_a])
+
+    pipe_b.append(pipe_a)
+    pipe_b.process(dummy_data)
+
+
+
+def test_pipeline_insert(dummy_data):
+    def mean(x):
+        return x.rolling("5min").mean()
+    def sum(x):
+        return x.rolling("5min").sum()
+    
+    sp_mean = SeriesProcessor(mean, series_names=["TMP"])
+    sp_sum = SeriesProcessor(sum, series_names=["TMP"])
+
+    sps = [sp_sum, sp_sum, sp_mean, sp_sum, sp_sum, sp_mean, sp_mean, sp_sum, sp_mean]
+
+    # create the base pipeline
+    pipe_a = SeriesPipeline(processors=[sps[0]])
+    pipe_a.insert(0, sps[1:2][0])  # note, this is a single item
+    with pytest.raises(TypeError):
+        # we do not allow inserting lists, must be a single item
+        pipe_a.insert(0, sps[2:4])
+
+    pipe_b = SeriesPipeline(processors=sps[2:])
+    pipe_a.insert(1, pipe_b)
+    p_steps = pipe_a.processing_steps
+    assert p_steps[0].name == sps[0].name
+    for i, ps in enumerate(p_steps[1:-1]):
+        assert ps.name == sps[i+2].name
+    assert p_steps[-1].name == sps[1].name
+
 def test_pipeline_steps_operations_series_pipeline(dummy_data):
     def drop_nans(series: pd.Series) -> pd.Series:
         return series.dropna()
