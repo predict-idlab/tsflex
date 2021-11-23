@@ -834,12 +834,14 @@ versatile input for its <code>process</code> method.</li>
         if processors is not None:
             assert isinstance(processors, list)
 
-            self.processing_steps = list(flatten(
-                [
-                    p.processing_steps if isinstance(p, SeriesPipeline) else [p]
-                    for p in processors
-                ]
-            ))
+            self.processing_steps = list(
+                flatten(
+                    [
+                        p.processing_steps if isinstance(p, SeriesPipeline) else [p]
+                        for p in processors
+                    ]
+                )
+            )
 
     def get_required_series(self) -&gt; List[str]:
         &#34;&#34;&#34;Return all required series names for this pipeline.
@@ -857,18 +859,29 @@ versatile input for its <code>process</code> method.</li>
             set(flatten(step.get_required_series() for step in self.processing_steps))
         )
 
-    def append(self, processor: SeriesProcessor) -&gt; None:
+    def append(self, processor: Union[SeriesProcessor, SeriesPipeline]) -&gt; None:
         &#34;&#34;&#34;Append a ``SeriesProcessor`` at the end of the pipeline.
 
         Parameters
         ----------
-        processor : SeriesProcessor
-            The ``SeriesProcessor`` that will be added to the end of the pipeline
+        processor : Union[SeriesProcessor, SeriesPipeline]
+            The ``SeriesProcessor`` or ``SeriesPipeline`` that will be added to the
+            end of the pipeline.
 
         &#34;&#34;&#34;
-        self.processing_steps.append(processor)
+        if isinstance(processor, SeriesProcessor):
+            self.processing_steps.append(processor)
+        elif isinstance(processor, SeriesPipeline):
+            self.processing_steps.extend(processor.processing_steps)
+        else:
+            raise TypeError(
+                f&#34;Can only append SeriesProcessor or SeriesPipeline, &#34;
+                + f&#34;not {type(processor)}&#34;
+            )
 
-    def insert(self, idx: int, processor: SeriesProcessor) -&gt; None:
+    def insert(
+        self, idx: int, processor: Union[SeriesProcessor, SeriesPipeline]
+    ) -&gt; None:
         &#34;&#34;&#34;Insert a ``SeriesProcessor`` at the given index in the pipeline.
 
         Parameters
@@ -877,11 +890,23 @@ versatile input for its <code>process</code> method.</li>
             The index where the given processor should be inserted in the pipeline.
             Index 0 will insert the given processor at the front of the pipeline,
             and index ``len(pipeline)`` is equivalent to appending the processor.
-        processor : SeriesProcessor
-            The ``SeriesProcessor`` that will be added to the end of the pipeline
+        processor : Union[SeriesProcessor, SeriesPipeline]
+            The ``SeriesProcessor`` or ``SeriesPipeline`` that will be inserted.&lt;br&gt;
+            .. note::
+                If the given processor is a ``SeriesPipeline``, all its processors will
+                be inserted sequentially, starting from the given index.
 
         &#34;&#34;&#34;
-        self.processing_steps.insert(idx, processor)
+        if isinstance(processor, SeriesProcessor):
+            self.processing_steps.insert(idx, processor)
+        elif isinstance(processor, SeriesPipeline):
+            for i, ps in enumerate(processor.processing_steps):
+                self.insert(idx + i, ps)
+        else:
+            raise TypeError(
+                f&#34;Can only insert a SeriesProcessor or SeriesPipeline, &#34;
+                + f&#34;not {type(processor)}&#34;
+            )
 
     def process(
         self,
@@ -1083,22 +1108,32 @@ list.</strong></dd>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def append(self, processor: SeriesProcessor) -&gt; None:
+<pre><code class="python">def append(self, processor: Union[SeriesProcessor, SeriesPipeline]) -&gt; None:
     &#34;&#34;&#34;Append a ``SeriesProcessor`` at the end of the pipeline.
 
     Parameters
     ----------
-    processor : SeriesProcessor
-        The ``SeriesProcessor`` that will be added to the end of the pipeline
+    processor : Union[SeriesProcessor, SeriesPipeline]
+        The ``SeriesProcessor`` or ``SeriesPipeline`` that will be added to the
+        end of the pipeline.
 
     &#34;&#34;&#34;
-    self.processing_steps.append(processor)</code></pre>
+    if isinstance(processor, SeriesProcessor):
+        self.processing_steps.append(processor)
+    elif isinstance(processor, SeriesPipeline):
+        self.processing_steps.extend(processor.processing_steps)
+    else:
+        raise TypeError(
+            f&#34;Can only append SeriesProcessor or SeriesPipeline, &#34;
+            + f&#34;not {type(processor)}&#34;
+        )</code></pre>
 </details>
 <div class="desc"><p>Append a <code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code> at the end of the pipeline.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>processor</code></strong> :&ensp;<code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code></dt>
-<dd>The <code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code> that will be added to the end of the pipeline</dd>
+<dt><strong><code>processor</code></strong> :&ensp;<code>Union[<a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a>, <a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a>]</code></dt>
+<dd>The <code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code> or <code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code> that will be added to the
+end of the pipeline.</dd>
 </dl></div>
 </dd>
 <dt id="tsflex.processing.SeriesPipeline.insert"><code class="name flex">
@@ -1109,7 +1144,9 @@ list.</strong></dd>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def insert(self, idx: int, processor: SeriesProcessor) -&gt; None:
+<pre><code class="python">def insert(
+    self, idx: int, processor: Union[SeriesProcessor, SeriesPipeline]
+) -&gt; None:
     &#34;&#34;&#34;Insert a ``SeriesProcessor`` at the given index in the pipeline.
 
     Parameters
@@ -1118,11 +1155,23 @@ list.</strong></dd>
         The index where the given processor should be inserted in the pipeline.
         Index 0 will insert the given processor at the front of the pipeline,
         and index ``len(pipeline)`` is equivalent to appending the processor.
-    processor : SeriesProcessor
-        The ``SeriesProcessor`` that will be added to the end of the pipeline
+    processor : Union[SeriesProcessor, SeriesPipeline]
+        The ``SeriesProcessor`` or ``SeriesPipeline`` that will be inserted.&lt;br&gt;
+        .. note::
+            If the given processor is a ``SeriesPipeline``, all its processors will
+            be inserted sequentially, starting from the given index.
 
     &#34;&#34;&#34;
-    self.processing_steps.insert(idx, processor)</code></pre>
+    if isinstance(processor, SeriesProcessor):
+        self.processing_steps.insert(idx, processor)
+    elif isinstance(processor, SeriesPipeline):
+        for i, ps in enumerate(processor.processing_steps):
+            self.insert(idx + i, ps)
+    else:
+        raise TypeError(
+            f&#34;Can only insert a SeriesProcessor or SeriesPipeline, &#34;
+            + f&#34;not {type(processor)}&#34;
+        )</code></pre>
 </details>
 <div class="desc"><p>Insert a <code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code> at the given index in the pipeline.</p>
 <h2 id="parameters">Parameters</h2>
@@ -1131,8 +1180,12 @@ list.</strong></dd>
 <dd>The index where the given processor should be inserted in the pipeline.
 Index 0 will insert the given processor at the front of the pipeline,
 and index <code>len(pipeline)</code> is equivalent to appending the processor.</dd>
-<dt><strong><code>processor</code></strong> :&ensp;<code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code></dt>
-<dd>The <code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code> that will be added to the end of the pipeline</dd>
+<dt><strong><code>processor</code></strong> :&ensp;<code>Union[<a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a>, <a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a>]</code></dt>
+<dd>The <code><a title="tsflex.processing.SeriesProcessor" href="#tsflex.processing.SeriesProcessor">SeriesProcessor</a></code> or <code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code> that will be inserted.<br><div class="admonition note">
+<p class="admonition-title">Note</p>
+If the given processor is a <code><a title="tsflex.processing.SeriesPipeline" href="#tsflex.processing.SeriesPipeline">SeriesPipeline</a></code>, all its processors will
+be inserted sequentially, starting from the given index.</div>
+</dd>
 </dl></div>
 </dd>
 <dt id="tsflex.processing.SeriesPipeline.process"><code class="name flex">
