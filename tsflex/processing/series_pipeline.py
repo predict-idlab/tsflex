@@ -39,12 +39,14 @@ class SeriesPipeline:
         if processors is not None:
             assert isinstance(processors, list)
 
-            self.processing_steps = list(flatten(
-                [
-                    p.processing_steps if isinstance(p, SeriesPipeline) else [p]
-                    for p in processors
-                ]
-            ))
+            self.processing_steps = list(
+                flatten(
+                    [
+                        p.processing_steps if isinstance(p, SeriesPipeline) else [p]
+                        for p in processors
+                    ]
+                )
+            )
 
     def get_required_series(self) -> List[str]:
         """Return all required series names for this pipeline.
@@ -62,18 +64,29 @@ class SeriesPipeline:
             set(flatten(step.get_required_series() for step in self.processing_steps))
         )
 
-    def append(self, processor: SeriesProcessor) -> None:
+    def append(self, processor: Union[SeriesProcessor, SeriesPipeline]) -> None:
         """Append a ``SeriesProcessor`` at the end of the pipeline.
 
         Parameters
         ----------
-        processor : SeriesProcessor
-            The ``SeriesProcessor`` that will be added to the end of the pipeline
+        processor : Union[SeriesProcessor, SeriesPipeline]
+            The ``SeriesProcessor`` or ``SeriesPipeline`` that will be added to the
+            end of the pipeline.
 
         """
-        self.processing_steps.append(processor)
+        if isinstance(processor, SeriesProcessor):
+            self.processing_steps.append(processor)
+        elif isinstance(processor, SeriesPipeline):
+            self.processing_steps.extend(processor.processing_steps)
+        else:
+            raise TypeError(
+                f"Can only append SeriesProcessor or SeriesPipeline, "
+                + f"not {type(processor)}"
+            )
 
-    def insert(self, idx: int, processor: SeriesProcessor) -> None:
+    def insert(
+        self, idx: int, processor: Union[SeriesProcessor, SeriesPipeline]
+    ) -> None:
         """Insert a ``SeriesProcessor`` at the given index in the pipeline.
 
         Parameters
@@ -82,11 +95,23 @@ class SeriesPipeline:
             The index where the given processor should be inserted in the pipeline.
             Index 0 will insert the given processor at the front of the pipeline,
             and index ``len(pipeline)`` is equivalent to appending the processor.
-        processor : SeriesProcessor
-            The ``SeriesProcessor`` that will be added to the end of the pipeline
+        processor : Union[SeriesProcessor, SeriesPipeline]
+            The ``SeriesProcessor`` or ``SeriesPipeline`` that will be inserted.<br>
+            .. note::
+                If the given processor is a ``SeriesPipeline``, all its processors will
+                be inserted sequentially, starting from the given index.
 
         """
-        self.processing_steps.insert(idx, processor)
+        if isinstance(processor, SeriesProcessor):
+            self.processing_steps.insert(idx, processor)
+        elif isinstance(processor, SeriesPipeline):
+            for i, ps in enumerate(processor.processing_steps):
+                self.insert(idx + i, ps)
+        else:
+            raise TypeError(
+                f"Can only insert a SeriesProcessor or SeriesPipeline, "
+                + f"not {type(processor)}"
+            )
 
     def process(
         self,
