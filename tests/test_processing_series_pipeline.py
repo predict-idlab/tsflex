@@ -220,10 +220,10 @@ def test_pipeline_insert(dummy_data):
     pipe_b = SeriesPipeline(processors=sps[2:])
     pipe_a.insert(1, pipe_b)
     p_steps = pipe_a.processing_steps
-    assert p_steps[0].name == sp_sum.name
+    assert p_steps[0].name == sps[0].name
     for i, ps in enumerate(p_steps[1:-1]):
         assert ps.name == sps[i+2].name
-    assert p_steps[-1].name == sp_sum.name
+    assert p_steps[-1].name == sps[1].name
 
 def test_pipeline_steps_operations_series_pipeline(dummy_data):
     def drop_nans(series: pd.Series) -> pd.Series:
