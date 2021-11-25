@@ -16,6 +16,7 @@
 
 #### Useful links
 
+- [Paper (preprint)](https://arxiv.org/abs/2111.12429)
 - [Documentation](https://predict-idlab.github.io/tsflex/)
 - [Example (machine learning) notebooks](https://github.com/predict-idlab/tsflex/tree/main/examples)
 
@@ -62,7 +63,7 @@ Note that the feature extraction is performed on multivariate data with varying 
 | df_ibi | ["IBI"]| irregularly sampled |
 
 ### <a href="https://predict-idlab.github.io/tsflex/processing/index.html#getting-started">Processing</a>
-`TODO`
+[Working example in our docs](https://predict-idlab.github.io/tsflex/processing/index.html#working-example)
 
 ## Why tsflex? ✨
 
@@ -117,6 +118,8 @@ If you use `tsflex` in a scientific publication, we would highly appreciate citi
     publisher={Elsevier}
 }
 ```
+
+Linkt to the preprint paper: https://arxiv.org/abs/2111.12429
 
 ---
 
