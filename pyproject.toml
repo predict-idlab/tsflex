@@ -32,6 +32,7 @@ scipy = "^1.7.0"
 seglearn = "^1.2.3"
 tsfresh = "^0.18.0"
 tsfel = "^0.1.4"
+statsmodels = "0.12.2"  # Added bc of this: https://github.com/blue-yonder/tsfresh/issues/897
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
