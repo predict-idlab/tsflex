@@ -135,12 +135,12 @@ def test_tsfresh_settings_wrapper(dummy_data):
 
     settings = ComprehensiveFCParameters()
 
-    efficient_tsfresh_feats = MultipleFeatureDescriptors(
+    all_tsfresh_feats = MultipleFeatureDescriptors(
         functions=tsfresh_settings_wrapper(settings),
         series_names=["EDA", "TMP"],
         windows="2.5min", strides="10min",
     )
-    feature_collection = FeatureCollection(efficient_tsfresh_feats)
+    feature_collection = FeatureCollection(all_tsfresh_feats)
 
     res_df = feature_collection.calculate(dummy_data.first("15min"), return_df=True)
     assert (res_df.shape[0] > 0) and (res_df.shape[1]) > 0
