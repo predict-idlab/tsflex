@@ -37,7 +37,7 @@ from ..utils.time import timedelta_to_str
 
 if os.name == "nt":  # If running on Windows
     # This enables pickling of globals on Windows
-    dill.settings["trace"] = True
+    dill.settings["recurse"] = True
 
 
 class FeatureCollection:
