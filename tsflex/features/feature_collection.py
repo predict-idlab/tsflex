@@ -341,7 +341,7 @@ class FeatureCollection:
         delete_logging_handlers(logger)
         # Add logging handler (if path provided)
         if logging_file_path:
-            add_logging_handler(logger, logging_file_path)
+            f_handler = add_logging_handler(logger, logging_file_path)
 
         # Convert the data to a series_dict
         series_dict: Dict[str, pd.Series] = {}
@@ -398,6 +398,10 @@ class FeatureCollection:
                     # Close & join because: https://github.com/uqfoundation/pathos/issues/131
                     pool.close()
                     pool.join()
+
+        # Close the file handler (this avoids PermissionError: [WinError 32])
+        if logging_file_path:
+            f_handler.close()
 
         if calculated_feature_list is None:
             raise RuntimeError(
