@@ -35,57 +35,6 @@ from ..utils.data import to_list, to_series_list, flatten
 from ..utils.logging import delete_logging_handlers, add_logging_handler
 from ..utils.time import timedelta_to_str
 
-if os.name == "nt":  # If running on Windows
-    # This enables pickling of globals on Windows
-    dill.settings["recurse"] = True
-    dill.settings["byref"] = True
-
-# from typing import Callable
-class StrollFeatureGenerator:
-
-    def __init__(
-        self,
-        features_desc_dict: Dict,
-        series_dict: Dict[str, pd.Series],
-        start_idx: Any,
-        end_idx: Any,
-        window_idx: str,
-        approve_sparsity: bool,
-    ) -> List[Tuple[StridedRolling, FuncWrapper]]:
-        # --- Future work ---
-        # We could also make the StridedRolling creation multithreaded
-        # Very low priority because the STROLL __init__ is rather efficient!
-        self._feature_desc_dict = features_desc_dict
-        self.series_dict = series_dict
-        self.start_idx = start_idx
-        self.end_idx = end_idx
-        self.window_idx = window_idx
-        self.approve_sparsity = approve_sparsity
-        self.keys_wins_strides = list(self._feature_desc_dict.keys())
-        self.lengths = np.cumsum(
-            [len(self._feature_desc_dict[k]) for k in self.keys_wins_strides]
-        )
-
-    def __call__(self, idx: int):
-        key_idx = np.searchsorted(self.lengths, idx, "right")  # right bc idx starts at 0
-        key, win, stride = self.keys_wins_strides[key_idx]
-        feature = self._feature_desc_dict[self.keys_wins_strides[key_idx]][
-            idx - self.lengths[key_idx]
-        ]
-        function: FuncWrapper = feature.function
-        # The factory method will instantiate the right StridedRolling object
-        stroll_arg_dict = dict(
-            data=[self.series_dict[k] for k in key],
-            window=win,
-            stride=stride,
-            start_idx=self.start_idx,
-            end_idx=self.end_idx,
-            window_idx=self.window_idx,
-            approve_sparsity=self.approve_sparsity,
-            func_data_type=function.input_type,
-        )
-        stroll = StridedRollingFactory.get_segmenter(**stroll_arg_dict)
-        return stroll, function
 
 
 class FeatureCollection:
@@ -259,44 +208,44 @@ class FeatureCollection:
         stroll, function = get_stroll_func(idx)
         return stroll.apply_func(function)
 
-    # def _stroll_feat_generator(
-    #     self,
-    #     series_dict: Dict[str, pd.Series],
-    #     start_idx: Any,
-    #     end_idx: Any,
-    #     window_idx: str,
-    #     approve_sparsity: bool,
-    # ) -> List[Tuple[StridedRolling, FuncWrapper]]:
-    #     # --- Future work ---
-    #     # We could also make the StridedRolling creation multithreaded
-    #     # Very low priority because the STROLL __init__ is rather efficient!
-    #     keys_wins_strides = list(self._feature_desc_dict.keys())
-    #     lengths = np.cumsum(
-    #         [len(self._feature_desc_dict[k]) for k in keys_wins_strides]
-    #     )
+    def _stroll_feat_generator(
+        self,
+        series_dict: Dict[str, pd.Series],
+        start_idx: Any,
+        end_idx: Any,
+        window_idx: str,
+        approve_sparsity: bool,
+    ) -> List[Tuple[StridedRolling, FuncWrapper]]:
+        # --- Future work ---
+        # We could also make the StridedRolling creation multithreaded
+        # Very low priority because the STROLL __init__ is rather efficient!
+        keys_wins_strides = list(self._feature_desc_dict.keys())
+        lengths = np.cumsum(
+            [len(self._feature_desc_dict[k]) for k in keys_wins_strides]
+        )
 
-    #     def get_stroll_function(idx):
-    #         key_idx = np.searchsorted(lengths, idx, "right")  # right bc idx starts at 0
-    #         key, win, stride = keys_wins_strides[key_idx]
-    #         feature = self._feature_desc_dict[keys_wins_strides[key_idx]][
-    #             idx - lengths[key_idx]
-    #         ]
-    #         function: FuncWrapper = feature.function
-    #         # The factory method will instantiate the right StridedRolling object
-    #         stroll_arg_dict = dict(
-    #             data=[series_dict[k] for k in key],
-    #             window=win,
-    #             stride=stride,
-    #             start_idx=start_idx,
-    #             end_idx=end_idx,
-    #             window_idx=window_idx,
-    #             approve_sparsity=approve_sparsity,
-    #             func_data_type=function.input_type,
-    #         )
-    #         stroll = StridedRollingFactory.get_segmenter(**stroll_arg_dict)
-    #         return stroll, function
+        def get_stroll_function(idx):
+            key_idx = np.searchsorted(lengths, idx, "right")  # right bc idx starts at 0
+            key, win, stride = keys_wins_strides[key_idx]
+            feature = self._feature_desc_dict[keys_wins_strides[key_idx]][
+                idx - lengths[key_idx]
+            ]
+            function: FuncWrapper = feature.function
+            # The factory method will instantiate the right StridedRolling object
+            stroll_arg_dict = dict(
+                data=[series_dict[k] for k in key],
+                window=win,
+                stride=stride,
+                start_idx=start_idx,
+                end_idx=end_idx,
+                window_idx=window_idx,
+                approve_sparsity=approve_sparsity,
+                func_data_type=function.input_type,
+            )
+            stroll = StridedRollingFactory.get_segmenter(**stroll_arg_dict)
+            return stroll, function
 
-    #     return get_stroll_function
+        return get_stroll_function
 
     def _get_stroll_feat_length(self) -> int:
         return sum(
@@ -418,12 +367,14 @@ class FeatureCollection:
         # Note: this variable has a global scope so this is shared in multiprocessing
         # TODO: try to make this more efficient
         global get_stroll_func
-        get_stroll_func = StrollFeatureGenerator(
-            self._feature_desc_dict, series_dict, start, end, window_idx, approve_sparsity
+        get_stroll_func = self._stroll_feat_generator(
+            series_dict, start, end, window_idx, approve_sparsity
         )
         nb_stroll_funcs = self._get_stroll_feat_length()
 
-        if n_jobs is None:
+        if os.name == "nt":  # On Windows no multiprocessing is supported
+            n_jobs = 1
+        elif n_jobs is None:
             n_jobs = os.cpu_count()
         n_jobs = min(n_jobs, nb_stroll_funcs)
 
@@ -438,8 +389,7 @@ class FeatureCollection:
                 traceback.print_exc()
         else:
             with Pool(processes=n_jobs) as pool:
-                chunk_size = 100 if os.name == "nt" else 1
-                results = pool.imap_unordered(self._executor, range(nb_stroll_funcs), chunk_size)
+                results = pool.imap_unordered(self._executor, range(nb_stroll_funcs))
                 if show_progress:
                     results = tqdm(results, total=nb_stroll_funcs)
                 try:
