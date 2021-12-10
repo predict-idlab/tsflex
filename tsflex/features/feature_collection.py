@@ -38,7 +38,7 @@ from ..utils.time import timedelta_to_str
 if os.name == "nt":  # If running on Windows
     # This enables pickling of globals on Windows
     dill.settings["recurse"] = True
-    dill.settings["byref"] = True
+    # dill.settings["byref"] = True
 
 
 class FeatureCollection:
@@ -206,11 +206,9 @@ class FeatureCollection:
         # After adding the features, check whether the descriptors are compatible
         self._check_feature_descriptors()
 
-    from typing import Callable, Tuple
     @staticmethod
-    def _executor(inp: Tuple[int, Callable]):
+    def _executor(idx: int):
         # global get_stroll_func
-        idx, get_stroll_func = inp
         stroll, function = get_stroll_func(idx)
         return stroll.apply_func(function)
 
@@ -372,7 +370,7 @@ class FeatureCollection:
 
         # Note: this variable has a global scope so this is shared in multiprocessing
         # TODO: try to make this more efficient
-        # global get_stroll_func
+        global get_stroll_func
         get_stroll_func = self._stroll_feat_generator(
             series_dict, start, end, window_idx, approve_sparsity
         )
@@ -388,12 +386,13 @@ class FeatureCollection:
             if show_progress:
                 idxs = tqdm(idxs)
             try:
-                calculated_feature_list = [self._executor((idx, get_stroll_func)) for idx in idxs]
+                calculated_feature_list = [self._executor(idx) for idx in idxs]
             except:
                 traceback.print_exc()
         else:
             with Pool(processes=n_jobs) as pool:
-                results = pool.imap_unordered(self._executor, zip(range(nb_stroll_funcs), [get_stroll_func]*nb_stroll_funcs))
+                chunk_size = 100 if os.name == "nt" else 1
+                results = pool.imap_unordered(self._executor, range(nb_stroll_funcs), chunk_size)
                 if show_progress:
                     results = tqdm(results, total=nb_stroll_funcs)
                 try:
