@@ -22,7 +22,7 @@ import dill
 import traceback
 import numpy as np
 import pandas as pd
-from multiprocess import Pool
+from multiprocess import Pool, freeze_support
 from tqdm.auto import tqdm
 
 from .feature import FeatureDescriptor, MultipleFeatureDescriptors
@@ -385,6 +385,7 @@ class FeatureCollection:
             except:
                 traceback.print_exc()
         else:
+            freeze_support()  # To make dill serialize correctly on Windows
             with Pool(processes=n_jobs) as pool:
                 results = pool.imap_unordered(self._executor, range(nb_stroll_funcs))
                 if show_progress:
@@ -399,11 +400,10 @@ class FeatureCollection:
                     pool.close()
                     pool.join()
 
-        # Close the file handler (this avoids PermissionError: [WinError 32])
-        if logging_file_path:
-            f_handler.close()
-            # f_handler.release()
-            logger.removeHandler(f_handler)
+        # # Close the file handler (this avoids PermissionError: [WinError 32])
+        # if logging_file_path:
+        #     f_handler.close()
+        #     logger.removeHandler(f_handler)
         
         if calculated_feature_list is None:
             raise RuntimeError(
