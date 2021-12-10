@@ -5,6 +5,7 @@ __author__ = "Jeroen Van Der Donckt, Emiel Deprost, Jonas Van Der Donckt"
 import os
 import pytest
 import pandas as pd
+import logging
 import numpy as np
 
 from typing import Union, Dict
@@ -29,6 +30,7 @@ def logging_file_path() -> str:
     yield logging_path
     # Cleanup after test
     if os.path.exists(logging_path):
+        logging.shutdown()
         os.remove(logging_path)
 
 
