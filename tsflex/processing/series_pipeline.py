@@ -187,7 +187,7 @@ class SeriesPipeline:
         delete_logging_handlers(logger)
         # Add logging handler (if path provided)
         if logging_file_path:
-            add_logging_handler(logger, logging_file_path)
+            f_handler = add_logging_handler(logger, logging_file_path)
 
         # Convert the data to a series_dict
         series_dict: Dict[str, pd.Series] = {}
@@ -210,11 +210,20 @@ class SeriesPipeline:
                 output_keys.update(processed_dict.keys())
                 series_dict.update(processed_dict)
             except Exception as e:
+                # Close the file handler (this avoids PermissionError: [WinError 32])
+                if logging_file_path:
+                    f_handler.close()
+                    logger.removeHandler(f_handler)
                 raise _ProcessingError(
                     "Error while processing function {}:\n {}".format(
                         processor.name, str(e)
                     )
                 ) from e
+
+        # Close the file handler (this avoids PermissionError: [WinError 32])
+        if logging_file_path:
+            f_handler.close()
+            logger.removeHandler(f_handler)
 
         if not return_all_series:
             # Return just the output series

@@ -365,6 +365,7 @@ class FeatureCollection:
 
         # Note: this variable has a global scope so this is shared in multiprocessing
         # TODO: try to make this more efficient
+        freeze_support()
         global get_stroll_func
         get_stroll_func = self._stroll_feat_generator(
             series_dict, start, end, window_idx, approve_sparsity
@@ -385,7 +386,6 @@ class FeatureCollection:
             except:
                 traceback.print_exc()
         else:
-            freeze_support()  # To make dill serialize correctly on Windows
             with Pool(processes=n_jobs) as pool:
                 results = pool.imap_unordered(self._executor, range(nb_stroll_funcs))
                 if show_progress:
@@ -400,10 +400,10 @@ class FeatureCollection:
                     pool.close()
                     pool.join()
 
-        # # Close the file handler (this avoids PermissionError: [WinError 32])
-        # if logging_file_path:
-        #     f_handler.close()
-        #     logger.removeHandler(f_handler)
+        # Close the file handler (this avoids PermissionError: [WinError 32])
+        if logging_file_path:
+            f_handler.close()
+            logger.removeHandler(f_handler)
         
         if calculated_feature_list is None:
             raise RuntimeError(
