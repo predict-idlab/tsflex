@@ -401,9 +401,9 @@ class FeatureCollection:
 
         # Close the file handler (this avoids PermissionError: [WinError 32])
         if logging_file_path:
+            logger.removeHandler(f_handler)
             f_handler.close()
-            del f_handler
-
+        
         if calculated_feature_list is None:
             raise RuntimeError(
                 "Feature Extraction halted due to error while extracting one (or multiple) feature(s)! "
