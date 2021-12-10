@@ -402,6 +402,7 @@ class FeatureCollection:
         # Close the file handler (this avoids PermissionError: [WinError 32])
         if logging_file_path:
             f_handler.close()
+            del f_handler
 
         if calculated_feature_list is None:
             raise RuntimeError(
