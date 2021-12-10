@@ -22,7 +22,7 @@ import dill
 import traceback
 import numpy as np
 import pandas as pd
-from multiprocess import Pool, freeze_support
+from multiprocess import Pool
 from tqdm.auto import tqdm
 
 from .feature import FeatureDescriptor, MultipleFeatureDescriptors
@@ -34,6 +34,10 @@ from ..utils.attribute_parsing import AttributeParser
 from ..utils.data import to_list, to_series_list, flatten
 from ..utils.logging import delete_logging_handlers, add_logging_handler
 from ..utils.time import timedelta_to_str
+
+if os.name == "nt":  # If running on Windows
+    # This enables pickling of globals on Windows
+    dill.settings["trace"] = True
 
 
 class FeatureCollection:
@@ -365,7 +369,6 @@ class FeatureCollection:
 
         # Note: this variable has a global scope so this is shared in multiprocessing
         # TODO: try to make this more efficient
-        freeze_support()
         global get_stroll_func
         get_stroll_func = self._stroll_feat_generator(
             series_dict, start, end, window_idx, approve_sparsity
