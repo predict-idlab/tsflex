@@ -161,7 +161,7 @@ def _make_single_func_robust(
         if not passthrough_nans:
             series = [s[~np.isnan(s)] for s in series]
         if any([len(s) &lt; min_nb_samples for s in series]):
-            if not isinstance(output_names, list):
+            if not isinstance(output_names, list) or len(output_names) == 1:
                 return error_val
             return tuple([error_val] * len(output_names))
         return func(*series, **kwargs)
