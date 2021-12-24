@@ -319,6 +319,13 @@ class FeatureCollection:
             If n_jobs is either 0 or 1, the code will be executed sequentially without
             creating a process pool. This is very useful when debugging, as the stack
             trace will be more comprehensible.
+            .. note:
+                Multiprocessed execution is not supported on Windows. Even when,
+                `n_jobs` is set > 1, the feature extraction will still be executed
+                sequentially.
+                Why do we not support multiprocessing on Windows; see this issue
+                https://github.com/predict-idlab/tsflex/issues/51
+
 
             .. tip::
                 It takes on avg. _300ms_ to schedule everything with
@@ -341,7 +348,7 @@ class FeatureCollection:
         delete_logging_handlers(logger)
         # Add logging handler (if path provided)
         if logging_file_path:
-            add_logging_handler(logger, logging_file_path)
+            f_handler = add_logging_handler(logger, logging_file_path)
 
         # Convert the data to a series_dict
         series_dict: Dict[str, pd.Series] = {}
@@ -371,7 +378,9 @@ class FeatureCollection:
         )
         nb_stroll_funcs = self._get_stroll_feat_length()
 
-        if n_jobs is None:
+        if os.name == "nt":  # On Windows no multiprocessing is supported, see https://github.com/predict-idlab/tsflex/issues/51
+            n_jobs = 1
+        elif n_jobs is None:
             n_jobs = os.cpu_count()
         n_jobs = min(n_jobs, nb_stroll_funcs)
 
@@ -388,7 +397,7 @@ class FeatureCollection:
             with Pool(processes=n_jobs) as pool:
                 results = pool.imap_unordered(self._executor, range(nb_stroll_funcs))
                 if show_progress:
-                    results = tqdm(results, total=self._get_stroll_feat_length())
+                    results = tqdm(results, total=nb_stroll_funcs)
                 try:
                     calculated_feature_list = [f for f in results]
                 except:
@@ -399,6 +408,11 @@ class FeatureCollection:
                     pool.close()
                     pool.join()
 
+        # Close the file handler (this avoids PermissionError: [WinError 32])
+        if logging_file_path:
+            f_handler.close()
+            logger.removeHandler(f_handler)
+        
         if calculated_feature_list is None:
             raise RuntimeError(
                 "Feature Extraction halted due to error while extracting one (or multiple) feature(s)! "

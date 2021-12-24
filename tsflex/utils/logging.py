@@ -1,6 +1,6 @@
 """Utility functions for logging operations."""
 
-__author__ = 'Jeroen Van Der Donckt'
+__author__ = "Jeroen Van Der Donckt"
 
 import logging
 import warnings
@@ -22,7 +22,7 @@ def remove_inner_brackets(message: str) -> str:
     -------
     str:
         A new message without any inner brackets.
-    
+
     """
     level = 0
     new_message = ""
@@ -48,7 +48,7 @@ def delete_logging_handlers(logger: logging.Logger):
     ----------
     logger : logging.Logger
         The logger.
-    
+
     """
     if len(logger.handlers) > 1:
         logger.handlers = [
@@ -57,7 +57,9 @@ def delete_logging_handlers(logger: logging.Logger):
     assert len(logger.handlers) == 1, "Multiple logging StreamHandlers present!!"
 
 
-def add_logging_handler(logger: logging.Logger, logging_file_path: Union[str, Path]):
+def add_logging_handler(
+    logger: logging.Logger, logging_file_path: Union[str, Path]
+) -> logging.FileHandler:
     """Add a logging file-handler to the logger.
 
     Parameters
@@ -66,7 +68,12 @@ def add_logging_handler(logger: logging.Logger, logging_file_path: Union[str, Pa
         The logger.
     logging_file_path : Union[str, Path]
         The file path for the file handler.
-    
+
+    Returns
+    -------
+    logging.FileHandler
+        The file-handler that is added to the given logger.
+
     """
     if not isinstance(logging_file_path, Path):
         logging_file_path = Path(logging_file_path)
@@ -81,12 +88,11 @@ def add_logging_handler(logger: logging.Logger, logging_file_path: Union[str, Pa
         open(logging_file_path, "w").close()
     f_handler = logging.FileHandler(logging_file_path, mode="w")
     f_handler.setFormatter(
-        logging.Formatter(
-            "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-        )
+        logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
     )
     f_handler.setLevel(logging.INFO)
     logger.addHandler(f_handler)
+    return f_handler
 
 
 def logging_file_to_df(logging_file_path: str) -> pd.DataFrame:
