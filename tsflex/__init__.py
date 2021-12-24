@@ -9,7 +9,7 @@
 
 __docformat__ = 'numpy'
 __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
-__version__ = '0.2.3.1'
+__version__ = '0.2.3.3'
 __pdoc__ = {
     # do not show tue utils module
     'tsflex.utils': False,
