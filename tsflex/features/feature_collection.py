@@ -319,6 +319,13 @@ class FeatureCollection:
             If n_jobs is either 0 or 1, the code will be executed sequentially without
             creating a process pool. This is very useful when debugging, as the stack
             trace will be more comprehensible.
+            .. note:
+                Multiprocessed execution is not supported on Windows. Even when,
+                `n_jobs` is set > 1, the feature extraction will still be executed
+                sequentially.
+                Why do we not support multiprocessing on Windows; see this issue
+                https://github.com/predict-idlab/tsflex/issues/51
+
 
             .. tip::
                 It takes on avg. _300ms_ to schedule everything with
@@ -371,7 +378,9 @@ class FeatureCollection:
         )
         nb_stroll_funcs = self._get_stroll_feat_length()
 
-        if n_jobs is None:
+        if os.name == "nt":  # On Windows no multiprocessing is supported, see https://github.com/predict-idlab/tsflex/issues/51
+            n_jobs = 1
+        elif n_jobs is None:
             n_jobs = os.cpu_count()
         n_jobs = min(n_jobs, nb_stroll_funcs)
 
