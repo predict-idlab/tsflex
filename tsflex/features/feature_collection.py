@@ -341,7 +341,7 @@ class FeatureCollection:
         delete_logging_handlers(logger)
         # Add logging handler (if path provided)
         if logging_file_path:
-            add_logging_handler(logger, logging_file_path)
+            f_handler = add_logging_handler(logger, logging_file_path)
 
         # Convert the data to a series_dict
         series_dict: Dict[str, pd.Series] = {}
@@ -388,7 +388,7 @@ class FeatureCollection:
             with Pool(processes=n_jobs) as pool:
                 results = pool.imap_unordered(self._executor, range(nb_stroll_funcs))
                 if show_progress:
-                    results = tqdm(results, total=self._get_stroll_feat_length())
+                    results = tqdm(results, total=nb_stroll_funcs)
                 try:
                     calculated_feature_list = [f for f in results]
                 except:
@@ -399,6 +399,11 @@ class FeatureCollection:
                     pool.close()
                     pool.join()
 
+        # Close the file handler (this avoids PermissionError: [WinError 32])
+        if logging_file_path:
+            f_handler.close()
+            logger.removeHandler(f_handler)
+        
         if calculated_feature_list is None:
             raise RuntimeError(
                 "Feature Extraction halted due to error while extracting one (or multiple) feature(s)! "
