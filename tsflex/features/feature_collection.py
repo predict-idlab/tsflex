@@ -41,7 +41,7 @@ class FeatureCollection:
 
     Parameters
     ----------
-    feature_descriptors : Union[FeatureDescriptor, MultipleFeatureDescriptors, List[Union[FeatureDescriptor, MultipleFeatureDescriptors]]], optional
+    feature_descriptors : Union[FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection, List[Union[FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection]]], optional
         Initial (list of) feature(s) to add to collection, by default None
 
     Notes
@@ -68,7 +68,8 @@ class FeatureCollection:
             Union[
                 FeatureDescriptor,
                 MultipleFeatureDescriptors,
-                List[Union[FeatureDescriptor, MultipleFeatureDescriptors]],
+                FeatureCollection,
+                List[Union[FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection]],
             ]
         ] = None,
     ):
@@ -279,19 +280,19 @@ class FeatureCollection:
             Dataframe or Series or list thereof, with all the required data for the
             feature calculation. \n
             **Assumptions**: \n
-            * each Series / DataFrame must have a sortable index. This index represents 
-            the sequence position of the corresponding values, the index can be either 
+            * each Series / DataFrame must have a sortable index. This index represents
+            the sequence position of the corresponding values, the index can be either
             numeric or a ``pd.DatetimeIndex``.
             * each Series / DataFrame index must be comparable.with all others
             * we assume that each series-name / dataframe-column-name is unique.
         return_df : bool, optional
             Whether the output needs to be a DataFrame or a list thereof, by default
-            False. If `True` the output dataframes will be merged to a DataFrame with an 
+            False. If `True` the output dataframes will be merged to a DataFrame with an
             outer merge.
         window_idx : str, optional
             The window's index position which will be used as index for the
             feature_window aggregation. Must be either of: `["begin", "middle", "end"]`.
-            by default "end". All features in this collection will use the same 
+            by default "end". All features in this collection will use the same
             window_idx.
         bound_method: str, optional
             The start-end bound methodology which is used to generate the slice ranges
@@ -412,7 +413,7 @@ class FeatureCollection:
         if logging_file_path:
             f_handler.close()
             logger.removeHandler(f_handler)
-        
+
         if calculated_feature_list is None:
             raise RuntimeError(
                 "Feature Extraction halted due to error while extracting one (or multiple) feature(s)! "
