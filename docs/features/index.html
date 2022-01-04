@@ -1017,7 +1017,7 @@ have the same type, i.e, either </p>
 
     Parameters
     ----------
-    feature_descriptors : Union[FeatureDescriptor, MultipleFeatureDescriptors, List[Union[FeatureDescriptor, MultipleFeatureDescriptors]]], optional
+    feature_descriptors : Union[FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection, List[Union[FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection]]], optional
         Initial (list of) feature(s) to add to collection, by default None
 
     Notes
@@ -1044,7 +1044,8 @@ have the same type, i.e, either </p>
             Union[
                 FeatureDescriptor,
                 MultipleFeatureDescriptors,
-                List[Union[FeatureDescriptor, MultipleFeatureDescriptors]],
+                FeatureCollection,
+                List[Union[FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection]],
             ]
         ] = None,
     ):
@@ -1255,19 +1256,19 @@ have the same type, i.e, either </p>
             Dataframe or Series or list thereof, with all the required data for the
             feature calculation. \n
             **Assumptions**: \n
-            * each Series / DataFrame must have a sortable index. This index represents 
-            the sequence position of the corresponding values, the index can be either 
+            * each Series / DataFrame must have a sortable index. This index represents
+            the sequence position of the corresponding values, the index can be either
             numeric or a ``pd.DatetimeIndex``.
             * each Series / DataFrame index must be comparable.with all others
             * we assume that each series-name / dataframe-column-name is unique.
         return_df : bool, optional
             Whether the output needs to be a DataFrame or a list thereof, by default
-            False. If `True` the output dataframes will be merged to a DataFrame with an 
+            False. If `True` the output dataframes will be merged to a DataFrame with an
             outer merge.
         window_idx : str, optional
             The window&#39;s index position which will be used as index for the
             feature_window aggregation. Must be either of: `[&#34;begin&#34;, &#34;middle&#34;, &#34;end&#34;]`.
-            by default &#34;end&#34;. All features in this collection will use the same 
+            by default &#34;end&#34;. All features in this collection will use the same
             window_idx.
         bound_method: str, optional
             The start-end bound methodology which is used to generate the slice ranges
@@ -1388,7 +1389,7 @@ have the same type, i.e, either </p>
         if logging_file_path:
             f_handler.close()
             logger.removeHandler(f_handler)
-        
+
         if calculated_feature_list is None:
             raise RuntimeError(
                 &#34;Feature Extraction halted due to error while extracting one (or multiple) feature(s)! &#34;
@@ -1521,7 +1522,7 @@ have the same type, i.e, either </p>
 <div class="desc"><p>Create a FeatureCollection.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>feature_descriptors</code></strong> :&ensp;<code>Union[<a title="tsflex.features.FeatureDescriptor" href="#tsflex.features.FeatureDescriptor">FeatureDescriptor</a>, <a title="tsflex.features.MultipleFeatureDescriptors" href="#tsflex.features.MultipleFeatureDescriptors">MultipleFeatureDescriptors</a>, List[Union[<a title="tsflex.features.FeatureDescriptor" href="#tsflex.features.FeatureDescriptor">FeatureDescriptor</a>, <a title="tsflex.features.MultipleFeatureDescriptors" href="#tsflex.features.MultipleFeatureDescriptors">MultipleFeatureDescriptors</a>]]]</code>, optional</dt>
+<dt><strong><code>feature_descriptors</code></strong> :&ensp;<code>Union[<a title="tsflex.features.FeatureDescriptor" href="#tsflex.features.FeatureDescriptor">FeatureDescriptor</a>, <a title="tsflex.features.MultipleFeatureDescriptors" href="#tsflex.features.MultipleFeatureDescriptors">MultipleFeatureDescriptors</a>, <a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a>, List[Union[<a title="tsflex.features.FeatureDescriptor" href="#tsflex.features.FeatureDescriptor">FeatureDescriptor</a>, <a title="tsflex.features.MultipleFeatureDescriptors" href="#tsflex.features.MultipleFeatureDescriptors">MultipleFeatureDescriptors</a>, <a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a>]]]</code>, optional</dt>
 <dd>Initial (list of) feature(s) to add to collection, by default None</dd>
 </dl>
 <h2 id="notes">Notes</h2>
@@ -1677,19 +1678,19 @@ collection.</p>
         Dataframe or Series or list thereof, with all the required data for the
         feature calculation. \n
         **Assumptions**: \n
-        * each Series / DataFrame must have a sortable index. This index represents 
-        the sequence position of the corresponding values, the index can be either 
+        * each Series / DataFrame must have a sortable index. This index represents
+        the sequence position of the corresponding values, the index can be either
         numeric or a ``pd.DatetimeIndex``.
         * each Series / DataFrame index must be comparable.with all others
         * we assume that each series-name / dataframe-column-name is unique.
     return_df : bool, optional
         Whether the output needs to be a DataFrame or a list thereof, by default
-        False. If `True` the output dataframes will be merged to a DataFrame with an 
+        False. If `True` the output dataframes will be merged to a DataFrame with an
         outer merge.
     window_idx : str, optional
         The window&#39;s index position which will be used as index for the
         feature_window aggregation. Must be either of: `[&#34;begin&#34;, &#34;middle&#34;, &#34;end&#34;]`.
-        by default &#34;end&#34;. All features in this collection will use the same 
+        by default &#34;end&#34;. All features in this collection will use the same
         window_idx.
     bound_method: str, optional
         The start-end bound methodology which is used to generate the slice ranges
@@ -1810,7 +1811,7 @@ collection.</p>
     if logging_file_path:
         f_handler.close()
         logger.removeHandler(f_handler)
-    
+
     if calculated_feature_list is None:
         raise RuntimeError(
             &#34;Feature Extraction halted due to error while extracting one (or multiple) feature(s)! &#34;
