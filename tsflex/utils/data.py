@@ -174,8 +174,6 @@ def load_empatica_data(f_names: Union[str, List[str]]) -> List[pd.DataFrame]:
     url = "https://github.com/predict-idlab/tsflex/raw/main/examples/data/empatica/"
     f_names = [f_names] if isinstance(f_names, str) else f_names
     return [
-        pd.read_parquet(
-            url + f"{f_name.lower()}.parquet", engine="fastparquet"
-        ).set_index("timestamp")
+        pd.read_parquet(url + f"{f_name.lower()}.parquet").set_index("timestamp")
         for f_name in f_names
     ]
