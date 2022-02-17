@@ -195,9 +195,14 @@ The table below positions _tsflex_ among other relative Python packages.
 
 # Benchmark 📊
 
-The visualization below compares `tsflex v0.2.2` against other eligible packages for the strided-rolling feature extraction use-case.<br>
-As a reference, the data size when loaded in RAM was 96.4MB. The shaded areas represent the lower an upper quantile range (q=[0.1, 0.9]) of the runs.
+The visualizations below compare `tsflex v0.2.2` against other eligible packages for the strided-rolling feature extraction use-case.
+As a reference, the data size when loaded in RAM was 96.4MB. 
 
-The figure is constructed by using the [tsflex-benchmarking](https://github.com/predict-idlab/tsflex-benchmarking) repo, we further refer to this repository for more details.
+In the first figure, the shaded areas represent the lower an upper quantile range (q=[0.1, 0.9]) of the runs.<br>
+In the second figure, the performance of `tsflex` & other related packages is charted as *times more efficient than `tfresh`* (for both sequential and multiprocessing execution).
 
-<iframe src="https://datapane.com/u/jonasvdd/reports/dkjVy5k/tsflex-benchmark-v2/embed/" width="100%" height="540px" style="border: none;" allowfullscreen>IFrame not supported</iframe><br>
+These figures are constructed by using the [tsflex-benchmarking](https://github.com/predict-idlab/tsflex-benchmarking) repo, we refer to this repository for more details.
+
+<iframe src="https://datapane.com/u/jvdd/reports/n3ZoyG7/tsflex-benchmark/embed/" width="100%" height="540px" style="border: none;">IFrame not supported</iframe>
+
+<iframe src="https://datapane.com/u/jvdd/reports/M7byzb3/benchmark-vs-tsfresh/embed/" width="100%" height="540px" style="border: none;">IFrame not supported</iframe>
