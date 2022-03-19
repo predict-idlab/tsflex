@@ -250,20 +250,49 @@ class StridedRolling(ABC):
         # expression only once, whereas a list comprehension evaluates its expression
         # every time).
         # See more why: https://stackoverflow.com/a/59838723
-        out = np.array(
-            list(
-                map(
-                    func,
+        out: np.array = None
+        if func.vectorized:
+            # Vectorized function execution
+            # TODO: can be optimized? -> look into: numpy.lib.stride_tricks.as_strided
+            # TODO: has still some memory peak??
+            # out = np.asarray(
+            #         func(
+            #             *[
+            #                 np.array([
+            #                     sc.values[sc.start_indexes[idx]: sc.end_indexes[idx]]
+            #                     for idx in range(len(self.index))
+            #                 ])
+            #                 for sc in self.series_containers
+            #             ],
+            #         )
+            #     )
+
+            out = np.asarray(
+                func(
                     *[
-                        [
-                            sc.values[sc.start_indexes[idx]: sc.end_indexes[idx]]
-                            for idx in range(len(self.index))
-                        ]
+                        sliding_window_1d(sc.values, self.window, self.stride)
                         for sc in self.series_containers
                     ],
                 )
             )
-        )
+        else:
+            # Sequential function execution (default)
+            out = np.array(
+                list(
+                    map(
+                        func,
+                        *[
+                            [
+                                sc.values[sc.start_indexes[idx] : sc.end_indexes[idx]]
+                                for idx in range(len(self.index))
+                            ]
+                            for sc in self.series_containers
+                        ],
+                    )
+                )
+            )
+
+        assert out.ndim > 0, ""  # TODO??
 
         # Aggregate function output in a dictionary
         feat_out = {}
@@ -489,3 +518,33 @@ class TimeIndexSampleStridedRolling(SequenceStridedRolling):
         )
         np_end_times = np_start_times + self.window
         return np_start_times, np_end_times
+
+
+def sliding_window_1d(data, window, step):
+    # window and step in samples
+    assert data.ndim == 1, "data must be 1 dimensional"
+
+    if isinstance(window, float):
+        assert window.is_integer(), "window be an int!"
+        window = int(window)
+    if isinstance(step, float):
+        assert step.is_integer(), "step must be an int!"
+        step = int(step)
+
+    assert (step >= 1) & (window < len(data))
+
+    # Define output shape
+    shape = [
+        np.floor(len(data) / step - window / step + 1).astype(int),
+        window,
+    ]
+
+    # Calculate strides
+    strides = [
+        data.strides[0] * step,
+        data.strides[0],
+    ]
+
+    return np.lib.stride_tricks.as_strided(
+        data, shape=shape, strides=strides, writeable=False
+    )

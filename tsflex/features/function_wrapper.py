@@ -34,6 +34,10 @@ class FuncWrapper(FrozenClass):
             a pd.Series, since pd.Series strided-rolling is significantly less efficient. 
             For a np.array it is possible to create very efficient views, but there is no 
             such thing as a pd.Series view. Thus, for each stroll, a new series is created.
+    vectorized: bool, optional
+        Flag indicating if the function can be executed vectorized over all the 
+        segmented windows. By default False.
+        TODO: extend docs
     **kwargs: dict, optional
         Keyword arguments which will be also passed to the `function`
 
@@ -49,11 +53,13 @@ class FuncWrapper(FrozenClass):
         func: Callable,
         output_names: Optional[Union[List[str], str]] = None,
         input_type: Optional[Union[np.array, pd.Series]] = np.array,
+        vectorized: bool = False,
         **kwargs,
     ):
         """Create FuncWrapper instance."""
         self.func = func
         self.kwargs: dict = kwargs
+        self.vectorized = vectorized
 
         if isinstance(output_names, list):
             self.output_names = output_names
