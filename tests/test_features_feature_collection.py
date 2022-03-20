@@ -868,6 +868,29 @@ def test_mixed_featuredescriptors_time_data(dummy_data):
     out = fc.calculate([df_eda, df_tmp], return_df=True)
     assert all(out.notna().sum(axis=0))
 
+
+### Test vectorized features
+
+def test_basic_vectorized_features(dummy_data):
+    fs = 4  # The sample frequency in Hz
+    fc = FeatureCollection(
+        feature_descriptors=[
+            FeatureDescriptor(np.max, "EDA", 250*fs, 75*fs),
+            FeatureDescriptor(
+                FuncWrapper(np.max, output_names="max_", vectorized=True, axis=-1),
+                "EDA",  250*fs, 75*fs,
+            )
+        ]
+    )
+    res = fc.calculate(dummy_data)
+
+    assert len(res) == 2
+    assert (len(res[0]) > 1) and (len(res[1]) > 1)
+    assert np.all(res[0].index == res[1].index)
+    assert np.all(res[0].values == res[1].values)
+
+
+
 ### Test 'error' use-cases
 
 

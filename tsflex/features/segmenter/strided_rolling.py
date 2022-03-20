@@ -255,6 +255,8 @@ class StridedRolling(ABC):
             # Vectorized function execution
             # TODO: can be optimized? -> look into: numpy.lib.stride_tricks.as_strided
             # TODO: has still some memory peak??
+
+            ## IMPL 1
             # out = np.asarray(
             #         func(
             #             *[
@@ -267,14 +269,28 @@ class StridedRolling(ABC):
             #         )
             #     )
 
-            out = np.asarray(
-                func(
-                    *[
-                        _sliding_strided_window_1d(sc.values, self.window, self.stride)
-                        for sc in self.series_containers
-                    ],
+            ## IMPL 2
+            # out = np.asarray(
+            #     func(
+            #         *[
+            #             _sliding_strided_window_1d(sc.values, self.window, self.stride)
+            #             for sc in self.series_containers
+            #         ],
+            #     )
+            # )
+
+            views = []
+            for sc in self.series_containers:
+                windows = sc.end_indexes - sc.start_indexes
+                strides = sc.start_indexes[1:] - sc.start_indexes[:-1]
+                assert np.all(windows == windows[0])
+                assert np.all(strides == strides[0])
+                views.append(
+                    _sliding_strided_window_1d(sc.values, windows[0], strides[0])
                 )
-            )
+            out = np.asarray(func(*views))
+
+
         else:
             # Sequential function execution (default)
             out = np.array(
@@ -554,7 +570,7 @@ def _sliding_strided_window_1d(data: np.ndarray, window: int, step: int):
     assert (step >= 1) & (window < len(data))
 
     shape = [
-        np.floor(len(data) / step - window / step + 1).astype(int),
+        np.ceil(len(data) / step - window / step).astype(int),
         window,
     ]
 

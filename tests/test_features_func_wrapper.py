@@ -85,6 +85,21 @@ def test_series_func_wrapper_with_kwargs(dummy_data):
     assert func2(dummy_data["EDA"]) == 0.25*3
 
 
-def test_error_func_wrapper_wrong_outputnames_type(dummy_data):
+def test_vectorized_func_wrapper(dummy_data):
+    func_cols = FuncWrapper(np.max, vectorized=True, axis=0)  # Axis = columns
+    func_rows = FuncWrapper(np.max, vectorized=True, axis=1)  # Axis = rows
+
+    assert func_cols.output_names == ['amax']
+    assert func_rows.output_names == ['amax']
+    assert np.allclose(func_cols(dummy_data.values), dummy_data.max().values)
+    assert np.allclose(func_rows(dummy_data.values), dummy_data.max(axis=1).values)
+
+
+def test_error_func_wrapper_wrong_outputnames_type():
     with pytest.raises(TypeError):
         FuncWrapper(np.min, output_names=5)
+
+
+def test_illegal_func_wrapper_vectorized_wrong_input_type():
+    with pytest.raises(AssertionError):
+        FuncWrapper(np.min, input_type=pd.Series, vectorized=True, axis=1)
