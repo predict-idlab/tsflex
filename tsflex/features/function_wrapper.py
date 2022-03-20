@@ -93,7 +93,6 @@ class FuncWrapper(FrozenClass):
         """Return repr string."""
         return (
             f"{self.__class__.__name__}({self.func.__name__}, {self.output_names},"
-            f" input_type={self.input_type}, vectorized={self.vectorized},"
             f" {self.kwargs})"
         )
 
