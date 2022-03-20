@@ -10,14 +10,14 @@ from ..utils.data import SUPPORTED_STROLL_TYPES
 from ..utils.classes import FrozenClass
 from .. import __pdoc__
 
-__pdoc__['FuncWrapper.__call__'] = True
+__pdoc__["FuncWrapper.__call__"] = True
 
 
 class FuncWrapper(FrozenClass):
     """Function wrapper.
 
-    A function wrapper which takes a numpy array / pandas series as input and returns 
-    one or multiple values. It also defines the names of the function outputs, and 
+    A function wrapper which takes a numpy array / pandas series as input and returns
+    one or multiple values. It also defines the names of the function outputs, and
     stores the function its keyword arguments.
 
     Parameters
@@ -27,17 +27,28 @@ class FuncWrapper(FrozenClass):
     output_names : Union[List[str], str], optional
         The name of the outputs of the function, by default None.
     input_type: Union[np.array, pd.Series], optional
-        The input type that the function requires (either np.array or pd.Series), by 
+        The input type that the function requires (either np.array or pd.Series), by
         default np.array.
-        .. Note:: 
+        .. Note::
             Make sure to only set this argument to pd.Series if the function requires
-            a pd.Series, since pd.Series strided-rolling is significantly less efficient. 
-            For a np.array it is possible to create very efficient views, but there is no 
+            a pd.Series, since pd.Series strided-rolling is significantly less efficient.
+            For a np.array it is possible to create very efficient views, but there is no
             such thing as a pd.Series view. Thus, for each stroll, a new series is created.
     vectorized: bool, optional
-        Flag indicating if the function can be executed vectorized over all the 
-        segmented windows. By default False.
-        TODO: extend docs
+        Flag indicating if the function should be executed vectorized over all the
+        segmented windows, by default False.
+        .. Info::
+            A vectorized function should take one or multiple series that each have the
+            shape (nb. segmented windows, window size).
+            For example a vectorized version of `np.max` is
+            ``FuncWrapper(np.max, vectorized=True, axis=1)``.
+        .. Note::
+            A function can only be applied in vectorized manner when the required series
+            are REGULARLY sampled (and have the same index in case of multiple required
+            series).
+            Also, the `input_type` should be `np.array` when `vectorized` is True. It
+            does not make sense to use a `pd.Series`, as the index should be regularly
+            sampled (see requirement above).
     **kwargs: dict, optional
         Keyword arguments which will be also passed to the `function`
 
@@ -59,7 +70,6 @@ class FuncWrapper(FrozenClass):
         """Create FuncWrapper instance."""
         self.func = func
         self.kwargs: dict = kwargs
-        self.vectorized = vectorized
 
         if isinstance(output_names, list):
             self.output_names = output_names
@@ -70,8 +80,12 @@ class FuncWrapper(FrozenClass):
         else:
             raise TypeError(f"`output_names` is unexpected type {type(output_names)}")
 
-        assert input_type in SUPPORTED_STROLL_TYPES
+        assert input_type in SUPPORTED_STROLL_TYPES, "Invalid input_type!"
+        assert not (
+            vectorized & (input_type is not np.array)
+        ), "The input_type must be np.array if vectorized is True!"
         self.input_type = input_type
+        self.vectorized = vectorized
 
         self._freeze()
 
@@ -79,6 +93,7 @@ class FuncWrapper(FrozenClass):
         """Return repr string."""
         return (
             f"{self.__class__.__name__}({self.func.__name__}, {self.output_names},"
+            f" input_type={self.input_type}, vectorized={self.vectorized},"
             f" {self.kwargs})"
         )
 

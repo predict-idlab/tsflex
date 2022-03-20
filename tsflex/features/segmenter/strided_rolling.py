@@ -270,7 +270,7 @@ class StridedRolling(ABC):
             out = np.asarray(
                 func(
                     *[
-                        sliding_window_1d(sc.values, self.window, self.stride)
+                        _sliding_strided_window_1d(sc.values, self.window, self.stride)
                         for sc in self.series_containers
                     ],
                 )
@@ -292,7 +292,10 @@ class StridedRolling(ABC):
                 )
             )
 
-        assert out.ndim > 0, ""  # TODO??
+        # Check if the function output is valid.
+        # This assertion will be raised when e.g. np.max is applied vectorized without
+        # specifying axis=1.
+        assert out.ndim > 0, "Vectorized function returned only 1 (non-array) value!"
 
         # Aggregate function output in a dictionary
         feat_out = {}
@@ -520,7 +523,24 @@ class TimeIndexSampleStridedRolling(SequenceStridedRolling):
         return np_start_times, np_end_times
 
 
-def sliding_window_1d(data, window, step):
+def _sliding_strided_window_1d(data: np.ndarray, window: int, step: int):
+    """View based sliding strided-window for 1-dimensional data.
+
+    Parameters
+    ----------
+    data: np.array
+        The 1-dimensional series to slide over.
+    window: int
+        The window size, in number of samples.
+    step: int
+        The step size (i.e., the stride), in number of samples.
+
+    Returns
+    -------
+    nd.array
+        A view of the sliding strided window of the data.
+
+    """
     # window and step in samples
     assert data.ndim == 1, "data must be 1 dimensional"
 
@@ -533,13 +553,11 @@ def sliding_window_1d(data, window, step):
 
     assert (step >= 1) & (window < len(data))
 
-    # Define output shape
     shape = [
         np.floor(len(data) / step - window / step + 1).astype(int),
         window,
     ]
 
-    # Calculate strides
     strides = [
         data.strides[0] * step,
         data.strides[0],
