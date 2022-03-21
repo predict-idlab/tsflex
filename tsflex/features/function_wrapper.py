@@ -35,7 +35,7 @@ class FuncWrapper(FrozenClass):
             For a np.array it is possible to create very efficient views, but there is no
             such thing as a pd.Series view. Thus, for each stroll, a new series is created.
     vectorized: bool, optional
-        Flag indicating if the function should be executed vectorized over all the
+        Flag indicating whether `func` should be executed vectorized over all the
         segmented windows, by default False.
         .. Info::
             A vectorized function should take one or multiple series that each have the
@@ -43,12 +43,12 @@ class FuncWrapper(FrozenClass):
             For example a vectorized version of `np.max` is
             ``FuncWrapper(np.max, vectorized=True, axis=1)``.
         .. Note::
-            A function can only be applied in vectorized manner when the required series
-            are REGULARLY sampled (and have the same index in case of multiple required
-            series).
-            Also, the `input_type` should be `np.array` when `vectorized` is True. It
-            does not make sense to use a `pd.Series`, as the index should be regularly
-            sampled (see requirement above).
+            * A function can only be applied in vectorized manner when the required 
+              series are REGULARLY sampled (and have the same index in case of multiple
+              required series).
+            * The `input_type` should be `np.array` when `vectorized` is True. It does 
+              not make sense to use a `pd.Series`, as the index should be regularly
+              sampled (see requirement above).
     **kwargs: dict, optional
         Keyword arguments which will be also passed to the `function`
 
