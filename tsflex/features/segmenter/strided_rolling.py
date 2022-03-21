@@ -253,8 +253,6 @@ class StridedRolling(ABC):
         out: np.array = None
         if func.vectorized:
             # Vectorized function execution
-            # TODO: can be optimized? -> look into: numpy.lib.stride_tricks.as_strided
-            # TODO: has still some memory peak??
 
             ## IMPL 1
             # out = np.asarray(
@@ -283,13 +281,16 @@ class StridedRolling(ABC):
             for sc in self.series_containers:
                 windows = sc.end_indexes - sc.start_indexes
                 strides = sc.start_indexes[1:] - sc.start_indexes[:-1]
-                assert np.all(windows == windows[0])
-                assert np.all(strides == strides[0])
+                assert np.all(
+                    windows == windows[0]
+                ), "Vectorized functions require same number of samples in each segmented window!"
+                assert np.all(
+                    strides == strides[0]
+                ), "Vectorized functions require same number of samples as stride!"
                 views.append(
                     _sliding_strided_window_1d(sc.values, windows[0], strides[0])
                 )
-            out = np.asarray(func(*views))
-
+            out = np.asarray(func(*views)).T  # .T to comply with expected output format
 
         else:
             # Sequential function execution (default)
@@ -580,5 +581,5 @@ def _sliding_strided_window_1d(data: np.ndarray, window: int, step: int):
     ]
 
     return np.lib.stride_tricks.as_strided(
-        data, shape=shape, strides=strides, writeable=False
+        data, shape=shape, strides=strides#, writeable=False
     )
