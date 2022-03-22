@@ -290,7 +290,13 @@ class StridedRolling(ABC):
                 views.append(
                     _sliding_strided_window_1d(sc.values, windows[0], strides[0])
                 )
-            out = np.asarray(func(*views)).T  # .T to comply with expected output format
+            out = func(*views)
+
+            out_type = type(out)
+            out = np.asarray(out)
+            # When multiple outputs are returned (= tuple) they should be transposed
+            # when combining into an array
+            out = out.T if out_type is tuple else out
 
         else:
             # Sequential function execution (default)
