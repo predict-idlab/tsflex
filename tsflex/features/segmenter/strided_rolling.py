@@ -255,6 +255,8 @@ class StridedRolling(ABC):
             # Vectorized function execution
 
             ## IMPL 1
+            ## Results in a high memory peak as a new np.array is created (and thus no
+            ## view is being used)
             # out = np.asarray(
             #         func(
             #             *[
@@ -268,6 +270,9 @@ class StridedRolling(ABC):
             #     )
 
             ## IMPL 2
+            ## Is a good implementation (equivalent to the one below), will also fail in
+            ## the same cases, but it does not perform clear assertions (with their 
+            ## accompanied clear messages).
             # out = np.asarray(
             #     func(
             #         *[

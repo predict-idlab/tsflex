@@ -936,6 +936,30 @@ def test_multiple_outputs_vectorized_features(dummy_data):
     assert np.all(res[s+"mean"+p].values == res[s+"mean_vect"+p].values)
 
 
+def test_multiple_inputs_vectorized_features(dummy_data):
+    def windowed_diff(x1, x2):
+        return np.sum(x1, axis=-1) - np.sum(x2, axis=-1)
+
+    fc = FeatureCollection(
+        feature_descriptors=[
+            FeatureDescriptor(np.sum, "EDA", "5min", "2.5min"),
+            FeatureDescriptor(np.sum, "TMP", "5min", "2.5min"),
+            FeatureDescriptor(
+                FuncWrapper(windowed_diff, vectorized=True),
+                ("EDA", "TMP"),  "5min", "2.5min"
+            )
+        ]
+    )
+
+    res = fc.calculate(dummy_data, return_df=True)
+
+    assert res.shape[1] == 3
+    assert res.shape[0] > 1
+    p = "__w=5m_s=2m30s"
+    manual_diff = res["EDA__sum"+p].values - res["TMP__sum"+p].values
+    assert np.all(res["EDA|TMP__windowed_diff"+p].values == manual_diff)
+
+
 ### Test 'error' use-cases
 
 
@@ -1201,5 +1225,7 @@ def test_vectorized_irregularly_sampled_data(dummy_data):
 
     assert len(df_eda) < len(dummy_data["EDA"].dropna())
 
+    # Fails bc of irregularly sampled data
+    # -> is a strict requirement to apply a vectorized feature function
     with pytest.raises(Exception):
         fc.calculate(df_eda)
