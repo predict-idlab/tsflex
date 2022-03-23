@@ -868,6 +868,98 @@ def test_mixed_featuredescriptors_time_data(dummy_data):
     out = fc.calculate([df_eda, df_tmp], return_df=True)
     assert all(out.notna().sum(axis=0))
 
+
+### Test vectorized features
+
+def test_basic_vectorized_features(dummy_data):
+    fs = 4  # The sample frequency in Hz
+    fc = FeatureCollection(
+        feature_descriptors=[
+            FeatureDescriptor(np.max, "EDA", 250*fs, 75*fs),
+            FeatureDescriptor(
+                FuncWrapper(np.max, output_names="max_", vectorized=True, axis=-1),
+                "EDA",  250*fs, 75*fs,
+            )
+        ]
+    )
+    res = fc.calculate(dummy_data)
+
+    assert len(res) == 2
+    assert (len(res[0]) > 1) and (len(res[1]) > 1)
+    assert np.all(res[0].index == res[1].index)
+    assert np.all(res[0].values == res[1].values)
+
+
+def test_time_based_vectorized_features(dummy_data):
+    fc = FeatureCollection(
+        feature_descriptors=[
+            FeatureDescriptor(np.max, "EDA", "5min", "3min"),
+            FeatureDescriptor(
+                FuncWrapper(np.max, output_names="max_", vectorized=True, axis=-1),
+                "EDA", "5min", "3min",
+            )
+        ]
+    )
+    res = fc.calculate(dummy_data)
+
+    assert len(res) == 2
+    assert (len(res[0]) > 1) and (len(res[1]) > 1)
+    assert np.all(res[0].index == res[1].index)
+    assert np.all(res[0].values == res[1].values)
+
+
+def test_multiple_outputs_vectorized_features(dummy_data):
+    def sum_mean(x, axis):
+        s = np.sum(x, axis)
+        return s, s / x.shape[axis]
+
+    fs = 4  # The sample frequency in Hz
+    fc = FeatureCollection(
+        feature_descriptors=[
+            FeatureDescriptor(np.sum, "EDA", 250*fs, 75*fs),
+            FeatureDescriptor(np.mean, "EDA", 250*fs, 75*fs),
+            FeatureDescriptor(
+                FuncWrapper(
+                    sum_mean, output_names=["sum_vect", "mean_vect"], 
+                    vectorized=True, axis=1
+                ),
+                "EDA", 250*fs, 75*fs,
+            )
+        ]
+    )
+
+    res = fc.calculate(dummy_data, return_df=True)
+
+    assert res.shape[1] == 4
+    s = "EDA__"; p = "__w=1000_s=300"
+    assert np.all(res[s+"sum"+p].values == res[s+"sum_vect"+p].values)
+    assert np.all(res[s+"mean"+p].values == res[s+"mean_vect"+p].values)
+
+
+def test_multiple_inputs_vectorized_features(dummy_data):
+    def windowed_diff(x1, x2):
+        return np.sum(x1, axis=-1) - np.sum(x2, axis=-1)
+
+    fc = FeatureCollection(
+        feature_descriptors=[
+            FeatureDescriptor(np.sum, "EDA", "5min", "2.5min"),
+            FeatureDescriptor(np.sum, "TMP", "5min", "2.5min"),
+            FeatureDescriptor(
+                FuncWrapper(windowed_diff, vectorized=True),
+                ("EDA", "TMP"),  "5min", "2.5min"
+            )
+        ]
+    )
+
+    res = fc.calculate(dummy_data, return_df=True)
+
+    assert res.shape[1] == 3
+    assert res.shape[0] > 1
+    p = "__w=5m_s=2m30s"
+    manual_diff = res["EDA__sum"+p].values - res["TMP__sum"+p].values
+    assert np.all(res["EDA|TMP__windowed_diff"+p].values == manual_diff)
+
+
 ### Test 'error' use-cases
 
 
@@ -1117,3 +1209,23 @@ def test_serialization(dummy_data):
         out[col_order].values, out_deserialized[col_order].values, equal_nan=True
     )
     os.remove(save_path)
+
+
+def test_vectorized_irregularly_sampled_data(dummy_data):
+    fc = FeatureCollection(
+        feature_descriptors=FeatureDescriptor(
+            FuncWrapper(np.std, vectorized=True, axis=1),
+            "EDA", window="5min", stride="3s"
+        )
+    )
+
+    df_eda = dummy_data["EDA"].dropna()
+    df_eda.iloc[[3+66*i for i in range(5)]] = np.nan
+    df_eda = df_eda.dropna()
+
+    assert len(df_eda) < len(dummy_data["EDA"].dropna())
+
+    # Fails bc of irregularly sampled data
+    # -> is a strict requirement to apply a vectorized feature function
+    with pytest.raises(Exception):
+        fc.calculate(df_eda)

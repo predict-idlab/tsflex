@@ -250,20 +250,80 @@ class StridedRolling(ABC):
         # expression only once, whereas a list comprehension evaluates its expression
         # every time).
         # See more why: https://stackoverflow.com/a/59838723
-        out = np.array(
-            list(
-                map(
-                    func,
-                    *[
-                        [
-                            sc.values[sc.start_indexes[idx]: sc.end_indexes[idx]]
-                            for idx in range(len(self.index))
-                        ]
-                        for sc in self.series_containers
-                    ],
+        out: np.array = None
+        if func.vectorized:
+            # Vectorized function execution
+
+            ## IMPL 1
+            ## Results in a high memory peak as a new np.array is created (and thus no
+            ## view is being used)
+            # out = np.asarray(
+            #         func(
+            #             *[
+            #                 np.array([
+            #                     sc.values[sc.start_indexes[idx]: sc.end_indexes[idx]]
+            #                     for idx in range(len(self.index))
+            #                 ])
+            #                 for sc in self.series_containers
+            #             ],
+            #         )
+            #     )
+
+            ## IMPL 2
+            ## Is a good implementation (equivalent to the one below), will also fail in
+            ## the same cases, but it does not perform clear assertions (with their 
+            ## accompanied clear messages).
+            # out = np.asarray(
+            #     func(
+            #         *[
+            #             _sliding_strided_window_1d(sc.values, self.window, self.stride)
+            #             for sc in self.series_containers
+            #         ],
+            #     )
+            # )
+
+            views = []
+            for sc in self.series_containers:
+                windows = sc.end_indexes - sc.start_indexes
+                strides = sc.start_indexes[1:] - sc.start_indexes[:-1]
+                assert np.all(
+                    windows == windows[0]
+                ), "Vectorized functions require same number of samples in each segmented window!"
+                assert np.all(
+                    strides == strides[0]
+                ), "Vectorized functions require same number of samples as stride!"
+                views.append(
+                    _sliding_strided_window_1d(sc.values, windows[0], strides[0])
+                )
+            out = func(*views)
+
+            out_type = type(out)
+            out = np.asarray(out)
+            # When multiple outputs are returned (= tuple) they should be transposed
+            # when combining into an array
+            out = out.T if out_type is tuple else out
+
+        else:
+            # Sequential function execution (default)
+            out = np.array(
+                list(
+                    map(
+                        func,
+                        *[
+                            [
+                                sc.values[sc.start_indexes[idx] : sc.end_indexes[idx]]
+                                for idx in range(len(self.index))
+                            ]
+                            for sc in self.series_containers
+                        ],
+                    )
                 )
             )
-        )
+
+        # Check if the function output is valid.
+        # This assertion will be raised when e.g. np.max is applied vectorized without
+        # specifying axis=1.
+        assert out.ndim > 0, "Vectorized function returned only 1 (non-array) value!"
 
         # Aggregate function output in a dictionary
         feat_out = {}
@@ -489,3 +549,48 @@ class TimeIndexSampleStridedRolling(SequenceStridedRolling):
         )
         np_end_times = np_start_times + self.window
         return np_start_times, np_end_times
+
+
+def _sliding_strided_window_1d(data: np.ndarray, window: int, step: int):
+    """View based sliding strided-window for 1-dimensional data.
+
+    Parameters
+    ----------
+    data: np.array
+        The 1-dimensional series to slide over.
+    window: int
+        The window size, in number of samples.
+    step: int
+        The step size (i.e., the stride), in number of samples.
+
+    Returns
+    -------
+    nd.array
+        A view of the sliding strided window of the data.
+
+    """
+    # window and step in samples
+    assert data.ndim == 1, "data must be 1 dimensional"
+
+    if isinstance(window, float):
+        assert window.is_integer(), "window must be an int!"
+        window = int(window)
+    if isinstance(step, float):
+        assert step.is_integer(), "step must be an int!"
+        step = int(step)
+
+    assert (step >= 1) & (window < len(data))
+
+    shape = [
+        np.ceil(len(data) / step - window / step).astype(int),
+        window,
+    ]
+
+    strides = [
+        data.strides[0] * step,
+        data.strides[0],
+    ]
+
+    return np.lib.stride_tricks.as_strided(
+        data, shape=shape, strides=strides#, writeable=False
+    )

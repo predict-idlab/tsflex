@@ -75,6 +75,35 @@ def _get_name(func: Callable) -> str:
     except:
         return type(func).__name__
 
+def _get_funcwrapper_func_and_kwargs(func: FuncWrapper) -> Tuple[Callable, dict]:
+    """Extract the function and keyword arguments from the given FuncWrapper.
+
+    Parameters
+    ----------
+    func: FuncWrapper
+        The FuncWrapper to extract the function and kwargs from.
+
+    Returns
+    -------
+    Tuple[Callable, dict]
+        Tuple of 1st the function of the FuncWrapper (is a Callable) and 2nd the keyword
+        arguments of the FuncWrapper.
+
+    """
+    assert isinstance(func, FuncWrapper)
+
+    # Extract the function (is a Callable)
+    function = func.func
+
+    # Extract the keyword arguments
+    func_wrapper_kwargs = {}
+    func_wrapper_kwargs["output_names"] = func.output_names
+    func_wrapper_kwargs["input_type"] = func.input_type
+    func_wrapper_kwargs["vectorized"] = func.vectorized
+    func_wrapper_kwargs.update(func.kwargs)
+
+    return function, func_wrapper_kwargs
+
 
 def _make_single_func_robust(
     func: Union[Callable, FuncWrapper],
@@ -105,14 +134,10 @@ def _make_single_func_robust(
     """
     assert isinstance(func, FuncWrapper) or isinstance(func, Callable)
 
-    # Extract the keyword arguments from the function wrapper
     func_wrapper_kwargs = {}
     if isinstance(func, FuncWrapper):
-        _func = func
-        func = _func.func
-        func_wrapper_kwargs["output_names"] = _func.output_names
-        func_wrapper_kwargs["input_type"] = _func.input_type
-        func_wrapper_kwargs.update(_func.kwargs)
+        # Extract the function and keyword arguments from the function wrapper
+        func, func_wrapper_kwargs = _get_funcwrapper_func_and_kwargs(func)
 
     output_names = func_wrapper_kwargs.get("output_names")
 

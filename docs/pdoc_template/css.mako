@@ -282,8 +282,10 @@
     .admonition-title {
       font-weight: bold;
     }
+    .admonition.info {
+      background: #edfcf4;
+    }
     .admonition.note,
-    .admonition.info,
     .admonition.important {
       background: #ebf3ff;
     }
