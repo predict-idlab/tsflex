@@ -16,7 +16,7 @@
 
 #### Useful links
 
-- [Paper (preprint)](https://arxiv.org/abs/2111.12429)
+- [Paper](https://www.sciencedirect.com/science/article/pii/S2352711021001904)
 - [Documentation](https://predict-idlab.github.io/tsflex/)
 - [Example (machine learning) notebooks](https://github.com/predict-idlab/tsflex/tree/main/examples)
 
@@ -119,7 +119,7 @@ If you use `tsflex` in a scientific publication, we would highly appreciate citi
 }
 ```
 
-Linkt to the preprint paper: https://arxiv.org/abs/2111.12429
+Link to the paper: https://www.sciencedirect.com/science/article/pii/S2352711021001904
 
 ---
 
