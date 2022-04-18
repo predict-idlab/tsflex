@@ -112,7 +112,7 @@ class StridedRolling(ABC):
         self.data_type = func_data_type
 
         # 0. Standardize the input
-        series_list: List[pd.Series] = to_series_list(data)
+        series_list: List[pd.Series] = to_series_list(data)  # TODO: isn't it always a list of series?
         self.series_dtype = AttributeParser.determine_type(series_list)
         self.series_key: Tuple[str, ...] = tuple([str(s.name) for s in series_list])
 
@@ -382,7 +382,7 @@ class SequenceStridedRolling(StridedRolling):
         window_offset = self._get_window_offset(self.window)
         # bool which indicates whether the `end` lies on the boundary
         # and as arange does not include the right boundary -> use it to enlarge `stop`
-        boundary = (self.end - self.start - self.window) % self.stride == 0
+        boundary = (self.end + 1 - self.start - self.window) % self.stride <= 1
         return pd.Index(
             data=np.arange(
                 start=self.start + window_offset,
@@ -526,7 +526,6 @@ class TimeIndexSampleStridedRolling(SequenceStridedRolling):
         # bool which indicates whether the `end` lies on the boundary
         # and as arange does not include the right boundary -> use it to enlarge `stop`
         boundary = (self.end - self.start - self.window) % self.stride == 0
-
         return series.iloc[
             np.arange(
                 start=int(window_offset),
@@ -582,7 +581,7 @@ def _sliding_strided_window_1d(data: np.ndarray, window: int, step: int):
     assert (step >= 1) & (window < len(data))
 
     shape = [
-        np.ceil(len(data) / step - window / step).astype(int),
+        np.floor(len(data) / step - window / step + 1).astype(int),
         window,
     ]
 

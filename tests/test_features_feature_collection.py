@@ -960,6 +960,29 @@ def test_multiple_inputs_vectorized_features(dummy_data):
     assert np.all(res["EDA|TMP__windowed_diff"+p].values == manual_diff)
 
 
+### Test feature extraction length
+
+def test_feature_extraction_length():
+    s = pd.Series(np.arange(10), name="dummy")
+    assert len(s) == 10
+
+    fc = FeatureCollection(
+        feature_descriptors=[
+            FeatureDescriptor(np.max, "dummy", 2, 2),
+            FeatureDescriptor(
+                FuncWrapper(np.max, output_names="max_", vectorized=True, axis=-1),
+                "dummy",  2, 2,
+            )
+        ]
+    )
+    res = fc.calculate(s)
+
+    assert len(res) == 2
+    assert (len(res[0]) == 5) and (len(res[1]) == 5)
+    assert np.all(res[0].index == res[1].index)
+    assert np.all(res[0].values == res[1].values)
+
+
 ### Test 'error' use-cases
 
 

@@ -367,7 +367,7 @@ class FeatureCollection:
         # determing the bounds of the series dict items and slice on them
         start, end = _determine_bounds(bound_method, list(series_dict.values()))
         series_dict = {
-            n: s[s.index.dtype.type(start) : s.index.dtype.type(end)]
+            n: s.loc[s.index.dtype.type(start) : s.index.dtype.type(end)]  # TODO: check memory efficiency of ths
             for n, s, in series_dict.items()
         }
 
