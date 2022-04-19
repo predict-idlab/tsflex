@@ -110,7 +110,7 @@ def tsfel_feature_dict_wrapper(features_dict: Dict) -> List[Callable]:
     .. Note::
         This wrapper wraps the output of tsfel its `get_features_by_domain` or
         `get_features_by_tag`. <br>
-        Se more [here](https://github.com/fraunhoferportugal/tsfel/blob/master/tsfel/feature_extraction/features_settings.py).
+        See more [here](https://github.com/fraunhoferportugal/tsfel/blob/master/tsfel/feature_extraction/features_settings.py).
 
     Example
     -------
@@ -223,7 +223,7 @@ def tsfresh_settings_wrapper(settings: Dict) -> List[Callable]:
         This wrapper wraps the output of tsfresh its `MinimalFCParameters()`, 
         `EfficientFCParameters()`, `IndexBasedFCParameters()`, 
         `TimeBasedFCParameters()`, or `ComprehensiveFCParameters()`. <br>
-        Se more [here](https://github.com/blue-yonder/tsfresh/blob/main/tsfresh/feature_extraction/settings.py).
+        See more [here](https://github.com/blue-yonder/tsfresh/blob/main/tsfresh/feature_extraction/settings.py).
 
     Example
     -------
@@ -270,6 +270,48 @@ def tsfresh_settings_wrapper(settings: Dict) -> List[Callable]:
 
 # ----------------------------------- --CATCH22 -------------------------------------
 def catch22_wrapper(catch22_all: Callable) -> FuncWrapper:
+    """Wrapper enabling compatibility with catch22.
+
+    [catch22](https://github.com/chlubba/catch22) is a collection of 22 time series 
+    features that are a high-performing subset of the over 7000 features in hctsa.
+
+    By using this wrapper, we can plug the catch22 features in a tsflex 
+    ``FeatureCollection``. 
+    This enables to easily extract the catch22 features while leveraging the flexibility
+    of tsflex.
+
+    .. Note::
+        This wrapper wraps the `catch22_all` function from `catch22`.
+
+    Example
+    -------
+    ```python
+    from tsflex.features import FeatureCollection, MultipleFeatureDescriptors
+    from tsflex.features.integrations import catch22_wrapper
+    from catch22 import catch22_all
+
+    catch22_feats = MultipleFeatureDescriptors(
+        functions=catch22_wrapper(catch22_all),
+        series_names=["sig_0", "sig_1"],  # list of signal names
+        windows="15min", strides="2min",
+    )
+
+    fc = FeatureCollection(catch22_feats)
+    fc.calculate(data)  # calculate the features on your data
+    ```
+
+    Parameters
+    ----------
+    catch22_all: Callable
+        The `catch22_all` function from the `catch22` package.
+
+    Returns
+    -------
+    FuncWrapper
+        The wrapped `catch22_all` function that is compatible with tsflex.
+        This FuncWrapper will output the 22 catch22 features.
+ 
+    """
     catch22_names = catch22_all([0])["names"]
     def wrap_catch22_all(x):
         return catch22_all(x)["values"]
