@@ -266,3 +266,13 @@ def tsfresh_settings_wrapper(settings: Dict) -> List[Callable]:
             for kwargs in param:
                 functions.append(FuncWrapper(func, output_names=f"{func.__name__}_{str(kwargs)}", **kwargs))
     return functions
+
+
+# ----------------------------------- --CATCH22 -------------------------------------
+def catch22_wrapper(catch22_all: Callable) -> FuncWrapper:
+    catch22_names = catch22_all([0])["names"]
+    def wrap_catch22_all(x):
+        return catch22_all(x)["values"]
+
+    wrap_catch22_all.__name__ = "[wrapped]__" + _get_name(catch22_all)
+    return FuncWrapper(wrap_catch22_all, output_names=catch22_names)
