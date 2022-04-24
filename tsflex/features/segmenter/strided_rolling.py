@@ -142,17 +142,12 @@ class StridedRolling(ABC):
 
         # 4. Check the sparsity assumption
         if not self.approve_sparsity:
-            qs = [0, 0.1, 0.5, 0.9, 1]
             for container in self.series_containers:
-                series_idx_stats = np.quantile(
-                    container.end_indexes - container.start_indexes, q=qs
-                )
-                q_str = ", ".join([f"q={q}: {v}" for q, v in zip(qs, series_idx_stats)])
                 # Warn when min != max
-                if not all(series_idx_stats == series_idx_stats[-1]):
+                if np.ptp(container.end_indexes - container.start_indexes) != 0:
                     warnings.warn(
                         f"There are gaps in the sequence of the {container.name}"
-                        f"-series;\n \t Quantiles of nb values in window: {q_str}",
+                        f"-series!",
                         RuntimeWarning,
                     )
 
