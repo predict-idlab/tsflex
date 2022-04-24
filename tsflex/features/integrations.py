@@ -282,6 +282,7 @@ def catch22_wrapper(catch22_all: Callable) -> FuncWrapper:
 
     .. Note::
         This wrapper wraps the `catch22_all` function from `catch22`.
+        See more [here](https://github.com/chlubba/catch22/blob/master/wrap_Python/catch22/catch22.py).
 
     Example
     -------

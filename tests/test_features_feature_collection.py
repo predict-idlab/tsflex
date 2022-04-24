@@ -1216,7 +1216,7 @@ def test_serialization(dummy_data):
 
     df_tmp = dummy_data["TMP"].reset_index(drop=True)
     df_eda = dummy_data["EDA"].reset_index(drop=True)
-    out = fc.calculate([df_tmp, df_eda], window_idx="end", return_df=True)
+    out = fc.calculate([df_tmp, df_eda], return_df=True)
     col_order = out.columns
 
     save_path = Path("featurecollection.pkl")
