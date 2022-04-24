@@ -88,12 +88,6 @@ def test_sequence_stroll_last_window_full(dummy_data):
     out = stroll_apply_dummy_func(df_eda[:2202], window=1000, stride=200)
     assert out.index[-1] == 1200
 
-    def stroll_apply_dummy_func(data, window, stride) -> pd.DataFrame:
-        stroll = SequenceStridedRolling(data, window, stride, window_idx="begin")
-        return stroll.apply_func(FuncWrapper(np.min))
-
-    ## TODO: also test this
-
 
 def test_time_stroll_last_window_full(dummy_data):
     df_eda = dummy_data["EDA"]
