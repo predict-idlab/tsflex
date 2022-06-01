@@ -435,7 +435,6 @@ class TimeStridedRolling(StridedRolling):
             end=self.end - self.window + window_offset,
             freq=self.stride,
             name=series.index.name,
-            closed=None,
         )
 
     def _construct_start_end_times(self) -> Tuple[np.ndarray, np.ndarray]:
