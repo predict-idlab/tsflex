@@ -155,12 +155,12 @@ def tsfel_feature_dict_wrapper(features_dict: Dict) -> List[Callable]:
             else:
                 return [func_name+f"_{idx}" for idx in range(1,nb_outputs+1)]
         output_param = eval(config["parameters"][nb_outputs])
-        return [func_name+f"_{nb_outputs}=v" for v in output_param]
+        return [func_name+f"_{nb_outputs}={v}" for v in output_param]
 
     functions = []
     tsfel_mod = importlib.import_module("tsfel.feature_extraction")
-    for donain_feats in features_dict.values():  # Iterate over feature domains
-        for config in donain_feats.values():  # Iterate over function configs
+    for domain_feats in features_dict.values():  # Iterate over feature domains
+        for config in domain_feats.values():  # Iterate over function configs
             func = getattr(tsfel_mod, config["function"].split(".")[-1])
             params = config["parameters"] if config["parameters"] else {}
             output_names = get_output_names(config)
@@ -275,8 +275,8 @@ def catch22_wrapper(catch22_all: Callable) -> FuncWrapper:
     [catch22](https://github.com/chlubba/catch22) is a collection of 22 time series 
     features that are a high-performing subset of the over 7000 features in hctsa.
 
-    By using this wrapper, we can plug the catch22 features in a tsflex 
-    ``FeatureCollection``. 
+    By using this wrapper, we can plug the catch22 features in a tsflex
+    ``FeatureCollection``.
     This enables to easily extract the catch22 features while leveraging the flexibility
     of tsflex.
 
@@ -314,6 +314,7 @@ def catch22_wrapper(catch22_all: Callable) -> FuncWrapper:
  
     """
     catch22_names = catch22_all([0])["names"]
+
     def wrap_catch22_all(x):
         return catch22_all(x)["values"]
 
