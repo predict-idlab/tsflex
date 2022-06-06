@@ -42,7 +42,7 @@ def seglearn_wrapper(func: Callable, func_name: Optional[str] = None) -> FuncWra
     output_names = _get_name(func) if func_name is None else func_name
     # A bit hacky (hard coded), bc hist is only func that returns multiple values
     if hasattr(func, "bins"):
-        output_names = [output_names+f"_bin{idx}" for idx in range(1, func.bins+1)]
+        output_names = [output_names + f"_bin{idx}" for idx in range(1, func.bins + 1)]
     return FuncWrapper(wrap_func, output_names=output_names)
 
 
@@ -153,9 +153,9 @@ def tsfel_feature_dict_wrapper(features_dict: Dict) -> List[Callable]:
             if nb_outputs == 1:
                 return func_name
             else:
-                return [func_name+f"_{idx}" for idx in range(1,nb_outputs+1)]
+                return [func_name + f"_{idx}" for idx in range(1, nb_outputs + 1)]
         output_param = eval(config["parameters"][nb_outputs])
-        return [func_name+f"_{nb_outputs}={v}" for v in output_param]
+        return [func_name + f"_{nb_outputs}={v}" for v in output_param]
 
     functions = []
     tsfel_mod = importlib.import_module("tsfel.feature_extraction")
@@ -264,7 +264,11 @@ def tsfresh_settings_wrapper(settings: Dict) -> List[Callable]:
             functions.append(tsfresh_combiner_wrapper(func, param))
         else:
             for kwargs in param:
-                functions.append(FuncWrapper(func, output_names=f"{func.__name__}_{str(kwargs)}", **kwargs))
+                functions.append(
+                    FuncWrapper(
+                        func, output_names=f"{func.__name__}_{str(kwargs)}", **kwargs
+                    )
+                )
     return functions
 
 
