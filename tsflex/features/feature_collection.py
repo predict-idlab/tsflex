@@ -256,7 +256,7 @@ class FeatureCollection:
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         return_df: Optional[bool] = False,
-        window_idx: Optional[str] = "end",
+        window_idx: Optional[str] = "begin",
         bound_method: Optional[str] = "inner",
         approve_sparsity: Optional[bool] = False,
         show_progress: Optional[bool] = False,
@@ -292,7 +292,7 @@ class FeatureCollection:
         window_idx : str, optional
             The window's index position which will be used as index for the
             feature_window aggregation. Must be either of: `["begin", "middle", "end"]`.
-            by default "end". All features in this collection will use the same
+            by default "begin". All features in this collection will use the same
             window_idx.
         bound_method: str, optional
             The start-end bound methodology which is used to generate the slice ranges
@@ -367,7 +367,7 @@ class FeatureCollection:
         # determing the bounds of the series dict items and slice on them
         start, end = _determine_bounds(bound_method, list(series_dict.values()))
         series_dict = {
-            n: s[s.index.dtype.type(start) : s.index.dtype.type(end)]
+            n: s.loc[s.index.dtype.type(start) : s.index.dtype.type(end)]  # TODO: check memory efficiency of ths
             for n, s, in series_dict.items()
         }
 

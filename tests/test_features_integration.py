@@ -20,6 +20,7 @@ from tsflex.features.integrations import (
     tsfel_feature_dict_wrapper,
     tsfresh_combiner_wrapper,
     tsfresh_settings_wrapper,
+    catch22_wrapper,
 )
 
 
@@ -278,6 +279,23 @@ def test_tsfel_feature_dict_wrapper(dummy_data):
         strides="10min",
     )
     feature_collection = FeatureCollection(all_tsfel_feats)
+
+    res_df = feature_collection.calculate(dummy_data.first("15min"), return_df=True)
+    assert (res_df.shape[0] > 0) and (res_df.shape[1]) > 0
+
+
+## CATCH22
+
+def test_catch22_all_features(dummy_data):
+    # Tests if we integrate with the catch22 features
+    from catch22 import catch22_all
+
+    catch22_feats = MultipleFeatureDescriptors(
+        functions=catch22_wrapper(catch22_all),
+        series_names=["EDA", "TMP"],
+        windows="2.5min", strides="10min",
+    )
+    feature_collection = FeatureCollection(catch22_feats)
 
     res_df = feature_collection.calculate(dummy_data.first("15min"), return_df=True)
     assert (res_df.shape[0] > 0) and (res_df.shape[1]) > 0

@@ -21,6 +21,7 @@ tsflex is a domain independent package for time series processing & feature extr
 | Climate modelling | [Ozone level detection](https://archive.ics.uci.edu/ml/datasets/Ozone%20Level%20Detection) | [example_ozone_level_detection.ipynb](https://github.com/predict-idlab/tsflex/blob/main/examples/example_ozone_level_detection.ipynb) |  
 | Household data | [Electric power consumption](https://archive.ics.uci.edu/ml/datasets/Individual+household+electric+power+consumption) | [example_power_consumption_estimation.ipynb](example_power_consumption_estimation.ipynb) |
 | Clinical data | [Sleep-EDF Database Expanded](https://physionet.org/content/sleep-edfx/1.0.0/) | [example_sleep_staging.ipynb](example_sleep_staging.ipynb) |
+| kaggle competition | [Tabular Playground Series - Apr 2022](https://www.kaggle.com/competitions/tabular-playground-series-apr-2022)| https://www.kaggle.com/code/jeroenvdd/tpsapr22-best-non-dl-model-tsflex-powershap | 
 
 
 <!-- | Wearable data | [WESAD - Wearable stress & affect detection](https://archive.ics.uci.edu/ml/datasets/WESAD+%28Wearable+Stress+and+Affect+Detection%29) | [verbose_example.ipynb](verbose_example.ipynb) - <br>`TODO` create a notebook that uses the whole wesad dataset -->

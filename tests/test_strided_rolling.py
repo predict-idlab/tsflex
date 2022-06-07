@@ -62,20 +62,31 @@ def test_sequence_stroll_last_window_full(dummy_data):
         stroll = SequenceStridedRolling(data, window, stride, window_idx="end")
         return stroll.apply_func(FuncWrapper(np.min))
 
+    out = stroll_apply_dummy_func(df_eda[:2198], window=1000, stride=200)
+    assert out.index[-1] == 2000
+    out = stroll_apply_dummy_func(df_eda[:2199], window=1000, stride=200)
+    assert out.index[-1] == 2000
+    out = stroll_apply_dummy_func(df_eda[:2200], window=1000, stride=200)
+    assert out.index[-1] == 2200
     out = stroll_apply_dummy_func(df_eda[:2201], window=1000, stride=200)
     assert out.index[-1] == 2200
-
-    out = stroll_apply_dummy_func(df_eda[:2399], window=1000, stride=200)
+    out = stroll_apply_dummy_func(df_eda[:2202], window=1000, stride=200)
     assert out.index[-1] == 2200
 
-    # -> slicing is include left bound, discard right bound -> so UNTIL index 2200
-    # i.e. last index in sequence is 2199 -> last valid full range 2200
-    out = stroll_apply_dummy_func(df_eda[:2400], window=1000, stride=200)
-    assert out.index[-1] == 2200
-    out = stroll_apply_dummy_func(df_eda[:2401], window=1000, stride=200)
-    assert out.index[-1] == 2400
-    out = stroll_apply_dummy_func(df_eda[:2530], window=1000, stride=200)
-    assert out.index[-1] == 2400
+    def stroll_apply_dummy_func(data, window, stride) -> pd.DataFrame:
+        stroll = SequenceStridedRolling(data, window, stride, window_idx="begin")
+        return stroll.apply_func(FuncWrapper(np.min))
+
+    out = stroll_apply_dummy_func(df_eda[:2198], window=1000, stride=200)
+    assert out.index[-1] == 1000
+    out = stroll_apply_dummy_func(df_eda[:2199], window=1000, stride=200)
+    assert out.index[-1] == 1000
+    out = stroll_apply_dummy_func(df_eda[:2200], window=1000, stride=200)
+    assert out.index[-1] == 1200
+    out = stroll_apply_dummy_func(df_eda[:2201], window=1000, stride=200)
+    assert out.index[-1] == 1200
+    out = stroll_apply_dummy_func(df_eda[:2202], window=1000, stride=200)
+    assert out.index[-1] == 1200
 
 
 def test_time_stroll_last_window_full(dummy_data):
