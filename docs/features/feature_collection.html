@@ -302,7 +302,7 @@ class FeatureCollection:
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         return_df: Optional[bool] = False,
-        window_idx: Optional[str] = &#34;end&#34;,
+        window_idx: Optional[str] = &#34;begin&#34;,
         bound_method: Optional[str] = &#34;inner&#34;,
         approve_sparsity: Optional[bool] = False,
         show_progress: Optional[bool] = False,
@@ -338,7 +338,7 @@ class FeatureCollection:
         window_idx : str, optional
             The window&#39;s index position which will be used as index for the
             feature_window aggregation. Must be either of: `[&#34;begin&#34;, &#34;middle&#34;, &#34;end&#34;]`.
-            by default &#34;end&#34;. All features in this collection will use the same
+            by default &#34;begin&#34;. All features in this collection will use the same
             window_idx.
         bound_method: str, optional
             The start-end bound methodology which is used to generate the slice ranges
@@ -413,7 +413,7 @@ class FeatureCollection:
         # determing the bounds of the series dict items and slice on them
         start, end = _determine_bounds(bound_method, list(series_dict.values()))
         series_dict = {
-            n: s[s.index.dtype.type(start) : s.index.dtype.type(end)]
+            n: s.loc[s.index.dtype.type(start) : s.index.dtype.type(end)]  # TODO: check memory efficiency of ths
             for n, s, in series_dict.items()
         }
 
@@ -828,7 +828,7 @@ class FeatureCollection:
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         return_df: Optional[bool] = False,
-        window_idx: Optional[str] = &#34;end&#34;,
+        window_idx: Optional[str] = &#34;begin&#34;,
         bound_method: Optional[str] = &#34;inner&#34;,
         approve_sparsity: Optional[bool] = False,
         show_progress: Optional[bool] = False,
@@ -864,7 +864,7 @@ class FeatureCollection:
         window_idx : str, optional
             The window&#39;s index position which will be used as index for the
             feature_window aggregation. Must be either of: `[&#34;begin&#34;, &#34;middle&#34;, &#34;end&#34;]`.
-            by default &#34;end&#34;. All features in this collection will use the same
+            by default &#34;begin&#34;. All features in this collection will use the same
             window_idx.
         bound_method: str, optional
             The start-end bound methodology which is used to generate the slice ranges
@@ -939,7 +939,7 @@ class FeatureCollection:
         # determing the bounds of the series dict items and slice on them
         start, end = _determine_bounds(bound_method, list(series_dict.values()))
         series_dict = {
-            n: s[s.index.dtype.type(start) : s.index.dtype.type(end)]
+            n: s.loc[s.index.dtype.type(start) : s.index.dtype.type(end)]  # TODO: check memory efficiency of ths
             for n, s, in series_dict.items()
         }
 
@@ -1239,7 +1239,7 @@ collection.</p>
 </dl></div>
 </dd>
 <dt id="tsflex.features.feature_collection.FeatureCollection.calculate"><code class="name flex">
-<span>def <span class="ident">calculate</span></span>(<span>self, data, return_df=False, window_idx='end', bound_method='inner', approve_sparsity=False, show_progress=False, logging_file_path=None, n_jobs=None)</span>
+<span>def <span class="ident">calculate</span></span>(<span>self, data, return_df=False, window_idx='begin', bound_method='inner', approve_sparsity=False, show_progress=False, logging_file_path=None, n_jobs=None)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -1250,7 +1250,7 @@ collection.</p>
     self,
     data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
     return_df: Optional[bool] = False,
-    window_idx: Optional[str] = &#34;end&#34;,
+    window_idx: Optional[str] = &#34;begin&#34;,
     bound_method: Optional[str] = &#34;inner&#34;,
     approve_sparsity: Optional[bool] = False,
     show_progress: Optional[bool] = False,
@@ -1286,7 +1286,7 @@ collection.</p>
     window_idx : str, optional
         The window&#39;s index position which will be used as index for the
         feature_window aggregation. Must be either of: `[&#34;begin&#34;, &#34;middle&#34;, &#34;end&#34;]`.
-        by default &#34;end&#34;. All features in this collection will use the same
+        by default &#34;begin&#34;. All features in this collection will use the same
         window_idx.
     bound_method: str, optional
         The start-end bound methodology which is used to generate the slice ranges
@@ -1361,7 +1361,7 @@ collection.</p>
     # determing the bounds of the series dict items and slice on them
     start, end = _determine_bounds(bound_method, list(series_dict.values()))
     series_dict = {
-        n: s[s.index.dtype.type(start) : s.index.dtype.type(end)]
+        n: s.loc[s.index.dtype.type(start) : s.index.dtype.type(end)]  # TODO: check memory efficiency of ths
         for n, s, in series_dict.items()
     }
 
@@ -1453,7 +1453,7 @@ outer merge.</dd>
 <dt><strong><code>window_idx</code></strong> :&ensp;<code>str</code>, optional</dt>
 <dd>The window's index position which will be used as index for the
 feature_window aggregation. Must be either of: <code>["begin", "middle", "end"]</code>.
-by default "end". All features in this collection will use the same
+by default "begin". All features in this collection will use the same
 window_idx.</dd>
 <dt><strong><code>bound_method</code></strong> :&ensp;<code>str</code>, optional</dt>
 <dd>

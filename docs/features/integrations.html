@@ -83,7 +83,7 @@ def seglearn_wrapper(func: Callable, func_name: Optional[str] = None) -&gt; Func
     output_names = _get_name(func) if func_name is None else func_name
     # A bit hacky (hard coded), bc hist is only func that returns multiple values
     if hasattr(func, &#34;bins&#34;):
-        output_names = [output_names+f&#34;_bin{idx}&#34; for idx in range(1, func.bins+1)]
+        output_names = [output_names + f&#34;_bin{idx}&#34; for idx in range(1, func.bins + 1)]
     return FuncWrapper(wrap_func, output_names=output_names)
 
 
@@ -151,7 +151,7 @@ def tsfel_feature_dict_wrapper(features_dict: Dict) -&gt; List[Callable]:
     .. Note::
         This wrapper wraps the output of tsfel its `get_features_by_domain` or
         `get_features_by_tag`. &lt;br&gt;
-        Se more [here](https://github.com/fraunhoferportugal/tsfel/blob/master/tsfel/feature_extraction/features_settings.py).
+        See more [here](https://github.com/fraunhoferportugal/tsfel/blob/master/tsfel/feature_extraction/features_settings.py).
 
     Example
     -------
@@ -194,14 +194,14 @@ def tsfel_feature_dict_wrapper(features_dict: Dict) -&gt; List[Callable]:
             if nb_outputs == 1:
                 return func_name
             else:
-                return [func_name+f&#34;_{idx}&#34; for idx in range(1,nb_outputs+1)]
+                return [func_name + f&#34;_{idx}&#34; for idx in range(1, nb_outputs + 1)]
         output_param = eval(config[&#34;parameters&#34;][nb_outputs])
-        return [func_name+f&#34;_{nb_outputs}=v&#34; for v in output_param]
+        return [func_name + f&#34;_{nb_outputs}={v}&#34; for v in output_param]
 
     functions = []
     tsfel_mod = importlib.import_module(&#34;tsfel.feature_extraction&#34;)
-    for donain_feats in features_dict.values():  # Iterate over feature domains
-        for config in donain_feats.values():  # Iterate over function configs
+    for domain_feats in features_dict.values():  # Iterate over feature domains
+        for config in domain_feats.values():  # Iterate over function configs
             func = getattr(tsfel_mod, config[&#34;function&#34;].split(&#34;.&#34;)[-1])
             params = config[&#34;parameters&#34;] if config[&#34;parameters&#34;] else {}
             output_names = get_output_names(config)
@@ -264,7 +264,7 @@ def tsfresh_settings_wrapper(settings: Dict) -&gt; List[Callable]:
         This wrapper wraps the output of tsfresh its `MinimalFCParameters()`, 
         `EfficientFCParameters()`, `IndexBasedFCParameters()`, 
         `TimeBasedFCParameters()`, or `ComprehensiveFCParameters()`. &lt;br&gt;
-        Se more [here](https://github.com/blue-yonder/tsfresh/blob/main/tsfresh/feature_extraction/settings.py).
+        See more [here](https://github.com/blue-yonder/tsfresh/blob/main/tsfresh/feature_extraction/settings.py).
 
     Example
     -------
@@ -305,8 +305,66 @@ def tsfresh_settings_wrapper(settings: Dict) -&gt; List[Callable]:
             functions.append(tsfresh_combiner_wrapper(func, param))
         else:
             for kwargs in param:
-                functions.append(FuncWrapper(func, output_names=f&#34;{func.__name__}_{str(kwargs)}&#34;, **kwargs))
-    return functions</code></pre>
+                functions.append(
+                    FuncWrapper(
+                        func, output_names=f&#34;{func.__name__}_{str(kwargs)}&#34;, **kwargs
+                    )
+                )
+    return functions
+
+
+# ----------------------------------- --CATCH22 -------------------------------------
+def catch22_wrapper(catch22_all: Callable) -&gt; FuncWrapper:
+    &#34;&#34;&#34;Wrapper enabling compatibility with catch22.
+
+    [catch22](https://github.com/chlubba/catch22) is a collection of 22 time series 
+    features that are a high-performing subset of the over 7000 features in hctsa.
+
+    By using this wrapper, we can plug the catch22 features in a tsflex
+    ``FeatureCollection``.
+    This enables to easily extract the catch22 features while leveraging the flexibility
+    of tsflex.
+
+    .. Note::
+        This wrapper wraps the `catch22_all` function from `catch22`.
+        See more [here](https://github.com/chlubba/catch22/blob/master/wrap_Python/catch22/catch22.py).
+
+    Example
+    -------
+    ```python
+    from tsflex.features import FeatureCollection, MultipleFeatureDescriptors
+    from tsflex.features.integrations import catch22_wrapper
+    from catch22 import catch22_all
+
+    catch22_feats = MultipleFeatureDescriptors(
+        functions=catch22_wrapper(catch22_all),
+        series_names=[&#34;sig_0&#34;, &#34;sig_1&#34;],  # list of signal names
+        windows=&#34;15min&#34;, strides=&#34;2min&#34;,
+    )
+
+    fc = FeatureCollection(catch22_feats)
+    fc.calculate(data)  # calculate the features on your data
+    ```
+
+    Parameters
+    ----------
+    catch22_all: Callable
+        The `catch22_all` function from the `catch22` package.
+
+    Returns
+    -------
+    FuncWrapper
+        The wrapped `catch22_all` function that is compatible with tsflex.
+        This FuncWrapper will output the 22 catch22 features.
+ 
+    &#34;&#34;&#34;
+    catch22_names = catch22_all([0])[&#34;names&#34;]
+
+    def wrap_catch22_all(x):
+        return catch22_all(x)[&#34;values&#34;]
+
+    wrap_catch22_all.__name__ = &#34;[wrapped]__&#34; + _get_name(catch22_all)
+    return FuncWrapper(wrap_catch22_all, output_names=catch22_names)</code></pre>
 </details>
 </section>
 <section>
@@ -354,7 +412,7 @@ def tsfresh_settings_wrapper(settings: Dict) -&gt; List[Callable]:
     output_names = _get_name(func) if func_name is None else func_name
     # A bit hacky (hard coded), bc hist is only func that returns multiple values
     if hasattr(func, &#34;bins&#34;):
-        output_names = [output_names+f&#34;_bin{idx}&#34; for idx in range(1, func.bins+1)]
+        output_names = [output_names + f&#34;_bin{idx}&#34; for idx in range(1, func.bins + 1)]
     return FuncWrapper(wrap_func, output_names=output_names)</code></pre>
 </details>
 <div class="desc"><p>Wrapper enabling compatibility with seglearn functions.</p>
@@ -495,7 +553,7 @@ with tsflex.</dd>
     .. Note::
         This wrapper wraps the output of tsfel its `get_features_by_domain` or
         `get_features_by_tag`. &lt;br&gt;
-        Se more [here](https://github.com/fraunhoferportugal/tsfel/blob/master/tsfel/feature_extraction/features_settings.py).
+        See more [here](https://github.com/fraunhoferportugal/tsfel/blob/master/tsfel/feature_extraction/features_settings.py).
 
     Example
     -------
@@ -538,14 +596,14 @@ with tsflex.</dd>
             if nb_outputs == 1:
                 return func_name
             else:
-                return [func_name+f&#34;_{idx}&#34; for idx in range(1,nb_outputs+1)]
+                return [func_name + f&#34;_{idx}&#34; for idx in range(1, nb_outputs + 1)]
         output_param = eval(config[&#34;parameters&#34;][nb_outputs])
-        return [func_name+f&#34;_{nb_outputs}=v&#34; for v in output_param]
+        return [func_name + f&#34;_{nb_outputs}={v}&#34; for v in output_param]
 
     functions = []
     tsfel_mod = importlib.import_module(&#34;tsfel.feature_extraction&#34;)
-    for donain_feats in features_dict.values():  # Iterate over feature domains
-        for config in donain_feats.values():  # Iterate over function configs
+    for domain_feats in features_dict.values():  # Iterate over feature domains
+        for config in domain_feats.values():  # Iterate over function configs
             func = getattr(tsfel_mod, config[&#34;function&#34;].split(&#34;.&#34;)[-1])
             params = config[&#34;parameters&#34;] if config[&#34;parameters&#34;] else {}
             output_names = get_output_names(config)
@@ -562,7 +620,7 @@ the flexibility of tsflex.</p>
 <p class="admonition-title">Note</p>
 <p>This wrapper wraps the output of tsfel its <code>get_features_by_domain</code> or
 <code>get_features_by_tag</code>. <br>
-Se more <a href="https://github.com/fraunhoferportugal/tsfel/blob/master/tsfel/feature_extraction/features_settings.py">here</a>.</p>
+See more <a href="https://github.com/fraunhoferportugal/tsfel/blob/master/tsfel/feature_extraction/features_settings.py">here</a>.</p>
 </div>
 <h2 id="example">Example</h2>
 <pre><code class="language-python">from tsflex.features import FeatureCollection, MultipleFeatureDescriptors
@@ -685,7 +743,7 @@ function.</dd>
         This wrapper wraps the output of tsfresh its `MinimalFCParameters()`, 
         `EfficientFCParameters()`, `IndexBasedFCParameters()`, 
         `TimeBasedFCParameters()`, or `ComprehensiveFCParameters()`. &lt;br&gt;
-        Se more [here](https://github.com/blue-yonder/tsfresh/blob/main/tsfresh/feature_extraction/settings.py).
+        See more [here](https://github.com/blue-yonder/tsfresh/blob/main/tsfresh/feature_extraction/settings.py).
 
     Example
     -------
@@ -726,7 +784,11 @@ function.</dd>
             functions.append(tsfresh_combiner_wrapper(func, param))
         else:
             for kwargs in param:
-                functions.append(FuncWrapper(func, output_names=f&#34;{func.__name__}_{str(kwargs)}&#34;, **kwargs))
+                functions.append(
+                    FuncWrapper(
+                        func, output_names=f&#34;{func.__name__}_{str(kwargs)}&#34;, **kwargs
+                    )
+                )
     return functions</code></pre>
 </details>
 <div class="desc"><p>Wrapper enabling compatibility with tsfresh feature extraction settings.</p>
@@ -741,7 +803,7 @@ the flexibility of tsflex.</p>
 <p>This wrapper wraps the output of tsfresh its <code>MinimalFCParameters()</code>,
 <code>EfficientFCParameters()</code>, <code>IndexBasedFCParameters()</code>,
 <code>TimeBasedFCParameters()</code>, or <code>ComprehensiveFCParameters()</code>. <br>
-Se more <a href="https://github.com/blue-yonder/tsfresh/blob/main/tsfresh/feature_extraction/settings.py">here</a>.</p>
+See more <a href="https://github.com/blue-yonder/tsfresh/blob/main/tsfresh/feature_extraction/settings.py">here</a>.</p>
 </div>
 <h2 id="example">Example</h2>
 <pre><code class="language-python">from tsflex.features import FeatureCollection, MultipleFeatureDescriptors
@@ -767,6 +829,104 @@ fc.calculate(data)  # calculate the features on your data
 <dt><code>List[Callable]</code></dt>
 <dd>List of the (wrapped) tsfresh functions that are now directly compatible with
 with tsflex.</dd>
+</dl></div>
+</dd>
+<dt id="tsflex.features.integrations.catch22_wrapper"><code class="name flex">
+<span>def <span class="ident">catch22_wrapper</span></span>(<span>catch22_all)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def catch22_wrapper(catch22_all: Callable) -&gt; FuncWrapper:
+    &#34;&#34;&#34;Wrapper enabling compatibility with catch22.
+
+    [catch22](https://github.com/chlubba/catch22) is a collection of 22 time series 
+    features that are a high-performing subset of the over 7000 features in hctsa.
+
+    By using this wrapper, we can plug the catch22 features in a tsflex
+    ``FeatureCollection``.
+    This enables to easily extract the catch22 features while leveraging the flexibility
+    of tsflex.
+
+    .. Note::
+        This wrapper wraps the `catch22_all` function from `catch22`.
+        See more [here](https://github.com/chlubba/catch22/blob/master/wrap_Python/catch22/catch22.py).
+
+    Example
+    -------
+    ```python
+    from tsflex.features import FeatureCollection, MultipleFeatureDescriptors
+    from tsflex.features.integrations import catch22_wrapper
+    from catch22 import catch22_all
+
+    catch22_feats = MultipleFeatureDescriptors(
+        functions=catch22_wrapper(catch22_all),
+        series_names=[&#34;sig_0&#34;, &#34;sig_1&#34;],  # list of signal names
+        windows=&#34;15min&#34;, strides=&#34;2min&#34;,
+    )
+
+    fc = FeatureCollection(catch22_feats)
+    fc.calculate(data)  # calculate the features on your data
+    ```
+
+    Parameters
+    ----------
+    catch22_all: Callable
+        The `catch22_all` function from the `catch22` package.
+
+    Returns
+    -------
+    FuncWrapper
+        The wrapped `catch22_all` function that is compatible with tsflex.
+        This FuncWrapper will output the 22 catch22 features.
+ 
+    &#34;&#34;&#34;
+    catch22_names = catch22_all([0])[&#34;names&#34;]
+
+    def wrap_catch22_all(x):
+        return catch22_all(x)[&#34;values&#34;]
+
+    wrap_catch22_all.__name__ = &#34;[wrapped]__&#34; + _get_name(catch22_all)
+    return FuncWrapper(wrap_catch22_all, output_names=catch22_names)</code></pre>
+</details>
+<div class="desc"><p>Wrapper enabling compatibility with catch22.</p>
+<p><a href="https://github.com/chlubba/catch22">catch22</a> is a collection of 22 time series
+features that are a high-performing subset of the over 7000 features in hctsa.</p>
+<p>By using this wrapper, we can plug the catch22 features in a tsflex
+<code>FeatureCollection</code>.
+This enables to easily extract the catch22 features while leveraging the flexibility
+of tsflex.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This wrapper wraps the <code>catch22_all</code> function from <code>catch22</code>.
+See more <a href="https://github.com/chlubba/catch22/blob/master/wrap_Python/catch22/catch22.py">here</a>.</p>
+</div>
+<h2 id="example">Example</h2>
+<pre><code class="language-python">from tsflex.features import FeatureCollection, MultipleFeatureDescriptors
+from tsflex.features.integrations import catch22_wrapper
+from catch22 import catch22_all
+
+catch22_feats = MultipleFeatureDescriptors(
+    functions=catch22_wrapper(catch22_all),
+    series_names=[&quot;sig_0&quot;, &quot;sig_1&quot;],  # list of signal names
+    windows=&quot;15min&quot;, strides=&quot;2min&quot;,
+)
+
+fc = FeatureCollection(catch22_feats)
+fc.calculate(data)  # calculate the features on your data
+</code></pre>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>catch22_all</code></strong> :&ensp;<code>Callable</code></dt>
+<dd>The <code>catch22_all</code> function from the <code>catch22</code> package.</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>FuncWrapper</code></dt>
+<dd>The wrapped <code>catch22_all</code> function that is compatible with tsflex.
+This FuncWrapper will output the 22 catch22 features.</dd>
 </dl></div>
 </dd>
 </dl>
@@ -804,6 +964,7 @@ alt="logo should be displayed here" width="95%"></a>
 <li><code><a title="tsflex.features.integrations.tsfel_feature_dict_wrapper" href="#tsflex.features.integrations.tsfel_feature_dict_wrapper">tsfel_feature_dict_wrapper</a></code></li>
 <li><code><a title="tsflex.features.integrations.tsfresh_combiner_wrapper" href="#tsflex.features.integrations.tsfresh_combiner_wrapper">tsfresh_combiner_wrapper</a></code></li>
 <li><code><a title="tsflex.features.integrations.tsfresh_settings_wrapper" href="#tsflex.features.integrations.tsfresh_settings_wrapper">tsfresh_settings_wrapper</a></code></li>
+<li><code><a title="tsflex.features.integrations.catch22_wrapper" href="#tsflex.features.integrations.catch22_wrapper">catch22_wrapper</a></code></li>
 </ul>
 </li>
 </ul>

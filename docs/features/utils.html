@@ -182,7 +182,7 @@ def _make_single_func_robust(
 
     output_names = func_wrapper_kwargs.get(&#34;output_names&#34;)
 
-    def wrap_func(*series: Union[np.ndarray, pd.Series], **kwargs) -&gt; FuncWrapper:
+    def wrap_func(*series: Union[np.ndarray, pd.Series], **kwargs) -&gt; Callable:
         if not passthrough_nans:
             series = [s[~np.isnan(s)] for s in series]
         if any([len(s) &lt; min_nb_samples for s in series]):
