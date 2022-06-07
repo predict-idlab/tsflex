@@ -216,8 +216,8 @@ class SeriesProcessor(FrozenClass):
 
         elapsed = time.time() - t_start
         logger.info(
-            f"Finished function [{self.name}] on {self.series_names} in "
-            f"[{elapsed} seconds]!"
+            f"Finished function [{self.name}] on {self.series_names} with output "
+            f"{list(processed_output.keys())} in [{elapsed} seconds]!"
         )
 
         return processed_output

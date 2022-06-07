@@ -28,11 +28,12 @@ def _parse_message(message: str) -> list:
     """Parse the message of the logged info."""
     regex = r"\[(.*?)\]"
     matches = re.findall(regex, remove_inner_brackets(message))
-    assert len(matches) == 3
+    assert len(matches) == 4
     func = matches[0]
     series_names = matches[1].replace("'", "")
-    duration_s = float(matches[2].rstrip(" seconds"))
-    return [func, series_names, duration_s]
+    output_names = matches[2].replace("'", "")
+    duration_s = float(matches[3].rstrip(" seconds"))
+    return [func, series_names, output_names, duration_s]
 
 
 def _parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
@@ -57,10 +58,11 @@ def _parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
 
     """
     df = logging_file_to_df(logging_file_path)
-    df[["function", "series_names", "duration"]] = pd.DataFrame(
+    df[["function", "series_names", "output_names", "duration"]] = pd.DataFrame(
         list(df["message"].apply(_parse_message)),
         index=df.index,
     )
+    df["duration %"] = (100 * (df['duration'] / df["duration"].sum())).round(2)
     return df.drop(columns=["name", "log_level", "message"])
 
 
