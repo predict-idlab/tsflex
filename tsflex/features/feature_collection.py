@@ -214,6 +214,7 @@ class FeatureCollection:
         start_idx: Any,
         end_idx: Any,
         window_idx: str,
+        include_final_window: bool,
         approve_sparsity: bool,
     ) -> List[Tuple[StridedRolling, FuncWrapper]]:
         # --- Future work ---
@@ -239,6 +240,7 @@ class FeatureCollection:
                 start_idx=start_idx,
                 end_idx=end_idx,
                 window_idx=window_idx,
+                include_final_window=include_final_window,
                 approve_sparsity=approve_sparsity,
                 func_data_type=function.input_type,
             )
@@ -256,7 +258,8 @@ class FeatureCollection:
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         return_df: Optional[bool] = False,
-        window_idx: Optional[str] = "begin",
+        window_idx: Optional[str] = "end",
+        include_final_window: Optional[bool] = False,
         bound_method: Optional[str] = "inner",
         approve_sparsity: Optional[bool] = False,
         show_progress: Optional[bool] = False,
@@ -292,8 +295,15 @@ class FeatureCollection:
         window_idx : str, optional
             The window's index position which will be used as index for the
             feature_window aggregation. Must be either of: `["begin", "middle", "end"]`.
-            by default "begin". All features in this collection will use the same
+            by default "end". All features in this collection will use the same
             window_idx.
+            ..note::  # TODO: check this in docs (if correctly rendered)
+                `window_idx` end  results in using the end idx of the window as ...
+        include_final_window : bool, optional
+            Whether the final (incomplete) window should be included in the output. By
+            default False.
+            ..note::  # TODO: check this in docs (if correctly rendered)
+                ...
         bound_method: str, optional
             The start-end bound methodology which is used to generate the slice ranges
             when ``data`` consists of multiple series / columns.
@@ -371,11 +381,16 @@ class FeatureCollection:
             for n, s, in series_dict.items()
         }
 
+        # Every night, we need to check if the user has acknowledged the sparsity
+        # of the data. If not, we raise a warning.
+        # TODO: check if this is the best way to do this
+        # M
+
         # Note: this variable has a global scope so this is shared in multiprocessing
         # TODO: try to make this more efficient
         global get_stroll_func
         get_stroll_func = self._stroll_feat_generator(
-            series_dict, start, end, window_idx, approve_sparsity
+            series_dict, start, end, window_idx, include_final_window, approve_sparsity
         )
         nb_stroll_funcs = self._get_stroll_feat_length()
 

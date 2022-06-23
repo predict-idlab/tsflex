@@ -97,6 +97,7 @@ class StridedRolling(ABC):
         end_idx: Optional[T] = None,
         func_data_type: Optional[Union[np.array, pd.Series]] = np.array,
         window_idx: Optional[str] = "end",
+        include_final_window: bool = False,
         approve_sparsity: Optional[bool] = False,
     ):
         self.window = window
@@ -106,6 +107,7 @@ class StridedRolling(ABC):
         assert AttributeParser.check_expected_type([window, stride], self.win_str_type)
 
         self.window_idx = window_idx
+        self.include_final_window = include_final_window
         self.approve_sparsity = approve_sparsity
 
         assert func_data_type in SUPPORTED_STROLL_TYPES
@@ -141,7 +143,7 @@ class StridedRolling(ABC):
         )
 
         # 4. Check the sparsity assumption
-        if not self.approve_sparsity:
+        if not self.approve_sparsity and len(self.index):
             for container in self.series_containers:
                 # Warn when min != max
                 if np.ptp(container.end_indexes - container.start_indexes) != 0:
@@ -298,8 +300,9 @@ class StridedRolling(ABC):
                         strides == strides[0]
                     ), "Vectorized functions require same number of samples as stride!"
                     views.append(
-                        _sliding_strided_window_1d(sc.values, windows[0], strides[0])
+                        _sliding_strided_window_1d(sc.values, windows[0], strides[0], self.include_final_window)
                     )
+
             out = func(*views)
 
             out_type = type(out)
@@ -385,13 +388,19 @@ class SequenceStridedRolling(StridedRolling):
     # ------------------------------ Overridden methods ------------------------------
     def _construct_output_index(self, series: pd.Series) -> pd.Index:
         window_offset = self._get_window_offset(self.window)
-        # bool which indicates whether the `end` lies on the boundary
-        # and as arange does not include the right boundary -> use it to enlarge `stop`
-        boundary = (self.end + 1 - self.start - self.window) % self.stride <= 1
+        # Calculate the number of sliding windown steps
+        # This calculation does not uses half-open bounds (and thus may miss one full
+        #  window when a pd.RangeIndex is used) -> you can force to include this window
+        # by setting `include_final_window` True.
+        nb_feats = (self.end - self.start - self.window) // self.stride + 1
+        # Add 1 if there is still some data after (including) the last window its start
+        # index - this is only added when `include_last_window` is True.
+        nb_feats += self.include_final_window * (self.start + self.stride * nb_feats <= self.end)
+        # Works perfectly
         return pd.Index(
             data=np.arange(
                 start=self.start + window_offset,
-                stop=self.end - self.window + window_offset + self.stride * boundary,
+                stop=self.start + window_offset + nb_feats * self.stride,
                 step=self.stride,
             ),
             name=series.index.name,
@@ -435,10 +444,16 @@ class TimeStridedRolling(StridedRolling):
     def _construct_output_index(self, series: pd.Series) -> pd.DatetimeIndex:
         # note: the index automatically takes the timezone of `start` & `end`
         window_offset = self._get_window_offset(self.window)
+        # print("end, start", self.end, self.start)
+        nb_feats = (self.end - self.start - self.window) // self.stride + 1
+        # print("nb_feats", nb_feats)
+        nb_feats += self.include_final_window * (self.start + self.stride * nb_feats <= self.end)
+        # print("nb_feats -- ", nb_feats)
         return pd.date_range(
             start=self.start + window_offset,
-            end=self.end - self.window + window_offset,
+            end=self.start + window_offset + nb_feats * self.stride,
             freq=self.stride,
+            closed="left",
             name=series.index.name,
         )
 
@@ -554,8 +569,15 @@ class TimeIndexSampleStridedRolling(SequenceStridedRolling):
         return np_start_times, np_end_times
 
 
-def _sliding_strided_window_1d(data: np.ndarray, window: int, step: int):
+def _sliding_strided_window_1d(data: np.ndarray, window: int, step: int, include_final_window: bool = False):
     """View based sliding strided-window for 1-dimensional data.
+
+    ..note::
+        When `include_final_window` is False, the last window is not included in the
+        segmented view (although this final window would contain exactly the same
+        number of samples as all other windows).
+        Setting `include_final_window` to True will include the last window in the
+        segmented view.
 
     Parameters
     ----------
@@ -565,6 +587,8 @@ def _sliding_strided_window_1d(data: np.ndarray, window: int, step: int):
         The window size, in number of samples.
     step: int
         The step size (i.e., the stride), in number of samples.
+    include_final_window: bool
+        Whether to include the final window or not.
 
     Returns
     -------
@@ -584,8 +608,12 @@ def _sliding_strided_window_1d(data: np.ndarray, window: int, step: int):
 
     assert (step >= 1) & (window < len(data))
 
+    nb_features = np.floor(len(data) / step - window / step).astype(int)
+    # print(nb_features)
+    nb_features += include_final_window
+
     shape = [
-        np.floor(len(data) / step - window / step + 1).astype(int),
+        nb_features,
         window,
     ]
 
