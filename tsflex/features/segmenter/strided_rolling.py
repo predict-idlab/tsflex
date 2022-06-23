@@ -281,7 +281,11 @@ class StridedRolling(ABC):
 
             views = []
             for sc in self.series_containers:
-                if len(sc.start_indexes) == 1:
+                if len(sc.start_indexes) == 0:
+                    # There are no feature windows  -> return empty array (see below)
+                    views = []
+                    break
+                elif len(sc.start_indexes) == 1:
                     # There is only 1 feature window (bc no steps in the sliding window)
                     views.append(
                         np.expand_dims(
@@ -303,7 +307,10 @@ class StridedRolling(ABC):
                         _sliding_strided_window_1d(sc.values, windows[0], strides[0], self.include_final_window)
                     )
 
-            out = func(*views)
+            # Assign empty array as output when there is no view to apply the vectorized
+            # function on (this is the case when there is at least for one series no
+            # feature windows)
+            out = func(*views) if len(views) >= 1 else np.array([])
 
             out_type = type(out)
             out = np.asarray(out)
@@ -335,10 +342,16 @@ class StridedRolling(ABC):
 
         # Aggregate function output in a dictionary
         feat_out = {}
-        if out.ndim == 1 or (out.ndim == 2 and out.shape[1] == 1):
+        if out.ndim == 1 and not len(out):
+            # When there are no features calculated (due to no feature windows)
+            assert not len(self.index)
+            for f_name in feat_names:
+                feat_out[self._create_feat_col_name(f_name)] = None  # Will be discarded (bc no index)
+        elif out.ndim == 1 or (out.ndim == 2 and out.shape[1] == 1):
             assert len(feat_names) == 1, f"Func {func} returned more than 1 output!"
             feat_out[self._create_feat_col_name(feat_names[0])] = out.flatten()
-        if out.ndim == 2 and out.shape[1] > 1:
+        else:
+            assert out.ndim == 2 and out.shape[1] > 1
             assert (
                 len(feat_names) == out.shape[1]
             ), f"Func {func} returned incorrect number of outputs ({out.shape[1]})!"
@@ -609,7 +622,7 @@ def _sliding_strided_window_1d(data: np.ndarray, window: int, step: int, include
     assert (step >= 1) & (window < len(data))
 
     nb_features = np.floor(len(data) / step - window / step).astype(int)
-    # print(nb_features)
+    print(nb_features)
     nb_features += include_final_window
 
     shape = [
