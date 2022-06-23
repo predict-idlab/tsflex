@@ -968,9 +968,9 @@ def test_feature_extraction_length():
 
     fc = FeatureCollection(
         feature_descriptors=[
-            FeatureDescriptor(np.max, "dummy", 3, 1),
+            FeatureDescriptor(np.min, "dummy", 3, 1),
             FeatureDescriptor(
-                FuncWrapper(np.max, output_names="max_", vectorized=True, axis=-1),
+                FuncWrapper(np.min, output_names="max_", vectorized=True, axis=-1),
                 "dummy",  3, 1,
             )
         ]
@@ -980,18 +980,20 @@ def test_feature_extraction_length():
     assert len(res) == 2
     assert np.all(res[0].index == res[1].index)
     assert np.all(res[0].values == res[1].values)
-    assert np.all(res[0].index.values == [0, 1])
-    assert np.all(res[0].values == [0, 1])
+    assert np.all(res[0].index.values == [0, 1, 2])
+    assert np.all(res[0].values.ravel() == [0, 1, 2])
 
     s = pd.Series([0, 1, 2, 3, 4, 5], name="dummy")
     s.index = [0, 1, 2, 2.5, 3, 4]
 
-    fc = FeatureCollection(FeatureDescriptor(np.max, "dummy", 3, 1))
-    res = fc.calculate(s)
+    fc = FeatureCollection(FeatureDescriptor(np.min, "dummy", 3, 1))
+    res = fc.calculate(s, window_idx="begin")
 
     assert len(res) == 1
     assert np.all(res[0].index.values == [0, 1])
-    assert np.all(res[0].values == [0, 1])
+    assert np.all(res[0].values.ravel() == [0, 1])
+
+
 
 
 ### Test 'error' use-cases

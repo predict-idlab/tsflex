@@ -339,8 +339,6 @@ def test_time_stroll_apply_func_vectorized():
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
 
 
-# TODO: test multiple outputs
-
 def test_sequence_stroll_apply_func_vectorized_multi_output():
     def min_max(arr, axis=None):
         return np.min(arr, axis=axis), np.max(arr, axis=axis)
@@ -406,7 +404,7 @@ def test_time_stroll_apply_func_vectorized_multi_output():
     f_vect = FuncWrapper(min_max, output_names=["min_vect", "max_vect"], vectorized=True, axis=-1)
 
     s = pd.Series(data=[0,1,2,3,4], name="dummy")
-    s.index =  pd.date_range("2020-01-01", freq="1h", periods=5)
+    s.index = pd.date_range("2020-01-01", freq="1h", periods=5)
 
     def assert_2col_df_equal(s1, s2):
         assert (s1.shape[1] == 2) & (s2.shape[1] == 2)
@@ -456,3 +454,25 @@ def test_time_stroll_apply_func_vectorized_multi_output():
     assert_2col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
     sr = TimeStridedRolling(s, window=pd.Timedelta(6, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin", include_final_window=True)
     assert_2col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
+
+
+def test_index_data_type_retention():
+    s = pd.Series([0, 1, 2, 3, 4], name="dummy")
+
+    ### Int
+    sr = SequenceStridedRolling(s, window=3, stride=1, window_idx="begin")
+    assert sr.index.dtype == "int"
+    assert not sr.index.dtype == "float"
+
+    ### Float
+    s.index = [0., 1., 2., 3., 4.]
+    sr = SequenceStridedRolling(s, window=3, stride=1, window_idx="begin")
+    assert sr.index.dtype == "float"
+    assert not sr.index.dtype == "int"
+
+    ### Time
+    s.index = pd.date_range("2020-01-01", freq="1h", periods=5)
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unity="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin")
+    assert "datetime64" in str(sr.index.dtype)
+    assert not sr.index.dtype == "int"
+    assert not sr.index.dtype == "float"

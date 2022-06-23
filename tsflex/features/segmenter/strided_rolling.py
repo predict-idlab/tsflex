@@ -304,7 +304,7 @@ class StridedRolling(ABC):
                         strides == strides[0]
                     ), "Vectorized functions require same number of samples as stride!"
                     views.append(
-                        _sliding_strided_window_1d(sc.values, windows[0], strides[0], self.include_final_window)
+                        _sliding_strided_window_1d(sc.values, windows[0], strides[0], len(self.index))
                     )
 
             # Assign empty array as output when there is no view to apply the vectorized
@@ -409,7 +409,6 @@ class SequenceStridedRolling(StridedRolling):
         # Add 1 if there is still some data after (including) the last window its start
         # index - this is only added when `include_last_window` is True.
         nb_feats += self.include_final_window * (self.start + self.stride * nb_feats <= self.end)
-        # Works perfectly
         return pd.Index(
             data=np.arange(
                 start=self.start + window_offset,
@@ -582,15 +581,8 @@ class TimeIndexSampleStridedRolling(SequenceStridedRolling):
         return np_start_times, np_end_times
 
 
-def _sliding_strided_window_1d(data: np.ndarray, window: int, step: int, include_final_window: bool = False):
+def _sliding_strided_window_1d(data: np.ndarray, window: int, step: int, nb_segments: int):
     """View based sliding strided-window for 1-dimensional data.
-
-    ..note::
-        When `include_final_window` is False, the last window is not included in the
-        segmented view (although this final window would contain exactly the same
-        number of samples as all other windows).
-        Setting `include_final_window` to True will include the last window in the
-        segmented view.
 
     Parameters
     ----------
@@ -600,8 +592,9 @@ def _sliding_strided_window_1d(data: np.ndarray, window: int, step: int, include
         The window size, in number of samples.
     step: int
         The step size (i.e., the stride), in number of samples.
-    include_final_window: bool
-        Whether to include the final window or not.
+    nb_segments: int
+        The number of sliding window steps, this is equal to the number of feature
+        windows.
 
     Returns
     -------
@@ -621,12 +614,8 @@ def _sliding_strided_window_1d(data: np.ndarray, window: int, step: int, include
 
     assert (step >= 1) & (window < len(data))
 
-    nb_features = np.floor(len(data) / step - window / step).astype(int)
-    print(nb_features)
-    nb_features += include_final_window
-
     shape = [
-        nb_features,
+        nb_segments,
         window,
     ]
 
