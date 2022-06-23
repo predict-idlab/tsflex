@@ -962,25 +962,36 @@ def test_multiple_inputs_vectorized_features(dummy_data):
 
 ### Test feature extraction length
 
+
 def test_feature_extraction_length():
-    s = pd.Series(np.arange(10), name="dummy")
-    assert len(s) == 10
+    s = pd.Series([0, 1, 2, 3, 4, 5], name="dummy")
 
     fc = FeatureCollection(
         feature_descriptors=[
-            FeatureDescriptor(np.max, "dummy", 2, 2),
+            FeatureDescriptor(np.max, "dummy", 3, 1),
             FeatureDescriptor(
                 FuncWrapper(np.max, output_names="max_", vectorized=True, axis=-1),
-                "dummy",  2, 2,
+                "dummy",  3, 1,
             )
         ]
     )
-    res = fc.calculate(s)
+    res = fc.calculate(s, window_idx="begin")
 
     assert len(res) == 2
-    assert (len(res[0]) == 5) and (len(res[1]) == 5)
     assert np.all(res[0].index == res[1].index)
     assert np.all(res[0].values == res[1].values)
+    assert np.all(res[0].index.values == [0, 1])
+    assert np.all(res[0].values == [0, 1])
+
+    s = pd.Series([0, 1, 2, 3, 4, 5], name="dummy")
+    s.index = [0, 1, 2, 2.5, 3, 4]
+
+    fc = FeatureCollection(FeatureDescriptor(np.max, "dummy", 3, 1))
+    res = fc.calculate(s)
+
+    assert len(res) == 1
+    assert np.all(res[0].index.values == [0, 1])
+    assert np.all(res[0].values == [0, 1])
 
 
 ### Test 'error' use-cases

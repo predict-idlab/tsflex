@@ -67,7 +67,7 @@ def test_sequence_stroll_last_window_full(dummy_data):
     out = stroll_apply_dummy_func(df_eda[:2199], window=1000, stride=200)
     assert out.index[-1] == 2000
     out = stroll_apply_dummy_func(df_eda[:2200], window=1000, stride=200)
-    assert out.index[-1] == 2200
+    assert out.index[-1] == 2000
     out = stroll_apply_dummy_func(df_eda[:2201], window=1000, stride=200)
     assert out.index[-1] == 2200
     out = stroll_apply_dummy_func(df_eda[:2202], window=1000, stride=200)
@@ -82,7 +82,7 @@ def test_sequence_stroll_last_window_full(dummy_data):
     out = stroll_apply_dummy_func(df_eda[:2199], window=1000, stride=200)
     assert out.index[-1] == 1000
     out = stroll_apply_dummy_func(df_eda[:2200], window=1000, stride=200)
-    assert out.index[-1] == 1200
+    assert out.index[-1] == 1000
     out = stroll_apply_dummy_func(df_eda[:2201], window=1000, stride=200)
     assert out.index[-1] == 1200
     out = stroll_apply_dummy_func(df_eda[:2202], window=1000, stride=200)
@@ -129,3 +129,100 @@ def test_time_index_sequence_stroll(dummy_data):
         df_eda, window=1000, stride=50, window_idx="end"
     )
     return stroll.apply_func(FuncWrapper(np.min))
+
+
+def test_sequence_stroll_indexing():
+    s = pd.Series(data=[0,1,2,3,4], name="dummy")
+
+    ## No Force
+    sr = SequenceStridedRolling(s, window=3, stride=1, window_idx="begin")
+    assert np.all(sr.index == [0,1])
+    sr = SequenceStridedRolling(s, window=3, stride=2, window_idx="begin")
+    assert np.all(sr.index == [0])
+    sr = SequenceStridedRolling(s, window=3, stride=3, window_idx="begin")
+    assert np.all(sr.index == [0])
+    sr = SequenceStridedRolling(s, window=3, stride=4, window_idx="begin")
+    assert np.all(sr.index == [0])
+    sr = SequenceStridedRolling(s, window=3, stride=5, window_idx="begin")
+    assert np.all(sr.index == [0])
+    sr = SequenceStridedRolling(s, window=3, stride=50, window_idx="begin")
+    assert np.all(sr.index == [0])
+
+    sr = SequenceStridedRolling(s, window=4, stride=1, window_idx="begin")
+    assert np.all(sr.index == [0])
+
+    sr = SequenceStridedRolling(s, window=5, stride=1, window_idx="begin")
+    assert np.all(sr.index == [])
+    sr = SequenceStridedRolling(s, window=6, stride=1, window_idx="begin")
+    assert np.all(sr.index == [])
+
+    ## Force
+    sr = SequenceStridedRolling(s, window=3, stride=1, window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == [0,1,2])
+    sr = SequenceStridedRolling(s, window=3, stride=2, window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == [0,2])
+    sr = SequenceStridedRolling(s, window=3, stride=4, window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == [0, 4])
+    sr = SequenceStridedRolling(s, window=3, stride=5, window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == [0])
+    sr = SequenceStridedRolling(s, window=3, stride=50, window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == [0])
+
+    sr = SequenceStridedRolling(s, window=4, stride=1, window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == [0, 1])
+
+    sr = SequenceStridedRolling(s, window=5, stride=1, window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == [0])
+    sr = SequenceStridedRolling(s, window=6, stride=1, window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == [])
+
+
+def test_time_stroll_indexing():
+    s = pd.Series(data=[0,1,2,3,4], name="dummy")
+    time_index = pd.date_range("2020-01-01", freq="1h", periods=5)
+    s.index = time_index
+
+    def get_time_index(arr):
+        return [time_index[idx] for idx in arr]
+
+    ## No Force
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin")
+    assert np.all(sr.index == get_time_index([0,1]))
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(2, unit="h"), window_idx="begin")
+    assert np.all(sr.index == get_time_index([0]))
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(3, unit="h"), window_idx="begin")
+    assert np.all(sr.index == get_time_index([0]))
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(4, unit="h"), window_idx="begin")
+    assert np.all(sr.index == get_time_index([0]))
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(5, unit="h"), window_idx="begin")
+    assert np.all(sr.index == get_time_index([0]))
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(50, unit="h"), window_idx="begin")
+    assert np.all(sr.index == get_time_index([0]))
+
+    sr = TimeStridedRolling(s, window=pd.Timedelta(4, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin")
+    assert np.all(sr.index == get_time_index([0]))
+
+    sr = TimeStridedRolling(s, window=pd.Timedelta(5, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin")
+    assert np.all(sr.index == [])
+    sr = TimeStridedRolling(s, window=pd.Timedelta(6, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin")
+    assert np.all(sr.index == [])
+
+    ## Force
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == get_time_index([0,1,2]))
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(2, unit="h"), window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == get_time_index([0,2]))
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(4, unit="h"), window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == get_time_index([0, 4]))
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(5, unit="h"), window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == get_time_index([0]))
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(50, unit="h"), window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == get_time_index([0]))
+
+    sr = TimeStridedRolling(s, window=pd.Timedelta(4, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == get_time_index([0, 1]))
+
+    sr = TimeStridedRolling(s, window=pd.Timedelta(5, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == get_time_index([0]))
+    sr = TimeStridedRolling(s, window=pd.Timedelta(6, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == [])
