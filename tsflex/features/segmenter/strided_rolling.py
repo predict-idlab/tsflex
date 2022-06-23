@@ -281,17 +281,28 @@ class StridedRolling(ABC):
 
             views = []
             for sc in self.series_containers:
-                windows = sc.end_indexes - sc.start_indexes
-                strides = sc.start_indexes[1:] - sc.start_indexes[:-1]
-                assert np.all(
-                    windows == windows[0]
-                ), "Vectorized functions require same number of samples in each segmented window!"
-                assert np.all(
-                    strides == strides[0]
-                ), "Vectorized functions require same number of samples as stride!"
-                views.append(
-                    _sliding_strided_window_1d(sc.values, windows[0], strides[0], self.include_final_window)
-                )
+                if len(sc.start_indexes) == 1:
+                    # There is only 1 feature window (bc no steps in the sliding window)
+                    views.append(
+                        np.expand_dims(
+                            sc.values[sc.start_indexes[0]: sc.end_indexes[0]],
+                            axis=0,
+                        )
+                    )
+                else: 
+                    # There are >1 feature windows (bc >=1 steps in the sliding window)
+                    windows = sc.end_indexes - sc.start_indexes
+                    strides = sc.start_indexes[1:] - sc.start_indexes[:-1]
+                    assert np.all(
+                        windows == windows[0]
+                    ), "Vectorized functions require same number of samples in each segmented window!"
+                    assert np.all(
+                        strides == strides[0]
+                    ), "Vectorized functions require same number of samples as stride!"
+                    views.append(
+                        _sliding_strided_window_1d(sc.values, windows[0], strides[0], self.include_final_window)
+                    )
+
             out = func(*views)
 
             out_type = type(out)
