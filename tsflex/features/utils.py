@@ -167,7 +167,7 @@ def make_robust(
 ) -> Union[FuncWrapper, List[FuncWrapper]]:
     """Decorate `funcs` into one or multiple robust FuncWrappers.
 
-     More specifically this method does:\n
+     More specifically this method does (in the following order):\n
      * `np.NaN` data input propagation / filtering
      *  `min_nb_samples` checking before feeding to `func`
         (if not met, returns `error_val`)\n
@@ -179,9 +179,12 @@ def make_robust(
     funcs: Union[Callable, FuncWrapper, List[Union[Callable, FuncWrapper]]]
         The function which will be made robust.
     min_nb_samples: int, optional
-        The minimum number of samples that are needed for `func` to be applied, by
-        default 1.
-        successfully.
+        The minimum number of samples that are needed for `func` to be applied
+        successfully, by default 1.
+        .. Note::
+            The number of samples are determined after the `passthrough_nans` filter
+            took place.
+
     error_val: Any, optional
         The error *return* value if the `min_nb_samples` requirement is not met, by
         default `np.NaN`.
