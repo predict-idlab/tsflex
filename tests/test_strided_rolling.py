@@ -461,18 +461,16 @@ def test_index_data_type_retention():
 
     ### Int
     sr = SequenceStridedRolling(s, window=3, stride=1, window_idx="begin")
-    assert sr.index.dtype == "int"
-    assert not sr.index.dtype == "float"
+    assert str(sr.index.dtype).startswith("int")
 
     ### Float
     s.index = [0., 1., 2., 3., 4.]
     sr = SequenceStridedRolling(s, window=3, stride=1, window_idx="begin")
-    assert sr.index.dtype == "float"
-    assert not sr.index.dtype == "int"
+    assert str(sr.index.dtype).startswith("float")
 
     ### Time
     s.index = pd.date_range("2020-01-01", freq="1h", periods=5)
     sr = TimeStridedRolling(s, window=pd.Timedelta(3, unity="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin")
     assert "datetime64" in str(sr.index.dtype)
-    assert not sr.index.dtype == "int"
-    assert not sr.index.dtype == "float"
+    assert not str(sr.index.dtype).startswith("int")
+    assert not str(sr.index.dtype).startswith("float")
