@@ -68,6 +68,24 @@ class StridedRolling(ABC):
         The window's index position which will be used as index for the
         feature_window aggregation. Must be either of: `["begin", "middle", "end"]`, by
         default "end".
+    include_final_window: bool, optional
+        Whether to include the final (possibly incomplete) window should be included in
+        the strided-window segmentation, by default False.
+        .. Note::
+            Both these notes apply when `include_final_window` is True.
+            Te user should be aware that the last window *might* be incomplete, i.e.;
+                - when equally sampled, the last window *might* be smaller than the
+                    the other windows.
+                - when not equally sampled, the last window *might* not include all
+                    the data points (as the begin-time + window-size comes after the
+                    last data point).
+            Note however, that when equally sampled, the last window *will* be a full
+            window when:
+                - the stride is the sampling rate of the data.
+                  Remark that thus when `include_final_window` is False, the last
+                  window, which is a full window will not be included.
+                - (len * sampling_rate - window_size) % stride is 0.
+                  Remark that the first case is a base case of this.
     approve_sparsity: bool, optional
         Bool indicating whether the user acknowledges that there may be sparsity (i.e.,
         irregularly sampled data), by default False.

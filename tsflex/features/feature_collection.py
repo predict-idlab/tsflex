@@ -300,10 +300,23 @@ class FeatureCollection:
             ..note::  # TODO: check this in docs (if correctly rendered)
                 `window_idx` end  results in using the end idx of the window as ...
         include_final_window : bool, optional
-            Whether the final (incomplete) window should be included in the output. By
-            default False.
-            ..note::  # TODO: check this in docs (if correctly rendered)
-                ...
+        Whether to include the final (possibly incomplete) window should be included in
+        the strided-window segmentation, by default False.
+        .. Note::
+            Both these notes apply when `include_final_window` is True.
+            Te user should be aware that the last window *might* be incomplete, i.e.;
+                - when equally sampled, the last window *might* be smaller than the
+                    the other windows.
+                - when not equally sampled, the last window *might* not include all
+                    the data points (as the begin-time + window-size comes after the
+                    last data point).
+            Note however, that when equally sampled, the last window *will* be a full
+            window when:
+                - the stride is the sampling rate of the data.
+                  Remark that thus when `include_final_window` is False, the last
+                  window, which is a full window will not be included.
+                - (len * sampling_rate - window_size) % stride is 0.
+                  Remark that the first case is a base case of this.
         bound_method: str, optional
             The start-end bound methodology which is used to generate the slice ranges
             when ``data`` consists of multiple series / columns.
