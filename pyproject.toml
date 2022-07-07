@@ -33,7 +33,7 @@ tsfresh = "^0.18.0"
 tsfel = "^0.1.4"
 statsmodels = "0.12.2"  # Added bc of this: https://github.com/blue-yonder/tsfresh/issues/897
 fastparquet = "0.8.0"  # Lock to this version to resolve issue on macos with python 3.7
-catch22 = "^0.2.0"
+pycatch22 = "^0.4.2"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
