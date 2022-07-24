@@ -50,6 +50,28 @@ def test_single_series_feature_collection(dummy_data):
     assert all(res_df.index[1:] - res_df.index[:-1] == pd.to_timedelta(5, unit="s"))
 
 
+def test_single_series_feature_collection_strides(dummy_data):
+    stride = "5s"
+    fd1 = FeatureDescriptor(np.sum, series_name="EDA", window="10s")
+    fd2 = FeatureDescriptor(np.sum, series_name="EDA", window="10s", stride='20s')
+    fd3 = FeatureDescriptor(np.sum, series_name="EDA", window="10s", stride=stride)
+    fc1 = FeatureCollection(feature_descriptors=fd1)
+    fc2 = FeatureCollection(feature_descriptors=fd2)
+    fc3 = FeatureCollection(feature_descriptors=fd3)
+
+    assert fc1.get_required_series() == fc2.get_required_series()
+    assert fc1.get_required_series() == fc3.get_required_series()
+
+    res1 = fc1.calculate(dummy_data, stride=stride, return_df=False, n_jobs=1)
+    res2 = fc2.calculate(dummy_data, stride=stride, return_df=False, n_jobs=1)
+    res3 = fc3.calculate(dummy_data, return_df=False, n_jobs=1)
+
+    assert (len(res1) == 1) & (len(res2) == 1) & (len(res3) == 1)
+
+    assert_frame_equal(res1[0], res2[0])
+    assert_frame_equal(res1[0], res3[0])
+
+
 def test_uneven_sampled_series_feature_collection(dummy_data):
     fd = FeatureDescriptor(
         function=np.sum,
@@ -263,6 +285,26 @@ def test_multiplefeaturedescriptors_feature_collection(dummy_data):
         ]
     )
     assert len(res_df) == expected_length
+
+
+def test_multiplefeaturedescriptors_feature_collection_strides(dummy_data):
+    stride= "2.5s"
+    mfd1 = MultipleFeatureDescriptors([np.max, np.min], ["EDA", "TMP"], ["5s", "7.5s"])
+    mfd2 = MultipleFeatureDescriptors([np.max, np.min], ["EDA", "TMP"], ["5s", "7.5s"], strides=["5s"])#, "10s"])  # TODO: list of strides supporten...
+    mfd3 = MultipleFeatureDescriptors([np.max, np.min], ["EDA", "TMP"], ["5s", "7.5s"], strides=stride)
+    fc1 = FeatureCollection(mfd1)
+    fc2 = FeatureCollection(mfd2)
+    fc3 = FeatureCollection(mfd3)
+
+    assert fc1.get_required_series() == fc2.get_required_series()
+    assert fc1.get_required_series() == fc3.get_required_series()
+
+    res1 = fc1.calculate(dummy_data, stride=stride, return_df=True, n_jobs=0)
+    res2 = fc2.calculate(dummy_data, stride=stride, return_df=True, n_jobs=0)
+    res3 = fc3.calculate(dummy_data, return_df=True, n_jobs=0)
+
+    assert_frame_equal(res1, res2)
+    assert_frame_equal(res1, res3)
 
 
 def test_featurecollection_feature_collection(dummy_data):

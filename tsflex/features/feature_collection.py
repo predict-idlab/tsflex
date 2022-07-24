@@ -33,7 +33,7 @@ from ..features.function_wrapper import FuncWrapper
 from ..utils.attribute_parsing import AttributeParser
 from ..utils.data import to_list, to_series_list, flatten
 from ..utils.logging import delete_logging_handlers, add_logging_handler
-from ..utils.time import timedelta_to_str
+from ..utils.time import parse_time_arg, timedelta_to_str
 
 
 class FeatureCollection:
@@ -110,16 +110,32 @@ class FeatureCollection:
         # Note: `window` & `stride` properties can either be a pd.Timedelta or an int
         return feature.series_name, feature.window, feature.stride
 
-    def _check_feature_descriptors(self):
+    def _check_feature_descriptors(
+        self,
+        skip_none: bool,
+        calc_stride: Optional[Union[float, pd.Timedelta, None]] = None
+    ):
         """Verify whether all added FeatureDescriptors imply the same-input data type.
 
         If this condition is not met, a warning will be raised.
 
+        Parameters
+        ----------
+        skip_none: bool
+            Whether to include None stride values in the checks.
+        calc_stride: Union[float, pd.Timedelta, None], optional
+            The calculate stride, by default None. This stride takes precedence over a
+            `FeatureDescriptor` its stride when not None.
+
         """
-        dtype_set = set(
-            AttributeParser.determine_type([win, stride])
-            for _, win, stride in self._feature_desc_dict.keys()
-        )
+        dtype_set = set()
+        for _, win, str in self._feature_desc_dict.keys():
+            str = calc_stride if calc_stride is not None else str
+            if skip_none and str is None:
+                dtype_set.add(AttributeParser.determine_type(win))
+            else:
+                dtype_set.add(AttributeParser.determine_type([win, str]))
+                # TODO duidelijkere error loggen
         if len(dtype_set) > 1:
             warnings.warn(
                 "There are multiple FeatureDescriptor window-stride "
@@ -200,7 +216,7 @@ class FeatureCollection:
                 raise TypeError(f"type: {type(feature)} is not supported - {feature}")
 
         # After adding the features, check whether the descriptors are compatible
-        self._check_feature_descriptors()
+        self._check_feature_descriptors(skip_none=True)
 
     @staticmethod
     def _executor(idx: int):
@@ -211,6 +227,7 @@ class FeatureCollection:
     def _stroll_feat_generator(
         self,
         series_dict: Dict[str, pd.Series],
+        calc_stride: Union[float, pd.Timedelta, None], # TODO list supporten
         start_idx: Any,
         end_idx: Any,
         window_idx: str,
@@ -228,6 +245,8 @@ class FeatureCollection:
         def get_stroll_function(idx):
             key_idx = np.searchsorted(lengths, idx, "right")  # right bc idx starts at 0
             key, win, stride = keys_wins_strides[key_idx]
+            stride = calc_stride if calc_stride is not None else stride  # calc_stride takes precedence
+
             feature = self._feature_desc_dict[keys_wins_strides[key_idx]][
                 idx - lengths[key_idx]
             ]
@@ -257,6 +276,7 @@ class FeatureCollection:
     def calculate(
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
+        stride: Optional[Union[float, str, pd.Timedelta, None]] = None,  # TODO: list supporten + wat met multiple feature descriptors met een list van strides?
         return_df: Optional[bool] = False,
         window_idx: Optional[str] = "end",
         include_final_window: Optional[bool] = False,
@@ -288,6 +308,21 @@ class FeatureCollection:
             numeric or a ``pd.DatetimeIndex``.
             * each Series / DataFrame index must be comparable.with all others
             * we assume that each series-name / dataframe-column-name is unique.
+        stride: Union[float, str, pd.Timedelta, None], optional
+            The stride size. By default None. This argument supports multiple types: \n
+            * If None, the stride of the `FeatureDescriptor` objects will be used.
+            * If the type is an `float` or an `int`, its value represents the series
+                - its stride **range** when a **non time-indexed** series is passed.
+                - the stride in **number of samples**, when a **time-indexed** series
+                is passed (must then be and `int`)
+            * If the stride's type is a `pd.Timedelta`, the stride size represents
+            the stride-time delta. The passed data **must have a time-index**.
+            * If a `str`, it must represent a stride-time-delta-string. The **passed data
+            must have a time-index**. \n
+            .. Note::
+                When set, this stride argument takes precedence over the stride property
+                of a `FeatureDescriptor` (i.e., not None value for `stride` passed to
+                this method).
         return_df : bool, optional
             Whether the output needs to be a DataFrame or a list thereof, by default
             False. If `True` the output dataframes will be merged to a DataFrame with an
@@ -297,7 +332,7 @@ class FeatureCollection:
             feature_window aggregation. Must be either of: `["begin", "middle", "end"]`.
             by default "end". All features in this collection will use the same
             window_idx.
-            ..note::  # TODO: check this in docs (if correctly rendered)
+            .. Note::
                 `window_idx` end  results in using the end idx of the window as ...
         include_final_window : bool, optional
         Whether to include the final (possibly incomplete) window should be included in
@@ -343,7 +378,7 @@ class FeatureCollection:
             If n_jobs is either 0 or 1, the code will be executed sequentially without
             creating a process pool. This is very useful when debugging, as the stack
             trace will be more comprehensible.
-            .. note:
+            .. Note:
                 Multiprocessed execution is not supported on Windows. Even when,
                 `n_jobs` is set > 1, the feature extraction will still be executed
                 sequentially.
@@ -374,6 +409,11 @@ class FeatureCollection:
         if logging_file_path:
             f_handler = add_logging_handler(logger, logging_file_path)
 
+        stride = parse_time_arg(stride) if isinstance(stride, str) else stride
+
+        # Check that all features have a correct window & stride argument
+        self._check_feature_descriptors(skip_none=False, calc_stride=stride)
+
         # Convert the data to a series_dict
         series_dict: Dict[str, pd.Series] = {}
         for s in to_series_list(data):
@@ -387,23 +427,24 @@ class FeatureCollection:
             if s.name in self.get_required_series():
                 series_dict[str(s.name)] = s
 
-        # determing the bounds of the series dict items and slice on them
+        # Determine the bounds of the series dict items and slice on them
         start, end = _determine_bounds(bound_method, list(series_dict.values()))
         series_dict = {
             n: s.loc[s.index.dtype.type(start) : s.index.dtype.type(end)]  # TODO: check memory efficiency of ths
             for n, s, in series_dict.items()
         }
 
-        # Every night, we need to check if the user has acknowledged the sparsity
-        # of the data. If not, we raise a warning.
-        # TODO: check if this is the best way to do this
-        # M
-
         # Note: this variable has a global scope so this is shared in multiprocessing
         # TODO: try to make this more efficient
         global get_stroll_func
         get_stroll_func = self._stroll_feat_generator(
-            series_dict, start, end, window_idx, include_final_window, approve_sparsity
+            series_dict,
+            calc_stride=stride,
+            start_idx=start,
+            end_idx=end,
+            window_idx=window_idx,
+            include_final_window=include_final_window,
+            approve_sparsity=approve_sparsity
         )
         nb_stroll_funcs = self._get_stroll_feat_length()
 
