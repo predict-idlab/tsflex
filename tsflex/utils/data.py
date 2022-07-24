@@ -5,6 +5,7 @@ __author__ = "Jeroen Van Der Donckt, Jonas Van Der Donckt"
 import itertools
 from typing import Any, Dict, Iterable, Iterator, List, Union, Tuple
 
+import os
 import numpy as np
 import pandas as pd
 
@@ -171,9 +172,14 @@ def load_empatica_data(f_names: Union[str, List[str]]) -> List[pd.DataFrame]:
     List[pd.DataFrame]
         Returns the empatica time-indexed data files in the same order as `f_names`
     """
+    dir = os.path.abspath(
+        os.path.join(os.path.dirname( __file__ ), '../../examples/data/empatica/')
+    )
+    dir = str(dir) + '/'  # allows compatible + operation (as with the url)
     url = "https://github.com/predict-idlab/tsflex/raw/main/examples/data/empatica/"
+    if not os.path.exists(dir): dir = url  # fetch online if data not local
     f_names = [f_names] if isinstance(f_names, str) else f_names
     return [
-        pd.read_parquet(url + f"{f_name.lower()}.parquet").set_index("timestamp")
+        pd.read_parquet(dir + f"{f_name.lower()}.parquet").set_index("timestamp")
         for f_name in f_names
     ]
