@@ -129,6 +129,9 @@ class FeatureCollection:
 
         """
         dtype_set = set()
+        if not skip_none and calc_stride is not None:
+            # TODO: Check whether there are no multiple strides for same feature window
+            pass
         for _, win, str in self._feature_desc_dict.keys():
             str = calc_stride if calc_stride is not None else str
             if skip_none and str is None:
