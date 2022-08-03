@@ -288,7 +288,7 @@ def test_tsfel_feature_dict_wrapper(dummy_data):
 
 def test_catch22_all_features(dummy_data):
     # Tests if we integrate with the catch22 features
-    from catch22 import catch22_all
+    from pycatch22 import catch22_all
 
     catch22_feats = MultipleFeatureDescriptors(
         functions=catch22_wrapper(catch22_all),

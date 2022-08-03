@@ -214,6 +214,7 @@ class FeatureCollection:
         start_idx: Any,
         end_idx: Any,
         window_idx: str,
+        include_final_window: bool,
         approve_sparsity: bool,
     ) -> List[Tuple[StridedRolling, FuncWrapper]]:
         # --- Future work ---
@@ -239,6 +240,7 @@ class FeatureCollection:
                 start_idx=start_idx,
                 end_idx=end_idx,
                 window_idx=window_idx,
+                include_final_window=include_final_window,
                 approve_sparsity=approve_sparsity,
                 func_data_type=function.input_type,
             )
@@ -256,7 +258,8 @@ class FeatureCollection:
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         return_df: Optional[bool] = False,
-        window_idx: Optional[str] = "begin",
+        window_idx: Optional[str] = "end",
+        include_final_window: Optional[bool] = False,
         bound_method: Optional[str] = "inner",
         approve_sparsity: Optional[bool] = False,
         show_progress: Optional[bool] = False,
@@ -264,15 +267,6 @@ class FeatureCollection:
         n_jobs: Optional[int] = None,
     ) -> Union[List[pd.DataFrame], pd.DataFrame]:
         """Calculate features on the passed data.
-
-        Notes
-        ------
-        * The (column-)names of the series in `data` represent the `series_names`.
-        * If a `logging_file_path` is provided, the execution (time) info can be
-          retrieved by calling `logger.get_feature_logs(logging_file_path)`.
-          Be aware that the `logging_file_path` gets cleared before the logger pushes
-          logged messages. Hence, one should use a separate logging file for each
-          constructed processing and feature instance with this library.
 
         Parameters
         ----------
@@ -292,8 +286,36 @@ class FeatureCollection:
         window_idx : str, optional
             The window's index position which will be used as index for the
             feature_window aggregation. Must be either of: `["begin", "middle", "end"]`.
-            by default "begin". All features in this collection will use the same
+            by default "end". All features in this collection will use the same
             window_idx.
+
+            ..Note::
+                `window_idx`="end" results in using the end idx of the window as ... TODO finish
+
+        include_final_window : bool, optional
+            Whether the final (possibly incomplete) window should be included in the
+            strided-window segmentation, by default False.
+
+            .. Note::
+                The remarks below apply when `include_final_window` is set to True.
+                The user should be aware that the last window *might* be incomplete,
+                i.e.;
+
+                - when equally sampled, the last window *might* be smaller than the
+                  the other windows.
+                - when not equally sampled, the last window *might* not include all the
+                  data points (as the begin-time + window-size comes after the last data
+                  point).
+
+                Note, that when equally sampled, the last window *will* be a full window
+                when:
+
+                - the stride is the sampling rate of the data (or stride = 1 for
+                sample-based configurations).<br>
+                **Remark**: that when `include_final_window` is set to False, the last
+                window (which is a full) window will not be included!
+                - *(len * sampling_rate - window_size) % stride = 0*. Remark that the
+                  above case is a base case of this.
         bound_method: str, optional
             The start-end bound methodology which is used to generate the slice ranges
             when ``data`` consists of multiple series / columns.
@@ -320,13 +342,12 @@ class FeatureCollection:
             If n_jobs is either 0 or 1, the code will be executed sequentially without
             creating a process pool. This is very useful when debugging, as the stack
             trace will be more comprehensible.
-            .. note:
+            .. note::
                 Multiprocessed execution is not supported on Windows. Even when,
                 `n_jobs` is set > 1, the feature extraction will still be executed
                 sequentially.
                 Why do we not support multiprocessing on Windows; see this issue
                 https://github.com/predict-idlab/tsflex/issues/51
-
 
             .. tip::
                 It takes on avg. _300ms_ to schedule everything with
@@ -343,6 +364,16 @@ class FeatureCollection:
         ------
         KeyError
             Raised when a required key is not found in `data`.
+
+        Notes
+        ------
+        * The (column-)names of the series in `data` represent the `series_names`.
+        * If a `logging_file_path` is provided, the execution (time) info can be
+          retrieved by calling `logger.get_feature_logs(logging_file_path)`.
+          Be aware that the `logging_file_path` gets cleared before the logger pushes
+          logged messages. Hence, one should use a separate logging file for each
+          constructed processing and feature instance with this library.
+
 
         """
         # Delete other logging handlers
@@ -364,18 +395,23 @@ class FeatureCollection:
             if s.name in self.get_required_series():
                 series_dict[str(s.name)] = s
 
-        # determing the bounds of the series dict items and slice on them
+        # determine the bounds of the series dict items and slice on them
         start, end = _determine_bounds(bound_method, list(series_dict.values()))
         series_dict = {
             n: s.loc[s.index.dtype.type(start) : s.index.dtype.type(end)]  # TODO: check memory efficiency of ths
             for n, s, in series_dict.items()
         }
 
+        # Every night, we need to check if the user has acknowledged the sparsity
+        # of the data. If not, we raise a warning.
+        # TODO: check if this is the best way to do this
+        # M
+
         # Note: this variable has a global scope so this is shared in multiprocessing
         # TODO: try to make this more efficient
         global get_stroll_func
         get_stroll_func = self._stroll_feat_generator(
-            series_dict, start, end, window_idx, approve_sparsity
+            series_dict, start, end, window_idx, include_final_window, approve_sparsity
         )
         nb_stroll_funcs = self._get_stroll_feat_length()
 
