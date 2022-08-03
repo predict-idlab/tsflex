@@ -19,7 +19,7 @@ from tsflex.features import FeatureCollection
 from pathlib import Path
 from pandas.testing import assert_frame_equal
 from scipy.stats import linregress
-from typing import Tuple
+from typing import Tuple, List
 from .utils import dummy_data
 
 
@@ -46,7 +46,8 @@ def test_single_series_feature_collection(dummy_data):
     freq = pd.to_timedelta(pd.infer_freq(dummy_data.index)) / np.timedelta64(1, "s")
     stride_s = 5
     window_s = 10
-    assert len(res_df) == math.ceil((int(len(dummy_data) / (1 / freq)) - window_s) / stride_s)
+    assert len(res_df) == math.ceil(
+        (int(len(dummy_data) / (1 / freq)) - window_s) / stride_s)
     assert all(res_df.index[1:] - res_df.index[:-1] == pd.to_timedelta(5, unit="s"))
 
 
@@ -80,7 +81,8 @@ def test_uneven_sampled_series_feature_collection(dummy_data):
     freq = pd.to_timedelta(pd.infer_freq(dummy_data.index)) / np.timedelta64(1, "s")
     stride_s = 16
     window_s = 10
-    assert len(res_df) == math.ceil((int(len(dummy_data) / (1 / freq)) - window_s) / stride_s)
+    assert len(res_df) == math.ceil(
+        (int(len(dummy_data) / (1 / freq)) - window_s) / stride_s)
     assert all(
         res_df.index[1:] - res_df.index[:-1] == pd.to_timedelta(stride_s, unit="s")
     )
@@ -116,7 +118,8 @@ def test_warning_uneven_sampled_series_feature_collection(dummy_data):
         freq = pd.to_timedelta(pd.infer_freq(dummy_data.index)) / np.timedelta64(1, "s")
         stride_s = 2.5
         window_s = 5
-        assert len(res_df) == math.ceil((int(len(dummy_data) / (1 / freq)) - window_s) / stride_s)
+        assert len(res_df) == math.ceil(
+            (int(len(dummy_data) / (1 / freq)) - window_s) / stride_s)
         assert all(
             res_df.index[1:] - res_df.index[:-1] == pd.to_timedelta(2.5, unit="s")
         )
@@ -142,8 +145,8 @@ def test_featurecollection_repr(dummy_data):
     fc_str: str = fc.__repr__()
     assert "EDA|TMP" in fc_str
     assert (
-        fc_str
-        == "EDA|TMP: (\n\twin: 30s   , stride: 30s: [\n\t\tFeatureDescriptor - func: FuncWrapper(corr, ['corrcoef'], {}),\n\t]\n)\n"
+            fc_str
+            == "EDA|TMP: (\n\twin: 30s   , stride: 30s: [\n\t\tFeatureDescriptor - func: FuncWrapper(corr, ['corrcoef'], {}),\n\t]\n)\n"
     )
 
     out = fc.calculate(dummy_data, n_jobs=1, return_df=True)
@@ -195,7 +198,8 @@ def test_window_idx_single_series_feature_collection(dummy_data):
         freq = pd.to_timedelta(pd.infer_freq(dummy_data.index)) / np.timedelta64(1, "s")
         stride_s = 12.5
         window_s = 5
-        assert len(res_df) == math.ceil((int(len(dummy_data) / (1 / freq)) - window_s) / stride_s)
+        assert len(res_df) == math.ceil(
+            (int(len(dummy_data) / (1 / freq)) - window_s) / stride_s)
         assert all(
             res_df.index[1:] - res_df.index[:-1] == pd.to_timedelta(12.5, unit="s")
         )
@@ -237,7 +241,6 @@ def test_multiplefeaturedescriptors_feature_collection(dummy_data):
     expected_output_names = expected_output_names[0] + expected_output_names[1]
     assert set(res_df.columns) == set(expected_output_names)
 
-
     # No NaNs when returning a list of calculated featured
     assert all([~res.isna().values.any() for res in res_list])
     # NaNs when merging to a df (for  some cols)
@@ -247,7 +250,8 @@ def test_multiplefeaturedescriptors_feature_collection(dummy_data):
     stride_s = 2.5
     window_s = 5
     freq = pd.to_timedelta(pd.infer_freq(dummy_data.index)) / np.timedelta64(1, "s")
-    expected_length = math.ceil((int(len(dummy_data) / (1 / freq)) - window_s) / stride_s)
+    expected_length = math.ceil(
+        (int(len(dummy_data) / (1 / freq)) - window_s) / stride_s)
     assert all(
         [
             len(res) == expected_length - 1
@@ -285,7 +289,8 @@ def test_featurecollection_feature_collection(dummy_data):
     freq = pd.to_timedelta(pd.infer_freq(dummy_data.index)) / np.timedelta64(1, "s")
     stride_s = 2.5
     window_s = 5
-    assert len(res_df) == math.ceil((int(len(dummy_data) / (1 / freq)) - window_s) / stride_s)
+    assert len(res_df) == math.ceil(
+        (int(len(dummy_data) / (1 / freq)) - window_s) / stride_s)
     assert all(res_df.index[1:] - res_df.index[:-1] == pd.to_timedelta(2.5, unit="s"))
 
 
@@ -392,7 +397,7 @@ def test_featurecollection_error_val(dummy_data):
     fc = FeatureCollection(FeatureCollection(feature_descriptors=fd))
 
     eda_data = dummy_data["EDA"].dropna()
-    eda_data[2 : 1 + 25 * 4] = None  # Leave gap of 25 s
+    eda_data[2: 1 + 25 * 4] = None  # Leave gap of 25 s
     eda_data = eda_data.dropna()
     assert eda_data.isna().any() == False
     assert (eda_data.index[1:] - eda_data.index[:-1]).max() == pd.Timedelta("25 s")
@@ -414,7 +419,7 @@ def test_featurecollection_error_val_multiple_outputs(dummy_data):
     fc = FeatureCollection(FeatureCollection(feature_descriptors=fd))
 
     eda_data = dummy_data["EDA"].dropna()
-    eda_data[2 : 1 + 25 * 4] = None  # Leave gap of 25 s
+    eda_data[2: 1 + 25 * 4] = None  # Leave gap of 25 s
     eda_data = eda_data.dropna()
     assert eda_data.isna().any() == False
     assert (eda_data.index[1:] - eda_data.index[:-1]).max() == pd.Timedelta("25 s")
@@ -484,7 +489,8 @@ def test_one_to_many_feature_collection(dummy_data):
     freq = pd.to_timedelta(pd.infer_freq(dummy_data.index)) / np.timedelta64(1, "s")
     stride_s = 2.5
     window_s = 5
-    assert len(res_df) == math.ceil((int(len(dummy_data) / (1 / freq)) - window_s) / stride_s)
+    assert len(res_df) == math.ceil(
+        (int(len(dummy_data) / (1 / freq)) - window_s) / stride_s)
 
     expected_output_names = [
         "EDA__q_0.1__w=5s_s=2.5s",
@@ -513,7 +519,8 @@ def test_many_to_one_feature_collection(dummy_data):
     freq = pd.to_timedelta(pd.infer_freq(dummy_data.index)) / np.timedelta64(1, "s")
     stride_s = 2.5
     window_s = 5
-    assert len(res_df) == math.ceil((int(len(dummy_data) / (1 / freq)) - window_s) / stride_s)
+    assert len(res_df) == math.ceil(
+        (int(len(dummy_data) / (1 / freq)) - window_s) / stride_s)
 
     expected_output_name = "EDA|TMP__abs_mean_diff__w=5s_s=2.5s"
     assert res_df.columns.values[0] == expected_output_name
@@ -521,7 +528,7 @@ def test_many_to_one_feature_collection(dummy_data):
 
 def test_many_to_many_feature_collection(dummy_data):
     def quantiles_abs_diff(
-        sig1: pd.Series, sig2: pd.Series
+            sig1: pd.Series, sig2: pd.Series
     ) -> Tuple[float, float, float]:
         return np.quantile(np.abs(sig1 - sig2), q=[0.1, 0.5, 0.9])
 
@@ -541,7 +548,8 @@ def test_many_to_many_feature_collection(dummy_data):
     freq = pd.to_timedelta(pd.infer_freq(dummy_data.index)) / np.timedelta64(1, "s")
     stride_s = 13.5
     window_s = 5
-    assert len(res_df) == math.ceil((int(len(dummy_data) / (1 / freq)) - window_s) / stride_s)
+    assert len(res_df) == math.ceil(
+        (int(len(dummy_data) / (1 / freq)) - window_s) / stride_s)
 
     expected_output_names = [
         "EDA|TMP__q_0.1_abs_diff__w=5s_s=13.5s",
@@ -731,8 +739,8 @@ def test_time_based_features():
         pd.Series(
             index=pd.date_range("2021-07-01", freq="1h", periods=1000), dtype=object
         )
-        .index.to_series()
-        .rename("time")
+            .index.to_series()
+            .rename("time")
     )
 
     # drop some data, as we don't make frequency assumptions
@@ -821,9 +829,9 @@ def test_time_based_features_sequence_based_data_error(dummy_data):
 
     fs = 4  # The sample frequency in Hz
     fc = FeatureCollection(
-    feature_descriptors=[
-        FeatureDescriptor(np.min, 'EDA', f'{250}s', f'{75}s'),
-        FeatureDescriptor(np.min, 'TMP', 250 * fs, 75 * fs)
+        feature_descriptors=[
+            FeatureDescriptor(np.min, 'EDA', f'{250}s', f'{75}s'),
+            FeatureDescriptor(np.min, 'TMP', 250 * fs, 75 * fs)
         ]
     )
 
@@ -843,27 +851,27 @@ def test_mixed_featuredescriptors_time_data(dummy_data):
     with warnings.catch_warnings(record=True) as w:
         # generate the warning by adding mixed FeatureDescriptors
         fc = FeatureCollection(
-        feature_descriptors=[
-            # same data range -> so when we perform an outer merge we do not suspect a
-            # nan error
-            FeatureDescriptor(np.min, 'EDA', f'{250}s', f'{75}s'),
-            FeatureDescriptor(np.min, 'EDA', 250 * fs, 75 * fs)
+            feature_descriptors=[
+                # same data range -> so when we perform an outer merge we do not suspect a
+                # nan error
+                FeatureDescriptor(np.min, 'EDA', f'{250}s', f'{75}s'),
+                FeatureDescriptor(np.min, 'EDA', 250 * fs, 75 * fs)
             ]
         )
         assert len(w) == 1
         assert all([issubclass(warn.category, RuntimeWarning) for warn in w])
-        assert all(["There are multiple FeatureDescriptor window-stride datatypes" in str(warn) for warn in w])
-
+        assert all(
+            ["There are multiple FeatureDescriptor window-stride datatypes" in str(warn)
+             for warn in w])
 
     with warnings.catch_warnings(record=True) as w:
         # generate the warning by adding mixed FeatureDescriptors
         fc.add(FeatureDescriptor(np.std, 'EDA', 250 * fs, 75 * fs))
         assert len(w) == 1
         assert all([issubclass(warn.category, RuntimeWarning) for warn in w])
-        assert all(["There are multiple FeatureDescriptor window-stride datatypes" in str(warn) for warn in w])
-
-
-
+        assert all(
+            ["There are multiple FeatureDescriptor window-stride datatypes" in str(warn)
+             for warn in w])
 
     out = fc.calculate([df_eda, df_tmp], return_df=True)
     assert all(out.notna().sum(axis=0))
@@ -875,10 +883,10 @@ def test_basic_vectorized_features(dummy_data):
     fs = 4  # The sample frequency in Hz
     fc = FeatureCollection(
         feature_descriptors=[
-            FeatureDescriptor(np.max, "EDA", 250*fs, 75*fs),
+            FeatureDescriptor(np.max, "EDA", 250 * fs, 75 * fs),
             FeatureDescriptor(
                 FuncWrapper(np.max, output_names="max_", vectorized=True, axis=-1),
-                "EDA",  250*fs, 75*fs,
+                "EDA", 250 * fs, 75 * fs,
             )
         ]
     )
@@ -916,14 +924,14 @@ def test_multiple_outputs_vectorized_features(dummy_data):
     fs = 4  # The sample frequency in Hz
     fc = FeatureCollection(
         feature_descriptors=[
-            FeatureDescriptor(np.sum, "EDA", 250*fs, 75*fs),
-            FeatureDescriptor(np.mean, "EDA", 250*fs, 75*fs),
+            FeatureDescriptor(np.sum, "EDA", 250 * fs, 75 * fs),
+            FeatureDescriptor(np.mean, "EDA", 250 * fs, 75 * fs),
             FeatureDescriptor(
                 FuncWrapper(
-                    sum_mean, output_names=["sum_vect", "mean_vect"], 
+                    sum_mean, output_names=["sum_vect", "mean_vect"],
                     vectorized=True, axis=1
                 ),
-                "EDA", 250*fs, 75*fs,
+                "EDA", 250 * fs, 75 * fs,
             )
         ]
     )
@@ -931,9 +939,10 @@ def test_multiple_outputs_vectorized_features(dummy_data):
     res = fc.calculate(dummy_data, return_df=True)
 
     assert res.shape[1] == 4
-    s = "EDA__"; p = "__w=1000_s=300"
-    assert np.all(res[s+"sum"+p].values == res[s+"sum_vect"+p].values)
-    assert np.all(res[s+"mean"+p].values == res[s+"mean_vect"+p].values)
+    s = "EDA__";
+    p = "__w=1000_s=300"
+    assert np.all(res[s + "sum" + p].values == res[s + "sum_vect" + p].values)
+    assert np.all(res[s + "mean" + p].values == res[s + "mean_vect" + p].values)
 
 
 def test_multiple_inputs_vectorized_features(dummy_data):
@@ -946,7 +955,7 @@ def test_multiple_inputs_vectorized_features(dummy_data):
             FeatureDescriptor(np.sum, "TMP", "5min", "2.5min"),
             FeatureDescriptor(
                 FuncWrapper(windowed_diff, vectorized=True),
-                ("EDA", "TMP"),  "5min", "2.5min"
+                ("EDA", "TMP"), "5min", "2.5min"
             )
         ]
     )
@@ -956,8 +965,8 @@ def test_multiple_inputs_vectorized_features(dummy_data):
     assert res.shape[1] == 3
     assert res.shape[0] > 1
     p = "__w=5m_s=2m30s"
-    manual_diff = res["EDA__sum"+p].values - res["TMP__sum"+p].values
-    assert np.all(res["EDA|TMP__windowed_diff"+p].values == manual_diff)
+    manual_diff = res["EDA__sum" + p].values - res["TMP__sum" + p].values
+    assert np.all(res["EDA|TMP__windowed_diff" + p].values == manual_diff)
 
 
 ### Test feature extraction length
@@ -969,14 +978,15 @@ def test_feature_extraction_length_range_index():
     ## Case 1: stride = 1 sample
     fc = FeatureCollection(
         feature_descriptors=[
-            FeatureDescriptor(np.min, "dummy", 3, 1),
+            FeatureDescriptor(np.min, "dummy", window=3, stride=1),
             FeatureDescriptor(
-                FuncWrapper(np.min, output_names="max_", vectorized=True, axis=-1),
-                "dummy",  3, 1,
+                FuncWrapper(np.min, output_names="min_", vectorized=True, axis=-1),
+                "dummy", window=3, stride=1,
             )
         ]
     )
 
+    res: List[pd.DataFrame]
     res = fc.calculate(s, window_idx="begin")
     assert len(res) == 2
     assert np.all(res[0].index == res[1].index)
@@ -995,18 +1005,19 @@ def test_feature_extraction_length_range_index():
     ##  Case 2: stride = 3 (i.e., tumbling window\)
     # note: no vectorized featuredescriptor as vectorized functions require all 
     # segmented windows to have equal length
-    fc = FeatureCollection(FeatureDescriptor(np.min, "dummy", 3, 3))
-    
+    fc = FeatureCollection(FeatureDescriptor(np.min, "dummy", window=3, stride=3))
+
     res = fc.calculate(s, window_idx="begin")
     assert len(res) == 1
     assert res[0].index == [0]
     assert res[0].values == [0]
 
     # -> extract on partially empty window (hence no vectorized)
-    res = fc.calculate(s, window_idx="begin", include_final_window=True, approve_sparsity=True)
+    res = fc.calculate(s, window_idx="begin", include_final_window=True,
+                       approve_sparsity=True)
     assert len(res) == 1
-    assert np.all(res[0].index == [0,3])
-    assert np.all(res[0].values.ravel() == [0,3])
+    assert np.all(res[0].index == [0, 3])
+    assert np.all(res[0].values.ravel() == [0, 3])
 
     ## Case 3: some more additional testing for tumbling windows
     s = pd.Series(np.arange(10), name="dummy")
@@ -1014,10 +1025,10 @@ def test_feature_extraction_length_range_index():
 
     fc = FeatureCollection(
         feature_descriptors=[
-            FeatureDescriptor(np.max, "dummy", 2, 2),
+            FeatureDescriptor(np.max, "dummy", window=2, stride=2),
             FeatureDescriptor(
                 FuncWrapper(np.max, output_names="max_", vectorized=True, axis=-1),
-                "dummy",  2, 2,
+                "dummy", window=2, stride=2,
             )
         ]
     )
@@ -1052,7 +1063,8 @@ def test_feature_extraction_length_float_index():
     assert np.all(res[0].index.values == [0, 1])
     assert np.all(res[0].values.ravel() == [0, 1])
 
-    res = fc.calculate(s, window_idx="begin", include_final_window=True, approve_sparsity=True)
+    res = fc.calculate(s, window_idx="begin", include_final_window=True,
+                       approve_sparsity=True)
     assert len(res) == 1
     assert np.all(res[0].index.values == [0, 1, 2])
     assert np.all(res[0].values.ravel() == [0, 1, 2])
@@ -1336,7 +1348,7 @@ def test_vectorized_irregularly_sampled_data(dummy_data):
     )
 
     df_eda = dummy_data["EDA"].dropna()
-    df_eda.iloc[[3+66*i for i in range(5)]] = np.nan
+    df_eda.iloc[[3 + 66 * i for i in range(5)]] = np.nan
     df_eda = df_eda.dropna()
 
     assert len(df_eda) < len(dummy_data["EDA"].dropna())

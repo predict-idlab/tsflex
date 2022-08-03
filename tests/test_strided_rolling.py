@@ -52,7 +52,7 @@ def test_sequence_stroll(dummy_data):
 
         f = FuncWrapper(np.mean, output_names="numpy_mean")
         out = stroll.apply_func(f)
-        assert f"TMP__numpy_mean__w={int(4*30)}_s={int(4*10)}" in out.columns
+        assert f"TMP__numpy_mean__w={int(4 * 30)}_s={int(4 * 10)}" in out.columns
 
 
 def test_sequence_stroll_last_window_full(dummy_data):
@@ -132,11 +132,11 @@ def test_time_index_sequence_stroll(dummy_data):
 
 
 def test_sequence_stroll_indexing():
-    s = pd.Series(data=[0,1,2,3,4], name="dummy")
+    s = pd.Series(data=[0, 1, 2, 3, 4], name="dummy")
 
     ## No Force
     sr = SequenceStridedRolling(s, window=3, stride=1, window_idx="begin")
-    assert np.all(sr.index == [0,1])
+    assert np.all(sr.index == [0, 1])
     sr = SequenceStridedRolling(s, window=3, stride=2, window_idx="begin")
     assert np.all(sr.index == [0])
     sr = SequenceStridedRolling(s, window=3, stride=3, window_idx="begin")
@@ -157,28 +157,36 @@ def test_sequence_stroll_indexing():
     assert np.all(sr.index == [])
 
     ## Force
-    sr = SequenceStridedRolling(s, window=3, stride=1, window_idx="begin", include_final_window=True)
-    assert np.all(sr.index == [0,1,2])
-    sr = SequenceStridedRolling(s, window=3, stride=2, window_idx="begin", include_final_window=True)
-    assert np.all(sr.index == [0,2])
-    sr = SequenceStridedRolling(s, window=3, stride=4, window_idx="begin", include_final_window=True)
+    sr = SequenceStridedRolling(s, window=3, stride=1, window_idx="begin",
+                                include_final_window=True)
+    assert np.all(sr.index == [0, 1, 2])
+    sr = SequenceStridedRolling(s, window=3, stride=2, window_idx="begin",
+                                include_final_window=True)
+    assert np.all(sr.index == [0, 2])
+    sr = SequenceStridedRolling(s, window=3, stride=4, window_idx="begin",
+                                include_final_window=True)
     assert np.all(sr.index == [0, 4])
-    sr = SequenceStridedRolling(s, window=3, stride=5, window_idx="begin", include_final_window=True)
+    sr = SequenceStridedRolling(s, window=3, stride=5, window_idx="begin",
+                                include_final_window=True)
     assert np.all(sr.index == [0])
-    sr = SequenceStridedRolling(s, window=3, stride=50, window_idx="begin", include_final_window=True)
+    sr = SequenceStridedRolling(s, window=3, stride=50, window_idx="begin",
+                                include_final_window=True)
     assert np.all(sr.index == [0])
 
-    sr = SequenceStridedRolling(s, window=4, stride=1, window_idx="begin", include_final_window=True)
+    sr = SequenceStridedRolling(s, window=4, stride=1, window_idx="begin",
+                                include_final_window=True)
     assert np.all(sr.index == [0, 1])
 
-    sr = SequenceStridedRolling(s, window=5, stride=1, window_idx="begin", include_final_window=True)
+    sr = SequenceStridedRolling(s, window=5, stride=1, window_idx="begin",
+                                include_final_window=True)
     assert np.all(sr.index == [0])
-    sr = SequenceStridedRolling(s, window=6, stride=1, window_idx="begin", include_final_window=True)
+    sr = SequenceStridedRolling(s, window=6, stride=1, window_idx="begin",
+                                include_final_window=True)
     assert np.all(sr.index == [])
 
 
 def test_time_stroll_indexing():
-    s = pd.Series(data=[0,1,2,3,4], name="dummy")
+    s = pd.Series(data=[0, 1, 2, 3, 4], name="dummy")
     time_index = pd.date_range("2020-01-01", freq="1h", periods=5)
     s.index = time_index
 
@@ -186,45 +194,70 @@ def test_time_stroll_indexing():
         return [time_index[idx] for idx in arr]
 
     ## No Force
-    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin")
-    assert np.all(sr.index == get_time_index([0,1]))
-    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(2, unit="h"), window_idx="begin")
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"),
+                            stride=pd.Timedelta(1, unit="h"), window_idx="begin")
+    assert np.all(sr.index == get_time_index([0, 1]))
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"),
+                            stride=pd.Timedelta(2, unit="h"), window_idx="begin")
     assert np.all(sr.index == get_time_index([0]))
-    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(3, unit="h"), window_idx="begin")
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"),
+                            stride=pd.Timedelta(3, unit="h"), window_idx="begin")
     assert np.all(sr.index == get_time_index([0]))
-    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(4, unit="h"), window_idx="begin")
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"),
+                            stride=pd.Timedelta(4, unit="h"), window_idx="begin")
     assert np.all(sr.index == get_time_index([0]))
-    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(5, unit="h"), window_idx="begin")
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"),
+                            stride=pd.Timedelta(5, unit="h"), window_idx="begin")
     assert np.all(sr.index == get_time_index([0]))
-    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(50, unit="h"), window_idx="begin")
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"),
+                            stride=pd.Timedelta(50, unit="h"), window_idx="begin")
     assert np.all(sr.index == get_time_index([0]))
 
-    sr = TimeStridedRolling(s, window=pd.Timedelta(4, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin")
+    sr = TimeStridedRolling(s, window=pd.Timedelta(4, unit="h"),
+                            stride=pd.Timedelta(1, unit="h"), window_idx="begin")
     assert np.all(sr.index == get_time_index([0]))
 
-    sr = TimeStridedRolling(s, window=pd.Timedelta(5, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin")
+    sr = TimeStridedRolling(s, window=pd.Timedelta(5, unit="h"),
+                            stride=pd.Timedelta(1, unit="h"), window_idx="begin")
     assert np.all(sr.index == [])
-    sr = TimeStridedRolling(s, window=pd.Timedelta(6, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin")
+    sr = TimeStridedRolling(s, window=pd.Timedelta(6, unit="h"),
+                            stride=pd.Timedelta(1, unit="h"), window_idx="begin")
     assert np.all(sr.index == [])
 
     ## Force
-    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin", include_final_window=True)
-    assert np.all(sr.index == get_time_index([0,1,2]))
-    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(2, unit="h"), window_idx="begin", include_final_window=True)
-    assert np.all(sr.index == get_time_index([0,2]))
-    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(4, unit="h"), window_idx="begin", include_final_window=True)
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"),
+                            stride=pd.Timedelta(1, unit="h"), window_idx="begin",
+                            include_final_window=True)
+    assert np.all(sr.index == get_time_index([0, 1, 2]))
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"),
+                            stride=pd.Timedelta(2, unit="h"), window_idx="begin",
+                            include_final_window=True)
+    assert np.all(sr.index == get_time_index([0, 2]))
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"),
+                            stride=pd.Timedelta(4, unit="h"), window_idx="begin",
+                            include_final_window=True)
     assert np.all(sr.index == get_time_index([0, 4]))
-    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(5, unit="h"), window_idx="begin", include_final_window=True)
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"),
+                            stride=pd.Timedelta(5, unit="h"), window_idx="begin",
+                            include_final_window=True)
     assert np.all(sr.index == get_time_index([0]))
-    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(50, unit="h"), window_idx="begin", include_final_window=True)
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"),
+                            stride=pd.Timedelta(50, unit="h"), window_idx="begin",
+                            include_final_window=True)
     assert np.all(sr.index == get_time_index([0]))
 
-    sr = TimeStridedRolling(s, window=pd.Timedelta(4, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin", include_final_window=True)
+    sr = TimeStridedRolling(s, window=pd.Timedelta(4, unit="h"),
+                            stride=pd.Timedelta(1, unit="h"), window_idx="begin",
+                            include_final_window=True)
     assert np.all(sr.index == get_time_index([0, 1]))
 
-    sr = TimeStridedRolling(s, window=pd.Timedelta(5, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin", include_final_window=True)
+    sr = TimeStridedRolling(s, window=pd.Timedelta(5, unit="h"),
+                            stride=pd.Timedelta(1, unit="h"), window_idx="begin",
+                            include_final_window=True)
     assert np.all(sr.index == get_time_index([0]))
-    sr = TimeStridedRolling(s, window=pd.Timedelta(6, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin", include_final_window=True)
+    sr = TimeStridedRolling(s, window=pd.Timedelta(6, unit="h"),
+                            stride=pd.Timedelta(1, unit="h"), window_idx="begin",
+                            include_final_window=True)
     assert np.all(sr.index == [])
 
 
@@ -232,7 +265,7 @@ def test_sequence_stroll_apply_func_vectorized():
     f = FuncWrapper(np.min, output_names="min")
     f_vect = FuncWrapper(np.min, output_names="min_vect", vectorized=True, axis=-1)
 
-    s = pd.Series(data=[0,1,2,3,4], name="dummy")
+    s = pd.Series(data=[0, 1, 2, 3, 4], name="dummy")
 
     def assert_1col_df_equal(s1, s2):
         assert (s1.shape[1] == 1) & (s2.shape[1] == 1)
@@ -262,24 +295,32 @@ def test_sequence_stroll_apply_func_vectorized():
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
 
     ## Force
-    sr = SequenceStridedRolling(s, window=3, stride=1, window_idx="begin", include_final_window=True)
+    sr = SequenceStridedRolling(s, window=3, stride=1, window_idx="begin",
+                                include_final_window=True)
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
-    sr = SequenceStridedRolling(s, window=3, stride=2, window_idx="begin", include_final_window=True)
+    sr = SequenceStridedRolling(s, window=3, stride=2, window_idx="begin",
+                                include_final_window=True)
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
     # Note: commented these because these will result in window of length 3 and 1
+    # And the vectorized function requires the same number of samples in each segmented window
     # sr = SequenceStridedRolling(s, window=3, stride=4, window_idx="begin", include_final_window=True)
     # assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
-    sr = SequenceStridedRolling(s, window=3, stride=5, window_idx="begin", include_final_window=True)
+    sr = SequenceStridedRolling(s, window=3, stride=5, window_idx="begin",
+                                include_final_window=True)
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
-    sr = SequenceStridedRolling(s, window=3, stride=50, window_idx="begin", include_final_window=True)
+    sr = SequenceStridedRolling(s, window=3, stride=50, window_idx="begin",
+                                include_final_window=True)
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
 
-    sr = SequenceStridedRolling(s, window=4, stride=1, window_idx="begin", include_final_window=True)
+    sr = SequenceStridedRolling(s, window=4, stride=1, window_idx="begin",
+                                include_final_window=True)
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
 
-    sr = SequenceStridedRolling(s, window=5, stride=1, window_idx="begin", include_final_window=True)
+    sr = SequenceStridedRolling(s, window=5, stride=1, window_idx="begin",
+                                include_final_window=True)
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
-    sr = SequenceStridedRolling(s, window=6, stride=1, window_idx="begin", include_final_window=True)
+    sr = SequenceStridedRolling(s, window=6, stride=1, window_idx="begin",
+                                include_final_window=True)
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
 
 
@@ -287,7 +328,7 @@ def test_time_stroll_apply_func_vectorized():
     f = FuncWrapper(np.min, output_names="min")
     f_vect = FuncWrapper(np.min, output_names="min_vect", vectorized=True, axis=-1)
 
-    s = pd.Series(data=[0,1,2,3,4], name="dummy")
+    s = pd.Series(data=[0, 1, 2, 3, 4], name="dummy")
     s.index = pd.date_range("2020-01-01", freq="1h", periods=5)
 
     def assert_1col_df_equal(s1, s2):
@@ -296,62 +337,89 @@ def test_time_stroll_apply_func_vectorized():
         assert np.all(s1.values.ravel() == s2.values.ravel())
 
     ## No Force
-    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin")
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"),
+                            stride=pd.Timedelta(1, unit="h"), window_idx="begin")
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
-    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(2, unit="h"), window_idx="begin")
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"),
+                            stride=pd.Timedelta(2, unit="h"), window_idx="begin")
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
-    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(3, unit="h"), window_idx="begin")
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"),
+                            stride=pd.Timedelta(3, unit="h"), window_idx="begin")
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
-    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(4, unit="h"), window_idx="begin")
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"),
+                            stride=pd.Timedelta(4, unit="h"), window_idx="begin")
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
-    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(5, unit="h"), window_idx="begin")
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"),
+                            stride=pd.Timedelta(5, unit="h"), window_idx="begin")
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
-    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(50, unit="h"), window_idx="begin")
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"),
+                            stride=pd.Timedelta(50, unit="h"), window_idx="begin")
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
 
-    sr = TimeStridedRolling(s, window=pd.Timedelta(4, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin")
+    sr = TimeStridedRolling(s, window=pd.Timedelta(4, unit="h"),
+                            stride=pd.Timedelta(1, unit="h"), window_idx="begin")
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
 
-    sr = TimeStridedRolling(s, window=pd.Timedelta(5, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin")
+    sr = TimeStridedRolling(s, window=pd.Timedelta(5, unit="h"),
+                            stride=pd.Timedelta(1, unit="h"), window_idx="begin")
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
-    sr = TimeStridedRolling(s, window=pd.Timedelta(6, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin")
+    sr = TimeStridedRolling(s, window=pd.Timedelta(6, unit="h"),
+                            stride=pd.Timedelta(1, unit="h"), window_idx="begin")
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
 
     ## Force
-    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin", include_final_window=True)
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"),
+                            stride=pd.Timedelta(1, unit="h"), window_idx="begin",
+                            include_final_window=True)
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
-    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(2, unit="h"), window_idx="begin", include_final_window=True)
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"),
+                            stride=pd.Timedelta(2, unit="h"), window_idx="begin",
+                            include_final_window=True)
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
     # Note: commented these because these will result in window of length 3 and 1
+    # And the vectorized function requires the same number of samples in each segmented window
     # sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(4, unit="h"), window_idx="begin", include_final_window=True)
     # assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
-    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(5, unit="h"), window_idx="begin", include_final_window=True)
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"),
+                            stride=pd.Timedelta(5, unit="h"), window_idx="begin",
+                            include_final_window=True)
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
-    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(50, unit="h"), window_idx="begin", include_final_window=True)
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"),
+                            stride=pd.Timedelta(50, unit="h"), window_idx="begin",
+                            include_final_window=True)
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
 
-    sr = TimeStridedRolling(s, window=pd.Timedelta(4, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin", include_final_window=True)
+    sr = TimeStridedRolling(s, window=pd.Timedelta(4, unit="h"),
+                            stride=pd.Timedelta(1, unit="h"), window_idx="begin",
+                            include_final_window=True)
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
 
-    sr = TimeStridedRolling(s, window=pd.Timedelta(5, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin", include_final_window=True)
+    sr = TimeStridedRolling(s, window=pd.Timedelta(5, unit="h"),
+                            stride=pd.Timedelta(1, unit="h"), window_idx="begin",
+                            include_final_window=True)
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
-    sr = TimeStridedRolling(s, window=pd.Timedelta(6, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin", include_final_window=True)
+    sr = TimeStridedRolling(s, window=pd.Timedelta(6, unit="h"),
+                            stride=pd.Timedelta(1, unit="h"), window_idx="begin",
+                            include_final_window=True)
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
 
 
 def test_sequence_stroll_apply_func_vectorized_multi_output():
     def min_max(arr, axis=None):
         return np.min(arr, axis=axis), np.max(arr, axis=axis)
-    f = FuncWrapper(min_max, output_names=["min", "max"])
-    f_vect = FuncWrapper(min_max, output_names=["min_vect", "max_vect"], vectorized=True, axis=-1)
 
-    s = pd.Series(data=[0,1,2,3,4], name="dummy")
+    f = FuncWrapper(min_max, output_names=["min", "max"])
+    f_vect = FuncWrapper(min_max, output_names=["min_vect", "max_vect"],
+                         vectorized=True, axis=-1)
+
+    s = pd.Series(data=[0, 1, 2, 3, 4], name="dummy")
 
     def assert_2col_df_equal(s1, s2):
         assert (s1.shape[1] == 2) & (s2.shape[1] == 2)
         assert np.all(s1.index == s2.index)
         for name in ["min", "max"]:
-            assert np.all(s1.filter(like=name).values.ravel() == s2.filter(like=name).values.ravel())
+            assert np.all(s1.filter(like=name).values.ravel() == s2.filter(
+                like=name).values.ravel())
 
     ## No Force
     sr = SequenceStridedRolling(s, window=3, stride=1, window_idx="begin")
@@ -376,83 +444,118 @@ def test_sequence_stroll_apply_func_vectorized_multi_output():
     assert_2col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
 
     ## Force
-    sr = SequenceStridedRolling(s, window=3, stride=1, window_idx="begin", include_final_window=True)
+    sr = SequenceStridedRolling(s, window=3, stride=1, window_idx="begin",
+                                include_final_window=True)
     assert_2col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
-    sr = SequenceStridedRolling(s, window=3, stride=2, window_idx="begin", include_final_window=True)
+    sr = SequenceStridedRolling(s, window=3, stride=2, window_idx="begin",
+                                include_final_window=True)
     assert_2col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
     # Note: commented these because these will result in window of length 3 and 1
+    # And the vectorized function requires the same number of samples in each segmented window
     # sr = SequenceStridedRolling(s, window=3, stride=4, window_idx="begin", include_final_window=True)
     # assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
-    sr = SequenceStridedRolling(s, window=3, stride=5, window_idx="begin", include_final_window=True)
+    sr = SequenceStridedRolling(s, window=3, stride=5, window_idx="begin",
+                                include_final_window=True)
     assert_2col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
-    sr = SequenceStridedRolling(s, window=3, stride=50, window_idx="begin", include_final_window=True)
+    sr = SequenceStridedRolling(s, window=3, stride=50, window_idx="begin",
+                                include_final_window=True)
     assert_2col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
 
-    sr = SequenceStridedRolling(s, window=4, stride=1, window_idx="begin", include_final_window=True)
+    sr = SequenceStridedRolling(s, window=4, stride=1, window_idx="begin",
+                                include_final_window=True)
     assert_2col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
 
-    sr = SequenceStridedRolling(s, window=5, stride=1, window_idx="begin", include_final_window=True)
+    sr = SequenceStridedRolling(s, window=5, stride=1, window_idx="begin",
+                                include_final_window=True)
     assert_2col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
-    sr = SequenceStridedRolling(s, window=6, stride=1, window_idx="begin", include_final_window=True)
+    sr = SequenceStridedRolling(s, window=6, stride=1, window_idx="begin",
+                                include_final_window=True)
     assert_2col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
 
 
 def test_time_stroll_apply_func_vectorized_multi_output():
     def min_max(arr, axis=None):
         return np.min(arr, axis=axis), np.max(arr, axis=axis)
-    f = FuncWrapper(min_max, output_names=["min", "max"])
-    f_vect = FuncWrapper(min_max, output_names=["min_vect", "max_vect"], vectorized=True, axis=-1)
 
-    s = pd.Series(data=[0,1,2,3,4], name="dummy")
+    f = FuncWrapper(min_max, output_names=["min", "max"])
+    f_vect = FuncWrapper(min_max, output_names=["min_vect", "max_vect"],
+                         vectorized=True, axis=-1)
+
+    s = pd.Series(data=[0, 1, 2, 3, 4], name="dummy")
     s.index = pd.date_range("2020-01-01", freq="1h", periods=5)
 
     def assert_2col_df_equal(s1, s2):
         assert (s1.shape[1] == 2) & (s2.shape[1] == 2)
         assert np.all(s1.index == s2.index)
         for name in ["min", "max"]:
-            assert np.all(s1.filter(like=name).values.ravel() == s2.filter(like=name).values.ravel())
+            assert np.all(s1.filter(like=name).values.ravel() == s2.filter(
+                like=name).values.ravel())
 
     ## No Force
-    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin")
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"),
+                            stride=pd.Timedelta(1, unit="h"), window_idx="begin")
     assert_2col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
-    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(2, unit="h"), window_idx="begin")
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"),
+                            stride=pd.Timedelta(2, unit="h"), window_idx="begin")
     assert_2col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
-    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(3, unit="h"), window_idx="begin")
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"),
+                            stride=pd.Timedelta(3, unit="h"), window_idx="begin")
     assert_2col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
-    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(4, unit="h"), window_idx="begin")
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"),
+                            stride=pd.Timedelta(4, unit="h"), window_idx="begin")
     assert_2col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
-    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(5, unit="h"), window_idx="begin")
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"),
+                            stride=pd.Timedelta(5, unit="h"), window_idx="begin")
     assert_2col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
-    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(50, unit="h"), window_idx="begin")
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"),
+                            stride=pd.Timedelta(50, unit="h"), window_idx="begin")
     assert_2col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
 
-    sr = TimeStridedRolling(s, window=pd.Timedelta(4, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin")
+    sr = TimeStridedRolling(s, window=pd.Timedelta(4, unit="h"),
+                            stride=pd.Timedelta(1, unit="h"), window_idx="begin")
     assert_2col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
 
-    sr = TimeStridedRolling(s, window=pd.Timedelta(5, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin")
+    sr = TimeStridedRolling(s, window=pd.Timedelta(5, unit="h"),
+                            stride=pd.Timedelta(1, unit="h"), window_idx="begin")
     assert_2col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
-    sr = TimeStridedRolling(s, window=pd.Timedelta(6, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin")
+    sr = TimeStridedRolling(s, window=pd.Timedelta(6, unit="h"),
+                            stride=pd.Timedelta(1, unit="h"), window_idx="begin")
     assert_2col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
 
     ## Force
-    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin", include_final_window=True)
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"),
+                            stride=pd.Timedelta(1, unit="h"), window_idx="begin",
+                            include_final_window=True)
     assert_2col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
-    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(2, unit="h"), window_idx="begin", include_final_window=True)
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"),
+                            stride=pd.Timedelta(2, unit="h"), window_idx="begin",
+                            include_final_window=True)
     assert_2col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
     # Note: commented these because these will result in window of length 3 and 1
+    # And the vectorized function requires the same number of samples in each segmented window
     # sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(4, unit="h"), window_idx="begin", include_final_window=True)
     # assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
-    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(5, unit="h"), window_idx="begin", include_final_window=True)
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"),
+                            stride=pd.Timedelta(5, unit="h"), window_idx="begin",
+                            include_final_window=True)
     assert_2col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
-    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), stride=pd.Timedelta(50, unit="h"), window_idx="begin", include_final_window=True)
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"),
+                            stride=pd.Timedelta(50, unit="h"), window_idx="begin",
+                            include_final_window=True)
     assert_2col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
 
-    sr = TimeStridedRolling(s, window=pd.Timedelta(4, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin", include_final_window=True)
+    sr = TimeStridedRolling(s, window=pd.Timedelta(4, unit="h"),
+                            stride=pd.Timedelta(1, unit="h"), window_idx="begin",
+                            include_final_window=True)
     assert_2col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
 
-    sr = TimeStridedRolling(s, window=pd.Timedelta(5, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin", include_final_window=True)
+    sr = TimeStridedRolling(s, window=pd.Timedelta(5, unit="h"),
+                            stride=pd.Timedelta(1, unit="h"), window_idx="begin",
+                            include_final_window=True)
     assert_2col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
-    sr = TimeStridedRolling(s, window=pd.Timedelta(6, unit="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin", include_final_window=True)
+    sr = TimeStridedRolling(s, window=pd.Timedelta(6, unit="h"),
+                            stride=pd.Timedelta(1, unit="h"), window_idx="begin",
+                            include_final_window=True)
     assert_2col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
 
 
@@ -470,7 +573,8 @@ def test_index_data_type_retention():
 
     ### Time
     s.index = pd.date_range("2020-01-01", freq="1h", periods=5)
-    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unity="h"), stride=pd.Timedelta(1, unit="h"), window_idx="begin")
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unity="h"),
+                            stride=pd.Timedelta(1, unit="h"), window_idx="begin")
     assert "datetime64" in str(sr.index.dtype)
     assert not str(sr.index.dtype).startswith("int")
     assert not str(sr.index.dtype).startswith("float")

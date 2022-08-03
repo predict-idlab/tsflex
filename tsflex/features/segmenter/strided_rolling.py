@@ -69,23 +69,28 @@ class StridedRolling(ABC):
         feature_window aggregation. Must be either of: `["begin", "middle", "end"]`, by
         default "end".
     include_final_window: bool, optional
-        Whether to include the final (possibly incomplete) window should be included in
-        the strided-window segmentation, by default False.
+        Whether the final (possibly incomplete) window should be included in the
+        strided-window segmentation, by default False.
+
         .. Note::
-            Both these notes apply when `include_final_window` is True.
-            Te user should be aware that the last window *might* be incomplete, i.e.;
-                - when equally sampled, the last window *might* be smaller than the
-                    the other windows.
-                - when not equally sampled, the last window *might* not include all
-                    the data points (as the begin-time + window-size comes after the
-                    last data point).
-            Note however, that when equally sampled, the last window *will* be a full
-            window when:
-                - the stride is the sampling rate of the data.
-                  Remark that thus when `include_final_window` is False, the last
-                  window, which is a full window will not be included.
-                - (len * sampling_rate - window_size) % stride is 0.
-                  Remark that the first case is a base case of this.
+            The remarks below apply when `include_final_window` is set to True.
+            The user should be aware that the last window *might* be incomplete, i.e.;
+
+            - when equally sampled, the last window *might* be smaller than the
+              the other windows.
+            - when not equally sampled, the last window *might* not include all the
+                data points (as the begin-time + window-size comes after the last data
+                point).
+
+            Note, that when equally sampled, the last window *will* be a full window
+            when:
+
+            - the stride is the sampling rate of the data (or stride = 1 for
+              sample-based configurations).<br>
+              **Remark**: that when `include_final_window` is set to False, the last
+              window (which is a full) window will not be included!
+            - *(len * sampling_rate - window_size) % stride = 0*. Remark that the above
+              case is a base case of this.
     approve_sparsity: bool, optional
         Bool indicating whether the user acknowledges that there may be sparsity (i.e.,
         irregularly sampled data), by default False.
@@ -286,7 +291,7 @@ class StridedRolling(ABC):
 
             ## IMPL 2
             ## Is a good implementation (equivalent to the one below), will also fail in
-            ## the same cases, but it does not perform clear assertions (with their 
+            ## the same cases, but it does not perform clear assertions (with their
             ## accompanied clear messages).
             # out = np.asarray(
             #     func(
@@ -311,7 +316,7 @@ class StridedRolling(ABC):
                             axis=0,
                         )
                     )
-                else: 
+                else:
                     # There are >1 feature windows (bc >=1 steps in the sliding window)
                     windows = sc.end_indexes - sc.start_indexes
                     strides = sc.start_indexes[1:] - sc.start_indexes[:-1]
@@ -419,7 +424,7 @@ class SequenceStridedRolling(StridedRolling):
     # ------------------------------ Overridden methods ------------------------------
     def _construct_output_index(self, series: pd.Series) -> pd.Index:
         window_offset = self._get_window_offset(self.window)
-        # Calculate the number of sliding windown steps
+        # Calculate the number of sliding window steps
         # This calculation does not uses half-open bounds (and thus may miss one full
         #  window when a pd.RangeIndex is used) -> you can force to include this window
         # by setting `include_final_window` True.
