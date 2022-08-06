@@ -14,6 +14,7 @@ from tsflex.utils.time import parse_time_arg
 class DataType(IntEnum):
     """Emum class for supported data types."""
 
+    UNDEFINED = 0
     SEQUENCE = 1
     TIME = 2
 
@@ -27,7 +28,10 @@ class AttributeParser:
     @staticmethod
     def determine_type(data: Any) -> DataType:
         """Determine the datatype of the given data."""
-        if isinstance(data, (pd.Series, pd.DataFrame)):
+        if data is None:
+            return DataType.UNDEFINED
+
+        elif isinstance(data, (pd.Series, pd.DataFrame)):
             dtype_str = str(data.index.dtype)
             if AttributeParser._datetime_regex.match(dtype_str) is not None:
                 return DataType.TIME

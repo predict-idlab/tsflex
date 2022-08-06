@@ -27,7 +27,7 @@ class StridedRollingFactory:
     }
 
     @staticmethod
-    def get_segmenter(data, window, stride, **kwargs) -> StridedRolling:
+    def get_segmenter(data, window, strides, **kwargs) -> StridedRolling:
         """Get the appropriate StridedRolling instance for the passed data.
 
         The returned instance will be determined by the data its index type
@@ -38,8 +38,8 @@ class StridedRollingFactory:
             The data to segment.
         window : Union[float, pd.TimeDelta]
              The window size to use for the segmentation.
-        stride : Union[float, pd.TimeDelta]
-            The stride to use for the segmentation.
+        strides : Union[List[Union[float, pd.TimeDelta]], None]
+            The stride(s) to use for the segmentation.
         **kwargs : dict, optional
             Additional keyword arguments, see the `StridedRolling` its documentation
             for more info.
@@ -64,14 +64,17 @@ class StridedRollingFactory:
 
         """
         data_dtype = AttributeParser.determine_type(data)
-        args_dtype = AttributeParser.determine_type([window, stride])
+        if strides is None:
+            args_dtype = AttributeParser.determine_type(window)
+        else:
+            args_dtype = AttributeParser.determine_type([window] + strides)
 
         if data_dtype.value == args_dtype.value:
             return StridedRollingFactory._datatype_to_stroll[data_dtype](
-                data, window, stride, **kwargs
+                data, window, strides, **kwargs
             )
         elif data_dtype == DataType.TIME and args_dtype == DataType.SEQUENCE:
             # Note: this is very niche and thus requires advanced knowledge
-            return TimeIndexSampleStridedRolling(data, window, stride, **kwargs)
+            return TimeIndexSampleStridedRolling(data, window, strides, **kwargs)
         elif data_dtype == DataType.SEQUENCE and args_dtype == DataType.TIME:
             raise ValueError("Cannot segment a sequence-series with a time window")

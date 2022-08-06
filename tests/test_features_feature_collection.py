@@ -51,6 +51,48 @@ def test_single_series_feature_collection(dummy_data):
     assert all(res_df.index[1:] - res_df.index[:-1] == pd.to_timedelta(5, unit="s"))
 
 
+def test_single_series_feature_collection_strides(dummy_data):
+    stride = "5s"
+    fd1 = FeatureDescriptor(np.sum, series_name="EDA", window="10s")
+    fd2 = FeatureDescriptor(np.sum, series_name="EDA", window="10s", stride='20s')
+    fd3 = FeatureDescriptor(np.sum, series_name="EDA", window="10s", stride=stride)
+    fc1 = FeatureCollection(feature_descriptors=fd1)
+    fc2 = FeatureCollection(feature_descriptors=fd2)
+    fc3 = FeatureCollection(feature_descriptors=fd3)
+
+    assert fc1.get_required_series() == fc2.get_required_series()
+    assert fc1.get_required_series() == fc3.get_required_series()
+
+    res1 = fc1.calculate(dummy_data, stride=stride, return_df=False, n_jobs=1)
+    res2 = fc2.calculate(dummy_data, stride=stride, return_df=False, n_jobs=1)
+    res3 = fc3.calculate(dummy_data, return_df=False, n_jobs=1)
+
+    assert (len(res1) == 1) & (len(res2) == 1) & (len(res3) == 1)
+
+    assert_frame_equal(res1[0], res2[0])
+    assert_frame_equal(res1[0], res3[0])
+
+
+def test_single_series_feature_collection_setpoints(dummy_data):
+    setpoints = [0, 5, 7, 10]
+    setpoints = dummy_data.index[setpoints].values
+    fd1 = FeatureDescriptor(np.sum, series_name="EDA", window="10s")
+    fd2 = FeatureDescriptor(np.sum, series_name="EDA", window="10s", stride='20s')
+    fc1 = FeatureCollection(feature_descriptors=fd1)
+    fc2 = FeatureCollection(feature_descriptors=fd2)
+
+    assert fc1.get_required_series() == fc2.get_required_series()
+
+    res1 = fc1.calculate(dummy_data, setpoints=setpoints, window_idx="begin")
+    res2 = fc2.calculate(dummy_data, setpoints=setpoints, window_idx="begin")
+
+    assert (len(res1) == 1) & (len(res2) == 1)
+    assert (len(res1[0]) == 4) & (len(res2[0]) == 4)
+
+    assert_frame_equal(res1[0], res2[0])
+    assert all(res1[0].index.values == setpoints)
+
+
 def test_uneven_sampled_series_feature_collection(dummy_data):
     fd = FeatureDescriptor(
         function=np.sum,
@@ -145,15 +187,15 @@ def test_featurecollection_repr(dummy_data):
     fc_str: str = fc.__repr__()
     assert "EDA|TMP" in fc_str
     assert (
-            fc_str
-            == "EDA|TMP: (\n\twin: 30s   , stride: 30s: [\n\t\tFeatureDescriptor - func: FuncWrapper(corr, ['corrcoef'], {}),\n\t]\n)\n"
+        fc_str
+        == "EDA|TMP: (\n\twin: 30s   : [\n\t\tFeatureDescriptor - func: FuncWrapper(corr, ['corrcoef'], {})    stride: ['30s'],\n\t]\n)\n"
     )
 
     out = fc.calculate(dummy_data, n_jobs=1, return_df=True)
-    assert out.columns[0] == "EDA|TMP__corrcoef__w=30s_s=30s"
+    assert out.columns[0] == "EDA|TMP__corrcoef__w=30s"
 
     out = fc.calculate(dummy_data, n_jobs=None, return_df=True)
-    assert out.columns[0] == "EDA|TMP__corrcoef__w=30s_s=30s"
+    assert out.columns[0] == "EDA|TMP__corrcoef__w=30s"
 
 
 def test_window_idx_single_series_feature_collection(dummy_data):
@@ -228,12 +270,12 @@ def test_multiplefeaturedescriptors_feature_collection(dummy_data):
     assert set(res_list_names) == set(res_df.columns)
     expected_output_names = [
         [
-            f"{sig}__sum_func__w=5s_s=2.5s",
-            f"{sig}__sum_func__w=7.5s_s=2.5s",
-            f"{sig}__amax__w=5s_s=2.5s",
-            f"{sig}__amax__w=7.5s_s=2.5s",
-            f"{sig}__amin__w=5s_s=2.5s",
-            f"{sig}__amin__w=7.5s_s=2.5s",
+            f"{sig}__sum_func__w=5s",
+            f"{sig}__sum_func__w=7.5s",
+            f"{sig}__amax__w=5s",
+            f"{sig}__amax__w=7.5s",
+            f"{sig}__amin__w=5s",
+            f"{sig}__amin__w=7.5s",
         ]
         for sig in ["EDA", "TMP"]
     ]
@@ -267,6 +309,26 @@ def test_multiplefeaturedescriptors_feature_collection(dummy_data):
         ]
     )
     assert len(res_df) == expected_length
+
+
+def test_multiplefeaturedescriptors_feature_collection_strides(dummy_data):
+    stride= "2.5s"
+    mfd1 = MultipleFeatureDescriptors([np.max, np.min], ["EDA", "TMP"], ["5s", "7.5s"])
+    mfd2 = MultipleFeatureDescriptors([np.max, np.min], ["EDA", "TMP"], ["5s", "7.5s"], strides=["5s"])#, "10s"])  # TODO: list of strides supporten...
+    mfd3 = MultipleFeatureDescriptors([np.max, np.min], ["EDA", "TMP"], ["5s", "7.5s"], strides=stride)
+    fc1 = FeatureCollection(mfd1)
+    fc2 = FeatureCollection(mfd2)
+    fc3 = FeatureCollection(mfd3)
+
+    assert fc1.get_required_series() == fc2.get_required_series()
+    assert fc1.get_required_series() == fc3.get_required_series()
+
+    res1 = fc1.calculate(dummy_data, stride=stride, return_df=True, n_jobs=0)
+    res2 = fc2.calculate(dummy_data, stride=stride, return_df=True, n_jobs=0)
+    res3 = fc3.calculate(dummy_data, return_df=True, n_jobs=0)
+
+    assert_frame_equal(res1, res2)
+    assert_frame_equal(res1, res3)
 
 
 def test_featurecollection_feature_collection(dummy_data):
@@ -493,9 +555,9 @@ def test_one_to_many_feature_collection(dummy_data):
         (int(len(dummy_data) / (1 / freq)) - window_s) / stride_s)
 
     expected_output_names = [
-        "EDA__q_0.1__w=5s_s=2.5s",
-        "EDA__q_0.5__w=5s_s=2.5s",
-        "EDA__q_0.9__w=5s_s=2.5s",
+        "EDA__q_0.1__w=5s",
+        "EDA__q_0.5__w=5s",
+        "EDA__q_0.9__w=5s",
     ]
     assert set(res_df.columns.values) == set(expected_output_names)
     assert (res_df[expected_output_names[0]] != res_df[expected_output_names[1]]).any()
@@ -522,7 +584,7 @@ def test_many_to_one_feature_collection(dummy_data):
     assert len(res_df) == math.ceil(
         (int(len(dummy_data) / (1 / freq)) - window_s) / stride_s)
 
-    expected_output_name = "EDA|TMP__abs_mean_diff__w=5s_s=2.5s"
+    expected_output_name = "EDA|TMP__abs_mean_diff__w=5s"
     assert res_df.columns.values[0] == expected_output_name
 
 
@@ -552,9 +614,9 @@ def test_many_to_many_feature_collection(dummy_data):
         (int(len(dummy_data) / (1 / freq)) - window_s) / stride_s)
 
     expected_output_names = [
-        "EDA|TMP__q_0.1_abs_diff__w=5s_s=13.5s",
-        "EDA|TMP__q_0.5_abs_diff__w=5s_s=13.5s",
-        "EDA|TMP__q_0.9_abs_diff__w=5s_s=13.5s",
+        "EDA|TMP__q_0.1_abs_diff__w=5s",
+        "EDA|TMP__q_0.5_abs_diff__w=5s",
+        "EDA|TMP__q_0.9_abs_diff__w=5s",
     ]
     assert set(res_df.columns.values) == set(expected_output_names)
     assert (res_df[expected_output_names[0]] != res_df[expected_output_names[1]]).any()
@@ -680,18 +742,13 @@ def test_series_funcs(dummy_data):
         (int(len(dummy_data) / downscale_factor / (1 / freq)) - window_s) / stride_s
     )
 
-    expected_output_names = [
-        "EDA|TMP__q_0.1_abs_diff__w=5s_s=2.5s",
-        "EDA|TMP__q_0.5_abs_diff__w=5s_s=2.5s",
-        "EDA|TMP__q_0.9_abs_diff__w=5s_s=2.5s",
-    ]
-    assert "EDA__min_time_diff__w=5s_s=2.5s" in res_df.columns
-    assert "EDA__amax__w=5s_s=2.5s" in res_df.columns
+    assert "EDA__min_time_diff__w=5s" in res_df.columns
+    assert "EDA__amax__w=5s" in res_df.columns
     assert all(
-        res_df["EDA__min_time_diff__w=5s_s=2.5s"]
-        == res_df["EDA__max_time_diff__w=5s_s=2.5s"]
+        res_df["EDA__min_time_diff__w=5s"]
+        == res_df["EDA__max_time_diff__w=5s"]
     )
-    assert all(res_df["EDA__min_time_diff__w=5s_s=2.5s"] == 0.25 * 3)
+    assert all(res_df["EDA__min_time_diff__w=5s"] == 0.25 * 3)
 
 
 def test_categorical_funcs():
@@ -730,7 +787,7 @@ def test_categorical_funcs():
             data=categorical_data, approve_sparsity=True, n_jobs=n_jobs, return_df=True
         )
         for c in categories:
-            assert f"cat__count-{str(c)}__w=1D_s=12h" in out.columns
+            assert f"cat__count-{str(c)}__w=1D" in out.columns
 
 
 def test_time_based_features():
@@ -770,12 +827,12 @@ def test_time_based_features():
     out = fc.calculate(
         data=time_value_series, approve_sparsity=True, n_jobs=1, return_df=True
     )
-    assert out.columns[0] == "time__std_hour__w=6h_s=4h"
+    assert out.columns[0] == "time__std_hour__w=6h"
 
     out = fc.calculate(
         data=time_value_series, approve_sparsity=True, n_jobs=None, return_df=True
     )
-    assert out.columns[0] == "time__std_hour__w=6h_s=4h"
+    assert out.columns[0] == "time__std_hour__w=6h"
 
 
 def test_pass_by_value(dummy_data):
@@ -939,10 +996,9 @@ def test_multiple_outputs_vectorized_features(dummy_data):
     res = fc.calculate(dummy_data, return_df=True)
 
     assert res.shape[1] == 4
-    s = "EDA__";
-    p = "__w=1000_s=300"
-    assert np.all(res[s + "sum" + p].values == res[s + "sum_vect" + p].values)
-    assert np.all(res[s + "mean" + p].values == res[s + "mean_vect" + p].values)
+    s = "EDA__"; p = "__w=1000"
+    assert np.all(res[s+"sum"+p].values == res[s+"sum_vect"+p].values)
+    assert np.all(res[s+"mean"+p].values == res[s+"mean_vect"+p].values)
 
 
 def test_multiple_inputs_vectorized_features(dummy_data):
@@ -964,9 +1020,9 @@ def test_multiple_inputs_vectorized_features(dummy_data):
 
     assert res.shape[1] == 3
     assert res.shape[0] > 1
-    p = "__w=5m_s=2m30s"
-    manual_diff = res["EDA__sum" + p].values - res["TMP__sum" + p].values
-    assert np.all(res["EDA|TMP__windowed_diff" + p].values == manual_diff)
+    p = "__w=5m"
+    manual_diff = res["EDA__sum"+p].values - res["TMP__sum"+p].values
+    assert np.all(res["EDA|TMP__windowed_diff"+p].values == manual_diff)
 
 
 ### Test feature extraction length
@@ -1102,6 +1158,15 @@ def test_type_error_add_feature_collection(dummy_data):
 
     with pytest.raises(TypeError):
         fc.add(np.sum)
+
+
+def test_error_add_feature_collection_same_func_window(dummy_data):
+    fd = FeatureDescriptor(np.sum, "EDA", window="5s", stride="2.5s")
+    fc = FeatureCollection(feature_descriptors=fd)
+    fd2 = FeatureDescriptor(np.sum, "EDA", window="5s", stride="8s")
+
+    with pytest.raises(Exception):
+        fc.add(fd2)
 
 
 def test_one_to_many_error_feature_collection(dummy_data):
@@ -1357,3 +1422,30 @@ def test_vectorized_irregularly_sampled_data(dummy_data):
     # -> is a strict requirement to apply a vectorized feature function
     with pytest.raises(Exception):
         fc.calculate(df_eda)
+
+
+def test_vectorized_multiple_asynchronous_strides(dummy_data):
+    fc = FeatureCollection(
+        feature_descriptors=FeatureDescriptor(
+            FuncWrapper(np.std, vectorized=True, axis=1),
+            "EDA", window="5min", stride=["3s", "5s"]
+        )
+    )
+
+    df_eda = dummy_data["EDA"].dropna()
+
+    # Fails bc of multiple asynchronous strides (resulting in different step sizes between the windows)
+    # -> is a strict requirement to apply a vectorized feature function
+    with pytest.raises(Exception):
+        fc.calculate(df_eda)
+
+
+def test_error_pass_stride_and_setpoints_calculate(dummy_data):
+    setpoints = [0, 5, 7, 10]
+    setpoints = dummy_data.index[setpoints].values
+    fc = FeatureCollection(
+        FeatureDescriptor(np.min, "EDA", window="5min", stride="3min")
+    )
+
+    with pytest.raises(Exception):
+        fc.calculate(dummy_data["EDA"], stride="3min", setpoints=setpoints)

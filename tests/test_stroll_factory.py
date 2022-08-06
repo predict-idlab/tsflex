@@ -30,7 +30,7 @@ def test_stroll_time_data(dummy_data):
     stroll = StridedRollingFactory.get_segmenter(
         data=dummy_data[['EDA', 'TMP']],
         window=window,
-        stride=stride,
+        strides=[stride],
     )
 
     out_f = stroll.apply_func(f_corr)
@@ -52,10 +52,10 @@ def test_stroll_sequence_data(dummy_data):
     stroll = StridedRollingFactory.get_segmenter(
         data=[eda_data, tmp_data],
         window=window,
-        stride=stride,
+        strides=[stride],
     )
     out_f = stroll.apply_func(f_corr)
-    assert out_f.columns[0] == f'EDA|TMP__corrcoef__w={int(window)}_s={int(stride)}'
+    assert out_f.columns[0] == f'EDA|TMP__corrcoef__w={int(window)}'
 
 
 def test_stroll_sequence_int_float(dummy_data):
@@ -76,10 +76,10 @@ def test_stroll_sequence_int_float(dummy_data):
     stroll = StridedRollingFactory.get_segmenter(
         data=[eda_data, tmp_data],
         window=window,
-        stride=stride,
+        strides=[stride],
     )
     out_f = stroll.apply_func(f_corr)
-    assert out_f.columns[0] == f'EDA|TMP__corrcoef__w={int(window)}_s={int(stride)}'
+    assert out_f.columns[0] == f'EDA|TMP__corrcoef__w={int(window)}'
 
 
 def test_stroll_mixed_index_dtypes(dummy_data):
@@ -94,7 +94,7 @@ def test_stroll_mixed_index_dtypes(dummy_data):
         stroll = StridedRollingFactory.get_segmenter(
             data=[eda_data, tmp_data],
             window=window,
-            stride=stride,
+            strides=[stride],
         )
 
 def test_stroll_timeindex_sequence(dummy_data):
@@ -108,7 +108,7 @@ def test_stroll_timeindex_sequence(dummy_data):
     stroll = StridedRollingFactory.get_segmenter(
         data=[eda_data, tmp_data],
         window=window,
-        stride=stride
+        strides=[stride]
     )
 
     assert isinstance(stroll, TimeIndexSampleStridedRolling)
@@ -122,7 +122,7 @@ def test_stroll_timeindex_sequence(dummy_data):
 
 
     out_f = stroll.apply_func(f_corr)
-    assert out_f.columns[0] == f'EDA|TMP__corrcoef__w={int(window)}_s={int(stride)}'
+    assert out_f.columns[0] == f'EDA|TMP__corrcoef__w={int(window)}'
     assert isinstance(out_f.index, pd.DatetimeIndex)
 
 def test_stroll_mixed_input_dtypes(dummy_data):
@@ -134,5 +134,5 @@ def test_stroll_mixed_input_dtypes(dummy_data):
         stroll = StridedRollingFactory.get_segmenter(
             data=[eda_data, tmp_data],
             window=pd.Timedelta(seconds=300),
-            stride=pd.Timedelta(seconds=100)
+            strides=[pd.Timedelta(seconds=100)]
         )

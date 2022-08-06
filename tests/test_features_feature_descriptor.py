@@ -8,6 +8,7 @@ import numpy as np
 
 from tsflex.features import FuncWrapper
 from tsflex.features import FeatureDescriptor, MultipleFeatureDescriptors
+from tsflex.utils.data import flatten
 
 ### FeatureDescriptor
 
@@ -24,7 +25,7 @@ def test_simple_feature_descriptor():
 
     assert fd.series_name == tuple(["EDA"])
     assert fd.window == pd.Timedelta(5, unit='seconds')
-    assert fd.stride == pd.Timedelta(2.5, unit='seconds')
+    assert fd.stride == [pd.Timedelta(2.5, unit='seconds')]
     assert fd.get_required_series() == ["EDA"]
     assert isinstance(fd.function, FuncWrapper)
 
@@ -39,10 +40,44 @@ def test_simple_raw_np_func_feature_descriptor():
 
     assert fd.series_name == tuple(["EDA"])
     assert fd.window == pd.Timedelta(5, unit='seconds')
-    assert fd.stride == pd.Timedelta(2.5, unit='seconds')
+    assert fd.stride == [pd.Timedelta(2.5, unit='seconds')]
     assert fd.get_required_series() == ["EDA"]
     assert isinstance(fd.function, FuncWrapper)
 
+
+def test_simple_feature_descriptor_optional_stride():
+    def sum_func(sig: np.ndarray) -> float:
+        return sum(sig)
+
+    fd = FeatureDescriptor(
+        function=sum_func,
+        series_name="EDA",
+        window='5s',
+    )
+
+    assert fd.series_name == tuple(["EDA"])
+    assert fd.window == pd.Timedelta(5, unit='seconds')
+    assert fd.stride == None
+    assert fd.get_required_series() == ["EDA"]
+    assert isinstance(fd.function, FuncWrapper)
+
+
+def test_simple_feature_descriptor_multiple_strides():
+    def sum_func(sig: np.ndarray) -> float:
+        return sum(sig)
+
+    fd = FeatureDescriptor(
+        function=sum_func,
+        series_name="EDA",
+        window='5s',
+        stride=['3s', '5s'],
+    )
+
+    assert fd.series_name == tuple(["EDA"])
+    assert fd.window == pd.Timedelta(5, unit='seconds')
+    assert fd.stride == [pd.Timedelta(3, unit='seconds'), pd.Timedelta(5, unit='seconds')]
+    assert fd.get_required_series() == ["EDA"]
+    assert isinstance(fd.function, FuncWrapper)
 
 # TODO -> add new test in which floats represent the float position
 
@@ -59,7 +94,7 @@ def test_simple_feature_descriptor_str_str_seconds():
 
     assert fd.series_name == tuple(["EDA"])
     assert fd.window == pd.Timedelta(5, unit='seconds')
-    assert fd.stride == pd.Timedelta(3, unit='seconds')
+    assert fd.stride == [pd.Timedelta(3, unit='seconds')]
     assert fd.get_required_series() == ["EDA"]
     assert isinstance(fd.function, FuncWrapper)
 
@@ -79,7 +114,7 @@ def test_simple_feature_descriptor_func_wrapper():
 
     assert fd.series_name == tuple(["EDA"])
     assert fd.window == pd.Timedelta(5, unit='seconds')
-    assert fd.stride == pd.Timedelta(2.5, unit='seconds')
+    assert fd.stride == [pd.Timedelta(2.5, unit='seconds')]
     assert fd.get_required_series() == ["EDA"]
     assert isinstance(fd.function, FuncWrapper)
 
@@ -145,7 +180,7 @@ def test_multiple_feature_descriptors():
     assert sum([el == pd.Timedelta(seconds=5) for el in windows]) == 3*2
     assert sum([el == pd.Timedelta(seconds=7.5) for el in windows]) == 3*2
 
-    strides = [fd.stride for fd in mfd.feature_descriptions]
+    strides = flatten([fd.stride for fd in mfd.feature_descriptions])
     assert (set(strides) == set([pd.Timedelta(seconds=2.5)]))
 
     functions = [fd.function for fd in mfd.feature_descriptions]

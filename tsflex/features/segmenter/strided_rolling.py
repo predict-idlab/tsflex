@@ -25,7 +25,7 @@ import pandas as pd
 from ..function_wrapper import FuncWrapper
 from ..logger import logger
 from ..utils import _determine_bounds
-from ...utils.data import SUPPORTED_STROLL_TYPES, to_series_list
+from ...utils.data import SUPPORTED_STROLL_TYPES, to_series_list, to_list, merge_sorted
 from ...utils.attribute_parsing import DataType, AttributeParser
 from ...utils.time import timedelta_to_str
 
@@ -45,10 +45,13 @@ class StridedRolling(ABC):
         Either an int, float, or ``pd.Timedelta``, representing the sliding window size
         in terms of the index (in case of a int or float) or the sliding window duration
         (in case of ``pd.Timedelta``).
-    stride : Union[float, pd.Timedelta]
-        Either an int, float, or ``pd.Timedelta``, representing the stride size in terms
-        of the index (in case of a int or float) or the stride duration (in case of
-        ``pd.Timedelta``).
+    strides : List[Union[float, pd.Timedelta]]
+        Either a list of int, float, or ``pd.Timedelta``, representing the stride sizes
+        in terms of the index (in case of a int or float) or the stride duration (in
+        case of ``pd.Timedelta``).
+    setpoints: np.ndarray, optional
+        The setpoints to use for the sliding window. If not provided, the setpoints
+        will be computed from the data using the passed ``strides``. By default None.
     start_idx: Union[float, pd.Timestamp], optional
         The start-index which will be used for each series passed to `data`. This is
         especially useful if multiple `StridedRolling` instances are created and the
@@ -115,7 +118,8 @@ class StridedRolling(ABC):
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         window: T,
-        stride: T,
+        strides: List[T],  # TODO: is this optional?
+        setpoints: Optional[np.ndarray] = None,
         start_idx: Optional[T] = None,
         end_idx: Optional[T] = None,
         func_data_type: Optional[Union[np.array, pd.Series]] = np.array,
@@ -123,11 +127,14 @@ class StridedRolling(ABC):
         include_final_window: bool = False,
         approve_sparsity: Optional[bool] = False,
     ):
-        self.window = window
-        self.stride = stride
 
-        # Note: the sub-class should set the self.func_data_type attribute
-        assert AttributeParser.check_expected_type([window, stride], self.win_str_type)
+        check_strides_list = [] if strides is None else strides
+        assert AttributeParser.check_expected_type(
+            [window] + check_strides_list, self.win_str_type
+        )
+
+        self.window = window
+        self.strides = strides
 
         self.window_idx = window_idx
         self.include_final_window = include_final_window
@@ -153,14 +160,27 @@ class StridedRolling(ABC):
         # Especially useful when the index dtype differs from the win-stride-dtype
         # e.g. -> performing a int-based stroll on time-indexed data
         # Note: this is very niche and thus requires advanced knowledge
-        self._update_start_end_indices_to_stroll_type(series_list)
+        self._update_start_end_indices_to_stroll_type(series_list)  # TODO: kan weg als we timesequencestroll weglaten
+
+        # Either use the passed setpoints or compute the start times of the segments
+        if setpoints is not None:  # use the passed setpoints
+            segment_start_idxs = setpoints
+        else:  # compute the start times of the segments (based on the stride(s))
+            segment_start_idxs = self._construct_start_idxs()
+
+        if not len(segment_start_idxs):
+            # warnings.warn("No segments found for the given data.", UserWarning)
+            # If no segments were found -> set dtype to index dtype
+            #   (this avoids ufunc 'add' error from numpy bcs of dtype mismatch)
+            segment_start_idxs = segment_start_idxs.astype(series_list[0].index.dtype)
 
         # 2. Create a new-index which will be used for DataFrame reconstruction
         # Note: the index-name of the first passed series will be re-used as index-name
-        self.index = self._construct_output_index(series_list[0])
+        self.index = self._get_output_index(series_list[0], segment_start_idxs)
 
         # 3. Construct the index ranges and store the series containers
-        np_start_times, np_end_times = self._construct_start_end_times()
+        np_start_times = segment_start_idxs
+        np_end_times = segment_start_idxs + self._get_np_value(self.window)
         self.series_containers = self._construct_series_containers(
             series_list, np_start_times, np_end_times
         )
@@ -176,13 +196,38 @@ class StridedRolling(ABC):
                         RuntimeWarning,
                     )
 
-    def _get_window_offset(self, window: T) -> T:
+    def _get_np_start_idx_for_stride(self, stride) -> np.ndarray:       
+        # ---------- Efficient numpy code -------
+        np_start = self._get_np_value(self.start)
+        np_stride = self._get_np_value(stride)
+
+        # Compute the start times (these remain the same for each series)
+        return np.arange(
+            start=np_start,
+            stop=np_start + self._calc_nb_feats_for_stride(stride)*np_stride,
+            step=np_stride,
+        )
+
+    def _construct_start_idxs(self) -> np.ndarray:
+        start_idxs = []
+        for stride in self.strides:
+            start_idxs += [self._get_np_start_idx_for_stride(stride)]
+        return np.asarray(merge_sorted(start_idxs))  # merge sorted lists w/o duplicates
+
+    def _calc_nb_feats_for_stride(self, stride) -> int:
+        nb_feats = (self.end - self.start - self.window) // stride + 1
+        # Add 1 if there is still some data after (including) the last window its
+        # start index - this is only added when `include_last_window` is True.
+        nb_feats += self.include_final_window * (self.start + stride * nb_feats <= self.end)
+        return nb_feats
+
+    def _get_window_offset(self) -> T:
         if self.window_idx == "end":
-            return window
+            return self.window
         elif self.window_idx == "middle":
-            return window / 2
+            return self.window / 2
         elif self.window_idx == "begin":
-            if isinstance(window, pd.Timedelta):
+            if isinstance(self.window, pd.Timedelta):
                 return pd.Timedelta(seconds=0)
             return 0
         else:
@@ -190,6 +235,15 @@ class StridedRolling(ABC):
                 f"window index {self.window_idx} must be either of: "
                 "['end', 'middle', 'begin']"
             )
+
+    def _get_output_index(self, series: pd.Series, start_idxs: np.ndarray) -> pd.Index:
+        if start_idxs.dtype.type == np.datetime64:
+            start_idxs = pd.to_datetime(start_idxs, unit="ns", utc=True).tz_convert(series.index.tz)
+        return pd.Index(
+            data=start_idxs + self._get_window_offset(),
+            name=series.index.name,
+            # dtype=series.index.dtype,  # TODO?
+        )
 
     def _construct_series_containers(
         self, series_list, np_start_times, np_end_times
@@ -241,7 +295,7 @@ class StridedRolling(ABC):
         pd.DataFrame
             The merged output of the function applied to every column in a
             new DataFrame. The DataFrame's column-names have the format:
-                `<series_col_name(s)>_<feature_name>__w=<window>_s=<stride>`.
+                `<series_col_name(s)>_<feature_name>__w=<window>`.
 
         Raises
         ------
@@ -387,7 +441,7 @@ class StridedRolling(ABC):
         logger.info(
             f"Finished function [{func.func.__name__}] on "
             f"{[self.series_key]} with window-stride "
-            f"[{self.window}, {self.stride}] in [{elapsed} seconds]!"
+            f"[{self.window}, {self.strides}] in [{elapsed} seconds]!"
         )
 
         return pd.DataFrame(index=self.index, data=feat_out)
@@ -397,11 +451,7 @@ class StridedRolling(ABC):
 
     # ----------------------------- OVERRIDE THESE METHODS -----------------------------
     @abstractmethod
-    def _construct_output_index(self, series: pd.Series) -> pd.Index:
-        raise NotImplementedError
-
-    @abstractmethod
-    def _construct_start_end_times(self) -> Tuple[np.ndarray, np.ndarray]:
+    def _get_np_value(val):
         raise NotImplementedError
 
     @abstractmethod
@@ -414,53 +464,23 @@ class SequenceStridedRolling(StridedRolling):
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         window: float,
-        stride: float,
+        strides: List[float],
         *args,
         **kwargs,
     ):
         self.win_str_type = DataType.SEQUENCE
-        super().__init__(data, window, stride, *args, **kwargs)
+        super().__init__(data, window, strides, *args, **kwargs)
 
-    # ------------------------------ Overridden methods ------------------------------
-    def _construct_output_index(self, series: pd.Series) -> pd.Index:
-        window_offset = self._get_window_offset(self.window)
-        # Calculate the number of sliding window steps
-        # This calculation does not uses half-open bounds (and thus may miss one full
-        #  window when a pd.RangeIndex is used) -> you can force to include this window
-        # by setting `include_final_window` True.
-        nb_feats = (self.end - self.start - self.window) // self.stride + 1
-        # Add 1 if there is still some data after (including) the last window its start
-        # index - this is only added when `include_last_window` is True.
-        nb_feats += self.include_final_window * (self.start + self.stride * nb_feats <= self.end)
-        return pd.Index(
-            data=np.arange(
-                start=self.start + window_offset,
-                stop=self.start + window_offset + nb_feats * self.stride,
-                step=self.stride,
-            ),
-            name=series.index.name,
-        )
-
-    def _construct_start_end_times(self) -> Tuple[np.ndarray, np.ndarray]:
-        # ---------- Efficient numpy code -------
-        # 1. Precompute the start & end times (these remain the same for each series)
-        # note: this if equivalent to:
-        #   if `window` == 'begin":
-        #       start_times = self.index.values
-        np_start_times = np.arange(
-            start=self.start,
-            stop=self.start + (len(self.index) * self.stride),
-            step=self.stride,
-            dtype=self.index.dtype,
-        )
-        np_end_times = np_start_times + self.window
-        return np_start_times, np_end_times
+    def _get_np_value(self, val) -> float:
+        # The sequence values are already of numpy compatible type
+        return val
 
     def _create_feat_col_name(self, feat_name: str) -> str:
         # TODO -> this is not that loosely coupled if we want somewhere else in the code
         # to also reproduce col-name construction
-        win_stride_str = f"w={self.window}_s={self.stride}"
-        return f"{'|'.join(self.series_key)}__{feat_name}__{win_stride_str}"
+        # TODO: UPDATE THE REDUCE METHOD
+        win_str = f"w={self.window}"
+        return f"{'|'.join(self.series_key)}__{feat_name}__{win_str}"
 
 
 class TimeStridedRolling(StridedRolling):
@@ -468,64 +488,40 @@ class TimeStridedRolling(StridedRolling):
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         window: pd.Timedelta,
-        stride: pd.Timedelta,
+        strides: List[pd.Timedelta],
         *args,
         **kwargs,
     ):
         self.win_str_type = DataType.TIME
-        super().__init__(data, window, stride, *args, **kwargs)
+        # TODO: do we check that each series has the same tz?
+        super().__init__(data, window, strides, *args, **kwargs)
 
     # ---------------------------- Overridden methods ------------------------------
-    def _construct_output_index(self, series: pd.Series) -> pd.DatetimeIndex:
-        # note: the index automatically takes the timezone of `start` & `end`
-        window_offset = self._get_window_offset(self.window)
-        # print("end, start", self.end, self.start)
-        nb_feats = (self.end - self.start - self.window) // self.stride + 1
-        # print("nb_feats", nb_feats)
-        nb_feats += self.include_final_window * (self.start + self.stride * nb_feats <= self.end)
-        # print("nb_feats -- ", nb_feats)
-        return pd.date_range(
-            start=self.start + window_offset,
-            end=self.start + window_offset + nb_feats * self.stride,
-            freq=self.stride,
-            closed="left",
-            name=series.index.name,
-        )
+    def _get_np_value(self, val):
+        # Convert everything to int64
+        if isinstance(val, pd.Timestamp):
+            return val.to_datetime64()
+        elif isinstance(val, pd.Timedelta):
+            return val.to_timedelta64()
+        raise ValueError(f"Unsupported value type: {type(val)}")
 
-    def _construct_start_end_times(self) -> Tuple[np.ndarray, np.ndarray]:
-        # ---------- Efficient numpy code -------
-        # 1. Convert everything to int64
-        np_start = self.start.to_datetime64()
-        np_window = self.window.to_timedelta64()
-        np_stride = self.stride.to_timedelta64()
-
-        # 2. Precompute the start & end times (these remain the same for each series)
-        # note: this if equivalent to:
-        #   if `window` == 'begin":
-        #       start_times = self.index.values
-        np_start_times = np.arange(
-            start=np_start,
-            stop=np_start + (len(self.index) * np_stride),
-            step=np_stride,
-            dtype=np.datetime64,
-        )
-        np_end_times = np_start_times + np_window
-        return np_start_times, np_end_times
+    # TODO: how bad is it that we don't have freq information anymore?
+    # def _construct_output_index(self, series: pd.Series) -> pd.DatetimeIndex:
+    # ...
 
     def _create_feat_col_name(self, feat_name: str) -> str:
-        # Convert win & stride to time-string if available :)
-        win_str = timedelta_to_str(self.window)
-        stride_str = timedelta_to_str(self.stride)
-        win_stride_str = f"w={win_str}_s={stride_str}"
-        return f"{'|'.join(self.series_key)}__{feat_name}__{win_stride_str}"
+        # Convert win to time-string if available :)
+        win_str = f"w={timedelta_to_str(self.window)}"
+        return f"{'|'.join(self.series_key)}__{feat_name}__{win_str}"
 
 
 class TimeIndexSampleStridedRolling(SequenceStridedRolling):
+    # TODO: decide what to do with this class
     def __init__(
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         window: int,
-        stride: int,
+        strides: List[int],
         *args,
         **kwargs,
     ):
@@ -552,12 +548,12 @@ class TimeIndexSampleStridedRolling(SequenceStridedRolling):
             kwargs.update({"start_idx": start, "end_idx": end})
 
         # pass the sliced series list instead of data
-        super().__init__(series_list, window, stride, *args, **kwargs)
+        super().__init__(series_list, window, strides, *args, **kwargs)
 
         assert self.series_dtype == DataType.TIME
 
         # we want to assure that the window-stride arguments are integers (samples)
-        assert all(isinstance(p, int) for p in [self.window, self.stride])
+        assert all(isinstance(p, int) for p in [self.window] + self.strides)
 
     # ---------------------------- Overridden methods ------------------------------
     def _update_start_end_indices_to_stroll_type(self, series_list: List[pd.Series]):
