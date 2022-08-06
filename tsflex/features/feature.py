@@ -52,8 +52,8 @@ class FeatureDescriptor(FrozenClass):
         * If a `str`, it must represents a window-time-range-string. The **passed data
           must have a time-index**.
 
-    stride : Union[int, str, pd.Timedelta, None], optional
-        The stride size. By default None. This argument supports multiple types: \n
+    stride : Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]], None], optional
+        The stride size(s). By default None. This argument supports multiple types: \n
         * If None, the stride will need to be passed to `FeatureCollection.calculate`.
         * If the type is an `float` or an `int`, its value represents the series
             - its stride **range** when a **non time-indexed** series is passed.
@@ -63,6 +63,8 @@ class FeatureDescriptor(FrozenClass):
           the stride-time delta. The passed data **must have a time-index**.
         * If a `str`, it must represent a stride-time-delta-string. The **passed data
           must have a time-index**. \n
+        * If a `List[Union[float, str, pd.Timedelta]]`, then the set intersection of the
+          strides will be used (e.g., stride=[2,3] -> index: 0, 2, 3, 6, 8, 9, ...)
         .. Note::
             The stride argument of `FeatureCollection.calculate` takes precedence over
             this value when set (i.e., not None value for `stride` passed to the 
@@ -114,16 +116,22 @@ class FeatureDescriptor(FrozenClass):
     ):
         self.series_name: Tuple[str, ...] = to_tuple(series_name)
         self.window = parse_time_arg(window) if isinstance(window, str) else window
-        self.stride = parse_time_arg(stride) if isinstance(stride, str) else stride
+        strides = to_list(stride)
+        if len(strides) == 1 and strides[0] is None:
+            self.stride = None
+        else:
+            self.stride = [
+                parse_time_arg(s) if isinstance(s, str) else s for s in strides
+                ]
 
         # Verify whether window and stride are either both sequence or time based
         dtype_set = set(
-            AttributeParser.determine_type(v) for v in [self.window, self.stride]
+            AttributeParser.determine_type(v) for v in [self.window] + to_list(self.stride)
         ).difference([DataType.UNDEFINED])
         if len(dtype_set) > 1:
             raise TypeError(
                 f"a combination of window ({self.window} type={type(self.window)}) and"
-                f" stride ({self.stride} type={type(self.stride)}) is not supported!"
+                f" stride ({self.stride}) is not supported!"
             )
 
         # Order of if statements is important (as FuncWrapper also is a Callable)!
@@ -233,12 +241,12 @@ class MultipleFeatureDescriptors:
         )
         # Convert the other types to list
         windows = to_list(windows)
-        strides = to_list(strides)
+        strides = to_list(strides) if strides is not None else strides
 
         self.feature_descriptions: List[FeatureDescriptor] = []
         # Iterate over all combinations
-        combinations = [functions, series_names, windows, strides]
-        for function, series_name, window, stride in itertools.product(*combinations):
+        combinations = [functions, series_names, windows]
+        for function, series_name, window in itertools.product(*combinations):
             self.feature_descriptions.append(
-                FeatureDescriptor(function, series_name, window, stride)
+                FeatureDescriptor(function, series_name, window, strides)
             )

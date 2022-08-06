@@ -157,6 +157,30 @@ def flatten(data: Iterable) -> Iterator:
     return itertools.chain.from_iterable(data)
 
 
+def merge_sorted(sorted_lists: Iterable) -> List:
+    """Merge the iterable of sorted lists into one list without duplicates.
+
+    # TODO: this is probably not the most optimal implementation, but for the small
+    # lists we are working with, this will suffice for now.
+
+    Parameters
+    ----------
+    sorted_lists : Iterable
+        An iterable of sorted lists that need to be merged.
+
+    Returns
+    -------
+    List
+        A sorted list (without duplicates) of the passed data.   
+    
+    """
+    return sorted(
+        set(
+            itertools.chain.from_iterable(sorted_lists)
+        )
+    )
+
+
 def load_empatica_data(f_names: Union[str, List[str]]) -> List[pd.DataFrame]:
     """load example empatica data from the github repository.
 
