@@ -295,15 +295,6 @@ class FeatureCollection:
     ) -> Union[List[pd.DataFrame], pd.DataFrame]:
         """Calculate features on the passed data.
 
-        Notes
-        ------
-        * The (column-)names of the series in `data` represent the `series_names`.
-        * If a `logging_file_path` is provided, the execution (time) info can be
-          retrieved by calling `logger.get_feature_logs(logging_file_path)`.
-          Be aware that the `logging_file_path` gets cleared before the logger pushes
-          logged messages. Hence, one should use a separate logging file for each
-          constructed processing and feature instance with this library.
-
         Parameters
         ----------
         data : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
@@ -339,26 +330,33 @@ class FeatureCollection:
             feature_window aggregation. Must be either of: `["begin", "middle", "end"]`.
             by default "end". All features in this collection will use the same
             window_idx.
-            .. Note::
-                `window_idx` end  results in using the end idx of the window as ...
+
+            ..Note::
+                `window_idx`="end" results in using the end idx of the window as ... TODO finish
         include_final_window : bool, optional
-        Whether to include the final (possibly incomplete) window should be included in
-        the strided-window segmentation, by default False.
-        .. Note::
-            Both these notes apply when `include_final_window` is True.
-            Te user should be aware that the last window *might* be incomplete, i.e.;
+            Whether the final (possibly incomplete) window should be included in the
+            strided-window segmentation, by default False.
+
+            .. Note::
+                The remarks below apply when `include_final_window` is set to True.
+                The user should be aware that the last window *might* be incomplete,
+                i.e.;
+
                 - when equally sampled, the last window *might* be smaller than the
-                    the other windows.
-                - when not equally sampled, the last window *might* not include all
-                    the data points (as the begin-time + window-size comes after the
-                    last data point).
-            Note however, that when equally sampled, the last window *will* be a full
-            window when:
-                - the stride is the sampling rate of the data.
-                  Remark that thus when `include_final_window` is False, the last
-                  window, which is a full window will not be included.
-                - (len * sampling_rate - window_size) % stride is 0.
-                  Remark that the first case is a base case of this.
+                  the other windows.
+                - when not equally sampled, the last window *might* not include all the
+                  data points (as the begin-time + window-size comes after the last data
+                  point).
+
+                Note, that when equally sampled, the last window *will* be a full window
+                when:
+
+                - the stride is the sampling rate of the data (or stride = 1 for
+                sample-based configurations).<br>
+                **Remark**: that when `include_final_window` is set to False, the last
+                window (which is a full) window will not be included!
+                - *(len * sampling_rate - window_size) % stride = 0*. Remark that the
+                  above case is a base case of this.
         bound_method: str, optional
             The start-end bound methodology which is used to generate the slice ranges
             when ``data`` consists of multiple series / columns.
@@ -385,13 +383,12 @@ class FeatureCollection:
             If n_jobs is either 0 or 1, the code will be executed sequentially without
             creating a process pool. This is very useful when debugging, as the stack
             trace will be more comprehensible.
-            .. Note:
+            .. note:
                 Multiprocessed execution is not supported on Windows. Even when,
                 `n_jobs` is set > 1, the feature extraction will still be executed
                 sequentially.
                 Why do we not support multiprocessing on Windows; see this issue
                 https://github.com/predict-idlab/tsflex/issues/51
-
 
             .. tip::
                 It takes on avg. _300ms_ to schedule everything with
@@ -408,6 +405,16 @@ class FeatureCollection:
         ------
         KeyError
             Raised when a required key is not found in `data`.
+
+        Notes
+        ------
+        * The (column-)names of the series in `data` represent the `series_names`.
+        * If a `logging_file_path` is provided, the execution (time) info can be
+          retrieved by calling `logger.get_feature_logs(logging_file_path)`.
+          Be aware that the `logging_file_path` gets cleared before the logger pushes
+          logged messages. Hence, one should use a separate logging file for each
+          constructed processing and feature instance with this library.
+
 
         """
         # Delete other logging handlers
