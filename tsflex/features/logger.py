@@ -9,6 +9,7 @@ FeatureCollection: its `logging_file_path` of the `calculate` method.
 __author__ = "Jeroen Van Der Donckt"
 
 import logging
+import numpy as np
 import pandas as pd
 import re
 
@@ -32,7 +33,8 @@ def _parse_message(message: str) -> list:
     assert len(matches) == 4
     func = matches[0]
     key = matches[1].replace("'", "") 
-    window, stride = matches[2].split(",")[0], matches[2].split(",")[1]
+    window, stride = matches[2].split(",")[0], ",".join(matches[2].split(",")[1:])
+    stride = eval(stride)  # parse the tuple
     duration_s = float(matches[3].rstrip(" seconds"))
     return [func, key, window, stride, duration_s]
 
@@ -63,8 +65,25 @@ def _parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
         list(df["message"].apply(_parse_message)),
         index=df.index,
     )
-    df["window"] = pd.to_timedelta(df["window"]).apply(timedelta_to_str)
-    df["stride"] = pd.to_timedelta(df["stride"]).apply(timedelta_to_str)
+    # Parse the window and stride
+    if df["window"].str.isnumeric().all():
+        df["window"] = pd.to_numeric(df["window"])
+    else:
+        df["window"] = pd.to_timedelta(df["window"]).apply(timedelta_to_str)
+    if df["stride"].apply(
+        lambda stride_tuple: np.char.isnumeric([s for s in stride_tuple])
+        ).all():
+        df["stride"] = df["stride"].apply(
+            lambda stride_tuple: tuple(
+                pd.to_numeric(s) for s in stride_tuple
+            )
+        )
+    else:
+        df["stride"] = df["stride"].apply(
+            lambda stride_tuple: tuple(
+                timedelta_to_str(pd.to_timedelta(s)) for s in stride_tuple
+            )
+        )
     return df.drop(columns=["name", "log_level", "message"])
 
 

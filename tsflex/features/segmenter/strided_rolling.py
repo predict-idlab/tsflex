@@ -118,7 +118,7 @@ class StridedRolling(ABC):
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         window: T,
-        strides: List[T],  # TODO: is this optional?
+        strides: Union[List[T], None],
         setpoints: Optional[np.ndarray] = None,
         start_idx: Optional[T] = None,
         end_idx: Optional[T] = None,
@@ -438,10 +438,11 @@ class StridedRolling(ABC):
                 ]
 
         elapsed = time.time() - t_start
+        log_strides = tuple() if self.strides is None else tuple(str(s) for s in self.strides)
         logger.info(
             f"Finished function [{func.func.__name__}] on "
             f"{[self.series_key]} with window-stride "
-            f"[{self.window}, {self.strides}] in [{elapsed} seconds]!"
+            f"[{self.window}, {log_strides}] in [{elapsed} seconds]!"
         )
 
         return pd.DataFrame(index=self.index, data=feat_out)

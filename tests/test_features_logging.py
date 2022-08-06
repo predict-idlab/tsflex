@@ -18,7 +18,7 @@ from .utils import dummy_data, logging_file_path
 test_path = os.path.abspath(os.path.dirname( __file__ ))
 
 
-def test_simple_features_logging(dummy_data, logging_file_path):
+def test_simple_features_logging_time_index(dummy_data, logging_file_path):
     fd = FeatureDescriptor(
         function=np.sum,
         series_name="EDA",
@@ -49,17 +49,64 @@ def test_simple_features_logging(dummy_data, logging_file_path):
     assert set(logging_df["function"].values) == set(['amin', 'sum'])
     assert set(logging_df["series_names"].values) == set(["(EDA,)", "(ACC_x,)", "(TMP,)"])
     assert all(logging_df["window"] == "5s")
-    assert all(logging_df["stride"] == "12s")
+    assert all(logging_df["stride"] == ("12s",))
 
     function_stats_df = get_function_stats(logging_file_path)
     assert len(function_stats_df) == 2
-    assert set(function_stats_df.index) == set([(s, "5s", "12s") for s in ["sum", "amin"]])
+    assert set(function_stats_df.index) == set([(s, "5s", ("12s",)) for s in ["sum", "amin"]])
     assert all(function_stats_df["duration"]["mean"] > 0)
     assert function_stats_df["duration"]["count"].sum() == 4
 
     series_names_df = get_series_names_stats(logging_file_path)
     assert len(series_names_df) == 3
-    assert set(series_names_df.index) == set([(s, "5s", "12s") for s in ["(EDA,)", "(TMP,)", "(ACC_x,)"]])
+    assert set(series_names_df.index) == set([(s, "5s", ("12s",)) for s in ["(EDA,)", "(TMP,)", "(ACC_x,)"]])
+    assert all(series_names_df["duration"]["mean"] > 0)
+    assert series_names_df["duration"]["count"].sum() == 4
+
+
+def test_simple_features_logging_sequence_index(dummy_data, logging_file_path):
+    dummy_data = dummy_data.reset_index(drop=True)
+    fd = FeatureDescriptor(
+        function=np.sum,
+        series_name="EDA",
+        window=50,
+        stride=120,
+    )
+    fc = FeatureCollection(feature_descriptors=fd)
+    fc.add(MultipleFeatureDescriptors(np.min, series_names=["TMP","ACC_x"], windows=50, strides=120))
+    fc.add(FeatureDescriptor(np.min, series_name=("EDA",), window=50, stride=120))
+
+    assert set(fc.get_required_series()) == set(["EDA", "TMP", "ACC_x"])
+    assert len(fc.get_required_series()) == 3
+
+    assert not os.path.exists(logging_file_path)
+
+    # Sequential (n_jobs <= 1), otherwise file_path gets cleared
+    _ = fc.calculate(dummy_data, logging_file_path=logging_file_path, n_jobs=1)
+
+    assert os.path.exists(logging_file_path)
+    logging_df = get_feature_logs(logging_file_path)
+
+    assert all(logging_df.columns.values == ['log_time', 'function', 'series_names', 'window', 'stride', 'duration'])
+
+    assert len(logging_df) == 4
+    assert logging_df.select_dtypes(include=[np.datetime64]).columns.values == ['log_time']
+    assert logging_df.select_dtypes(include=[np.timedelta64]).columns.values == ['duration']
+
+    assert set(logging_df["function"].values) == set(['amin', 'sum'])
+    assert set(logging_df["series_names"].values) == set(["(EDA,)", "(ACC_x,)", "(TMP,)"])
+    assert all(logging_df["window"] == 50)
+    assert all(logging_df["stride"] == (120,))
+
+    function_stats_df = get_function_stats(logging_file_path)
+    assert len(function_stats_df) == 2
+    assert set(function_stats_df.index) == set([(s, 50, (120,)) for s in ["sum", "amin"]])
+    assert all(function_stats_df["duration"]["mean"] > 0)
+    assert function_stats_df["duration"]["count"].sum() == 4
+
+    series_names_df = get_series_names_stats(logging_file_path)
+    assert len(series_names_df) == 3
+    assert set(series_names_df.index) == set([(s, 50, (120,)) for s in ["(EDA,)", "(TMP,)", "(ACC_x,)"]])
     assert all(series_names_df["duration"]["mean"] > 0)
     assert series_names_df["duration"]["count"].sum() == 4
 
