@@ -164,6 +164,7 @@ class StridedRolling(ABC):
 
         # Either use the passed setpoints or compute the start times of the segments
         if setpoints is not None:  # use the passed setpoints
+            self.strides = None
             segment_start_idxs = setpoints
         else:  # compute the start times of the segments (based on the stride(s))
             segment_start_idxs = self._construct_start_idxs()

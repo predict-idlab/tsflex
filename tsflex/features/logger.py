@@ -71,7 +71,7 @@ def _parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
     else:
         df["window"] = pd.to_timedelta(df["window"]).apply(timedelta_to_str)
     if df["stride"].apply(
-        lambda stride_tuple: np.char.isnumeric([s for s in stride_tuple])
+        lambda stride_tuple: len(stride_tuple) and np.char.isnumeric(stride_tuple)
         ).all():
         df["stride"] = df["stride"].apply(
             lambda stride_tuple: tuple(
