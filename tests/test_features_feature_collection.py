@@ -15,6 +15,7 @@ import numpy as np
 from tsflex.features import FuncWrapper
 from tsflex.features import FeatureDescriptor, MultipleFeatureDescriptors
 from tsflex.features import FeatureCollection
+from tsflex.utils.data import flatten
 
 from pathlib import Path
 from pandas.testing import assert_frame_equal
@@ -362,7 +363,7 @@ def test_feature_collection_column_sorted(dummy_data):
             functions=[np.max, np.min, len, np.sum, np.median, np.mean, np.std],
             series_names="EDA",
             windows=["5s", "30s", "2min"],
-            strides="5s",
+            strides="30s",
         )
     )
     df_eda = dummy_data["EDA"].first('5min')
@@ -378,7 +379,7 @@ def test_featurecollection_reduce(dummy_data):
             functions=[np.max, np.min, np.std, np.sum],
             series_names="EDA",
             windows=["5s", "30s", "1min"],
-            strides="5s",
+            strides="30s",
         )
     )
     df_feat_tot = fc.calculate(data=dummy_data, return_df=True, show_progress=True)
@@ -389,6 +390,8 @@ def test_featurecollection_reduce(dummy_data):
         )
         fc_reduced = fc.reduce(col_subset)
         fc_reduced.calculate(dummy_data)
+        for fd in flatten(fc._feature_desc_dict.values()):
+            assert np.all(fd.stride == [pd.Timedelta(30, unit="s")])
 
     # also test the reduce function on a single column
     fc_reduced = fc.reduce(random.sample(list(df_feat_tot.columns), 1))
@@ -397,6 +400,63 @@ def test_featurecollection_reduce(dummy_data):
     # should also work when fc is deleted
     del fc
     fc_reduced.calculate(dummy_data)
+
+
+def test_featurecollection_reduce_multiple_strides(dummy_data):
+    fc = FeatureCollection(
+        MultipleFeatureDescriptors(
+            functions=[np.max, np.min, np.std, np.sum],
+            series_names="EDA",
+            windows=["5s", "30s", "1min"],
+            strides=["30s", "45s"],
+        )
+    )
+    df_feat_tot = fc.calculate(data=dummy_data, return_df=True, show_progress=True)
+
+    for _ in range(5):
+        col_subset = random.sample(
+            list(df_feat_tot.columns), random.randint(1, len(df_feat_tot.columns))
+        )
+        fc_reduced = fc.reduce(col_subset)
+        fc_reduced.calculate(dummy_data)
+        for fd in flatten(fc._feature_desc_dict.values()):
+            assert np.all(fd.stride == [pd.Timedelta(30, unit="s"), pd.Timedelta(45, unit="s")])
+
+    # also test the reduce function on a single column
+    fc_reduced = fc.reduce(random.sample(list(df_feat_tot.columns), 1))
+    fc_reduced.calculate(dummy_data)
+
+    # should also work when fc is deleted
+    del fc
+    fc_reduced.calculate(dummy_data)
+
+
+def test_featurecollection_reduce_no_stride(dummy_data):
+    fc = FeatureCollection(
+        MultipleFeatureDescriptors(
+            functions=[np.max, np.min, np.std, np.sum],
+            series_names="EDA",
+            windows=["5s", "30s", "1min"],
+        )
+    )
+    df_feat_tot = fc.calculate(data=dummy_data, stride="45s", return_df=True, show_progress=True)
+
+    for _ in range(5):
+        col_subset = random.sample(
+            list(df_feat_tot.columns), random.randint(1, len(df_feat_tot.columns))
+        )
+        fc_reduced = fc.reduce(col_subset)
+        fc_reduced.calculate(dummy_data, stride="45s")
+        for fd in flatten(fc._feature_desc_dict.values()):
+            assert fd.stride == None
+
+    # also test the reduce function on a single column
+    fc_reduced = fc.reduce(random.sample(list(df_feat_tot.columns), 1))
+    fc_reduced.calculate(dummy_data, stride="45s")
+
+    # should also work when fc is deleted
+    del fc
+    fc_reduced.calculate(dummy_data, stride="45s")
 
 
 def test_featurecollection_numeric_reduce(dummy_data):
@@ -444,7 +504,7 @@ def test_featurecollection_reduce_multiple_feat_output(dummy_data):
     )
     # df_feat_tot = fc.calculate(data=dummy_data, return_df=True, show_progress=True)
 
-    fc_reduce = fc.reduce(feat_cols_to_keep=["EDA__min__w=5s_s=5s"])
+    fc_reduce = fc.reduce(feat_cols_to_keep=["EDA__min__w=5s"])
     del fd
     fc_reduce.calculate(dummy_data)
 
