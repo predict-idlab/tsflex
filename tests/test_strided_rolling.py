@@ -1,5 +1,6 @@
 """Tests for the strided rolling class"""
 
+from xml.etree.ElementInclude import include
 import numpy as np
 import pandas as pd
 import pytest
@@ -126,7 +127,7 @@ def test_abstract_class(dummy_data):
 def test_time_index_sequence_stroll(dummy_data):
     df_eda = dummy_data["EDA"]
     stroll = TimeIndexSampleStridedRolling(
-        df_eda, window=1000, stride=50, window_idx="end"
+        df_eda, window=1000, strides=[50], window_idx="end"
     )
     return stroll.apply_func(FuncWrapper(np.min))
 
@@ -153,7 +154,11 @@ def test_sequence_stroll_indexing():
 
     sr = SequenceStridedRolling(s, window=5, strides=[1], window_idx="begin")
     assert np.all(sr.index == [])
+    sr = SequenceStridedRolling(s, window=5, strides=[2], window_idx="begin")
+    assert np.all(sr.index == [])
     sr = SequenceStridedRolling(s, window=6, strides=[1], window_idx="begin")
+    assert np.all(sr.index == [])
+    sr = SequenceStridedRolling(s, window=6, strides=[2], window_idx="begin")
     assert np.all(sr.index == [])
 
     ## Force
@@ -173,8 +178,12 @@ def test_sequence_stroll_indexing():
 
     sr = SequenceStridedRolling(s, window=5, strides=[1], window_idx="begin", include_final_window=True)
     assert np.all(sr.index == [0])
+    sr = SequenceStridedRolling(s, window=5, strides=[2], window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == [0])
     sr = SequenceStridedRolling(s, window=6, strides=[1], window_idx="begin", include_final_window=True)
-    assert np.all(sr.index == [])
+    assert np.all(sr.index == [0])
+    sr = SequenceStridedRolling(s, window=6, strides=[2], window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == [0])
 
 
 def test_time_stroll_indexing():
@@ -204,7 +213,11 @@ def test_time_stroll_indexing():
 
     sr = TimeStridedRolling(s, window=pd.Timedelta(5, unit="h"), strides=[pd.Timedelta(1, unit="h")], window_idx="begin")
     assert np.all(sr.index == [])
+    sr = TimeStridedRolling(s, window=pd.Timedelta(5, unit="h"), strides=[pd.Timedelta(2, unit="h")], window_idx="begin")
+    assert np.all(sr.index == [])
     sr = TimeStridedRolling(s, window=pd.Timedelta(6, unit="h"), strides=[pd.Timedelta(1, unit="h")], window_idx="begin")
+    assert np.all(sr.index == [])
+    sr = TimeStridedRolling(s, window=pd.Timedelta(6, unit="h"), strides=[pd.Timedelta(2, unit="h")], window_idx="begin")
     assert np.all(sr.index == [])
 
     ## Force
@@ -224,8 +237,73 @@ def test_time_stroll_indexing():
 
     sr = TimeStridedRolling(s, window=pd.Timedelta(5, unit="h"), strides=[pd.Timedelta(1, unit="h")], window_idx="begin", include_final_window=True)
     assert np.all(sr.index == get_time_index([0]))
+    sr = TimeStridedRolling(s, window=pd.Timedelta(5, unit="h"), strides=[pd.Timedelta(2, unit="h")], window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == get_time_index([0]))
     sr = TimeStridedRolling(s, window=pd.Timedelta(6, unit="h"), strides=[pd.Timedelta(1, unit="h")], window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == get_time_index([0]))
+    sr = TimeStridedRolling(s, window=pd.Timedelta(6, unit="h"), strides=[pd.Timedelta(2, unit="h")], window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == get_time_index([0]))
+
+
+def test_sequence_stroll_indexing_multiple_strides():
+    s = pd.Series(data=np.arange(20), name="dummy")
+
+    ## No Force
+    sr = SequenceStridedRolling(s, window=3, strides=[3, 5], window_idx="begin")
+    assert np.all(sr.index == [0,3,5,6,9,10,12,15])
+
+    sr = SequenceStridedRolling(s, window=19, strides=[3, 5], window_idx="begin")
+    assert np.all(sr.index == [0])
+
+    sr = SequenceStridedRolling(s, window=20, strides=[3, 5], window_idx="begin")
     assert np.all(sr.index == [])
+    sr = SequenceStridedRolling(s, window=21, strides=[3, 5], window_idx="begin")
+    assert np.all(sr.index == [])
+
+    ## Force
+    sr = SequenceStridedRolling(s, window=3, strides=[3, 5], window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == [0,3,5,6,9,10,12,15,18])
+
+    sr = SequenceStridedRolling(s, window=19, strides=[3, 5], window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == [0, 3, 5])
+
+    sr = SequenceStridedRolling(s, window=20, strides=[3, 5], window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == [0])
+    sr = SequenceStridedRolling(s, window=21, strides=[3, 5], window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == [0])
+
+
+def test_time_stroll_indexing_multiple_strides():
+    s = pd.Series(data=np.arange(20), name="dummy")
+    time_index = pd.date_range("2020-01-01", freq="1h", periods=20)
+    s.index = time_index
+
+    def get_time_index(arr):
+        return [time_index[idx] for idx in arr]
+
+    ## No Force
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), strides=[pd.Timedelta(3, unit="h"), pd.Timedelta(5, unit="h")], window_idx="begin")
+    assert np.all(sr.index == get_time_index([0,3,5,6,9,10,12,15]))
+
+    sr = TimeStridedRolling(s, window=pd.Timedelta(19, unit="h"), strides=[pd.Timedelta(3, unit="h"), pd.Timedelta(5, unit="h")], window_idx="begin")
+    assert np.all(sr.index == get_time_index([0]))
+
+    sr = TimeStridedRolling(s, window=pd.Timedelta(20, unit="h"), strides=[pd.Timedelta(3, unit="h"), pd.Timedelta(5, unit="h")], window_idx="begin")
+    assert np.all(sr.index == [])
+    sr = TimeStridedRolling(s, window=pd.Timedelta(21, unit="h"), strides=[pd.Timedelta(3, unit="h"), pd.Timedelta(5, unit="h")], window_idx="begin")
+    assert np.all(sr.index == [])
+
+    ## Force
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), strides=[pd.Timedelta(3, unit="h"), pd.Timedelta(5, unit="h")], window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == get_time_index([0,3,5,6,9,10,12,15,18]))
+
+    sr = TimeStridedRolling(s, window=pd.Timedelta(19, unit="h"), strides=[pd.Timedelta(3, unit="h"), pd.Timedelta(5, unit="h")], window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == get_time_index([0, 3, 5]))
+
+    sr = TimeStridedRolling(s, window=pd.Timedelta(20, unit="h"), strides=[pd.Timedelta(3, unit="h"), pd.Timedelta(5, unit="h")], window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == get_time_index([0]))
+    sr = TimeStridedRolling(s, window=pd.Timedelta(21, unit="h"), strides=[pd.Timedelta(3, unit="h"), pd.Timedelta(5, unit="h")], window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == get_time_index([0]))
 
 
 def test_sequence_stroll_apply_func_vectorized():

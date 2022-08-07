@@ -216,7 +216,7 @@ class StridedRolling(ABC):
         return np.asarray(merge_sorted(start_idxs))  # merge sorted lists w/o duplicates
 
     def _calc_nb_feats_for_stride(self, stride) -> int:
-        nb_feats = (self.end - self.start - self.window) // stride + 1
+        nb_feats = max((self.end - self.start - self.window) // stride + 1, 0)
         # Add 1 if there is still some data after (including) the last window its
         # start index - this is only added when `include_last_window` is True.
         nb_feats += self.include_final_window * (self.start + stride * nb_feats <= self.end)
