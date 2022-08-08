@@ -74,7 +74,27 @@ def test_single_series_feature_collection_strides(dummy_data):
     assert_frame_equal(res1[0], res3[0])
 
 
-def test_single_series_feature_collection_setpoints(dummy_data):
+def test_single_series_feature_collection_sequence_setpoints(dummy_data):
+    dummy_data = dummy_data.reset_index(drop=True)
+    setpoints = [0, 5, 7, 10]
+    fd1 = FeatureDescriptor(np.sum, series_name="EDA", window=10)
+    fd2 = FeatureDescriptor(np.sum, series_name="EDA", window=10, stride=20)
+    fc1 = FeatureCollection(feature_descriptors=fd1)
+    fc2 = FeatureCollection(feature_descriptors=fd2)
+
+    assert fc1.get_required_series() == fc2.get_required_series()
+
+    res1 = fc1.calculate(dummy_data, setpoints=setpoints, window_idx="begin")
+    res2 = fc2.calculate(dummy_data, setpoints=setpoints, window_idx="begin")
+
+    assert (len(res1) == 1) & (len(res2) == 1)
+    assert (len(res1[0]) == 4) & (len(res2[0]) == 4)
+
+    assert_frame_equal(res1[0], res2[0])
+    assert all(res1[0].index.values == setpoints)
+
+
+def test_single_series_feature_collection_timestamp_setpoints(dummy_data):
     setpoints = [0, 5, 7, 10]
     setpoints = dummy_data.index[setpoints].values
     fd1 = FeatureDescriptor(np.sum, series_name="EDA", window="10s")

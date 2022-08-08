@@ -168,7 +168,14 @@ class StridedRolling(ABC):
         # The setpoints have precedence over the stride index computation
         if setpoints is not None:  # use the passed setpoints
             self.strides = None
-            segment_start_idxs = setpoints
+            if setpoints.dtype.type == np.datetime64:
+                # TODO: this is starting to become ugly...
+                # I think we can avoid this when the user can pass a pd.Index instead of a np.array...
+                setpoints_idx = pd.to_datetime(setpoints, unit="ns", utc=True).tz_convert(series_list[0].index.tz)
+                valid_range_mask = (setpoints_idx >= self.start) & (setpoints_idx < self.end)
+            else:
+                valid_range_mask = (setpoints >= self.start) & (setpoints < self.end)
+            segment_start_idxs = setpoints[valid_range_mask]
         else:  # compute the start times of the segments (based on the stride(s))
             segment_start_idxs = self._construct_start_idxs()
 

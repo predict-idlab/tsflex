@@ -118,7 +118,7 @@ class FeatureDescriptor(FrozenClass):
     ):
         self.series_name: Tuple[str, ...] = to_tuple(series_name)
         self.window = parse_time_arg(window) if isinstance(window, str) else window
-        strides = to_list(stride)
+        strides = sorted(set(to_list(stride)))  # omit duplicate stride values
         if len(strides) == 1 and strides[0] is None:
             self.stride = None
         else:
@@ -246,7 +246,6 @@ class MultipleFeatureDescriptors:
         )
         # Convert the other types to list
         windows = to_list(windows)
-        strides = list(set(to_list(strides)))  # omit the duplicate strides
 
         self.feature_descriptions: List[FeatureDescriptor] = []
         # Iterate over all combinations

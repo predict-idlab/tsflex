@@ -306,6 +306,144 @@ def test_time_stroll_indexing_multiple_strides():
     assert np.all(sr.index == get_time_index([0]))
 
 
+def test_sequence_stroll_indexing_setpoints():
+    setpoints = np.array([0, 5, 7, 10])
+    s = pd.Series(data=np.arange(20), name="dummy")
+
+    ## No Force
+    sr = SequenceStridedRolling(s, window=3, setpoints=setpoints, window_idx="begin")
+    assert sr.strides is None
+    assert np.all(sr.index == setpoints)
+
+    sr = SequenceStridedRolling(s, window=3, strides=[3, 5], setpoints=setpoints, window_idx="begin")
+    assert sr.strides is None
+    assert np.all(sr.index == setpoints)
+
+    sr = SequenceStridedRolling(s, window=3, strides=[3, 5], setpoints=setpoints, window_idx="end")
+    assert sr.strides is None
+    assert np.all(sr.index == setpoints + 3)
+
+    ## Force
+    sr = SequenceStridedRolling(s, window=3, setpoints=setpoints, window_idx="begin", include_final_window=True)
+    assert sr.strides is None
+    assert np.all(sr.index == setpoints)
+
+    sr = SequenceStridedRolling(s, window=3, strides=[3, 5], setpoints=setpoints, window_idx="begin", include_final_window=True)
+    assert sr.strides is None
+    assert np.all(sr.index == setpoints)
+
+    sr = SequenceStridedRolling(s, window=3, strides=[3, 5], setpoints=setpoints, window_idx="end", include_final_window=True)
+    assert sr.strides is None
+    assert np.all(sr.index == setpoints + 3)
+
+
+def test_sequence_stroll_indexing_setpoints_outside_valid_range():
+    setpoints = np.array([0, 5, 7, 10, 200])
+    s = pd.Series(data=np.arange(20), name="dummy")
+
+    ## No Force
+    ## No Force
+    sr = SequenceStridedRolling(s, window=3, setpoints=setpoints, window_idx="begin")
+    assert sr.strides is None
+    assert np.all(sr.index == setpoints[:4])
+
+    sr = SequenceStridedRolling(s, window=3, strides=[3, 5], setpoints=setpoints, window_idx="begin")
+    assert sr.strides is None
+    assert np.all(sr.index == setpoints[:4])
+
+    sr = SequenceStridedRolling(s, window=3, strides=[3, 5], setpoints=setpoints, window_idx="end")
+    assert sr.strides is None
+    assert np.all(sr.index == setpoints[:4] + 3)
+
+    ## Force
+    sr = SequenceStridedRolling(s, window=3, setpoints=setpoints, window_idx="begin", include_final_window=True)
+    assert sr.strides is None
+    assert np.all(sr.index == setpoints[:4])
+
+    sr = SequenceStridedRolling(s, window=3, strides=[3, 5], setpoints=setpoints, window_idx="begin", include_final_window=True)
+    assert sr.strides is None
+    assert np.all(sr.index == setpoints[:4])
+
+    sr = SequenceStridedRolling(s, window=3, strides=[3, 5], setpoints=setpoints, window_idx="end", include_final_window=True)
+    assert sr.strides is None
+    assert np.all(sr.index == setpoints[:4] + 3)
+
+
+def test_time_stroll_indexing_setpoints():
+    s = pd.Series(data=np.arange(20), name="dummy")
+    time_index = pd.date_range("2020-01-01", freq="1h", periods=20)
+    s.index = time_index
+
+    setpoints = s.index[[0, 5, 7, 10]].values
+
+    def get_time_index(arr):
+        return [time_index[idx] for idx in arr]
+
+    ## No Force
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), setpoints=setpoints, window_idx="begin")
+    assert sr.strides is None
+    assert np.all(sr.index == get_time_index([0, 5, 7, 10]))
+
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), strides=[pd.Timedelta(3, unit="h"), pd.Timedelta(5, unit="h")], setpoints=setpoints, window_idx="begin")
+    assert sr.strides is None
+    assert np.all(sr.index == get_time_index([0, 5, 7, 10]))
+
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), strides=[pd.Timedelta(3, unit="h"), pd.Timedelta(5, unit="h")], setpoints=setpoints, window_idx="end")
+    assert sr.strides is None
+    assert np.all(sr.index == [t + pd.Timedelta(3, unit="h") for t in get_time_index([0, 5, 7, 10])])
+
+    ## No Force
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), setpoints=setpoints, window_idx="begin", include_final_window=True)
+    assert sr.strides is None
+    assert np.all(sr.index == get_time_index([0, 5, 7, 10]))
+
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), strides=[pd.Timedelta(3, unit="h"), pd.Timedelta(5, unit="h")], setpoints=setpoints, window_idx="begin", include_final_window=True)
+    assert sr.strides is None
+    assert np.all(sr.index == get_time_index([0, 5, 7, 10]))
+
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), strides=[pd.Timedelta(3, unit="h"), pd.Timedelta(5, unit="h")], setpoints=setpoints, window_idx="end", include_final_window=True)
+    assert sr.strides is None
+    assert np.all(sr.index == [t + pd.Timedelta(3, unit="h") for t in get_time_index([0, 5, 7, 10])])
+
+
+def test_time_stroll_indexing_setpoints_outside_valid_range():
+    s = pd.Series(data=np.arange(20), name="dummy")
+    time_index = pd.date_range("2020-01-01", freq="1h", periods=20)
+    s.index = time_index
+
+    setpoints = s.index[[0, 5, 7, 10]].values
+    setpoints = np.append(setpoints, (s.index[[0]] + pd.Timedelta(200, unit="h")).values)
+
+    def get_time_index(arr):
+        return [time_index[idx] for idx in arr]
+
+    ## No Force
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), setpoints=setpoints, window_idx="begin")
+    assert sr.strides is None
+    assert np.all(sr.index == get_time_index([0, 5, 7, 10]))
+
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), strides=[pd.Timedelta(3, unit="h"), pd.Timedelta(5, unit="h")], setpoints=setpoints, window_idx="begin")
+    assert sr.strides is None
+    assert np.all(sr.index == get_time_index([0, 5, 7, 10]))
+
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), strides=[pd.Timedelta(3, unit="h"), pd.Timedelta(5, unit="h")], setpoints=setpoints, window_idx="end")
+    assert sr.strides is None
+    assert np.all(sr.index == [t + pd.Timedelta(3, unit="h") for t in get_time_index([0, 5, 7, 10])])
+
+    ## No Force
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), setpoints=setpoints, window_idx="begin", include_final_window=True)
+    assert sr.strides is None
+    assert np.all(sr.index == get_time_index([0, 5, 7, 10]))
+
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), strides=[pd.Timedelta(3, unit="h"), pd.Timedelta(5, unit="h")], setpoints=setpoints, window_idx="begin", include_final_window=True)
+    assert sr.strides is None
+    assert np.all(sr.index == get_time_index([0, 5, 7, 10]))
+
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), strides=[pd.Timedelta(3, unit="h"), pd.Timedelta(5, unit="h")], setpoints=setpoints, window_idx="end", include_final_window=True)
+    assert sr.strides is None
+    assert np.all(sr.index == [t + pd.Timedelta(3, unit="h") for t in get_time_index([0, 5, 7, 10])])
+
+
 def test_sequence_stroll_apply_func_vectorized():
     f = FuncWrapper(np.min, output_names="min")
     f_vect = FuncWrapper(np.min, output_names="min_vect", vectorized=True, axis=-1)
@@ -344,9 +482,11 @@ def test_sequence_stroll_apply_func_vectorized():
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
     sr = SequenceStridedRolling(s, window=3, strides=[2], window_idx="begin", include_final_window=True)
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
-    # Note: commented these because these will result in window of length 3 and 1
-    # sr = SequenceStridedRolling(s, window=3, strides=[4], window_idx="begin", include_final_window=True)
-    # assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
+    with pytest.raises(Exception):
+        # the vectorized function requires the same number of samples in each segmented window
+        # this will result in window of length 3 and 1
+        sr = SequenceStridedRolling(s, window=3, strides=[4], window_idx="begin", include_final_window=True)
+        sr.apply_func(f_vect)
     sr = SequenceStridedRolling(s, window=3, strides=[5], window_idx="begin", include_final_window=True)
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
     sr = SequenceStridedRolling(s, window=3, strides=[50], window_idx="begin", include_final_window=True)
@@ -400,10 +540,11 @@ def test_time_stroll_apply_func_vectorized():
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
     sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), strides=[pd.Timedelta(2, unit="h")], window_idx="begin", include_final_window=True)
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
-    # Note: commented these because these will result in window of length 3 and 1
-    # And the vectorized function requires the same number of samples in each segmented window
-    # sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), strides=[pd.Timedelta(4, unit="h")], window_idx="begin", include_final_window=True)
-    # assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
+    with pytest.raises(Exception):
+        # the vectorized function requires the same number of samples in each segmented window
+        # this will result in window of length 3 and 1
+        sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), strides=[pd.Timedelta(4, unit="h")], window_idx="begin", include_final_window=True)
+        sr.apply_func(f_vect)
     sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), strides=[pd.Timedelta(5, unit="h")], window_idx="begin", include_final_window=True)
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
     sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), strides=[pd.Timedelta(50, unit="h")], window_idx="begin", include_final_window=True)
@@ -416,6 +557,61 @@ def test_time_stroll_apply_func_vectorized():
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
     sr = TimeStridedRolling(s, window=pd.Timedelta(6, unit="h"), strides=[pd.Timedelta(1, unit="h")], window_idx="begin", include_final_window=True)
     assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
+
+
+def test_sequence_stroll_apply_func_vectorized_setpoints():
+    f = FuncWrapper(np.min, output_names="min")
+    f_vect = FuncWrapper(np.min, output_names="min_vect", vectorized=True, axis=-1)
+
+    setpoints = np.array([0, 3, 6, 9])
+    s = pd.Series(data=np.arange(20), name="dummy")
+
+    def assert_1col_df_equal(s1, s2):
+        assert (s1.shape[1] == 1) & (s2.shape[1] == 1)
+        assert np.all(s1.index == s2.index)
+        assert np.all(s1.values.ravel() == s2.values.ravel())
+
+    ## No Force
+    sr = SequenceStridedRolling(s, window=3, setpoints=setpoints, window_idx="begin")
+    assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
+
+    ## Force
+    sr = SequenceStridedRolling(s, window=3, setpoints=setpoints, window_idx="begin", include_final_window=True)
+    assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
+
+    with pytest.raises(Exception):
+        # Because of irregular stride step in the setpoints
+        setpoints = np.array([0, 2, 3])
+        sr = SequenceStridedRolling(s, window=3, setpoints=setpoints, window_idx="begin")
+        sr.apply_func(f_vect)
+    
+
+def test_time_stroll_apply_func_vectorized_setpoints():
+    f = FuncWrapper(np.min, output_names="min")
+    f_vect = FuncWrapper(np.min, output_names="min_vect", vectorized=True, axis=-1)
+
+    s = pd.Series(data=np.arange(20), name="dummy")
+    s.index = pd.date_range("2020-01-01", freq="1h", periods=20)
+    setpoints = s.index[[0, 3, 6, 9]].values
+
+    def assert_1col_df_equal(s1, s2):
+        assert (s1.shape[1] == 1) & (s2.shape[1] == 1)
+        assert np.all(s1.index == s2.index)
+        assert np.all(s1.values.ravel() == s2.values.ravel())
+
+    ## No Force
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), setpoints=setpoints, window_idx="begin")
+    assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
+   
+    ## Force
+    sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), setpoints=setpoints, window_idx="begin", include_final_window=True)
+    assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
+
+    with pytest.raises(Exception):
+        # Because of irregular stride step in the setpoints
+        setpoints = s.index[[0, 2, 3]].values
+        sr = SequenceStridedRolling(s, window=3, setpoints=setpoints, window_idx="begin")
+        sr.apply_func(f_vect)
 
 
 def test_sequence_stroll_apply_func_vectorized_multi_output():
