@@ -4,6 +4,7 @@ __author__ = "Jeroen Van Der Donckt, Jonas Van Der Donckt"
 
 import itertools
 from typing import Any, Dict, Iterable, Iterator, List, Union, Tuple
+from pathlib import Path
 
 import os
 import numpy as np
@@ -157,30 +158,6 @@ def flatten(data: Iterable) -> Iterator:
     return itertools.chain.from_iterable(data)
 
 
-def merge_sorted(sorted_lists: Iterable) -> List:
-    """Merge the iterable of sorted lists into one list without duplicates.
-
-    # TODO: this is probably not the most optimal implementation, but for the small
-    # lists we are working with, this will suffice for now.
-
-    Parameters
-    ----------
-    sorted_lists : Iterable
-        An iterable of sorted lists that need to be merged.
-
-    Returns
-    -------
-    List
-        A sorted list (without duplicates) of the passed data.   
-    
-    """
-    return sorted(
-        set(
-            itertools.chain.from_iterable(sorted_lists)
-        )
-    )
-
-
 def load_empatica_data(f_names: Union[str, List[str]]) -> List[pd.DataFrame]:
     """load example empatica data from the github repository.
 
@@ -196,12 +173,15 @@ def load_empatica_data(f_names: Union[str, List[str]]) -> List[pd.DataFrame]:
     List[pd.DataFrame]
         Returns the empatica time-indexed data files in the same order as `f_names`
     """
-    dir = os.path.abspath(
-        os.path.join(os.path.dirname( __file__ ), '../../examples/data/empatica/')
+    dir = (
+        Path(__file__)
+        .parent.parent.parent.joinpath("examples", "data", "empatica")
+        .absolute()
     )
-    dir = str(dir) + '/'  # allows compatible + operation (as with the url)
+    dir = str(dir) + "/"  # allows compatible + operation (as with the url)
     url = "https://github.com/predict-idlab/tsflex/raw/main/examples/data/empatica/"
-    if not os.path.exists(dir): dir = url  # fetch online if data not local
+    if not os.path.exists(dir):
+        dir = url  # fetch online if data not local
     f_names = [f_names] if isinstance(f_names, str) else f_names
     return [
         pd.read_parquet(dir + f"{f_name.lower()}.parquet").set_index("timestamp")

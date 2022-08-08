@@ -70,16 +70,19 @@ class FeatureCollection:
                 FeatureDescriptor,
                 MultipleFeatureDescriptors,
                 FeatureCollection,
-                List[Union[FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection]],
+                List[
+                    Union[
+                        FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection
+                    ]
+                ],
             ]
         ] = None,
     ):
         # The feature collection is a dict with keys of type:
         #   tuple(tuple(str), float OR pd.timedelta)
-        # The outer tuple's values correspond to (series_key(s), window, stride)
+        # The outer tuple's values correspond to (series_key(s), window)
         self._feature_desc_dict: Dict[
-            Tuple[Tuple[str], Union[float, pd.Timedelta]],
-            List[FeatureDescriptor],
+            Tuple[Tuple[str], Union[float, pd.Timedelta]], List[FeatureDescriptor]
         ] = {}
 
         if feature_descriptors:
@@ -112,7 +115,7 @@ class FeatureCollection:
     def _check_feature_descriptors(
         self,
         skip_none: bool,
-        calc_stride: Optional[Union[float, pd.Timedelta, None]] = None
+        calc_stride: Optional[Union[float, pd.Timedelta, None]] = None,
     ):
         """Verify whether all added FeatureDescriptors imply the same-input data type.
 
@@ -123,14 +126,11 @@ class FeatureCollection:
         skip_none: bool
             Whether to include None stride values in the checks.
         calc_stride: Union[float, pd.Timedelta, None], optional
-            The calculate stride, by default None. This stride takes precedence over a
-            `FeatureDescriptor` its stride when not None.
+            The `FeatureCollection.calculate` stride, by default None. This stride
+            takes precedence over a `FeatureDescriptor` its stride when not None.
 
         """
         dtype_set = set()
-        if not skip_none and calc_stride is not None:
-            # TODO: Check whether there are no multiple strides for same feature window
-            pass
         for series_names, win in self._feature_desc_dict.keys():
             for fd in self._feature_desc_dict[(series_names, win)]:
                 str = calc_stride if calc_stride is not None else fd.stride
@@ -138,7 +138,7 @@ class FeatureCollection:
                     dtype_set.add(AttributeParser.determine_type(win))
                 else:
                     dtype_set.add(AttributeParser.determine_type([win] + to_list(str)))
-                # TODO duidelijkere error loggen
+
         if len(dtype_set) > 1:
             warnings.warn(
                 "There are multiple FeatureDescriptor window-stride "
@@ -230,7 +230,7 @@ class FeatureCollection:
     def _stroll_feat_generator(
         self,
         series_dict: Dict[str, pd.Series],
-        calc_stride: Union[List[Union[float, pd.Timedelta]], None], # TODO list supporten
+        calc_stride: Union[List[Union[float, pd.Timedelta]], None],
         setpoints: Union[np.ndarray, None],
         start_idx: Any,
         end_idx: Any,
@@ -254,7 +254,6 @@ class FeatureCollection:
                 idx - lengths[key_idx]
             ]
             stride = feature.stride if calc_stride is None else calc_stride
-            # stride = calc_stride if calc_stride is not None else stride  # calc_stride takes precedence
             function: FuncWrapper = feature.function
             # The factory method will instantiate the right StridedRolling object
             stroll_arg_dict = dict(
@@ -319,8 +318,8 @@ class FeatureCollection:
             must have a time-index**. \n
             .. Note::
                 When set, this stride argument takes precedence over the stride property
-                of a `FeatureDescriptor` (i.e., not None value for `stride` passed to
-                this method).
+                of the `FeatureDescriptor`s in this `FeatureCollection` (i.e., when a
+                not None value for `stride` passed to this method).
         return_df : bool, optional
             Whether the output needs to be a DataFrame or a list thereof, by default
             False. If `True` the output dataframes will be merged to a DataFrame with an
@@ -332,7 +331,10 @@ class FeatureCollection:
             window_idx.
 
             ..Note::
-                `window_idx`="end" results in using the end idx of the window as ... TODO finish
+                `window_idx`="end" uses the window's end (= right open bound) as
+                output index. \n
+                `window_idx`="begin" uses the window's start idx (= left closed bound)
+                as output index.
         include_final_window : bool, optional
             Whether the final (possibly incomplete) window should be included in the
             strided-window segmentation, by default False.
@@ -427,7 +429,7 @@ class FeatureCollection:
             raise ArgumentError(
                 message=(
                     "The stride and setpoints argument cannot be set together!",
-                    "At least one of both should be None."
+                    "At least one of both should be None.",
                 )
             )
 
@@ -455,7 +457,9 @@ class FeatureCollection:
         # Determine the bounds of the series dict items and slice on them
         start, end = _determine_bounds(bound_method, list(series_dict.values()))
         series_dict = {
-            n: s.loc[s.index.dtype.type(start) : s.index.dtype.type(end)]  # TODO: check memory efficiency of ths
+            n: s.loc[
+                s.index.dtype.type(start) : s.index.dtype.type(end)
+            ]  # TODO: check memory efficiency of ths
             for n, s, in series_dict.items()
         }
 
@@ -470,11 +474,13 @@ class FeatureCollection:
             end_idx=end,
             window_idx=window_idx,
             include_final_window=include_final_window,
-            approve_sparsity=approve_sparsity
+            approve_sparsity=approve_sparsity,
         )
         nb_stroll_funcs = self._get_stroll_feat_length()
 
-        if os.name == "nt":  # On Windows no multiprocessing is supported, see https://github.com/predict-idlab/tsflex/issues/51
+        if (
+            os.name == "nt"
+        ):  # On Windows no multiprocessing is supported, see https://github.com/predict-idlab/tsflex/issues/51
             n_jobs = 1
         elif n_jobs is None:
             n_jobs = os.cpu_count()
@@ -511,8 +517,8 @@ class FeatureCollection:
 
         if calculated_feature_list is None:
             raise RuntimeError(
-                "Feature Extraction halted due to error while extracting one (or multiple) feature(s)! "
-                + "See stack trace above."
+                "Feature Extraction halted due to error while extracting one "
+                + "(or multiple) feature(s)! See stack trace above."
             )
 
         if return_df:

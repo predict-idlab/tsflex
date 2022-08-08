@@ -20,7 +20,7 @@ def test_time_stroll_window_idx(dummy_data):
         stroll = TimeStridedRolling(
             data=dummy_data[["EDA"]],
             window=pd.Timedelta(seconds=5),
-            strides=[pd.Timedelta(seconds=5)],
+            strides=pd.Timedelta(seconds=5),
             window_idx=window_idx,
         )
 
@@ -46,7 +46,7 @@ def test_sequence_stroll(dummy_data):
         stroll = SequenceStridedRolling(
             data=tmp_series,
             window=4 * 30,
-            strides=[4 * 10],
+            strides=4 * 10,
             window_idx=window_idx,
             approve_sparsity=True,
         )

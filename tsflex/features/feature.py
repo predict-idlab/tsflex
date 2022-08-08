@@ -52,7 +52,7 @@ class FeatureDescriptor(FrozenClass):
         * If a `str`, it must represents a window-time-range-string. The **passed data
           must have a time-index**.
 
-    stride : Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]], None], optional
+    stride : Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]], optional
         The stride size(s). By default None. This argument supports multiple types: \n
         * If None, the stride will need to be passed to `FeatureCollection.calculate`.
         * If the type is an `float` or an `int`, its value represents the series
@@ -67,7 +67,7 @@ class FeatureDescriptor(FrozenClass):
           strides will be used (e.g., stride=[2,3] -> index: 0, 2, 3, 6, 8, 9, ...)
         .. Note::
             The stride argument of `FeatureCollection.calculate` takes precedence over
-            this value when set (i.e., not None value for `stride` passed to the 
+            this value when set (i.e., not None value for `stride` passed to the
             `calculate` method).
 
     .. Note::
@@ -112,7 +112,9 @@ class FeatureDescriptor(FrozenClass):
         function: Union[FuncWrapper, Callable],
         series_name: Union[str, Tuple[str, ...]],
         window: Union[float, str, pd.Timedelta],
-        stride: Optional[Union[float, str, pd.Timedelta, None]] = None,
+        stride: Optional[
+            Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]]
+        ] = None,
     ):
         self.series_name: Tuple[str, ...] = to_tuple(series_name)
         self.window = parse_time_arg(window) if isinstance(window, str) else window
@@ -122,11 +124,12 @@ class FeatureDescriptor(FrozenClass):
         else:
             self.stride = [
                 parse_time_arg(s) if isinstance(s, str) else s for s in strides
-                ]
+            ]
 
         # Verify whether window and stride are either both sequence or time based
         dtype_set = set(
-            AttributeParser.determine_type(v) for v in [self.window] + to_list(self.stride)
+            AttributeParser.determine_type(v)
+            for v in [self.window] + to_list(self.stride)
         ).difference([DataType.UNDEFINED])
         if len(dtype_set) > 1:
             raise TypeError(
@@ -200,7 +203,7 @@ class MultipleFeatureDescriptors:
         * If `series_names` is a list of either strings or tuple of strings, then
           `function` will be called for each entry of this list.
 
-        .. Note:: 
+        .. Note::
             when passing a list as `series_names`, all items in this list should
             have the same type, i.e, either \n
             * all a str
@@ -215,7 +218,7 @@ class MultipleFeatureDescriptors:
     Note
     ----
     The `windows` and `strides` argument should be either both numeric or
-    ``pd.Timedelta`` (depending on de index datatype) - when `strides` is not None. 
+    ``pd.Timedelta`` (depending on de index datatype) - when `strides` is not None.
 
     """
 
@@ -224,7 +227,9 @@ class MultipleFeatureDescriptors:
         functions: Union[FuncWrapper, Callable, List[Union[FuncWrapper, Callable]]],
         series_names: Union[str, Tuple[str, ...], List[str], List[Tuple[str, ...]]],
         windows: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
-        strides: Optional[Union[float, str, pd.Timedelta, None, List[Union[float, str, pd.Timedelta]]]] = None,
+        strides: Optional[
+            Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]]
+        ] = None,
     ):
         # Cast functions to FuncWrapper, this avoids creating multiple
         # FuncWrapper objects for the same function in the FeatureDescriptor
@@ -241,7 +246,7 @@ class MultipleFeatureDescriptors:
         )
         # Convert the other types to list
         windows = to_list(windows)
-        strides = to_list(strides) if strides is not None else strides
+        strides = list(set(to_list(strides)))  # omit the duplicate strides
 
         self.feature_descriptions: List[FeatureDescriptor] = []
         # Iterate over all combinations
