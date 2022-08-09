@@ -1112,7 +1112,7 @@ def test_mixed_featuredescriptors_time_data(dummy_data):
              for warn in w])
 
     out = fc.calculate([df_eda, df_tmp], return_df=True)
-    assert all(out.notna().sum(axis=0))
+    assert all(out.notna().sum(axis=0))  # TODO what do we want to assert here?
 
 
 ### Test vectorized features
@@ -1647,7 +1647,7 @@ def test_error_no_stride_and_no_setpoints(dummy_data):
         fc.calculate(dummy_data)
 
 
-def test_feature_collection_various_timezones():
+def test_feature_collection_various_timezones_data():
     s_usa = pd.Series(
         [0, 1, 2, 3, 4, 5], 
         index=pd.date_range("2020-01-01", freq="1h", periods=6, tz='America/Chicago'),
@@ -1688,3 +1688,42 @@ def test_feature_collection_various_timezones():
     )
     with pytest.raises(Exception):
         fc.calculate([s_usa, s_eu, s_none])
+
+
+def test_feature_collection_various_timezones_setpoints():
+    # TODO: do we really want to support setpoints with different time zones?
+    s_usa = pd.Series(
+        [0, 1, 2, 3, 4, 5], 
+        index=pd.date_range("2020-01-01", freq="1h", periods=6, tz='America/Chicago'),
+        name="s_usa"
+    )
+    s_eu = pd.Series(
+        [0, 1, 2, 3, 4, 5], 
+        index=pd.date_range("2020-01-01", freq="1h", periods=6, tz='Europe/Brussels'),
+        name="s_eu"
+    )
+    s_none = pd.Series(
+        [0, 1, 2, 3, 4, 5], 
+        index=pd.date_range("2020-01-01", freq="1h", periods=6, tz=None),
+        name="s_none"
+    )
+
+    # As long as all features are calculated on the same tz data no error should be thrown
+    for s in [s_usa, s_eu, s_none]:
+        fc = FeatureCollection(
+            FeatureDescriptor(np.min, s.name, "3h", "3h")
+        )
+        res = fc.calculate([s_usa, s_eu, s_none], setpoints=s.index[:3], n_jobs=0, return_df=True)
+        assert np.all(res.values.ravel() == [0, 1, 2])
+
+    fc = FeatureCollection(
+        FeatureDescriptor(np.min, "s_usa", "3h", "3h")
+    )
+    res = fc.calculate(s_usa, setpoints=s_eu.index[:3].values, n_jobs=0, return_df=True)
+    assert np.all(res.values == [])
+
+    fc = FeatureCollection(
+        FeatureDescriptor(np.min, "s_usa", "3h", "3h")
+    )
+    res = fc.calculate(s_usa, setpoints=s_none.index[:3].values, n_jobs=0, return_df=True)
+    assert np.all(res.values == [])

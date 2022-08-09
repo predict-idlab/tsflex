@@ -172,12 +172,6 @@ class StridedRolling(ABC):
         else:  # compute the start times of the segments (based on the stride(s))
             segment_start_idxs = self._construct_start_idxs()
 
-        if not len(segment_start_idxs):
-            # warnings.warn("No segments found for the given data.", UserWarning)
-            # If no segments were found -> set dtype to index dtype
-            #   (this avoids ufunc 'add' error from numpy bcs of dtype mismatch)
-            segment_start_idxs = segment_start_idxs.astype(series_list[0].index.dtype)
-
         # 2. Create a new-index which will be used for DataFrame reconstruction
         # Note: the index-name of the first passed series will be re-used as index-name
         self.index = self._get_output_index(
