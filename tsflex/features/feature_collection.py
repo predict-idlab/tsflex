@@ -439,7 +439,7 @@ class FeatureCollection:
             ]
             self._check_feature_descriptors(skip_none=False, calc_stride=stride)
         elif setpoints is not None:
-            setpoints = np.asarray(setpoints)
+            setpoints = np.asarray(setpoints).squeeze()  # remove singleton dimensions
 
         # Convert the data to a series_dict
         series_dict: Dict[str, pd.Series] = {}
@@ -638,7 +638,9 @@ class FeatureCollection:
                 win_str = self._ws_to_str(win_size)
                 output_str += f"{win_str:<6}: ["
                 for feat_desc in self._feature_desc_dict[feature_key, win_size]:
-                    stride_str = [self._ws_to_str(s) for s in feat_desc.stride]
+                    stride_str = feat_desc.stride
+                    if stride_str is not None:
+                        stride_str = [self._ws_to_str(s) for s in stride_str]
                     output_str += f"\n\t\t{feat_desc._func_str}"
                     output_str += f"    stride: {stride_str},"
                 output_str += "\n\t]"

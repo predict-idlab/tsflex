@@ -491,7 +491,7 @@ class SequenceStridedRolling(StridedRolling):
         self.win_str_type = DataType.SEQUENCE
         super().__init__(data, window, strides, *args, **kwargs)
 
-    def _parse_setpoints(self, setpoints, series):
+    def _parse_setpoints(self, setpoints: np.ndarray, series: pd.Series) -> np.ndarray:
         valid_range = (setpoints >= self.start) & (setpoints < self.end)
         return setpoints[valid_range]
 
@@ -520,10 +520,10 @@ class TimeStridedRolling(StridedRolling):
         super().__init__(data, window, strides, *args, **kwargs)
 
     # ---------------------------- Overridden methods ------------------------------
-    def _parse_setpoints(self, setpoints, series):
+    def _parse_setpoints(self, setpoints: np.ndarray, series: pd.Series) -> np.ndarray:
         setpoints_idx = pd.to_datetime(setpoints, utc=True).tz_convert(series.index.tz)
         valid_range = (setpoints_idx >= self.start) & (setpoints_idx < self.end)
-        return setpoints.astype(np.datetime64)[valid_range]
+        return setpoints[valid_range].astype(np.datetime64)
 
     def _get_np_value(self, val):
         # Convert everything to int64
