@@ -7,7 +7,6 @@ Methods, next to `FeatureCollection.calculate()`, worth looking at: \n
 """
 
 from __future__ import annotations
-from argparse import ArgumentError
 import warnings
 
 
@@ -82,7 +81,7 @@ class FeatureCollection:
         #   tuple(tuple(str), float OR pd.timedelta)
         # The outer tuple's values correspond to (series_key(s), window)
         self._feature_desc_dict: Dict[
-            Tuple[Tuple[str], Union[float, pd.Timedelta]], List[FeatureDescriptor]
+            Tuple[Tuple[str, ...], Union[float, pd.Timedelta]], List[FeatureDescriptor]
         ] = {}
 
         if feature_descriptors:
@@ -108,7 +107,7 @@ class FeatureCollection:
     @staticmethod
     def _get_collection_key(
         feature: FeatureDescriptor,
-    ) -> Tuple[tuple, Union[pd.Timedelta, float]]:
+    ) -> Tuple[Tuple[str, ...], Union[pd.Timedelta, float]]:
         # Note: `window` property can be either a pd.Timedelta or a float
         return feature.series_name, feature.window
 
@@ -432,11 +431,9 @@ class FeatureCollection:
             ), ("Each feature descriptor must have a stride when no stride or "
                 + "setpoints are passed to this method!")
         elif stride is not None and setpoints is not None:
-            raise ArgumentError(
-                message=(
-                    "The stride and setpoints argument cannot be set together!",
-                    "At least one of both should be None.",
-                )
+            raise ValueError(
+                    "The stride and setpoints argument cannot be set together! " +
+                    "At least one of both should be None."
             )
 
         if stride is not None:

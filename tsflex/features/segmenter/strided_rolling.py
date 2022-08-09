@@ -65,8 +65,9 @@ class StridedRolling(ABC):
         .. Note::
             Make sure to only set this argument to pd.Series when this is really
             required, since pd.Series strided-rolling is significantly less efficient.
-            For a np.array it is possible to create very efficient views, but there is no
-            such thing as a pd.Series view. Thus, for each stroll, a new series is created.
+            For a np.array it is possible to create very efficient views, but there is
+            no such thing as a pd.Series view. Thus, for each stroll, a new series is
+            created.
     window_idx : str, optional
         The window's index position which will be used as index for the
         feature_window aggregation. Must be either of: `["begin", "middle", "end"]`, by
@@ -175,8 +176,7 @@ class StridedRolling(ABC):
         # 2. Create a new-index which will be used for DataFrame reconstruction
         # Note: the index-name of the first passed series will be re-used as index-name
         self.index = self._get_output_index(
-            segment_start_idxs, 
-            name=series_list[0].index.name
+            segment_start_idxs, name=series_list[0].index.name
         )
 
         # 3. Construct the index ranges and store the series containers
@@ -376,9 +376,10 @@ class StridedRolling(ABC):
                     # There are >1 feature windows (bc >=1 steps in the sliding window)
                     windows = sc.end_indexes - sc.start_indexes
                     strides = sc.start_indexes[1:] - sc.start_indexes[:-1]
-                    assert np.all(
-                        windows == windows[0]
-                    ), "Vectorized functions require same number of samples in each segmented window!"
+                    assert np.all(windows == windows[0]), (
+                        "Vectorized functions require same number of samples in each "
+                        + "segmented window!"
+                    )
                     assert np.all(
                         strides == strides[0]
                     ), "Vectorized functions require same number of samples as stride!"
@@ -513,8 +514,8 @@ class TimeStridedRolling(StridedRolling):
         data = to_series_list(data)
         tz_index = data[0].index.tz
         for data_entry in to_series_list(data)[1:]:
-          assert data_entry.index.tz == tz_index
-        self._tz_index = tz_index  
+            assert data_entry.index.tz == tz_index
+        self._tz_index = tz_index
         # Set the data type & call the super constructor
         self.win_str_type = DataType.TIME
         super().__init__(data, window, strides, *args, **kwargs)
@@ -598,7 +599,7 @@ class TimeIndexSampleStridedRolling(SequenceStridedRolling):
         )
 
     def _construct_output_index(self, series: pd.Series) -> pd.DatetimeIndex:
-        window_offset = int(self._get_window_offset(self.window))
+        window_offset = int(self._get_window_offset())
         assert all(isinstance(p, np.int64) for p in [self.start, self.end])
 
         # Note: so we have one or multiple time-indexed series on which we specified a
