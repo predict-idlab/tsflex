@@ -425,7 +425,13 @@ class FeatureCollection:
         if logging_file_path:
             f_handler = add_logging_handler(logger, logging_file_path)
 
-        if stride is not None and setpoints is not None:
+        if stride is None and setpoints is None:
+            assert all(
+                fd.stride is not None 
+                for fd in flatten(self._feature_desc_dict.values())
+            ), ("Each feature descriptor must have a stride when no stride or "
+                + "setpoints are passed to this method!")
+        elif stride is not None and setpoints is not None:
             raise ArgumentError(
                 message=(
                     "The stride and setpoints argument cannot be set together!",

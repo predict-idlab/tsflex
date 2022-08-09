@@ -153,13 +153,13 @@ def test_single_series_feature_collection_sequence_setpoints_datatypes():
     assert np.all(res.index == s.index[setpoints_list])
 
 
-def test_single_series_feature_collection_timestamp_setpoints_datatypes(dummy_data):
+def test_single_series_feature_collection_timestamp_setpoints_datatypes():
     s = pd.Series(np.arange(20), name="dummy")
     s.index = pd.date_range("2021-08-09", freq="1h", periods=20)
     setpoints_list = [0, 3, 5, 6, 8]
 
     fc = FeatureCollection(
-        FeatureDescriptor(np.min, "dummy", "1s")
+        FeatureDescriptor(np.min, "dummy", "1h")
     )
 
     # On a list
@@ -191,6 +191,28 @@ def test_single_series_feature_collection_timestamp_setpoints_datatypes(dummy_da
     res = fc.calculate(s, setpoints=setpoints, window_idx="begin", return_df=True)
     assert np.all(res.index == s.index[setpoints_list])
 
+
+def test_sequence_setpoints_not_sorted():
+    s = pd.Series(np.arange(20), name="dummy")
+    setpoints = [0, 5, 3]
+
+    fc = FeatureCollection(
+        FeatureDescriptor(np.min, "dummy", 5)
+    )
+    res = fc.calculate(s, setpoints=setpoints, return_df=True, window_idx="begin")
+    assert all(res.index == setpoints)
+
+
+def test_time_setpoints_not_sorted():
+    s = pd.Series(np.arange(20), name="dummy")
+    s.index = pd.date_range("2021-08-09", freq="1h", periods=20)
+    setpoints = s.index[[0, 5, 3]]
+
+    fc = FeatureCollection(
+        FeatureDescriptor(np.min, "dummy", "1h")
+    )
+    res = fc.calculate(s, setpoints=setpoints, return_df=True, window_idx="begin")
+    assert all(res.index == setpoints)
 
 
 def test_uneven_sampled_series_feature_collection(dummy_data):
@@ -1606,5 +1628,63 @@ def test_error_pass_stride_and_setpoints_calculate(dummy_data):
         FeatureDescriptor(np.min, "EDA", window="5min", stride="3min")
     )
 
+    # Fails because both a stride and setpoints is passed to the calculate method
     with pytest.raises(Exception):
         fc.calculate(dummy_data["EDA"], stride="3min", setpoints=setpoints)
+
+
+def test_error_no_stride_and_no_setpoints(dummy_data):
+    fc = FeatureCollection(
+        [
+            FeatureDescriptor(np.min, "EDA", window="5s"),
+            FeatureDescriptor(np.max, "EDA", window="5s", stride="5s")
+        ]
+    )
+
+    # Fails because at least one feature descriptor in the feature collection does not
+    # have a stride, and no stride nor setpoints is passed to the calculate method
+    with pytest.raises(Exception):
+        fc.calculate(dummy_data)
+
+
+def test_feature_collection_various_timezones():
+    s_usa = pd.Series(
+        [0, 1, 2, 3, 4, 5], 
+        index=pd.date_range("2020-01-01", freq="1h", periods=6, tz='America/Chicago'),
+        name="s_usa"
+    )
+    s_eu = pd.Series(
+        [0, 1, 2, 3, 4, 5], 
+        index=pd.date_range("2020-01-01", freq="1h", periods=6, tz='Europe/Brussels'),
+        name="s_eu"
+    )
+    s_none = pd.Series(
+        [0, 1, 2, 3, 4, 5], 
+        index=pd.date_range("2020-01-01", freq="1h", periods=6, tz=None),
+        name="s_none"
+    )
+
+    # As long as all features are calculated on the same tz data no error should be thrown
+    for name in ["s_usa", "s_eu", "s_none"]:
+        fc = FeatureCollection(
+            MultipleFeatureDescriptors(np.min, name, "3h", "3h")
+        )
+        fc.calculate([s_usa, s_eu, s_none])
+
+    # When feature collection calculates (different) features on different tz data
+    # -> comparison error will be thrown
+    fc = FeatureCollection(
+        MultipleFeatureDescriptors(np.min, ["s_usa", "s_eu", "s_none"], "3h", "3h")
+    )
+    with pytest.raises(Exception):
+        fc.calculate([s_usa, s_eu, s_none])
+    fc = FeatureCollection(
+        MultipleFeatureDescriptors(np.min, ["s_usa", "s_eu"], "3h", "3h")
+    )
+    with pytest.raises(Exception):
+        fc.calculate([s_usa, s_eu, s_none])
+    fc = FeatureCollection(
+        MultipleFeatureDescriptors(np.min, ["s_usa", "s_none"], "3h", "3h")
+    )
+    with pytest.raises(Exception):
+        fc.calculate([s_usa, s_eu, s_none])

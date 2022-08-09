@@ -759,3 +759,47 @@ def test_index_data_type_retention():
     assert "datetime64" in str(sr.index.dtype)
     assert not str(sr.index.dtype).startswith("int")
     assert not str(sr.index.dtype).startswith("float")
+
+
+def test_various_time_zones():
+    f = FuncWrapper(np.min)
+    f2 = FuncWrapper(np.dot)
+    s_usa = pd.Series(
+        [0, 1, 2, 3, 4, 5], 
+        index=pd.date_range("2020-01-01", freq="1h", periods=6, tz='America/Chicago'),
+        name="s_usa"
+    )
+    s_eu = pd.Series(
+        [0, 1, 2, 3, 4, 5], 
+        index=pd.date_range("2020-01-01", freq="1h", periods=6, tz='Europe/Brussels'),
+        name="s_eu"
+    )
+    s_none = pd.Series(
+        [0, 1, 2, 3, 4, 5], 
+        index=pd.date_range("2020-01-01", freq="1h", periods=6, tz=None),
+        name="s_none"
+    )
+
+    # As long as all features are calculated on the same tz data no error should be thrown
+    for s in [s_usa, s_eu, s_none]:
+        sr = TimeStridedRolling(
+            s, window=pd.Timedelta(3, unit="h"), strides=[pd.Timedelta(3, unit="h")]
+        )
+        res = sr.apply_func(f)
+        assert np.all(res.values == [0])
+        sr = TimeStridedRolling(
+            [s, s], window=pd.Timedelta(3, unit="h"), strides=[pd.Timedelta(3, unit="h")]
+        )
+        res = sr.apply_func(f2)
+        assert np.all(res.values == [5])
+
+    # When features are calculated (different) features on different tz data
+    # -> error will be thrown
+    with pytest.raises(Exception):
+        sr = TimeStridedRolling(
+            [s_usa, s_eu], window=pd.Timedelta(3, unit="h"), strides=[pd.Timedelta(3, unit="h")]
+        )
+    with pytest.raises(Exception):
+        sr = TimeStridedRolling(
+            [s_usa, s_none], window=pd.Timedelta(3, unit="h"), strides=[pd.Timedelta(3, unit="h")]
+        )
