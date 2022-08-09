@@ -658,9 +658,11 @@ def test_sequence_stroll_apply_func_vectorized_multi_output():
     assert_2col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
     sr = SequenceStridedRolling(s, window=3, strides=[2], window_idx="begin", include_final_window=True)
     assert_2col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
-    # Note: commented these because these will result in window of length 3 and 1
-    # sr = SequenceStridedRolling(s, window=3, strides=[4], window_idx="begin", include_final_window=True)
-    # assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
+    with pytest.raises(Exception):
+        # the vectorized function requires the same number of samples in each segmented window
+        # this will result in window of length 3 and 1
+        sr = SequenceStridedRolling(s, window=3, strides=[4], window_idx="begin", include_final_window=True)
+        sr.apply_func(f_vect)
     sr = SequenceStridedRolling(s, window=3, strides=[5], window_idx="begin", include_final_window=True)
     assert_2col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
     sr = SequenceStridedRolling(s, window=3, strides=[50], window_idx="begin", include_final_window=True)
@@ -720,10 +722,11 @@ def test_time_stroll_apply_func_vectorized_multi_output():
     assert_2col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
     sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), strides=[pd.Timedelta(2, unit="h")], window_idx="begin", include_final_window=True)
     assert_2col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
-    # Note: commented these because these will result in window of length 3 and 1
-    # And the vectorized function requires the same number of samples in each segmented window
-    # sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), strides=[pd.Timedelta(4, unit="h")], window_idx="begin", include_final_window=True)
-    # assert_1col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
+    with pytest.raises(Exception):
+        # the vectorized function requires the same number of samples in each segmented window
+        # this will result in window of length 3 and 1
+        sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), strides=[pd.Timedelta(4, unit="h")], window_idx="begin", include_final_window=True)
+        sr.apply_func(f_vect)
     sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), strides=[pd.Timedelta(5, unit="h")], window_idx="begin", include_final_window=True)
     assert_2col_df_equal(sr.apply_func(f), sr.apply_func(f_vect))
     sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), strides=[pd.Timedelta(50, unit="h")], window_idx="begin", include_final_window=True)

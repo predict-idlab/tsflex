@@ -114,6 +114,85 @@ def test_single_series_feature_collection_timestamp_setpoints(dummy_data):
     assert all(res1[0].index.values == setpoints)
 
 
+def test_single_series_feature_collection_sequence_setpoints_datatypes():
+    s = pd.Series(np.arange(20), name="dummy")
+    setpoints_list = [0, 3, 5, 6, 8]
+
+    fc = FeatureCollection(
+        FeatureDescriptor(np.min, "dummy", 5)
+    )
+
+    # On a list
+    setpoints = setpoints_list
+    assert isinstance(setpoints, list)
+    res = fc.calculate(s, setpoints=setpoints, window_idx="begin", return_df=True)
+    assert np.all(res.index == s.index[setpoints_list])
+
+    # On a numpy array
+    setpoints = np.array(setpoints_list)
+    assert isinstance(setpoints, np.ndarray)
+    res = fc.calculate(s, setpoints=setpoints, window_idx="begin", return_df=True)
+    assert np.all(res.index == s.index[setpoints_list])
+
+    # On a pandas series
+    setpoints = pd.Series(setpoints_list)
+    assert isinstance(setpoints, pd.Series)
+    res = fc.calculate(s, setpoints=setpoints, window_idx="begin", return_df=True)
+    assert np.all(res.index == s.index[setpoints_list])
+
+    # On a pandas dataframe
+    setpoints = pd.DataFrame(setpoints_list)
+    assert isinstance(setpoints, pd.DataFrame)
+    res = fc.calculate(s, setpoints=setpoints, window_idx="begin", return_df=True)
+    assert np.all(res.index == s.index[setpoints_list])
+
+    # On a pandas index
+    setpoints = pd.Index(setpoints_list)
+    assert isinstance(setpoints, pd.Index)
+    res = fc.calculate(s, setpoints=setpoints, window_idx="begin", return_df=True)
+    assert np.all(res.index == s.index[setpoints_list])
+
+
+def test_single_series_feature_collection_timestamp_setpoints_datatypes(dummy_data):
+    s = pd.Series(np.arange(20), name="dummy")
+    s.index = pd.date_range("2021-08-09", freq="1h", periods=20)
+    setpoints_list = [0, 3, 5, 6, 8]
+
+    fc = FeatureCollection(
+        FeatureDescriptor(np.min, "dummy", "1s")
+    )
+
+    # On a list
+    setpoints = [s.index[idx] for idx in setpoints_list]
+    res = fc.calculate(s, setpoints=setpoints, window_idx="begin", return_df=True, n_jobs=0)
+    assert np.all(res.index == s.index[setpoints_list])
+
+    # On a numpy array
+    setpoints = s.index[setpoints_list].values
+    assert isinstance(setpoints, np.ndarray)
+    res = fc.calculate(s, setpoints=setpoints, window_idx="begin", return_df=True)
+    assert np.all(res.index == s.index[setpoints_list])
+
+    # On a pandas series
+    setpoints = pd.Series(s.index[setpoints_list])
+    assert isinstance(setpoints, pd.Series)
+    res = fc.calculate(s, setpoints=setpoints, window_idx="begin", return_df=True)
+    assert np.all(res.index == s.index[setpoints_list])
+
+    # On a pandas dataframe
+    setpoints = pd.DataFrame(s.index[setpoints_list])
+    assert isinstance(setpoints, pd.DataFrame)
+    res = fc.calculate(s, setpoints=setpoints, window_idx="begin", return_df=True)
+    assert np.all(res.index == s.index[setpoints_list])
+
+    # On a pandas index
+    setpoints = s.index[setpoints_list]
+    assert isinstance(setpoints, pd.Index)
+    res = fc.calculate(s, setpoints=setpoints, window_idx="begin", return_df=True)
+    assert np.all(res.index == s.index[setpoints_list])
+
+
+
 def test_uneven_sampled_series_feature_collection(dummy_data):
     fd = FeatureDescriptor(
         function=np.sum,

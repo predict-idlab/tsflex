@@ -168,14 +168,8 @@ class StridedRolling(ABC):
         # The setpoints have precedence over the stride index computation
         if setpoints is not None:  # use the passed setpoints
             self.strides = None
-            if setpoints.dtype.type == np.datetime64:
-                # TODO: this is starting to become ugly...
-                # I think we can avoid this when the user can pass a pd.Index instead of a np.array...
-                setpoints_idx = pd.to_datetime(setpoints, unit="ns", utc=True).tz_convert(series_list[0].index.tz)
-                valid_range_mask = (setpoints_idx >= self.start) & (setpoints_idx < self.end)
-            else:
-                valid_range_mask = (setpoints >= self.start) & (setpoints < self.end)
-            segment_start_idxs = setpoints[valid_range_mask]
+            # TODO: dit nog mooier maken
+            segment_start_idxs = self._parse_setpoints(setpoints, series_list[0])
         else:  # compute the start times of the segments (based on the stride(s))
             segment_start_idxs = self._construct_start_idxs()
 
@@ -187,7 +181,7 @@ class StridedRolling(ABC):
 
         # 2. Create a new-index which will be used for DataFrame reconstruction
         # Note: the index-name of the first passed series will be re-used as index-name
-        self.index = self._get_output_index(series_list[0], segment_start_idxs)
+        self.index = self._get_output_index(segment_start_idxs, series_list[0])
 
         # 3. Construct the index ranges and store the series containers
         np_start_times = segment_start_idxs
@@ -250,7 +244,7 @@ class StridedRolling(ABC):
                 "['end', 'middle', 'begin']"
             )
 
-    def _get_output_index(self, series: pd.Series, start_idxs: np.ndarray) -> pd.Index:
+    def _get_output_index(self, start_idxs: np.ndarray, series: pd.Series) -> pd.Index:
         if start_idxs.dtype.type == np.datetime64:
             start_idxs = pd.to_datetime(start_idxs, unit="ns", utc=True).tz_convert(
                 series.index.tz
@@ -473,6 +467,10 @@ class StridedRolling(ABC):
 
     # ----------------------------- OVERRIDE THESE METHODS -----------------------------
     @abstractmethod
+    def _parse_setpoints(self, setpoints, series):
+        raise NotImplementedError
+
+    @abstractmethod
     def _get_np_value(self, val):
         raise NotImplementedError
 
@@ -492,6 +490,10 @@ class SequenceStridedRolling(StridedRolling):
     ):
         self.win_str_type = DataType.SEQUENCE
         super().__init__(data, window, strides, *args, **kwargs)
+
+    def _parse_setpoints(self, setpoints, series):
+        valid_range = (setpoints >= self.start) & (setpoints < self.end)
+        return setpoints[valid_range]
 
     def _get_np_value(self, val) -> float:
         # The sequence values are already of numpy compatible type
@@ -518,6 +520,11 @@ class TimeStridedRolling(StridedRolling):
         super().__init__(data, window, strides, *args, **kwargs)
 
     # ---------------------------- Overridden methods ------------------------------
+    def _parse_setpoints(self, setpoints, series):
+        setpoints_idx = pd.to_datetime(setpoints, utc=True).tz_convert(series.index.tz)
+        valid_range = (setpoints_idx >= self.start) & (setpoints_idx < self.end)
+        return setpoints.astype(np.datetime64)[valid_range]
+
     def _get_np_value(self, val):
         # Convert everything to int64
         if isinstance(val, pd.Timestamp):
