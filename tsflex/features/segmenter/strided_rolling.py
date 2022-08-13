@@ -550,9 +550,9 @@ class TimeStridedRolling(StridedRolling):
 
 
 class TimeIndexSampleStridedRolling(SequenceStridedRolling):
-    # TODO: decide what to do with this class
     def __init__(
         self,
+        # TODO -> update arguments
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         window: int,
         strides: Optional[Union[int, List[int]]] = None,
@@ -581,6 +581,9 @@ class TimeIndexSampleStridedRolling(SequenceStridedRolling):
             series_list = [s[start:end] for s in series_list]
             kwargs.update({"start_idx": start, "end_idx": end})
 
+        # We retain the first series list to stitch back the output index
+        self._series_index = series_list[0].index
+
         # pass the sliced series list instead of data
         super().__init__(series_list, window, strides, *args, **kwargs)
 
@@ -588,6 +591,12 @@ class TimeIndexSampleStridedRolling(SequenceStridedRolling):
 
         # we want to assure that the window-stride arguments are integers (samples)
         assert all(isinstance(p, int) for p in [self.window] + self.strides)
+
+    def apply_func(self, func: FuncWrapper) -> pd.DataFrame:
+        # Apply the function and stitch back the time-index
+        df = super().apply_func(func)
+        df.index = self._series_index[df.index]
+        return df
 
     # ---------------------------- Overridden methods ------------------------------
     def _update_start_end_indices_to_stroll_type(self, series_list: List[pd.Series]):
@@ -597,41 +606,6 @@ class TimeIndexSampleStridedRolling(SequenceStridedRolling):
             [self.start.to_datetime64(), self.end.to_datetime64()],
             "left",
         )
-
-    def _construct_output_index(self, series: pd.Series) -> pd.DatetimeIndex:
-        window_offset = int(self._get_window_offset())
-        assert all(isinstance(p, np.int64) for p in [self.start, self.end])
-
-        # Note: so we have one or multiple time-indexed series on which we specified a
-        # sample based window-stride configuration -> assumptions we make
-        # * if we have  multiple series as input for a feature-functions
-        #  -> we assume the time-indexes are (roughly) the same for each series
-
-        # bool which indicates whether the `end` lies on the boundary
-        # and as arange does not include the right boundary -> use it to enlarge `stop`
-        boundary = (self.end - self.start - self.window) % self.stride == 0
-        return series.iloc[
-            np.arange(
-                start=int(window_offset),
-                stop=self.end - self.window + window_offset + self.stride * boundary,
-                step=self.stride,
-            )
-        ].index
-
-    def _construct_start_end_times(self) -> Tuple[np.ndarray, np.ndarray]:
-        # ---------- Efficient numpy code -------
-        # 1. Precompute the start & end times (these remain the same for each series)
-        # note: this if equivalent to:
-        #   if `window` == 'begin":
-        #       start_times = self.index.values
-        np_start_times = np.arange(
-            start=self.start,
-            stop=self.start + (len(self.index) * self.stride),
-            step=self.stride,
-            dtype=np.int64,  # the only thing that is changed w.r.t. the Superclass
-        )
-        np_end_times = np_start_times + self.window
-        return np_start_times, np_end_times
 
 
 def _sliding_strided_window_1d(

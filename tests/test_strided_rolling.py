@@ -1,5 +1,6 @@
 """Tests for the strided rolling class"""
 
+from curses import window
 from xml.etree.ElementInclude import include
 import numpy as np
 import pandas as pd
@@ -75,7 +76,7 @@ def test_sequence_stroll_last_window_full(dummy_data):
     assert out.index[-1] == 2200
 
     def stroll_apply_dummy_func(data, window, stride) -> pd.DataFrame:
-        stroll = SequenceStridedRolling(data, window, [stride], window_idx="begin")
+        stroll = SequenceStridedRolling(data, window, stride, window_idx="begin")
         return stroll.apply_func(FuncWrapper(np.min))
 
     out = stroll_apply_dummy_func(df_eda[:2198], window=1000, stride=200)
@@ -130,6 +131,18 @@ def test_time_index_sequence_stroll(dummy_data):
         df_eda, window=1000, strides=[50], window_idx="end"
     )
     return stroll.apply_func(FuncWrapper(np.min))
+
+
+def test_time_index_sequence_stroll(dummy_data):
+    df_eda = dummy_data["EDA"]
+    window, stride = 1000, 50
+    stroll = TimeIndexSampleStridedRolling(
+        df_eda, window=window, strides=[stride], window_idx="end"
+    )
+    out = stroll.apply_func(FuncWrapper(np.min))
+    assert out.index[0] == df_eda.index[window]
+    assert out.index[1] == df_eda.index[window + stride]
+    assert out.index[2] == df_eda.index[window + 2 * stride]
 
 
 def test_sequence_stroll_indexing():
