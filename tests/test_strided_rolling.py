@@ -1,7 +1,5 @@
 """Tests for the strided rolling class"""
 
-from curses import window
-from xml.etree.ElementInclude import include
 import numpy as np
 import pandas as pd
 import pytest
@@ -258,32 +256,64 @@ def test_time_stroll_indexing():
     assert np.all(sr.index == get_time_index([0]))
 
 
-def test_sequence_stroll_indexing_multiple_strides():
-    s = pd.Series(data=np.arange(20), name="dummy")
+def test_time_index_sequence_stroll_indexing():
+    # Same test as above, but with an time-index and sequence arguments
+    s = pd.Series(data=[0, 1, 2, 3, 4], name="dummy")
+    time_index = pd.date_range("2020-01-01", freq="1h", periods=5)
+    s.index = time_index
 
     ## No Force
-    sr = SequenceStridedRolling(s, window=3, strides=[3, 5], window_idx="begin")
-    assert np.all(sr.index == [0,3,5,6,9,10,12,15])
-
-    sr = SequenceStridedRolling(s, window=19, strides=[3, 5], window_idx="begin")
+    # Note -> the current TimeStridedRolling implementation stitches the time index back 
+    # together based on the sequence index.
+    sr = TimeIndexSampleStridedRolling(s, window=3, strides=[1], window_idx="begin")
+    assert np.all(sr.index == [0,1])
+    sr = TimeIndexSampleStridedRolling(s, window=3, strides=[2], window_idx="begin")
+    assert np.all(sr.index == [0])
+    sr = TimeIndexSampleStridedRolling(s, window=3, strides=[3], window_idx="begin")
+    assert np.all(sr.index == [0])
+    sr = TimeIndexSampleStridedRolling(s, window=3, strides=4, window_idx="begin")
+    assert np.all(sr.index == [0])
+    sr = TimeIndexSampleStridedRolling(s, window=3, strides=5, window_idx="begin")
+    assert np.all(sr.index == [0])
+    sr = TimeIndexSampleStridedRolling(s, window=3, strides=50, window_idx="begin")
     assert np.all(sr.index == [0])
 
-    sr = SequenceStridedRolling(s, window=20, strides=[3, 5], window_idx="begin")
+    sr = TimeIndexSampleStridedRolling(s, window=4, strides=50, window_idx="begin")
+    assert np.all(sr.index == [0])
+
+    sr = TimeIndexSampleStridedRolling(s, window=5, strides=1, window_idx="begin")
     assert np.all(sr.index == [])
-    sr = SequenceStridedRolling(s, window=21, strides=[3, 5], window_idx="begin")
+    sr = TimeIndexSampleStridedRolling(s, window=5, strides=2, window_idx="begin")
+    assert np.all(sr.index == [])
+    sr = TimeIndexSampleStridedRolling(s, window=6, strides=1, window_idx="begin")
+    assert np.all(sr.index == [])
+    sr = TimeIndexSampleStridedRolling(s, window=6, strides=2, window_idx="begin")
     assert np.all(sr.index == [])
 
     ## Force
-    sr = SequenceStridedRolling(s, window=3, strides=[3, 5], window_idx="begin", include_final_window=True)
-    assert np.all(sr.index == [0,3,5,6,9,10,12,15,18])
-
-    sr = SequenceStridedRolling(s, window=19, strides=[3, 5], window_idx="begin", include_final_window=True)
-    assert np.all(sr.index == [0, 3, 5])
-
-    sr = SequenceStridedRolling(s, window=20, strides=[3, 5], window_idx="begin", include_final_window=True)
+    sr = TimeIndexSampleStridedRolling(s, window=3, strides=1, window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == [0,1,2])
+    sr = TimeIndexSampleStridedRolling(s, window=3, strides=2, window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == [0,2])
+    sr = TimeIndexSampleStridedRolling(s, window=3, strides=3, window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == [0,3])
+    sr = TimeIndexSampleStridedRolling(s, window=3, strides=4, window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == [0,4])
+    sr = TimeIndexSampleStridedRolling(s, window=3, strides=5, window_idx="begin", include_final_window=True)
     assert np.all(sr.index == [0])
-    sr = SequenceStridedRolling(s, window=21, strides=[3, 5], window_idx="begin", include_final_window=True)
+    sr = TimeIndexSampleStridedRolling(s, window=3, strides=50, window_idx="begin", include_final_window=True)
     assert np.all(sr.index == [0])
+
+    sr = TimeIndexSampleStridedRolling(s, window=4, strides=1, window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == [0,1])
+
+    sr = TimeIndexSampleStridedRolling(s, window=5, strides=[1], window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == [0])
+    sr = TimeIndexSampleStridedRolling(s, window=5, strides=[2], window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == [0])
+    sr = TimeIndexSampleStridedRolling(s, window=6, strides=[1], window_idx="begin", include_final_window=True)
+    assert np.all(sr.index == [0])
+    sr = TimeIndexSampleStridedRolling(s, window=6, strides=[2], window_idx="begin", include_final_window=True)
 
 
 def test_time_stroll_indexing_multiple_strides():
