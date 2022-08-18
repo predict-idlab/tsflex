@@ -104,6 +104,21 @@ class FeatureCollection:
             set(flatten([fr_key[0] for fr_key in self._feature_desc_dict.keys()]))
         )
 
+    def get_nb_output_features(self) -> int:
+        """Return the number of output features in this feature collection.
+
+        Returns
+        -------
+        int
+            The number of output features in this feature collection.
+
+        """
+        return sum(
+            len(fd.function.output_names)
+            for fds in self._feature_desc_dict.values()
+            for fd in fds
+        )
+
     @staticmethod
     def _get_collection_key(
         feature: FeatureDescriptor,
@@ -226,11 +241,15 @@ class FeatureCollection:
         stroll, function = get_stroll_func(idx)
         return stroll.apply_func(function)
 
+    def _get_stroll(self, kwargs):
+        return StridedRollingFactory.get_segmenter(**kwargs)
+
     def _stroll_feat_generator(
         self,
         series_dict: Dict[str, pd.Series],
         calc_stride: Union[List[Union[float, pd.Timedelta]], None],
-        setpoints: Union[np.ndarray, None],
+        segment_start_idxs: Union[np.ndarray, None],
+        segment_end_idxs: Union[np.ndarray, None],
         start_idx: Any,
         end_idx: Any,
         window_idx: str,
@@ -259,7 +278,8 @@ class FeatureCollection:
                 data=[series_dict[k] for k in key],
                 window=win,
                 strides=stride,
-                setpoints=setpoints,
+                segment_start_idxs=segment_start_idxs,
+                segment_end_idxs=segment_end_idxs,
                 start_idx=start_idx,
                 end_idx=end_idx,
                 window_idx=window_idx,
@@ -267,7 +287,8 @@ class FeatureCollection:
                 approve_sparsity=approve_sparsity,
                 func_data_type=function.input_type,
             )
-            stroll = StridedRollingFactory.get_segmenter(**stroll_arg_dict)
+            # stroll = StridedRollingFactory.get_segmenter(**stroll_arg_dict)
+            stroll = self._get_stroll(stroll_arg_dict)
             return stroll, function
 
         return get_stroll_function
@@ -281,7 +302,8 @@ class FeatureCollection:
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         stride: Optional[Union[float, str, pd.Timedelta, List, None]] = None,
-        setpoints: Optional[pd.Index] = None,
+        segment_start_idxs: Optional[pd.Index] = None,
+        segment_end_idxs: Optional[pd.Index] = None,
         return_df: Optional[bool] = False,
         window_idx: Optional[str] = "end",
         include_final_window: Optional[bool] = False,
@@ -319,6 +341,39 @@ class FeatureCollection:
                 When set, this stride argument takes precedence over the stride property
                 of the `FeatureDescriptor`s in this `FeatureCollection` (i.e., when a
                 not None value for `stride` passed to this method).
+        segment_start_idxs: pd.Index, optional  # TODO is this a pd.Index?
+            The start indices of the segments. If None, the start indices will be
+            computed from the data using either
+            - the `segment_end_idxs` - the `window` size property of the
+                `FeatureDescriptor` in this `FeatureCollection` (if `segment_end_idxs`
+                is not None)
+            - strided-window rolling on the data using `window` and `stride` of the
+                `FeatureDescriptor` in this `FeatureCollection` (if `segment_end_idxs`
+                 is also None). (Note that the `stride` argument of this method takes
+                 precedence over the `stride` property of the `FeatureDescriptor`s).
+            By default None.
+        segment_end_idxs: pd.Index, optional
+            The end indices for the segmented windows. If None, the end indices will be
+            computed from the data using either
+            - the `segment_start_idxs` + the `window` size property of the
+                `FeatureDescriptor` in this `FeatureCollection` (if `segment_start_idxs`
+                is not None)
+            - strided-window rolling on the data using `window` and `stride` of the
+                `FeatureDescriptor` in this `FeatureCollection` (if `segment_start_idxs`
+                 is also None). (Note that the `stride` argument of this method takes
+                 precedence over the `stride` property of the `FeatureDescriptor`s).
+            By default None.
+
+            ..Note::
+                When passing both `segment_start_idxs` and `segment_end_idxs`, these two
+                arguments must have the same length and every start index must be <=
+                than the corresponding end index.
+                Note that passing both arguments, discards any meaning of the `window`
+                and `stride` values (as these segment indices define the segmented data,
+                and thus no strided-window rolling index calculation has to be executed).
+                As such, the user can create variable-length segmented windows. However,
+                in such cases, the user should be weary that the feature functions are
+                invariant to these (potentially variable-length) windows.
         return_df : bool, optional
             Whether the output needs to be a DataFrame or a list thereof, by default
             False. If `True` the output dataframes will be merged to a DataFrame with an
@@ -424,16 +479,52 @@ class FeatureCollection:
         if logging_file_path:
             f_handler = add_logging_handler(logger, logging_file_path)
 
-        if stride is None and setpoints is None:
+        if segment_start_idxs is not None:
+            segment_start_idxs = np.asarray(
+                segment_start_idxs
+            ).squeeze()  # remove singleton dimensions
+        if segment_end_idxs is not None:
+            segment_end_idxs = np.asarray(
+                segment_end_idxs
+            ).squeeze()  # remove singleton dimensions
+
+        if segment_start_idxs is None or segment_end_idxs is None:
             assert all(
-                fd.stride is not None 
+                fd.window is not None
                 for fd in flatten(self._feature_desc_dict.values())
-            ), ("Each feature descriptor must have a stride when no stride or "
-                + "setpoints are passed to this method!")
-        elif stride is not None and setpoints is not None:
+            ), "Each feature descriptor must have a window when not both ,,"
+        if segment_start_idxs is not None and segment_end_idxs is not None:
+            assert len(segment_start_idxs) == len(
+                segment_end_idxs
+            ), "segment_start_idxs and segment_end_idxs must have the same length"
+            assert np.all(
+                segment_start_idxs <= segment_end_idxs
+            ), "segment_start_idxs must be <= segment_end_idxs"
+            nb_output_features_without_window = len(
+                set(
+                    (series, o)
+                    for (series, _), fd_list in self._feature_desc_dict.items()
+                    for fd in fd_list
+                    for o in fd.function.output_names
+                )
+            )
+            assert (
+                nb_output_features_without_window == self.get_nb_output_features()
+            ), "Each output name - series input combination must have 1 or None window values"
+        if stride is None and segment_start_idxs is None and segment_end_idxs is None:
+            assert all(
+                fd.stride is not None
+                for fd in flatten(self._feature_desc_dict.values())
+            ), (
+                "Each feature descriptor must have a stride when no stride or "
+                + "segment indices are passed to this method!"
+            )
+        elif stride is not None and (
+            segment_start_idxs is not None or segment_end_idxs is not None
+        ):
             raise ValueError(
-                    "The stride and setpoints argument cannot be set together! " +
-                    "At least one of both should be None."
+                "The stride and segment index argument cannot be set together! "
+                + "At least one of both should be None."
             )
 
         if stride is not None:
@@ -441,8 +532,6 @@ class FeatureCollection:
                 parse_time_arg(s) if isinstance(s, str) else s for s in to_list(stride)
             ]
             self._check_feature_descriptors(skip_none=False, calc_stride=stride)
-        elif setpoints is not None:
-            setpoints = np.asarray(setpoints).squeeze()  # remove singleton dimensions
 
         # Convert the data to a series_dict
         series_dict: Dict[str, pd.Series] = {}
@@ -458,6 +547,7 @@ class FeatureCollection:
                 series_dict[str(s.name)] = s
 
         # Determine the bounds of the series dict items and slice on them
+        # TODO: is dit wel nodig hier? want we doen dat ook in de strided rolling
         start, end = _determine_bounds(bound_method, list(series_dict.values()))
         series_dict = {
             n: s.loc[
@@ -466,13 +556,18 @@ class FeatureCollection:
             for n, s, in series_dict.items()
         }
 
+        print(start, end)
+
+        # TODO: segment indices trimmen?
+
         # Note: this variable has a global scope so this is shared in multiprocessing
         # TODO: try to make this more efficient
         global get_stroll_func
         get_stroll_func = self._stroll_feat_generator(
             series_dict,
             calc_stride=stride,
-            setpoints=setpoints,
+            segment_start_idxs=segment_start_idxs,
+            segment_end_idxs=segment_end_idxs,
             start_idx=start,
             end_idx=end,
             window_idx=window_idx,

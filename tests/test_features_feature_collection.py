@@ -37,6 +37,7 @@ def test_single_series_feature_collection(dummy_data):
     fc = FeatureCollection(feature_descriptors=fd)
 
     assert fc.get_required_series() == ["EDA"]
+    assert fc.get_nb_output_features() == 1
 
     res_list = fc.calculate(dummy_data, return_df=False, n_jobs=1)
     res_df = fc.calculate(dummy_data, return_df=True, n_jobs=1)
@@ -63,6 +64,8 @@ def test_single_series_feature_collection_strides(dummy_data):
 
     assert fc1.get_required_series() == fc2.get_required_series()
     assert fc1.get_required_series() == fc3.get_required_series()
+    assert fc1.get_nb_output_features() == fc2.get_nb_output_features()
+    assert fc1.get_nb_output_features() == fc3.get_nb_output_features()
 
     res1 = fc1.calculate(dummy_data, stride=stride, return_df=False, n_jobs=1)
     res2 = fc2.calculate(dummy_data, stride=stride, return_df=False, n_jobs=1)
@@ -74,145 +77,314 @@ def test_single_series_feature_collection_strides(dummy_data):
     assert_frame_equal(res1[0], res3[0])
 
 
-def test_single_series_feature_collection_sequence_setpoints(dummy_data):
+def test_single_series_feature_collection_sequence_segment_start_idxs(dummy_data):
     dummy_data = dummy_data.reset_index(drop=True)
-    setpoints = [0, 5, 7, 10]
+    segment_start_idxs = [0, 5, 7, 10]
     fd1 = FeatureDescriptor(np.sum, series_name="EDA", window=10)
     fd2 = FeatureDescriptor(np.sum, series_name="EDA", window=10, stride=20)
     fc1 = FeatureCollection(feature_descriptors=fd1)
     fc2 = FeatureCollection(feature_descriptors=fd2)
 
     assert fc1.get_required_series() == fc2.get_required_series()
+    assert fc1.get_nb_output_features() == fc2.get_nb_output_features()
 
-    res1 = fc1.calculate(dummy_data, setpoints=setpoints, window_idx="begin")
-    res2 = fc2.calculate(dummy_data, setpoints=setpoints, window_idx="begin")
+    res1 = fc1.calculate(dummy_data, segment_start_idxs=segment_start_idxs, window_idx="begin")
+    res2 = fc2.calculate(dummy_data, segment_start_idxs=segment_start_idxs, window_idx="begin")
 
     assert (len(res1) == 1) & (len(res2) == 1)
     assert (len(res1[0]) == 4) & (len(res2[0]) == 4)
 
     assert_frame_equal(res1[0], res2[0])
-    assert all(res1[0].index.values == setpoints)
+    assert all(res1[0].index.values == segment_start_idxs)
 
 
-def test_single_series_feature_collection_timestamp_setpoints(dummy_data):
-    setpoints = [0, 5, 7, 10]
-    setpoints = dummy_data.index[setpoints].values
+def test_single_series_feature_collection_sequence_segment_end_idxs(dummy_data):
+    dummy_data = dummy_data.reset_index(drop=True)
+    segment_end_idxs = [20, 25, 35, 40]
+    fd1 = FeatureDescriptor(np.sum, series_name="EDA", window=10)
+    fd2 = FeatureDescriptor(np.sum, series_name="EDA", window=10, stride=20)
+    fc1 = FeatureCollection(feature_descriptors=fd1)
+    fc2 = FeatureCollection(feature_descriptors=fd2)
+
+    assert fc1.get_required_series() == fc2.get_required_series()
+    assert fc1.get_nb_output_features() == fc2.get_nb_output_features()
+
+    res1 = fc1.calculate(dummy_data, segment_end_idxs=segment_end_idxs, window_idx="end")
+    res2 = fc2.calculate(dummy_data, segment_end_idxs=segment_end_idxs, window_idx="end")
+
+    assert (len(res1) == 1) & (len(res2) == 1)
+    assert (len(res1[0]) == 4) & (len(res2[0]) == 4)
+
+    assert_frame_equal(res1[0], res2[0])
+    assert all(res1[0].index.values == segment_end_idxs)
+
+
+def test_single_series_feature_collection_timestamp_segment_start_idxs(dummy_data):
+    segment_start_idxs = [0, 5, 7, 10]
+    segment_start_idxs = dummy_data.index[segment_start_idxs].values
     fd1 = FeatureDescriptor(np.sum, series_name="EDA", window="10s")
     fd2 = FeatureDescriptor(np.sum, series_name="EDA", window="10s", stride='20s')
     fc1 = FeatureCollection(feature_descriptors=fd1)
     fc2 = FeatureCollection(feature_descriptors=fd2)
 
     assert fc1.get_required_series() == fc2.get_required_series()
+    assert fc1.get_nb_output_features() == fc2.get_nb_output_features()
 
-    res1 = fc1.calculate(dummy_data, setpoints=setpoints, window_idx="begin")
-    res2 = fc2.calculate(dummy_data, setpoints=setpoints, window_idx="begin")
+    res1 = fc1.calculate(dummy_data, segment_start_idxs=segment_start_idxs, window_idx="begin")
+    res2 = fc2.calculate(dummy_data, segment_start_idxs=segment_start_idxs, window_idx="begin")
 
     assert (len(res1) == 1) & (len(res2) == 1)
     assert (len(res1[0]) == 4) & (len(res2[0]) == 4)
 
     assert_frame_equal(res1[0], res2[0])
-    assert all(res1[0].index.values == setpoints)
+    assert all(res1[0].index.values == segment_start_idxs)
 
 
-def test_single_series_feature_collection_sequence_setpoints_datatypes():
+def test_single_series_feature_collection_timestamp_segment_end_idxs(dummy_data):
+    segment_end_idxs = [2000, 2500, 3500, 4000]
+    segment_end_idxs = dummy_data.index[segment_end_idxs].values
+    fd1 = FeatureDescriptor(np.sum, series_name="EDA", window="10s")
+    fd2 = FeatureDescriptor(np.sum, series_name="EDA", window="10s", stride='20s')
+    fc1 = FeatureCollection(feature_descriptors=fd1)
+    fc2 = FeatureCollection(feature_descriptors=fd2)
+
+    assert fc1.get_required_series() == fc2.get_required_series()
+    assert fc1.get_nb_output_features() == fc2.get_nb_output_features()
+
+    res1 = fc1.calculate(dummy_data, segment_end_idxs=segment_end_idxs, window_idx="end")
+    res2 = fc2.calculate(dummy_data, segment_end_idxs=segment_end_idxs, window_idx="end")
+
+    assert (len(res1) == 1) & (len(res2) == 1)
+    assert (len(res1[0]) == 4) & (len(res2[0]) == 4)
+
+    assert_frame_equal(res1[0], res2[0])
+    assert all(res1[0].index.values == segment_end_idxs)
+
+
+def test_single_series_feature_collection_sequence_segment_start_idxs_datatypes():
     s = pd.Series(np.arange(20), name="dummy")
-    setpoints_list = [0, 3, 5, 6, 8]
+    segment_start_idxs_list = [0, 3, 5, 6, 8]
 
     fc = FeatureCollection(
         FeatureDescriptor(np.min, "dummy", 5)
     )
 
     # On a list
-    setpoints = setpoints_list
-    assert isinstance(setpoints, list)
-    res = fc.calculate(s, setpoints=setpoints, window_idx="begin", return_df=True)
-    assert np.all(res.index == s.index[setpoints_list])
+    segment_start_idxs = segment_start_idxs_list
+    assert isinstance(segment_start_idxs, list)
+    res = fc.calculate(s, segment_start_idxs=segment_start_idxs, window_idx="begin", return_df=True)
+    assert np.all(res.index == s.index[segment_start_idxs_list])
 
     # On a numpy array
-    setpoints = np.array(setpoints_list)
-    assert isinstance(setpoints, np.ndarray)
-    res = fc.calculate(s, setpoints=setpoints, window_idx="begin", return_df=True)
-    assert np.all(res.index == s.index[setpoints_list])
+    segment_start_idxs = np.array(segment_start_idxs_list)
+    assert isinstance(segment_start_idxs, np.ndarray)
+    res = fc.calculate(s, segment_start_idxs=segment_start_idxs, window_idx="begin", return_df=True)
+    assert np.all(res.index == s.index[segment_start_idxs_list])
 
     # On a pandas series
-    setpoints = pd.Series(setpoints_list)
-    assert isinstance(setpoints, pd.Series)
-    res = fc.calculate(s, setpoints=setpoints, window_idx="begin", return_df=True)
-    assert np.all(res.index == s.index[setpoints_list])
+    segment_start_idxs = pd.Series(segment_start_idxs_list)
+    assert isinstance(segment_start_idxs, pd.Series)
+    res = fc.calculate(s, segment_start_idxs=segment_start_idxs, window_idx="begin", return_df=True)
+    assert np.all(res.index == s.index[segment_start_idxs_list])
 
     # On a pandas dataframe
-    setpoints = pd.DataFrame(setpoints_list)
-    assert isinstance(setpoints, pd.DataFrame)
-    res = fc.calculate(s, setpoints=setpoints, window_idx="begin", return_df=True)
-    assert np.all(res.index == s.index[setpoints_list])
+    segment_start_idxs = pd.DataFrame(segment_start_idxs_list)
+    assert isinstance(segment_start_idxs, pd.DataFrame)
+    res = fc.calculate(s, segment_start_idxs=segment_start_idxs, window_idx="begin", return_df=True)
+    assert np.all(res.index == s.index[segment_start_idxs_list])
 
     # On a pandas index
-    setpoints = pd.Index(setpoints_list)
-    assert isinstance(setpoints, pd.Index)
-    res = fc.calculate(s, setpoints=setpoints, window_idx="begin", return_df=True)
-    assert np.all(res.index == s.index[setpoints_list])
+    segment_start_idxs = pd.Index(segment_start_idxs_list)
+    assert isinstance(segment_start_idxs, pd.Index)
+    res = fc.calculate(s, segment_start_idxs=segment_start_idxs, window_idx="begin", return_df=True)
+    assert np.all(res.index == s.index[segment_start_idxs_list])
 
 
-def test_single_series_feature_collection_timestamp_setpoints_datatypes():
+def test_single_series_feature_collection_sequence_segment_end_idxs_datatypes():
+    s = pd.Series(np.arange(20), name="dummy")
+    segment_end_idxs_list = [5, 6, 8, 12, 18]
+
+    fc = FeatureCollection(
+        FeatureDescriptor(np.min, "dummy", 5)
+    )
+
+    # On a list
+    segment_end_idxs = segment_end_idxs_list
+    assert isinstance(segment_end_idxs, list)
+    res = fc.calculate(s, segment_end_idxs=segment_end_idxs, window_idx="end", return_df=True)
+    assert np.all(res.index == s.index[segment_end_idxs_list])
+
+    # On a numpy array
+    segment_end_idxs = np.array(segment_end_idxs_list)
+    assert isinstance(segment_end_idxs, np.ndarray)
+    res = fc.calculate(s, segment_end_idxs=segment_end_idxs, window_idx="end", return_df=True)
+    assert np.all(res.index == s.index[segment_end_idxs_list])
+
+    # On a pandas series
+    segment_end_idxs = pd.Series(segment_end_idxs_list)
+    assert isinstance(segment_end_idxs, pd.Series)
+    res = fc.calculate(s, segment_end_idxs=segment_end_idxs, window_idx="end", return_df=True)
+    assert np.all(res.index == s.index[segment_end_idxs_list])
+
+    # On a pandas dataframe
+    segment_end_idxs = pd.DataFrame(segment_end_idxs_list)
+    assert isinstance(segment_end_idxs, pd.DataFrame)
+    res = fc.calculate(s, segment_end_idxs=segment_end_idxs, window_idx="end", return_df=True)
+    assert np.all(res.index == s.index[segment_end_idxs_list])
+
+    # On a pandas index
+    segment_end_idxs = pd.Index(segment_end_idxs_list)
+    assert isinstance(segment_end_idxs, pd.Index)
+    res = fc.calculate(s, segment_end_idxs=segment_end_idxs, window_idx="end", return_df=True)
+    assert np.all(res.index == s.index[segment_end_idxs_list])
+
+
+def test_single_series_feature_collection_timestamp_segment_start_idxs_datatypes():
     s = pd.Series(np.arange(20), name="dummy")
     s.index = pd.date_range("2021-08-09", freq="1h", periods=20)
-    setpoints_list = [0, 3, 5, 6, 8]
+    segment_start_idxs_list = [5, 6, 8, 12, 18]
 
     fc = FeatureCollection(
         FeatureDescriptor(np.min, "dummy", "1h")
     )
 
     # On a list
-    setpoints = [s.index[idx] for idx in setpoints_list]
-    res = fc.calculate(s, setpoints=setpoints, window_idx="begin", return_df=True, n_jobs=0)
-    assert np.all(res.index == s.index[setpoints_list])
+    segment_start_idxs = [s.index[idx] for idx in segment_start_idxs_list]
+    res = fc.calculate(s, segment_start_idxs=segment_start_idxs, window_idx="begin", return_df=True, n_jobs=0)
+    assert np.all(res.index == s.index[segment_start_idxs_list])
 
     # On a numpy array
-    setpoints = s.index[setpoints_list].values
-    assert isinstance(setpoints, np.ndarray)
-    res = fc.calculate(s, setpoints=setpoints, window_idx="begin", return_df=True)
-    assert np.all(res.index == s.index[setpoints_list])
+    segment_start_idxs = s.index[segment_start_idxs_list].values
+    assert isinstance(segment_start_idxs, np.ndarray)
+    res = fc.calculate(s, segment_start_idxs=segment_start_idxs, window_idx="begin", return_df=True)
+    assert np.all(res.index == s.index[segment_start_idxs_list])
 
     # On a pandas series
-    setpoints = pd.Series(s.index[setpoints_list])
-    assert isinstance(setpoints, pd.Series)
-    res = fc.calculate(s, setpoints=setpoints, window_idx="begin", return_df=True)
-    assert np.all(res.index == s.index[setpoints_list])
+    segment_start_idxs = pd.Series(s.index[segment_start_idxs_list])
+    assert isinstance(segment_start_idxs, pd.Series)
+    res = fc.calculate(s, segment_start_idxs=segment_start_idxs, window_idx="begin", return_df=True)
+    assert np.all(res.index == s.index[segment_start_idxs_list])
 
     # On a pandas dataframe
-    setpoints = pd.DataFrame(s.index[setpoints_list])
-    assert isinstance(setpoints, pd.DataFrame)
-    res = fc.calculate(s, setpoints=setpoints, window_idx="begin", return_df=True)
-    assert np.all(res.index == s.index[setpoints_list])
+    segment_start_idxs = pd.DataFrame(s.index[segment_start_idxs_list])
+    assert isinstance(segment_start_idxs, pd.DataFrame)
+    res = fc.calculate(s, segment_start_idxs=segment_start_idxs, window_idx="begin", return_df=True)
+    assert np.all(res.index == s.index[segment_start_idxs_list])
 
     # On a pandas index
-    setpoints = s.index[setpoints_list]
-    assert isinstance(setpoints, pd.Index)
-    res = fc.calculate(s, setpoints=setpoints, window_idx="begin", return_df=True)
-    assert np.all(res.index == s.index[setpoints_list])
+    segment_start_idxs = s.index[segment_start_idxs_list]
+    assert isinstance(segment_start_idxs, pd.Index)
+    res = fc.calculate(s, segment_start_idxs=segment_start_idxs, window_idx="begin", return_df=True)
+    assert np.all(res.index == s.index[segment_start_idxs_list])
 
 
-def test_sequence_setpoints_not_sorted():
-    s = pd.Series(np.arange(20), name="dummy")
-    setpoints = [0, 5, 3]
-
-    fc = FeatureCollection(
-        FeatureDescriptor(np.min, "dummy", 5)
-    )
-    res = fc.calculate(s, setpoints=setpoints, return_df=True, window_idx="begin")
-    assert all(res.index == setpoints)
-
-
-def test_time_setpoints_not_sorted():
+def test_single_series_feature_collection_timestamp_segment_end_idxs_datatypes():
     s = pd.Series(np.arange(20), name="dummy")
     s.index = pd.date_range("2021-08-09", freq="1h", periods=20)
-    setpoints = s.index[[0, 5, 3]]
+    segment_end_idxs_list = [5, 6, 8, 12, 18]
 
     fc = FeatureCollection(
         FeatureDescriptor(np.min, "dummy", "1h")
     )
-    res = fc.calculate(s, setpoints=setpoints, return_df=True, window_idx="begin")
-    assert all(res.index == setpoints)
+
+    # On a list
+    segment_end_idxs = [s.index[idx] for idx in segment_end_idxs_list]
+    res = fc.calculate(s, segment_end_idxs=segment_end_idxs, window_idx="end", return_df=True, n_jobs=0)
+    assert np.all(res.index == s.index[segment_end_idxs_list])
+
+    # On a numpy array
+    segment_end_idxs = s.index[segment_end_idxs_list].values
+    assert isinstance(segment_end_idxs, np.ndarray)
+    res = fc.calculate(s, segment_end_idxs=segment_end_idxs, window_idx="end", return_df=True)
+    assert np.all(res.index == s.index[segment_end_idxs_list])
+
+    # On a pandas series
+    segment_end_idxs = pd.Series(s.index[segment_end_idxs_list])
+    assert isinstance(segment_end_idxs, pd.Series)
+    res = fc.calculate(s, segment_end_idxs=segment_end_idxs, window_idx="end", return_df=True)
+    assert np.all(res.index == s.index[segment_end_idxs_list])
+
+    # On a pandas dataframe
+    segment_end_idxs = pd.DataFrame(s.index[segment_end_idxs_list])
+    assert isinstance(segment_end_idxs, pd.DataFrame)
+    res = fc.calculate(s, segment_end_idxs=segment_end_idxs, window_idx="end", return_df=True)
+    assert np.all(res.index == s.index[segment_end_idxs_list])
+
+    # On a pandas index
+    segment_end_idxs = s.index[segment_end_idxs_list]
+    assert isinstance(segment_end_idxs, pd.Index)
+    res = fc.calculate(s, segment_end_idxs=segment_end_idxs, window_idx="end", return_df=True)
+    assert np.all(res.index == s.index[segment_end_idxs_list])
+
+
+def test_sequence_segment_start_idxs_not_sorted():
+    s = pd.Series(np.arange(20), name="dummy")
+    segment_start_idxs = [0, 5, 3]
+
+    fc = FeatureCollection(
+        FeatureDescriptor(np.min, "dummy", 5)
+    )
+    res = fc.calculate(s, segment_start_idxs=segment_start_idxs, return_df=True, window_idx="begin")
+    assert all(res.index == segment_start_idxs)
+
+
+def test_sequence_segment_end_idxs_not_sorted():
+    s = pd.Series(np.arange(20), name="dummy")
+    segment_end_idxs = [5, 10, 8]
+
+    fc = FeatureCollection(
+        FeatureDescriptor(np.min, "dummy", 5)
+    )
+    res = fc.calculate(s, segment_end_idxs=segment_end_idxs, return_df=True, window_idx="end")
+    assert all(res.index == segment_end_idxs)
+
+
+def test_time_segment_start_idxs_not_sorted():
+    s = pd.Series(np.arange(20), name="dummy")
+    s.index = pd.date_range("2021-08-09", freq="1h", periods=20)
+    segment_start_idxs = s.index[[0, 5, 3]]
+
+    fc = FeatureCollection(
+        FeatureDescriptor(np.min, "dummy", "1h")
+    )
+    res = fc.calculate(s, segment_start_idxs=segment_start_idxs, return_df=True, window_idx="begin")
+    assert all(res.index == segment_start_idxs)
+
+
+def test_time_segment_end_idxs_not_sorted():
+    s = pd.Series(np.arange(20), name="dummy")
+    s.index = pd.date_range("2021-08-09", freq="1h", periods=20)
+    segment_end_idxs = s.index[[5, 10, 8]]
+
+    fc = FeatureCollection(
+        FeatureDescriptor(np.min, "dummy", "1h")
+    )
+    res = fc.calculate(s, segment_end_idxs=segment_end_idxs, return_df=True, window_idx="end")
+    assert all(res.index == segment_end_idxs)
+
+
+def test_sequence_segment_start_and_end_idxs():
+    s = pd.Series(np.arange(20), name="dummy")
+    segment_start_idxs = [0, 5, 3]
+    segment_end_idxs = [5, 10, 8]
+
+    fc = FeatureCollection(
+        [
+            FeatureDescriptor(np.min, "dummy", 5),
+            FeatureDescriptor(len, "dummy", 5),
+        ]
+    )
+    res = fc.calculate(s, segment_start_idxs=segment_start_idxs, segment_end_idxs=segment_end_idxs, return_df=True, window_idx="begin")
+    assert all(res.index == segment_start_idxs)
+    assert np.all(res.filter(like="min").values.ravel() == segment_start_idxs)
+    assert np.all(res.filter(like="len").values.ravel() == 5)
+
+
+# TODO: 
+# - test index
+# - test end & start idxs
+# - test error when passing stride
+# CODING: window optioneel maken
 
 
 def test_uneven_sampled_series_feature_collection(dummy_data):
@@ -235,6 +407,7 @@ def test_uneven_sampled_series_feature_collection(dummy_data):
 
     assert set(fc.get_required_series()) == set(["EDA", "TMP"])
     assert len(fc.get_required_series()) == 2
+    assert fc.get_nb_output_features() == 3
 
     # Drop some data to obtain an irregular sampling rate
     inp = dummy_data.drop(np.random.choice(dummy_data.index[1:-1], 500, replace=False))
@@ -264,6 +437,7 @@ def test_warning_uneven_sampled_series_feature_collection(dummy_data):
 
     assert set(fc.get_required_series()) == set(["EDA", "TMP"])
     assert len(fc.get_required_series()) == 2
+    assert fc.get_nb_output_features() == 2
     # Drop some data to obtain an irregular sampling rate
     inp = dummy_data.drop(np.random.choice(dummy_data.index[1:-1], 500, replace=False))
 
@@ -330,6 +504,7 @@ def test_window_idx_single_series_feature_collection(dummy_data):
     fc = FeatureCollection(feature_descriptors=fd)
 
     assert fc.get_required_series() == ["EDA"]
+    assert fc.get_nb_output_features() == 1
 
     res_begin = fc.calculate(dummy_data, return_df=True, n_jobs=0, window_idx="begin")
     res_end = fc.calculate(dummy_data, return_df=True, n_jobs=0, window_idx="end")
@@ -346,9 +521,7 @@ def test_window_idx_single_series_feature_collection(dummy_data):
     )
 
     with pytest.raises(Exception):
-        res_not_existing = fc.calculate(
-            dummy_data, n_jobs=0, return_df=True, window_idx="somewhere"
-        )
+        fc.calculate(dummy_data, n_jobs=0, return_df=True, window_idx="somewhere")
 
     assert np.isclose(res_begin.values, res_end.values).all()
     assert np.isclose(res_begin.values, res_middle.values).all()
@@ -383,6 +556,7 @@ def test_multiplefeaturedescriptors_feature_collection(dummy_data):
 
     assert set(fc.get_required_series()) == set(["EDA", "TMP"])
     assert len(fc.get_required_series()) == 2
+    assert fc.get_nb_output_features() == 3 * 2 * 2
 
     res_list = fc.calculate(dummy_data, return_df=False, n_jobs=6)
     res_df = fc.calculate(dummy_data, return_df=True, n_jobs=6)
@@ -436,7 +610,7 @@ def test_multiplefeaturedescriptors_feature_collection(dummy_data):
 def test_multiplefeaturedescriptors_feature_collection_strides(dummy_data):
     stride= "2.5s"
     mfd1 = MultipleFeatureDescriptors([np.max, np.min], ["EDA", "TMP"], ["5s", "7.5s"])
-    mfd2 = MultipleFeatureDescriptors([np.max, np.min], ["EDA", "TMP"], ["5s", "7.5s"], strides=["5s"])#, "10s"])  # TODO: list of strides supporten...
+    mfd2 = MultipleFeatureDescriptors([np.max, np.min], ["EDA", "TMP"], ["5s", "7.5s"], strides=["5s", "10s"]) 
     mfd3 = MultipleFeatureDescriptors([np.max, np.min], ["EDA", "TMP"], ["5s", "7.5s"], strides=stride)
     fc1 = FeatureCollection(mfd1)
     fc2 = FeatureCollection(mfd2)
@@ -444,6 +618,8 @@ def test_multiplefeaturedescriptors_feature_collection_strides(dummy_data):
 
     assert fc1.get_required_series() == fc2.get_required_series()
     assert fc1.get_required_series() == fc3.get_required_series()
+    assert fc1.get_nb_output_features() == fc2.get_nb_output_features()
+    assert fc1.get_nb_output_features() == fc3.get_nb_output_features()
 
     res1 = fc1.calculate(dummy_data, stride=stride, return_df=True, n_jobs=0)
     res2 = fc2.calculate(dummy_data, stride=stride, return_df=True, n_jobs=0)
@@ -463,6 +639,7 @@ def test_featurecollection_feature_collection(dummy_data):
     fc = FeatureCollection(FeatureCollection(feature_descriptors=fd))
 
     assert fc.get_required_series() == ["EDA"]
+    assert fc.get_nb_output_features() == 1
 
     res_list = fc.calculate(dummy_data, return_df=False, n_jobs=1)
     res_df = fc.calculate(dummy_data, return_df=True, n_jobs=1)
@@ -488,6 +665,10 @@ def test_feature_collection_column_sorted(dummy_data):
         )
     )
     df_eda = dummy_data["EDA"].first('5min')
+
+    assert fc.get_required_series() == ["EDA"]
+    assert fc.get_nb_output_features() == 7 * 3
+
     out_cols = fc.calculate(df_eda, return_df=True, n_jobs=None).columns.values
 
     for _ in range(10):
@@ -623,6 +804,10 @@ def test_featurecollection_reduce_multiple_feat_output(dummy_data):
             fd,
         ]
     )
+
+    assert fc.get_required_series() == ["EDA"]
+    assert fc.get_nb_output_features() == 2 * 3 + 2
+
     # df_feat_tot = fc.calculate(data=dummy_data, return_df=True, show_progress=True)
 
     fc_reduce = fc.reduce(feat_cols_to_keep=["EDA__min__w=5s"])
@@ -1621,19 +1806,19 @@ def test_vectorized_multiple_asynchronous_strides(dummy_data):
         fc.calculate(df_eda)
 
 
-def test_error_pass_stride_and_setpoints_calculate(dummy_data):
-    setpoints = [0, 5, 7, 10]
-    setpoints = dummy_data.index[setpoints].values
+def test_error_pass_stride_and_segment_start_idxs_calculate(dummy_data):
+    segment_start_idxs = [0, 5, 7, 10]
+    segment_start_idxs = dummy_data.index[segment_start_idxs].values
     fc = FeatureCollection(
         FeatureDescriptor(np.min, "EDA", window="5min", stride="3min")
     )
 
-    # Fails because both a stride and setpoints is passed to the calculate method
+    # Fails because both a stride and segment_start_idxs is passed to the calculate method
     with pytest.raises(Exception):
-        fc.calculate(dummy_data["EDA"], stride="3min", setpoints=setpoints)
+        fc.calculate(dummy_data["EDA"], stride="3min", segment_start_idxs=segment_start_idxs)
 
 
-def test_error_no_stride_and_no_setpoints(dummy_data):
+def test_error_no_stride_and_no_segment_start_idxs(dummy_data):
     fc = FeatureCollection(
         [
             FeatureDescriptor(np.min, "EDA", window="5s"),
@@ -1642,7 +1827,7 @@ def test_error_no_stride_and_no_setpoints(dummy_data):
     )
 
     # Fails because at least one feature descriptor in the feature collection does not
-    # have a stride, and no stride nor setpoints is passed to the calculate method
+    # have a stride, and no stride nor segment_start_idxs is passed to the calculate method
     with pytest.raises(Exception):
         fc.calculate(dummy_data)
 
@@ -1690,8 +1875,8 @@ def test_feature_collection_various_timezones_data():
         fc.calculate([s_usa, s_eu, s_none])
 
 
-def test_feature_collection_various_timezones_setpoints():
-    # TODO: do we really want to support setpoints with different time zones?
+def test_feature_collection_various_timezones_segment_start_idxs():
+    # TODO: do we really want to support segment_start_idxs with different time zones?
     s_usa = pd.Series(
         [0, 1, 2, 3, 4, 5], 
         index=pd.date_range("2020-01-01", freq="1h", periods=6, tz='America/Chicago'),
@@ -1713,17 +1898,17 @@ def test_feature_collection_various_timezones_setpoints():
         fc = FeatureCollection(
             FeatureDescriptor(np.min, s.name, "3h", "3h")
         )
-        res = fc.calculate([s_usa, s_eu, s_none], setpoints=s.index[:3], n_jobs=0, return_df=True)
+        res = fc.calculate([s_usa, s_eu, s_none], segment_start_idxs=s.index[:3], n_jobs=0, return_df=True)
         assert np.all(res.values.ravel() == [0, 1, 2])
 
     fc = FeatureCollection(
         FeatureDescriptor(np.min, "s_usa", "3h", "3h")
     )
-    res = fc.calculate(s_usa, setpoints=s_eu.index[:3].values, n_jobs=0, return_df=True)
+    res = fc.calculate(s_usa, segment_start_idxs=s_eu.index[:3].values, n_jobs=0, return_df=True)
     assert np.all(res.values == [])
 
     fc = FeatureCollection(
         FeatureDescriptor(np.min, "s_usa", "3h", "3h")
     )
-    res = fc.calculate(s_usa, setpoints=s_none.index[:3].values, n_jobs=0, return_df=True)
+    res = fc.calculate(s_usa, segment_start_idxs=s_none.index[:3].values, n_jobs=0, return_df=True)
     assert np.all(res.values == [])
