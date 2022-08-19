@@ -301,8 +301,8 @@ class FeatureCollection:
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         stride: Optional[Union[float, str, pd.Timedelta, List, None]] = None,
-        segment_start_idxs: Optional[pd.Index] = None,
-        segment_end_idxs: Optional[pd.Index] = None,
+        segment_start_idxs: Optional[Union[list, np.ndarray, pd.Series, pd.Index]] = None,
+        segment_end_idxs: Optional[Union[list, np.ndarray, pd.Series, pd.Index]] = None,
         return_df: Optional[bool] = False,
         window_idx: Optional[str] = "end",
         include_final_window: Optional[bool] = False,
@@ -340,7 +340,7 @@ class FeatureCollection:
                 When set, this stride argument takes precedence over the stride property
                 of the `FeatureDescriptor`s in this `FeatureCollection` (i.e., when a
                 not None value for `stride` passed to this method).
-        segment_start_idxs: pd.Index, optional  # TODO is this a pd.Index?
+        segment_start_idxs: Union[list, np.ndarray, pd.Series, pd.Index], optional
             The start indices of the segments. If None, the start indices will be
             computed from the data using either
             - the `segment_end_idxs` - the `window` size property of the
@@ -351,7 +351,7 @@ class FeatureCollection:
                  is also None). (Note that the `stride` argument of this method takes
                  precedence over the `stride` property of the `FeatureDescriptor`s).
             By default None.
-        segment_end_idxs: pd.Index, optional
+        segment_end_idxs: Union[list, np.ndarray, pd.Series, pd.Index], optional
             The end indices for the segmented windows. If None, the end indices will be
             computed from the data using either
             - the `segment_start_idxs` + the `window` size property of the

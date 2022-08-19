@@ -33,8 +33,10 @@ def _parse_message(message: str) -> list:
     assert len(matches) == 4
     func = matches[0]
     key = matches[1].replace("'", "")
-    window, stride = matches[2].split(",")[0], ",".join(matches[2].split(",")[1:])
-    stride = eval(stride)  # parse the tuple
+    window = matches[2].split(",")[0].strip()
+    stride = ",".join(matches[2].split(",")[1:]).strip()
+    if stride != "manual":
+        stride = eval(stride)  # parse the tuple
     duration_s = float(matches[3].rstrip(" seconds"))
     return [func, key, window, stride, duration_s]
 
@@ -65,17 +67,22 @@ def _parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
         list(df["message"].apply(_parse_message)),
         index=df.index,
     )
-    # Parse the window and stride
-    if df["window"].str.isnumeric().all():
+    # Parse the window
+    if (df["window"] == "manual").any():
+        # All should be manual
+        assert (df["window"] == "manual").all()
+    elif df["window"].str.isnumeric().all():
         df["window"] = pd.to_numeric(df["window"])
     else:
         df["window"] = pd.to_timedelta(df["window"]).apply(timedelta_to_str)
-    if (
-        df["stride"]
-        .apply(
-            lambda stride_tuple: len(stride_tuple) and np.char.isnumeric(stride_tuple).all()
-        )
-        .all()
+    # Parse the stride
+    if (df["stride"] == "manual").any():
+        # All should be manual
+        assert (df["stride"] == "manual").all()
+    elif (
+        df["stride"].apply(
+            lambda stride_tuple: np.char.isnumeric(stride_tuple).all()
+        ).all()
     ):
         df["stride"] = df["stride"].apply(
             lambda stride_tuple: tuple(sorted(pd.to_numeric(s) for s in stride_tuple))

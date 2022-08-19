@@ -480,13 +480,12 @@ class StridedRolling(ABC):
                 ]
 
         elapsed = time.time() - t_start
-        log_strides = (
-            tuple() if self.strides is None else tuple(str(s) for s in self.strides)
-        )
+        log_strides = "manual" if self.strides is None else tuple(map(str, self.strides))
+        log_window = "manual" if self.window is None else self.window
         logger.info(
             f"Finished function [{func.func.__name__}] on "
             f"{[self.series_key]} with window-stride "
-            f"[{self.window}, {log_strides}] in [{elapsed} seconds]!"
+            f"[{log_window}, {log_strides}] in [{elapsed} seconds]!"
         )
 
         return pd.DataFrame(index=self.index, data=feat_out)
