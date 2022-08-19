@@ -118,6 +118,29 @@ class FeatureCollection:
             for fd in flatten(self._feature_desc_dict.values())
         )
 
+    def _get_nb_output_features_without_window(self) -> int:
+        """Return the number of output features in this feature collection, without
+        using the window as a unique identifier.
+
+        This is relevant for when the window value(s) are overriden by passing 
+        `segment_start_idxs` and `segment_end_idxs` to the `calculate` method.
+
+        Returns
+        -------
+        int:
+            The number of output features in this feature collection without using the
+            window as a unique identifier.
+
+        """ 
+        return len(
+            set(
+                (series, o)
+                for (series, _), fd_list in self._feature_desc_dict.items()
+                for fd in fd_list
+                for o in fd.function.output_names
+            )
+        )
+
     @staticmethod
     def _get_collection_key(
         feature: FeatureDescriptor,
@@ -499,16 +522,8 @@ class FeatureCollection:
             assert np.all(
                 segment_start_idxs <= segment_end_idxs
             ), "segment_start_idxs must be <= segment_end_idxs"
-            nb_output_features_without_window = len(
-                set(
-                    (series, o)
-                    for (series, _), fd_list in self._feature_desc_dict.items()
-                    for fd in fd_list
-                    for o in fd.function.output_names
-                )
-            )
             assert (
-                nb_output_features_without_window == self.get_nb_output_features()
+                self._get_nb_output_features_without_window() == self.get_nb_output_features()
             ), "Each output name - series input combination must have 1 or None window values"
         if stride is None and segment_start_idxs is None and segment_end_idxs is None:
             assert all(
@@ -671,10 +686,17 @@ class FeatureCollection:
         """
         # dict in which we store all the { output_col_name : (UUID, FeatureDescriptor) }
         # items of our current Featurecollection object
+        manual_window = False
+        if any(c.endswith("w=manual") for c in feat_cols_to_keep):
+            assert all(c.endswith("w=manual") for c in feat_cols_to_keep)
+            assert (
+                self._get_nb_output_features_without_window() == self.get_nb_output_features()
+            )
+            manual_window = True
         feat_col_fd_mapping: Dict[str, Tuple[str, FeatureDescriptor]] = {}
-        for (s_names, window), fds in self._feature_desc_dict.items():
-            fd: FeatureDescriptor
-            for fd in fds:
+        for (s_names, window), fd_list in self._feature_desc_dict.items():
+            window = "manual" if manual_window else self._ws_to_str(window)
+            for fd in fd_list:
                 # As a single FeatureDescriptor can have multiple output col names, we
                 # create a unique identifier for each FeatureDescriptor (on which we
                 # will apply set-like operations later on to only retain all the unique
@@ -688,7 +710,7 @@ class FeatureCollection:
                             if isinstance(s_names, tuple)
                             else s_names,
                             output_name,
-                            f"w={self._ws_to_str(window)}",
+                            f"w={window}",
                         ]
                     )
                     feat_col_fd_mapping[feat_col_name] = (uuid_str, fd)

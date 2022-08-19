@@ -854,6 +854,93 @@ def test_featurecollection_reduce_multiple_feat_output(dummy_data):
     fc_reduce.calculate(dummy_data)
 
 
+def test_featurecollection_reduce_segment_start_idx(dummy_data):
+    fc = FeatureCollection(
+        MultipleFeatureDescriptors(
+            functions=[np.max, np.min, np.std, np.sum],
+            series_names="EDA",
+            windows=["5s", "30s", "1min"],
+        )
+    )
+    segment_start_idxs = dummy_data.index[::100][:10]
+    df_feat_tot = fc.calculate(data=dummy_data, segment_start_idxs=segment_start_idxs, return_df=True, show_progress=True)
+
+    for _ in range(5):
+        col_subset = random.sample(
+            list(df_feat_tot.columns), random.randint(1, len(df_feat_tot.columns))
+        )
+        fc_reduced = fc.reduce(col_subset)
+        fc_reduced.calculate(dummy_data, segment_start_idxs=segment_start_idxs)
+        for fd in flatten(fc._feature_desc_dict.values()):
+            assert fd.stride == None
+
+    # also test the reduce function on a single column
+    fc_reduced = fc.reduce(random.sample(list(df_feat_tot.columns), 1))
+    fc_reduced.calculate(dummy_data, segment_start_idxs=segment_start_idxs)
+
+    # should also work when fc is deleted
+    del fc
+    fc_reduced.calculate(dummy_data, segment_start_idxs=segment_start_idxs)
+
+
+def test_featurecollection_reduce_segment_end_idx(dummy_data):
+    fc = FeatureCollection(
+        MultipleFeatureDescriptors(
+            functions=[np.max, np.min, np.std, np.sum],
+            series_names="EDA",
+            windows=["5s", "30s", "1min"],
+        )
+    )
+    segment_end_idxs = dummy_data.index[::100][10:20]
+    df_feat_tot = fc.calculate(data=dummy_data, segment_end_idxs=segment_end_idxs, return_df=True, show_progress=True)
+
+    for _ in range(5):
+        col_subset = random.sample(
+            list(df_feat_tot.columns), random.randint(1, len(df_feat_tot.columns))
+        )
+        fc_reduced = fc.reduce(col_subset)
+        fc_reduced.calculate(dummy_data, segment_end_idxs=segment_end_idxs)
+        for fd in flatten(fc._feature_desc_dict.values()):
+            assert fd.stride == None
+
+    # also test the reduce function on a single column
+    fc_reduced = fc.reduce(random.sample(list(df_feat_tot.columns), 1))
+    fc_reduced.calculate(dummy_data, segment_end_idxs=segment_end_idxs)
+
+    # should also work when fc is deleted
+    del fc
+    fc_reduced.calculate(dummy_data, segment_end_idxs=segment_end_idxs)
+
+
+def test_featurecollection_reduce_segment_start_and_end_idx(dummy_data):
+    fc = FeatureCollection(
+        MultipleFeatureDescriptors(
+            functions=[np.max, np.min, np.std, np.sum],
+            series_names="EDA",
+        )
+    )
+    segment_start_idxs = dummy_data.index[::100][:10]    
+    segment_end_idxs = dummy_data.index[::100][10:20]
+    df_feat_tot = fc.calculate(data=dummy_data, segment_start_idxs=segment_start_idxs, segment_end_idxs=segment_end_idxs, return_df=True, show_progress=True)
+
+    for _ in range(5):
+        col_subset = random.sample(
+            list(df_feat_tot.columns), random.randint(1, len(df_feat_tot.columns))
+        )
+        fc_reduced = fc.reduce(col_subset)
+        fc_reduced.calculate(dummy_data, segment_start_idxs=segment_start_idxs, segment_end_idxs=segment_end_idxs)
+        for fd in flatten(fc._feature_desc_dict.values()):
+            assert fd.stride == None
+
+    # also test the reduce function on a single column
+    fc_reduced = fc.reduce(random.sample(list(df_feat_tot.columns), 1))
+    fc_reduced.calculate(dummy_data, segment_start_idxs=segment_start_idxs, segment_end_idxs=segment_end_idxs)
+
+    # should also work when fc is deleted
+    del fc
+    fc_reduced.calculate(dummy_data, segment_start_idxs=segment_start_idxs, segment_end_idxs=segment_end_idxs)
+
+
 def test_featurecollection_error_val(dummy_data):
     fd = FeatureDescriptor(
         function=np.max,
