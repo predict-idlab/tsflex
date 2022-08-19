@@ -266,7 +266,6 @@ class FeatureCollection:
         def get_stroll_function(idx):
             key_idx = np.searchsorted(lengths, idx, "right")  # right bc idx starts at 0
             key, win = keys_wins_strides[key_idx]
-            print(key, win)
 
             feature = self._feature_desc_dict[keys_wins_strides[key_idx]][
                 idx - lengths[key_idx]
