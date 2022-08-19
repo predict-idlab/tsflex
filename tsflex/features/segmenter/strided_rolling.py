@@ -681,13 +681,8 @@ def _sliding_strided_window_1d(
     """
     # window and step in samples
     assert data.ndim == 1, "data must be 1 dimensional"
-
-    if isinstance(window, float):
-        assert window.is_integer(), "window must be an int!"
-        window = int(window)
-    if isinstance(step, float):
-        assert step.is_integer(), "step must be an int!"
-        step = int(step)
+    assert isinstance(window, (int, np.integer)), "window must be an integer"
+    assert isinstance(step, (int, np.integer)), "step must be an integer"
 
     assert (step >= 1) & (window < len(data))
 
