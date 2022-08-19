@@ -27,6 +27,7 @@ def test_simple_feature_descriptor():
     assert fd.window == pd.Timedelta(5, unit='seconds')
     assert fd.stride == [pd.Timedelta(2.5, unit='seconds')]
     assert fd.get_required_series() == ["EDA"]
+    assert fd.get_nb_output_features() == 1
     assert isinstance(fd.function, FuncWrapper)
 
 
@@ -42,6 +43,7 @@ def test_simple_raw_np_func_feature_descriptor():
     assert fd.window == pd.Timedelta(5, unit='seconds')
     assert fd.stride == [pd.Timedelta(2.5, unit='seconds')]
     assert fd.get_required_series() == ["EDA"]
+    assert fd.get_nb_output_features() == 1
     assert isinstance(fd.function, FuncWrapper)
 
 
@@ -59,6 +61,24 @@ def test_simple_feature_descriptor_optional_stride():
     assert fd.window == pd.Timedelta(5, unit='seconds')
     assert fd.stride == None
     assert fd.get_required_series() == ["EDA"]
+    assert fd.get_nb_output_features() == 1
+    assert isinstance(fd.function, FuncWrapper)
+
+
+def test_simple_feature_descriptor_optional_window_and_stride():
+    def sum_func(sig: np.ndarray) -> float:
+        return sum(sig)
+
+    fd = FeatureDescriptor(
+        function=sum_func,
+        series_name="EDA",
+    )
+
+    assert fd.series_name == tuple(["EDA"])
+    assert fd.window == None
+    assert fd.stride == None
+    assert fd.get_required_series() == ["EDA"]
+    assert fd.get_nb_output_features() == 1
     assert isinstance(fd.function, FuncWrapper)
 
 
@@ -77,6 +97,7 @@ def test_simple_feature_descriptor_multiple_strides():
     assert fd.window == pd.Timedelta(5, unit='seconds')
     assert fd.stride == [pd.Timedelta(3, unit='seconds'), pd.Timedelta(5, unit='seconds')]
     assert fd.get_required_series() == ["EDA"]
+    assert fd.get_nb_output_features() == 1
     assert isinstance(fd.function, FuncWrapper)
 
 # TODO -> add new test in which floats represent the float position
@@ -96,6 +117,7 @@ def test_simple_feature_descriptor_str_str_seconds():
     assert fd.window == pd.Timedelta(5, unit='seconds')
     assert fd.stride == [pd.Timedelta(3, unit='seconds')]
     assert fd.get_required_series() == ["EDA"]
+    assert fd.get_nb_output_features() == 1
     assert isinstance(fd.function, FuncWrapper)
 
 
@@ -116,6 +138,7 @@ def test_simple_feature_descriptor_func_wrapper():
     assert fd.window == pd.Timedelta(5, unit='seconds')
     assert fd.stride == [pd.Timedelta(2.5, unit='seconds')]
     assert fd.get_required_series() == ["EDA"]
+    assert fd.get_nb_output_features() == 1
     assert isinstance(fd.function, FuncWrapper)
 
 
@@ -152,6 +175,16 @@ def test_error_different_args_simple_feature_descriptor():
             series_name="EDA",
             window=invalid_window,
             stride=invalid_stride,
+        )
+
+def test_error_optional_window_but_pass_stride_feature_descriptor():
+
+    with pytest.raises(AssertionError):
+        _ = FeatureDescriptor(
+            function=np.sum,
+            series_name="EDA",
+            stride="3s",
+            # passes no window 
         )
 
 
@@ -192,3 +225,75 @@ def test_multiple_feature_descriptors():
     assert sum([el == 'sum_func' for el in output_names]) == 2*2
     assert sum([el == 'amax' for el in output_names]) == 2*2
     assert sum([el == 'amin' for el in output_names]) == 2*2
+
+
+def test_multiple_feature_descriptors_optional_stride():
+    def sum_func(sig: np.ndarray) -> float:
+        return sum(sig)
+
+    mfd = MultipleFeatureDescriptors(
+        functions=[sum_func, FuncWrapper(np.max), np.min],
+        series_names=["EDA", "TMP"],
+        windows=['5s', '7.5s'],
+        # passes no stride
+    )
+
+    assert len(mfd.feature_descriptions) == 3*2*2
+
+    series_names = [fd.series_name for fd in mfd.feature_descriptions]
+    assert set(series_names) == set([tuple(["EDA"]), tuple(["TMP"])])
+    assert sum([el == tuple(["EDA"]) for el in series_names]) == 3*2
+    assert sum([el == tuple(["TMP"]) for el in series_names]) == 3*2
+
+    windows = [fd.window for fd in mfd.feature_descriptions]
+    assert set(windows) == set([pd.Timedelta(seconds=5), pd.Timedelta(seconds=7.5)])
+    assert sum([el == pd.Timedelta(seconds=5) for el in windows]) == 3*2
+    assert sum([el == pd.Timedelta(seconds=7.5) for el in windows]) == 3*2
+
+    strides = [fd.stride for fd in mfd.feature_descriptions]
+    assert set(strides) == set([None])
+
+    functions = [fd.function for fd in mfd.feature_descriptions]
+    assert len(set(functions)) == 3
+    output_names = [f.output_names for f in functions]
+    assert all([len(outputs) == 1 for outputs in output_names])
+    output_names = [outputs[0] for outputs in output_names]
+    assert set(output_names) == set(['sum_func', 'amax', 'amin'])
+    assert sum([el == 'sum_func' for el in output_names]) == 2*2
+    assert sum([el == 'amax' for el in output_names]) == 2*2
+    assert sum([el == 'amin' for el in output_names]) == 2*2
+
+
+def test_multiple_feature_descriptors_optional_stride_and_window():
+    def sum_func(sig: np.ndarray) -> float:
+        return sum(sig)
+
+    mfd = MultipleFeatureDescriptors(
+        functions=[sum_func, FuncWrapper(np.max), np.min],
+        series_names=["EDA", "TMP"],
+        # passes no window,
+        # passes no stride
+    )
+
+    assert len(mfd.feature_descriptions) == 3*2
+
+    series_names = [fd.series_name for fd in mfd.feature_descriptions]
+    assert set(series_names) == set([tuple(["EDA"]), tuple(["TMP"])])
+    assert sum([el == tuple(["EDA"]) for el in series_names]) == 3
+    assert sum([el == tuple(["TMP"]) for el in series_names]) == 3
+
+    windows = [fd.window for fd in mfd.feature_descriptions]
+    assert set(windows) == set([None])
+
+    strides = [fd.stride for fd in mfd.feature_descriptions]
+    assert set(strides) == set([None])
+
+    functions = [fd.function for fd in mfd.feature_descriptions]
+    assert len(set(functions)) == 3
+    output_names = [f.output_names for f in functions]
+    assert all([len(outputs) == 1 for outputs in output_names])
+    output_names = [outputs[0] for outputs in output_names]
+    assert set(output_names) == set(['sum_func', 'amax', 'amin'])
+    assert sum([el == 'sum_func' for el in output_names]) == 2
+    assert sum([el == 'amax' for el in output_names]) == 2
+    assert sum([el == 'amin' for el in output_names]) == 2

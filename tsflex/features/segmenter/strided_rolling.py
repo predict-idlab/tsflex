@@ -151,9 +151,10 @@ class StridedRolling(ABC):
                 "Values in segment_start_idxs should be <= correspend segment_end_idxs value"
             )
 
-        assert AttributeParser.check_expected_type(
-            [window] + ([] if strides is None else strides), self.win_str_type
-        )
+        if window is not None:
+            assert AttributeParser.check_expected_type(
+                [window] + ([] if strides is None else strides), self.win_str_type
+            )
 
         self.window = window
         self.strides = strides

@@ -370,14 +370,32 @@ def test_sequence_segment_start_and_end_idxs():
 
     fc = FeatureCollection(
         [
-            FeatureDescriptor(np.min, "dummy", 5),
-            FeatureDescriptor(len, "dummy", 5),
+            FeatureDescriptor(np.min, "dummy", 100),
+            FeatureDescriptor(len, "dummy"),
         ]
     )
     res = fc.calculate(s, segment_start_idxs=segment_start_idxs, segment_end_idxs=segment_end_idxs, return_df=True, window_idx="begin")
     assert all(res.index == segment_start_idxs)
-    assert np.all(res.filter(like="min").values.ravel() == segment_start_idxs)
-    assert np.all(res.filter(like="len").values.ravel() == 5)
+    assert np.all(res["dummy__amin__w=manual"] == segment_start_idxs)
+    assert np.all(res["dummy__len__w=manual"] == 5)
+
+
+def test_time_segment_start_and_end_idxs():
+    s = pd.Series(np.arange(20), name="dummy")
+    s.index = pd.date_range("2021-08-09", freq="1h", periods=20)
+    segment_start_idxs = s.index[[0, 5, 3]]
+    segment_end_idxs = s.index[[5, 10, 8]]
+
+    fc = FeatureCollection(
+        [
+            FeatureDescriptor(np.min, "dummy", "100h"),
+            FeatureDescriptor(len, "dummy"),
+        ]
+    )
+    res = fc.calculate(s, segment_start_idxs=segment_start_idxs, segment_end_idxs=segment_end_idxs, return_df=True, window_idx="begin")
+    assert all(res.index == segment_start_idxs)
+    assert np.all(res["dummy__amin__w=manual"] == [0, 5, 3])
+    assert np.all(res["dummy__len__w=manual"] == 5)
 
 
 # TODO: 

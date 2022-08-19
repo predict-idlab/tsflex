@@ -41,8 +41,10 @@ class FeatureDescriptor(FrozenClass):
         * If `series_name` is a tuple of strings, then `function` should
             require `len(tuple)` series as input **and in exactly the same order**
 
-    window : Union[float, str, pd.Timedelta]
-        The window size, this argument supports multiple types: \n
+    window : Union[float, str, pd.Timedelta], optional
+        The window size. By default None. This argument supports multiple types: \n
+        * If None, the `segment_start_idxs` and `segment_end_idxs` will need to be 
+          passed.
         * If the type is an `float` or an `int`, its value represents the series
             - its window **range** when a **non time-indexed** series is passed.
             - its window in **number of samples**, when a **time-indexed** series is
@@ -51,6 +53,14 @@ class FeatureDescriptor(FrozenClass):
           the window-time-range. The passed data **must have a time-index**.
         * If a `str`, it must represents a window-time-range-string. The **passed data
           must have a time-index**.
+        .. Note::
+            - When the `segment_start_idxs` and `segment_end_idxs` are both passed to
+              the `FeatureCollection.calculate` method, this window argument is ignored.
+              Note that this is the only case when it is allowed to pass None for the
+              window argument.
+            - When the window argument is None, than the stride argument should be None
+              as well (as it makes no sense to pass a stride value when the window is 
+              None).
 
     stride : Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]], optional
         The stride size(s). By default None. This argument supports multiple types: \n
@@ -66,9 +76,11 @@ class FeatureDescriptor(FrozenClass):
         * If a `List[Union[float, str, pd.Timedelta]]`, then the set intersection of the
           strides will be used (e.g., stride=[2,3] -> index: 0, 2, 3, 6, 8, 9, ...)
         .. Note::
-            The stride argument of `FeatureCollection.calculate` takes precedence over
-            this value when set (i.e., not None value for `stride` passed to the
-            `calculate` method).
+            - The stride argument of `FeatureCollection.calculate` takes precedence over
+              this value when set (i.e., not None value for `stride` passed to the
+              `calculate` method).
+            - The stride argument should be None when the window argument is None (as it
+              makes no sense to pass a stride value when the window is None).
 
     .. Note::
         As described above, the `window-stride` argument can be sample-based (when using
@@ -111,15 +123,17 @@ class FeatureDescriptor(FrozenClass):
         self,
         function: Union[FuncWrapper, Callable],
         series_name: Union[str, Tuple[str, ...]],
-        window: Union[float, str, pd.Timedelta],
+        window: Optional[Union[float, str, pd.Timedelta]] = None,
         stride: Optional[
             Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]]
         ] = None,
     ):
+        strides = sorted(set(to_list(stride)))  # omit duplicate stride values
+        if window is None:
+            assert strides == [None], "stride must be None if window is None"
         self.series_name: Tuple[str, ...] = to_tuple(series_name)
         self.window = parse_time_arg(window) if isinstance(window, str) else window
-        strides = sorted(set(to_list(stride)))  # omit duplicate stride values
-        if len(strides) == 1 and strides[0] is None:
+        if strides == [None]:
             self.stride = None
         else:
             self.stride = [
@@ -167,6 +181,17 @@ class FeatureDescriptor(FrozenClass):
 
         """
         return list(set(self.series_name))
+
+    def get_nb_output_features(self) -> int:
+        """Return the number of output features of this feature descriptor.
+
+        Returns
+        -------
+        int
+            Number of output features.
+
+        """
+        return len(self.function.output_names)
 
     def __repr__(self) -> str:
         """Representation string of Feature."""
@@ -226,7 +251,7 @@ class MultipleFeatureDescriptors:
         self,
         functions: Union[FuncWrapper, Callable, List[Union[FuncWrapper, Callable]]],
         series_names: Union[str, Tuple[str, ...], List[str], List[Tuple[str, ...]]],
-        windows: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
+        windows: Optional[Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]]] = None,
         strides: Optional[
             Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]]
         ] = None,

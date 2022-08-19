@@ -63,13 +63,13 @@ class StridedRollingFactory:
             The constructed StridedRolling instance.
 
         """
-        data_dtype = AttributeParser.determine_type(data)
+        data_dtype = AttributeParser.determine_type(data)  
         if strides is None:
             args_dtype = AttributeParser.determine_type(window)
         else:
             args_dtype = AttributeParser.determine_type([window] + strides)
 
-        if data_dtype.value == args_dtype.value:
+        if window is None or data_dtype.value == args_dtype.value:
             return StridedRollingFactory._datatype_to_stroll[data_dtype](
                 data, window, strides, **kwargs
             )

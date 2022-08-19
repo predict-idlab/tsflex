@@ -114,9 +114,8 @@ class FeatureCollection:
 
         """
         return sum(
-            len(fd.function.output_names)
-            for fds in self._feature_desc_dict.values()
-            for fd in fds
+            fd.get_nb_output_features() 
+            for fd in flatten(self._feature_desc_dict.values())
         )
 
     @staticmethod
@@ -241,8 +240,8 @@ class FeatureCollection:
         stroll, function = get_stroll_func(idx)
         return stroll.apply_func(function)
 
-    def _get_stroll(self, kwargs):
-        return StridedRollingFactory.get_segmenter(**kwargs)
+    # def _get_stroll(self, kwargs):
+        # return StridedRollingFactory.get_segmenter(**kwargs)
 
     def _stroll_feat_generator(
         self,
@@ -267,6 +266,7 @@ class FeatureCollection:
         def get_stroll_function(idx):
             key_idx = np.searchsorted(lengths, idx, "right")  # right bc idx starts at 0
             key, win = keys_wins_strides[key_idx]
+            print(key, win)
 
             feature = self._feature_desc_dict[keys_wins_strides[key_idx]][
                 idx - lengths[key_idx]
@@ -287,8 +287,8 @@ class FeatureCollection:
                 approve_sparsity=approve_sparsity,
                 func_data_type=function.input_type,
             )
-            # stroll = StridedRollingFactory.get_segmenter(**stroll_arg_dict)
-            stroll = self._get_stroll(stroll_arg_dict)
+            stroll = StridedRollingFactory.get_segmenter(**stroll_arg_dict)
+            # stroll = self._get_stroll(stroll_arg_dict)
             return stroll, function
 
         return get_stroll_function
@@ -492,7 +492,7 @@ class FeatureCollection:
             assert all(
                 fd.window is not None
                 for fd in flatten(self._feature_desc_dict.values())
-            ), "Each feature descriptor must have a window when not both ,,"
+            ), "Each feature descriptor must have a window when not both segment_start_idxs and segment_end_idxs are provided"
         if segment_start_idxs is not None and segment_end_idxs is not None:
             assert len(segment_start_idxs) == len(
                 segment_end_idxs
@@ -555,8 +555,6 @@ class FeatureCollection:
             ]  # TODO: check memory efficiency of ths
             for n, s, in series_dict.items()
         }
-
-        print(start, end)
 
         # TODO: segment indices trimmen?
 
