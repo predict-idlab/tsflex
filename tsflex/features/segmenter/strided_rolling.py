@@ -607,6 +607,8 @@ class TimeIndexSampleStridedRolling(SequenceStridedRolling):
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         window: int,
         strides: Optional[Union[int, List[int]]] = None,
+        segment_start_idxs: Optional[np.ndarray] = None,
+        segment_end_idxs: Optional[np.ndarray] = None,
         *args,
         **kwargs,
     ):
@@ -620,6 +622,12 @@ class TimeIndexSampleStridedRolling(SequenceStridedRolling):
               using the inner bounds
 
         """
+        if segment_start_idxs is not None or segment_end_idxs is not None:
+            raise NotImplementedError(
+                "TimeIndexSampleStridedRolling is not implemented to support passing"
+                + "segment_start_idxs or segment_end_idxs"
+            )
+
         # We want to reset the index as its type differs from the passed win-stride
         # configs
         self.reset_series_index_b4_segmenting = True

@@ -439,6 +439,71 @@ def test_time_segment_start_and_end_idxs_empty_array():
     assert np.all(res["dummy__len__w=manual"] == [])
 
 
+def test_sequence_segment_start_or_end_idxs_of_wrong_dtype():
+    s = pd.Series(np.arange(20), name="dummy")
+    wrong_segment_idx = pd.date_range("2021-08-09", freq="1h", periods=20)[5:9]
+
+    fc = FeatureCollection(
+        FeatureDescriptor(np.min, "dummy", 3)
+    )
+    _ = fc.calculate(s, stride=5)
+
+    with pytest.raises(Exception):
+        _ = fc.calculate(s, segment_start_idxs=wrong_segment_idx)
+
+    with pytest.raises(Exception):
+        _ = fc.calculate(s, segment_end_idxs=wrong_segment_idx)
+
+    with pytest.raises(Exception):
+        _ = fc.calculate(s, segment_start_idxs=wrong_segment_idx, segment_end_idxs=wrong_segment_idx)
+
+
+def test_time_segment_start_or_end_idxs_of_wrong_dtype():
+    s = pd.Series(np.arange(20), name="dummy")
+    s.index = pd.date_range("2021-08-09", freq="1h", periods=20)
+    wrong_segment_idx = [5, 6, 7, 8]
+
+    fc = FeatureCollection(
+        FeatureDescriptor(np.min, "dummy", "3h")
+    )
+    _ = fc.calculate(s, stride="3h")
+
+    with pytest.raises(Exception):
+        _ = fc.calculate(s, segment_start_idxs=wrong_segment_idx)
+
+    with pytest.raises(Exception):
+        _ = fc.calculate(s, segment_end_idxs=wrong_segment_idx)
+
+    with pytest.raises(Exception):
+        _ = fc.calculate(s, segment_start_idxs=wrong_segment_idx, segment_end_idxs=wrong_segment_idx)
+
+
+def test_time_sample_index_segment_start_or_end_idxs_not_implemented():
+    s = pd.Series(np.arange(20), name="dummy")
+    s.index = pd.date_range("2021-08-09", freq="1h", periods=20)
+    segments_idx = [5, 6, 7, 8]
+
+    fc = FeatureCollection(
+        FeatureDescriptor(np.min, "dummy", 3)
+    )
+    _ = fc.calculate(s, stride=3, window_idx="begin")
+
+    with pytest.raises(Exception):
+        _ = fc.calculate(s, segment_start_idxs=segments_idx)
+    with pytest.raises(Exception):
+        _ = fc.calculate(s, segment_start_idxs=s.index[segments_idx])
+
+    with pytest.raises(Exception):
+        _ = fc.calculate(s, segment_end_idxs=segments_idx)
+    with pytest.raises(Exception):
+        _ = fc.calculate(s, segment_end_idxs=s.index[segments_idx])
+
+    with pytest.raises(Exception):
+        _ = fc.calculate(s, segment_start_idxs=segments_idx, segment_end_idxs=segments_idx)
+    with pytest.raises(Exception):
+        _ = fc.calculate(s, segment_start_idxs=s.index[segments_idx], segment_end_idxs=s.index[segments_idx])
+
+
 def test_uneven_sampled_series_feature_collection(dummy_data):
     fd = FeatureDescriptor(
         function=np.sum,
