@@ -28,7 +28,7 @@ from tqdm.auto import tqdm
 from .feature import FeatureDescriptor, MultipleFeatureDescriptors
 from .logger import logger
 from .segmenter import StridedRollingFactory, StridedRolling
-from .utils import _determine_bounds
+from .utils import _determine_bounds, _check_start_end_array
 from ..features.function_wrapper import FuncWrapper
 from ..utils.attribute_parsing import AttributeParser
 from ..utils.data import to_list, to_series_list, flatten
@@ -325,21 +325,6 @@ class FeatureCollection:
             self._get_nb_output_features_without_window() == self.get_nb_output_features()
         ), "Each output name - series_input combination must have 1 or None window"
 
-    @staticmethod
-    def _check_segment_start_and_end_idxs(
-        segment_start_idxs: np.ndarray, 
-        segment_end_idxs: np.ndarray
-    ):
-        assert segment_start_idxs is not None and segment_end_idxs is not None, (
-            "both segment indices may not be none for these checks"
-        )
-        assert len(segment_start_idxs) == len(segment_end_idxs), (
-            "segment_start_idxs and segment_end_idxs must have equal length"
-        )
-        assert np.all(segment_start_idxs <= segment_end_idxs), (
-            "for all corresponding values: segment_start_idxs <= segment_end_idxs"
-        )
-
     def calculate(
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
@@ -538,9 +523,9 @@ class FeatureCollection:
         if segment_start_idxs is not None and segment_end_idxs is not None:
             # Check if segment indices have same length and whether every start idx
             # <= end idx
-            self._check_segment_start_and_end_idxs(segment_start_idxs, segment_end_idxs)
+            _check_start_end_array(segment_start_idxs, segment_end_idxs)
             # Check if there is only 1 or None window value for every output name - 
-            # input_series compbination
+            # input_series combination
             self._check_no_multiple_windows()
 
         if segment_start_idxs is None or segment_end_idxs is None:
@@ -598,26 +583,27 @@ class FeatureCollection:
         }
 
         # Trim the segment indices (if necessary)
-        if segment_start_idxs is not None:
-            start_ = start; end_ = end
-            if isinstance(start, pd.Timestamp) and start.tz is not None:
-                assert isinstance(end, pd.Timestamp) and end.tz == start.tz
-                start_ = start_.tz_convert(tz="UTC").tz_localize(None)
-                end_ = end_.tz_convert(tz="UTC").tz_localize(None)
-            mask = (segment_start_idxs >= start_) & (segment_start_idxs <= end_)
-            segment_start_idxs = segment_start_idxs[mask]
-        if segment_end_idxs is not None:
-            start_ = start; end_ = end
-            if isinstance(start, pd.Timestamp) and start.tz is not None:
-                assert isinstance(end, pd.Timestamp) and end.tz == start.tz
-                start_ = start_.tz_convert(tz="UTC").tz_localize(None)
-                end_ = end_.tz_convert(tz="UTC").tz_localize(None)
-            mask = (segment_end_idxs >= start_) & (segment_end_idxs <= end_)
-            segment_end_idxs = segment_end_idxs[mask]
-        if segment_start_idxs is not None and segment_end_idxs is not None:
-            # Check if segment indices have same length and whether every start idx
-            # <= end idx
-            self._check_segment_start_and_end_idxs(segment_start_idxs, segment_end_idxs)
+        # TODO: currently commented this as this also happens in StridedRolling
+        # if segment_start_idxs is not None:
+        #     start_ = start; end_ = end
+        #     if isinstance(start, pd.Timestamp) and start.tz is not None:
+        #         assert isinstance(end, pd.Timestamp) and end.tz == start.tz
+        #         start_ = start_.tz_convert(None)
+        #         end_ = end_.tz_convert(None)
+        #     mask = (segment_start_idxs >= start_) & (segment_start_idxs <= end_)
+        #     segment_start_idxs = segment_start_idxs[mask]
+        # if segment_end_idxs is not None:
+        #     start_ = start; end_ = end
+        #     if isinstance(start, pd.Timestamp) and start.tz is not None:
+        #         assert isinstance(end, pd.Timestamp) and end.tz == start.tz
+        #         start_ = start_.tz_convert(None)
+        #         end_ = end_.tz_convert(None)
+        #     mask = (segment_end_idxs >= start_) & (segment_end_idxs <= end_)
+        #     segment_end_idxs = segment_end_idxs[mask]
+        # if segment_start_idxs is not None and segment_end_idxs is not None:
+        #     # Check if segment indices have same length and whether every start idx
+        #     # <= end idx
+        #     _check_start_end_array(segment_start_idxs, segment_end_idxs)
 
         # Note: this variable has a global scope so this is shared in multiprocessing
         # TODO: try to make this more efficient
@@ -736,9 +722,9 @@ class FeatureCollection:
         manual_window = False
         if any(c.endswith("w=manual") for c in feat_cols_to_keep):
             assert all(c.endswith("w=manual") for c in feat_cols_to_keep)
-            assert (
-                self._get_nb_output_features_without_window() == self.get_nb_output_features()
-            )
+            # As the windows are created manual, the FeatureCollection cannot contain
+            # multiple windows for the same output name - input_series combination
+            self._check_no_multiple_windows()
             manual_window = True
         feat_col_fd_mapping: Dict[str, Tuple[str, FeatureDescriptor]] = {}
         for (s_names, window), fd_list in self._feature_desc_dict.items():

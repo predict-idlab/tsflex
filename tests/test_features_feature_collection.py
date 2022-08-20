@@ -404,11 +404,28 @@ def test_sequence_segment_start_and_end_idxs():
     assert np.all(res["dummy__len__w=manual"] == [5]*3 + [2])
 
 
-def test_time_segment_start_and_end_idxs():
+def test_sequence_segment_start_and_end_idxs_empty_array():
+    s = pd.Series(np.arange(20), name="dummy")
+    segment_start_idxs = []
+    segment_end_idxs = []
+
+    fc = FeatureCollection(
+        [
+            FeatureDescriptor(np.min, "dummy", 100),
+            FeatureDescriptor(len, "dummy"),
+        ]
+    )
+    res = fc.calculate(s, segment_start_idxs=segment_start_idxs, segment_end_idxs=segment_end_idxs, return_df=True, window_idx="begin", n_jobs=1)
+    assert all(res.index == segment_start_idxs)
+    assert np.all(res["dummy__amin__w=manual"] == [])
+    assert np.all(res["dummy__len__w=manual"] == [])
+
+
+def test_time_segment_start_and_end_idxs_empty_array():
     s = pd.Series(np.arange(20), name="dummy")
     s.index = pd.date_range("2021-08-09", freq="1h", periods=20)
-    segment_start_idxs = s.index[[0, 5, 3, 3]]
-    segment_end_idxs = s.index[[5, 10, 8, 5]]
+    segment_start_idxs =[]
+    segment_end_idxs = []
 
     fc = FeatureCollection(
         [
@@ -418,13 +435,9 @@ def test_time_segment_start_and_end_idxs():
     )
     res = fc.calculate(s, segment_start_idxs=segment_start_idxs, segment_end_idxs=segment_end_idxs, return_df=True, window_idx="begin", n_jobs=1)
     assert all(res.index == segment_start_idxs)
-    assert np.all(res["dummy__amin__w=manual"] == [0, 5, 3, 3])
-    assert np.all(res["dummy__len__w=manual"] == [5]*3 + [2])
+    assert np.all(res["dummy__amin__w=manual"] == [])
+    assert np.all(res["dummy__len__w=manual"] == [])
 
-
-# TODO: 
-# - test index
-# - test error when passing stride
 
 def test_uneven_sampled_series_feature_collection(dummy_data):
     fd = FeatureDescriptor(

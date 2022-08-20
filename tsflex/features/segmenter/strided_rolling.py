@@ -24,7 +24,7 @@ import pandas as pd
 
 from ..function_wrapper import FuncWrapper
 from ..logger import logger
-from ..utils import _determine_bounds
+from ..utils import _determine_bounds, _check_start_end_array
 from ...utils.data import SUPPORTED_STROLL_TYPES, to_series_list, to_list
 from ...utils.attribute_parsing import DataType, AttributeParser
 from ...utils.time import timedelta_to_str
@@ -144,12 +144,7 @@ class StridedRolling(ABC):
 
         # Check the passed segment indices
         if segment_start_idxs is not None and segment_end_idxs is not None:
-            assert len(segment_start_idxs) == len(segment_end_idxs), (
-                "segment_start_idxs and segment_end_idxs should have equal length"
-            )
-            assert np.all(segment_start_idxs <= segment_end_idxs), (
-                "for all corresponding values: segment_start_idxs <= segment_end_idxs"
-            )
+            _check_start_end_array(segment_start_idxs, segment_end_idxs)
 
         if window is not None:
             assert AttributeParser.check_expected_type(
@@ -209,6 +204,9 @@ class StridedRolling(ABC):
         else:
             np_start_times = self._construct_start_idxs()
             np_end_times = np_start_times + self._get_np_value(self.window)
+
+        # Check the numpy start and end indices
+        _check_start_end_array(np_start_times, np_end_times)
         
         # 3. Create a new-index which will be used for DataFrame reconstruction
         # Note: the index-name of the first passed series will be re-used as index-name
@@ -421,7 +419,7 @@ class StridedRolling(ABC):
                     ), "Vectorized functions require same number of samples as stride!"
                     views.append(
                         _sliding_strided_window_1d(
-                            sc.values, windows[0], strides[0], len(self.index)
+                            sc.values[sc.start_indexes[0]:], windows[0], strides[0], len(self.index)
                         )
                     )
 
@@ -537,8 +535,7 @@ class SequenceStridedRolling(StridedRolling):
 
     # ------------------------------- Overridden methods -------------------------------
     def _parse_segment_idxs(self, segment_idxs: np.ndarray) -> np.ndarray:
-        valid_range = (segment_idxs >= self.start) & (segment_idxs < self.end)
-        return segment_idxs[valid_range]
+        return segment_idxs[(segment_idxs >= self.start) & (segment_idxs <= self.end)]
 
     def _create_feat_col_name(self, feat_name: str) -> str:
         # TODO -> this is not that loosely coupled if we want somewhere else in the code
@@ -580,8 +577,14 @@ class TimeStridedRolling(StridedRolling):
 
     # ------------------------------- Overridden methods -------------------------------
     def _parse_segment_idxs(self, segment_idxs: np.ndarray) -> np.ndarray:
-        idxs_conv = pd.to_datetime(segment_idxs, utc=True).tz_convert(self._tz_index)
-        valid_range = (idxs_conv >= self.start) & (idxs_conv < self.end)
+        if len(segment_idxs) == 0:
+            return segment_idxs.astype(np.datetime64)
+        start_ = self.start; end_ = self.end;
+        if start_.tz is not None:
+            assert end_.tz is not None
+            start_ = start_.tz_convert(None)
+            end_ = end_.tz_convert(None)
+        valid_range = (segment_idxs >= start_) & (segment_idxs <= end_)
         return segment_idxs[valid_range].astype(np.datetime64)
 
     # TODO: how bad is it that we don't have freq information anymore?

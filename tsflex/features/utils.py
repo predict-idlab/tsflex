@@ -53,6 +53,27 @@ def _determine_bounds(bound_method, series_list: List[pd.Series]) -> Tuple[Any, 
         raise ValueError(f"invalid bound method string passed {bound_method}")
 
 
+def _check_start_end_array(start_idxs: np.ndarray, end_idxs: np.ndarray):
+    """Check if the start and end indices are valid.
+
+    These are vaild if they are of the same length and if the start indices are smaller
+    than the end indices.
+
+    Parameters
+    ----------
+    start_idxs: np.ndarray
+        The start indices.
+    end_idxs: np.ndarray
+        The end indices.
+    """
+    assert len(start_idxs) == len(end_idxs), (
+        "start_idxs and end_ixs must have equal length"
+    )
+    assert np.all(start_idxs <= end_idxs), (
+        "for all corresponding values: segment_start_idxs <= segment_end_idxs"
+    )
+
+
 def _get_name(func: Callable) -> str:
     """Get the name of the function.
 
