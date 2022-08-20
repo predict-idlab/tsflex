@@ -3,9 +3,7 @@
 __author__ = "Jeroen Van Der Donckt, Emiel Deprost, Jonas Van Der Donckt"
 
 import os
-import pytest
 import warnings
-import pandas as pd
 import numpy as np
 
 from tsflex.features import FeatureDescriptor, MultipleFeatureDescriptors

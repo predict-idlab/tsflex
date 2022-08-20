@@ -145,10 +145,10 @@ class StridedRolling(ABC):
         # Check the passed segment indices
         if segment_start_idxs is not None and segment_end_idxs is not None:
             assert len(segment_start_idxs) == len(segment_end_idxs), (
-                "The segment_start_idxs and segment_end_idxs should have equal length"
+                "segment_start_idxs and segment_end_idxs should have equal length"
             )
             assert np.all(segment_start_idxs <= segment_end_idxs), (
-                "Values in segment_start_idxs should be <= correspend segment_end_idxs value"
+                "for all corresponding values: segment_start_idxs <= segment_end_idxs"
             )
 
         if window is not None:

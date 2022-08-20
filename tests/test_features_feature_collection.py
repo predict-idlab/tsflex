@@ -941,6 +941,21 @@ def test_featurecollection_reduce_segment_start_and_end_idx(dummy_data):
     fc_reduced.calculate(dummy_data, segment_start_idxs=segment_start_idxs, segment_end_idxs=segment_end_idxs)
 
 
+def test_featurecollection_reduce_segment_start_and_end_idx_multiple_windows(dummy_data):
+    fc = FeatureCollection(
+        MultipleFeatureDescriptors(
+            functions=[np.max, np.min, np.std, np.sum],
+            series_names="EDA",
+            windows=["5s", "30s", "1min"],
+        )
+    )
+    segment_start_idxs = dummy_data.index[::100][:10]    
+    segment_end_idxs = dummy_data.index[::100][10:20]
+
+    with pytest.raises(AssertionError):
+        fc.calculate(data=dummy_data, segment_start_idxs=segment_start_idxs, segment_end_idxs=segment_end_idxs, return_df=True)
+
+
 def test_featurecollection_error_val(dummy_data):
     fd = FeatureDescriptor(
         function=np.max,

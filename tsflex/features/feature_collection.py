@@ -320,6 +320,26 @@ class FeatureCollection:
             len(self._feature_desc_dict[k]) for k in self._feature_desc_dict.keys()
         )
 
+    def _check_no_multiple_windows(self):
+        assert (
+            self._get_nb_output_features_without_window() == self.get_nb_output_features()
+        ), "Each output name - series_input combination must have 1 or None window"
+
+    @staticmethod
+    def _check_segment_start_and_end_idxs(
+        segment_start_idxs: np.ndarray, 
+        segment_end_idxs: np.ndarray
+    ):
+        assert segment_start_idxs is not None and segment_end_idxs is not None, (
+            "both segment indices may not be none for these checks"
+        )
+        assert len(segment_start_idxs) == len(segment_end_idxs), (
+            "segment_start_idxs and segment_end_idxs must have equal length"
+        )
+        assert np.all(segment_start_idxs <= segment_end_idxs), (
+            "for all corresponding values: segment_start_idxs <= segment_end_idxs"
+        )
+
     def calculate(
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
@@ -501,30 +521,37 @@ class FeatureCollection:
         if logging_file_path:
             f_handler = add_logging_handler(logger, logging_file_path)
 
+        # Convert to numpy array (if necessary)
         if segment_start_idxs is not None:
+            if hasattr(segment_start_idxs, "values"):
+                segment_start_idxs = segment_start_idxs.values
             segment_start_idxs = np.asarray(
                 segment_start_idxs
             ).squeeze()  # remove singleton dimensions
         if segment_end_idxs is not None:
+            if hasattr(segment_end_idxs, "values"):
+                segment_end_idxs = segment_end_idxs.values
             segment_end_idxs = np.asarray(
                 segment_end_idxs
             ).squeeze()  # remove singleton dimensions
+
+        if segment_start_idxs is not None and segment_end_idxs is not None:
+            # Check if segment indices have same length and whether every start idx
+            # <= end idx
+            self._check_segment_start_and_end_idxs(segment_start_idxs, segment_end_idxs)
+            # Check if there is only 1 or None window value for every output name - 
+            # input_series compbination
+            self._check_no_multiple_windows()
 
         if segment_start_idxs is None or segment_end_idxs is None:
             assert all(
                 fd.window is not None
                 for fd in flatten(self._feature_desc_dict.values())
-            ), "Each feature descriptor must have a window when not both segment_start_idxs and segment_end_idxs are provided"
-        if segment_start_idxs is not None and segment_end_idxs is not None:
-            assert len(segment_start_idxs) == len(
-                segment_end_idxs
-            ), "segment_start_idxs and segment_end_idxs must have the same length"
-            assert np.all(
-                segment_start_idxs <= segment_end_idxs
-            ), "segment_start_idxs must be <= segment_end_idxs"
-            assert (
-                self._get_nb_output_features_without_window() == self.get_nb_output_features()
-            ), "Each output name - series input combination must have 1 or None window values"
+            ), (
+                "Each feature descriptor must have a window when not both"
+                + "segment_start_idxs and segment_end_idxs are provided"
+            )
+
         if stride is None and segment_start_idxs is None and segment_end_idxs is None:
             assert all(
                 fd.stride is not None
@@ -537,7 +564,7 @@ class FeatureCollection:
             segment_start_idxs is not None or segment_end_idxs is not None
         ):
             raise ValueError(
-                "The stride and segment index argument cannot be set together! "
+                "The stride and any segment index argument cannot be set together! "
                 + "At least one of both should be None."
             )
 
@@ -570,7 +597,27 @@ class FeatureCollection:
             for n, s, in series_dict.items()
         }
 
-        # TODO: segment indices trimmen?
+        # Trim the segment indices (if necessary)
+        if segment_start_idxs is not None:
+            start_ = start; end_ = end
+            if isinstance(start, pd.Timestamp) and start.tz is not None:
+                assert isinstance(end, pd.Timestamp) and end.tz == start.tz
+                start_ = start_.tz_convert(tz="UTC").tz_localize(None)
+                end_ = end_.tz_convert(tz="UTC").tz_localize(None)
+            mask = (segment_start_idxs >= start_) & (segment_start_idxs <= end_)
+            segment_start_idxs = segment_start_idxs[mask]
+        if segment_end_idxs is not None:
+            start_ = start; end_ = end
+            if isinstance(start, pd.Timestamp) and start.tz is not None:
+                assert isinstance(end, pd.Timestamp) and end.tz == start.tz
+                start_ = start_.tz_convert(tz="UTC").tz_localize(None)
+                end_ = end_.tz_convert(tz="UTC").tz_localize(None)
+            mask = (segment_end_idxs >= start_) & (segment_end_idxs <= end_)
+            segment_end_idxs = segment_end_idxs[mask]
+        if segment_start_idxs is not None and segment_end_idxs is not None:
+            # Check if segment indices have same length and whether every start idx
+            # <= end idx
+            self._check_segment_start_and_end_idxs(segment_start_idxs, segment_end_idxs)
 
         # Note: this variable has a global scope so this is shared in multiprocessing
         # TODO: try to make this more efficient
@@ -685,7 +732,7 @@ class FeatureCollection:
 
         """
         # dict in which we store all the { output_col_name : (UUID, FeatureDescriptor) }
-        # items of our current Featurecollection object
+        # items of our current FeatureCollection object
         manual_window = False
         if any(c.endswith("w=manual") for c in feat_cols_to_keep):
             assert all(c.endswith("w=manual") for c in feat_cols_to_keep)
