@@ -16,7 +16,7 @@ import os
 import uuid
 from copy import deepcopy
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union, Any
+from typing import Dict, List, Optional, Tuple, Union, Any, Iterable, Callable
 
 import dill
 import traceback
@@ -31,7 +31,7 @@ from .segmenter import StridedRollingFactory, StridedRolling
 from .utils import _determine_bounds, _check_start_end_array
 from ..features.function_wrapper import FuncWrapper
 from ..utils.attribute_parsing import AttributeParser
-from ..utils.data import to_list, to_series_list, flatten
+from ..utils.data import to_list, to_tuple, to_series_list, flatten
 from ..utils.logging import delete_logging_handlers, add_logging_handler
 from ..utils.time import parse_time_arg, timedelta_to_str
 
@@ -113,16 +113,14 @@ class FeatureCollection:
             The number of output features in this feature collection.
 
         """
-        return sum(
-            fd.get_nb_output_features() 
-            for fd in flatten(self._feature_desc_dict.values())
-        )
+        fd_list: Iterable[FeatureDescriptor] = flatten(self._feature_desc_dict.values())
+        return sum(fd.get_nb_output_features() for fd in fd_list)
 
     def _get_nb_output_features_without_window(self) -> int:
         """Return the number of output features in this feature collection, without
         using the window as a unique identifier.
 
-        This is relevant for when the window value(s) are overriden by passing 
+        This is relevant for when the window value(s) are overridden by passing
         `segment_start_idxs` and `segment_end_idxs` to the `calculate` method.
 
         Returns
@@ -131,7 +129,7 @@ class FeatureCollection:
             The number of output features in this feature collection without using the
             window as a unique identifier.
 
-        """ 
+        """
         return len(
             set(
                 (series, o)
@@ -144,8 +142,9 @@ class FeatureCollection:
     @staticmethod
     def _get_collection_key(
         feature: FeatureDescriptor,
-    ) -> Tuple[Tuple[str, ...], Union[pd.Timedelta, float]]:
-        # Note: `window` property can be either a pd.Timedelta or a float
+    ) -> Tuple[Tuple[str, ...], Union[pd.Timedelta, float, None]]:
+        # Note: `window` property can be either a pd.Timedelta or a float or None
+        # assert feature.window is not None
         return feature.series_name, feature.window
 
     def _check_feature_descriptors(
@@ -162,18 +161,21 @@ class FeatureCollection:
         skip_none: bool
             Whether to include None stride values in the checks.
         calc_stride: Union[float, pd.Timedelta, None], optional
-            The `FeatureCollection.calculate` stride, by default None. This stride
-            takes precedence over a `FeatureDescriptor` its stride when not None.
+            The `FeatureCollection.calculate` its stride argument, by default None.
+            This stride takes precedence over a `FeatureDescriptor` its stride when
+            it is not None.
 
         """
         dtype_set = set()
         for series_names, win in self._feature_desc_dict.keys():
             for fd in self._feature_desc_dict[(series_names, win)]:
-                str = calc_stride if calc_stride is not None else fd.stride
-                if skip_none and str is None:
+                stride = calc_stride if calc_stride is not None else fd.stride
+                if skip_none and stride is None:
                     dtype_set.add(AttributeParser.determine_type(win))
                 else:
-                    dtype_set.add(AttributeParser.determine_type([win] + to_list(str)))
+                    dtype_set.add(
+                        AttributeParser.determine_type([win] + to_list(stride))
+                    )
 
         if len(dtype_set) > 1:
             warnings.warn(
@@ -264,7 +266,7 @@ class FeatureCollection:
         return stroll.apply_func(function)
 
     # def _get_stroll(self, kwargs):
-        # return StridedRollingFactory.get_segmenter(**kwargs)
+    #     return StridedRollingFactory.get_segmenter(**kwargs)
 
     def _stroll_feat_generator(
         self,
@@ -277,7 +279,7 @@ class FeatureCollection:
         window_idx: str,
         include_final_window: bool,
         approve_sparsity: bool,
-    ) -> List[Tuple[StridedRolling, FuncWrapper]]:
+    ) -> Callable[[int], Tuple[StridedRolling, FuncWrapper]]:
         # --- Future work ---
         # We could also make the StridedRolling creation multithreaded
         # Very low priority because the STROLL __init__ is rather efficient!
@@ -286,7 +288,7 @@ class FeatureCollection:
             [len(self._feature_desc_dict[k]) for k in keys_wins_strides]
         )
 
-        def get_stroll_function(idx):
+        def get_stroll_function(idx) -> Tuple[StridedRolling, FuncWrapper]:
             key_idx = np.searchsorted(lengths, idx, "right")  # right bc idx starts at 0
             key, win = keys_wins_strides[key_idx]
 
@@ -310,7 +312,6 @@ class FeatureCollection:
                 func_data_type=function.input_type,
             )
             stroll = StridedRollingFactory.get_segmenter(**stroll_arg_dict)
-            # stroll = self._get_stroll(stroll_arg_dict)
             return stroll, function
 
         return get_stroll_function
@@ -322,14 +323,20 @@ class FeatureCollection:
 
     def _check_no_multiple_windows(self):
         assert (
-            self._get_nb_output_features_without_window() == self.get_nb_output_features()
-        ), "Each output name - series_input combination must have 1 or None window"
+            self._get_nb_output_features_without_window()
+            == self.get_nb_output_features()
+        ), (
+            "When using `segment_XXX_idxs`; each output name - series_input combination"
+            + " can only have 1 window (or None)"
+        )
 
     def calculate(
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         stride: Optional[Union[float, str, pd.Timedelta, List, None]] = None,
-        segment_start_idxs: Optional[Union[list, np.ndarray, pd.Series, pd.Index]] = None,
+        segment_start_idxs: Optional[
+            Union[list, np.ndarray, pd.Series, pd.Index]
+        ] = None,
         segment_end_idxs: Optional[Union[list, np.ndarray, pd.Series, pd.Index]] = None,
         return_df: Optional[bool] = False,
         window_idx: Optional[str] = "end",
@@ -351,26 +358,26 @@ class FeatureCollection:
             * each Series / DataFrame must have a sortable index. This index represents
             the sequence position of the corresponding values, the index can be either
             numeric or a ``pd.DatetimeIndex``.
-            * each Series / DataFrame index must be comparable.with all others
+            * each Series / DataFrame index must be comparable with all others
             * we assume that each series-name / dataframe-column-name is unique.
         stride: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta], None], optional
             The stride size. By default None. This argument supports multiple types: \n
             * If None, the stride of the `FeatureDescriptor` objects will be used.
-            * If the type is an `float` or an `int`, its value represents the series
+            * If the type is an `float` or an `int`, its value represents the series:\n
                 - its stride **range** when a **non time-indexed** series is passed.
                 - the stride in **number of samples**, when a **time-indexed** series
                 is passed (must then be and `int`)
             * If the stride's type is a `pd.Timedelta`, the stride size represents
             the stride-time delta. The passed data **must have a time-index**.
-            * If a `str`, it must represent a stride-time-delta-string. The **passed data
-            must have a time-index**. \n
+            * If a `str`, it must represent a stride-time-delta-string. Hence, the
+            **passed data must have a time-index**. \n
             .. Note::
                 When set, this stride argument takes precedence over the stride property
                 of the `FeatureDescriptor`s in this `FeatureCollection` (i.e., when a
                 not None value for `stride` passed to this method).
         segment_start_idxs: Union[list, np.ndarray, pd.Series, pd.Index], optional
             The start indices of the segments. If None, the start indices will be
-            computed from the data using either
+            computed from the data using either:\n
             - the `segment_end_idxs` - the `window` size property of the
                 `FeatureDescriptor` in this `FeatureCollection` (if `segment_end_idxs`
                 is not None)
@@ -381,7 +388,7 @@ class FeatureCollection:
             By default None.
         segment_end_idxs: Union[list, np.ndarray, pd.Series, pd.Index], optional
             The end indices for the segmented windows. If None, the end indices will be
-            computed from the data using either
+            computed from the data using either:\n
             - the `segment_start_idxs` + the `window` size property of the
                 `FeatureDescriptor` in this `FeatureCollection` (if `segment_start_idxs`
                 is not None)
@@ -408,7 +415,7 @@ class FeatureCollection:
         window_idx : str, optional
             The window's index position which will be used as index for the
             feature_window aggregation. Must be either of: `["begin", "middle", "end"]`.
-            by default "end". All features in this collection will use the same
+            by **default "end"**. All features in this collection will use the same
             window_idx.
 
             ..Note::
@@ -466,7 +473,7 @@ class FeatureCollection:
             If n_jobs is either 0 or 1, the code will be executed sequentially without
             creating a process pool. This is very useful when debugging, as the stack
             trace will be more comprehensible.
-            .. note:
+            .. note::
                 Multiprocessed execution is not supported on Windows. Even when,
                 `n_jobs` is set > 1, the feature extraction will still be executed
                 sequentially.
@@ -476,7 +483,7 @@ class FeatureCollection:
             .. tip::
                 It takes on avg. _300ms_ to schedule everything with
                 multiprocessing. So if your sequential feature extraction code runs
-                faster than ~1.5s, it might not be worth it to parallelize the process
+                faster than ~1s, it might not be worth it to parallelize the process
                 (and thus better leave `n_jobs` to 0 or 1).
 
         Returns
@@ -524,7 +531,7 @@ class FeatureCollection:
             # Check if segment indices have same length and whether every start idx
             # <= end idx
             _check_start_end_array(segment_start_idxs, segment_end_idxs)
-            # Check if there is only 1 or None window value for every output name - 
+            # Check if there is either 1 or No(ne) window value for every output name -
             # input_series combination
             self._check_no_multiple_windows()
 
@@ -554,6 +561,7 @@ class FeatureCollection:
             )
 
         if stride is not None:
+            # Verify whether the stride complies with the input data dtype
             stride = [
                 parse_time_arg(s) if isinstance(s, str) else s for s in to_list(stride)
             ]
@@ -573,7 +581,7 @@ class FeatureCollection:
                 series_dict[str(s.name)] = s
 
         # Determine the bounds of the series dict items and slice on them
-        # TODO: is dit wel nodig hier? want we doen dat ook in de strided rolling
+        # TODO: is dit wel nodig `hier? want we doen dat ook in de strided rolling
         start, end = _determine_bounds(bound_method, list(series_dict.values()))
         series_dict = {
             n: s.loc[
@@ -737,14 +745,8 @@ class FeatureCollection:
                 uuid_str = str(uuid.uuid4())
                 for output_name in fd.function.output_names:
                     # Reconstruct the feature column name
-                    feat_col_name = "__".join(
-                        [
-                            "|".join(s_names)
-                            if isinstance(s_names, tuple)
-                            else s_names,
-                            output_name,
-                            f"w={window}",
-                        ]
+                    feat_col_name = StridedRolling.construct_output_index(
+                        series_keys=s_names, feat_name=output_name, win_str=window
                     )
                     feat_col_fd_mapping[feat_col_name] = (uuid_str, fd)
 
@@ -771,6 +773,7 @@ class FeatureCollection:
 
     @staticmethod
     def _ws_to_str(window_or_stride: Any) -> str:
+        """Convert the window/stride value to a (shortend) string representation."""
         if isinstance(window_or_stride, pd.Timedelta):
             return timedelta_to_str(window_or_stride)
         else:
