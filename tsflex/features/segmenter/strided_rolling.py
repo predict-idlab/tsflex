@@ -25,7 +25,7 @@ import pandas as pd
 from ..function_wrapper import FuncWrapper
 from ..logger import logger
 from ..utils import _determine_bounds, _check_start_end_array
-from ...utils.data import SUPPORTED_STROLL_TYPES, to_series_list, to_list
+from ...utils.data import SUPPORTED_STROLL_TYPES, to_series_list, to_list, to_tuple
 from ...utils.attribute_parsing import DataType, AttributeParser
 from ...utils.time import timedelta_to_str
 
@@ -49,22 +49,23 @@ class StridedRolling(ABC):
         Either a list of int, float, or ``pd.Timedelta``, representing the stride sizes
         in terms of the index (in case of a int or float) or the stride duration (in
         case of ``pd.Timedelta``). By default None.
-    segment_start_idxs: np.ndarray, optional  # TODO is this a numpy array?
+    segment_start_idxs: np.ndarray, optional
         The start indices for the segmented windows. If not provided, the start indices
-        will be computed from the data using the passed ``strides``. By default None.
+        will be computed from the data using the passed ``strides`` or by using the
+        ``segment_end_idxs`` (if not none) + ``window``. By default None.
     segment_end_idxs: np.ndarray, optional
-        The end indices for the segmented windows. You can only pass an array to this
-        argument when you pass an array to `segment_start_idxs` as well (read more in
-        note below). If not provided, the end indices will be computed from the data
-        using the passed ``strides``. By default None.
+        The end indices for the segmented windows. If not provided, the end indices will
+        be computed from either (1) the data using the passed ``window`` + ``strides``
+        or (2) the ``segment_start_idxs`` + ``window``, By default None.
         .. Note::
-            You can only pass an array for `segment_end_idxs` when an array is passed
-            for `segment_start_idxs` that has th following properties;
-                - both should have equal length
-                - all values in ``segment_start_idxs`` should be <= ``segment_end_idxs``
+            When you pass arrays to both ``segment_start_idxs`` and
+            ``segment_end_idxs``, the corresponding index-values of these arrays will be
+            used as segment-ranges. As a result, the following properties must be met:\n
+              - both arrays should have equal length
+              - all values in ``segment_start_idxs`` should be <= ``segment_end_idxs``
     start_idx: Union[float, pd.Timestamp], optional
         The start-index which will be used for each series passed to `data`. This is
-        especially useful if multiple `StridedRolling` instances are created and the
+        especially useful if multiple ``StridedRolling`` instances are created and the
         user want to ensure same (start-)indexes for each of them.
     end_idx: Union[float, pd.Timestamp], optional
         The end-index which will be used as sliding end-limit for each series passed to
@@ -77,7 +78,7 @@ class StridedRolling(ABC):
             required, since pd.Series strided-rolling is significantly less efficient.
             For a np.array it is possible to create very efficient views, but there is
             no such thing as a pd.Series view. Thus, for each stroll, a new series is
-            created.
+            created, inducing a lot of non-feature calculation of overhead.
     window_idx : str, optional
         The window's index position which will be used as index for the
         feature_window aggregation. Must be either of: `["begin", "middle", "end"]`, by
@@ -87,7 +88,7 @@ class StridedRolling(ABC):
         strided-window segmentation, by default False.
 
         .. Note::
-            The remarks below apply when `include_final_window` is set to True.
+            The remarks below apply when ``include_final_window`` is set to True.
             The user should be aware that the last window *might* be incomplete, i.e.;
 
             - when equally sampled, the last window *might* be smaller than the
@@ -116,7 +117,7 @@ class StridedRolling(ABC):
 
     """
 
-    # Class variables which are used by sub-classes
+    # Class variables which are used by subclasses
     win_str_type: DataType
     reset_series_index_b4_segmenting: bool = False
 
@@ -184,7 +185,7 @@ class StridedRolling(ABC):
         self._update_start_end_indices_to_stroll_type(series_list)
 
         # 2. Construct the index ranges
-        # Either use the passed segment indices or compute the start or end times of the 
+        # Either use the passed segment indices or compute the start or end times of the
         # segments. The segment indices have precedence over the stride (and window) for
         # index computation.
         if segment_start_idxs is not None or segment_end_idxs is not None:
@@ -198,7 +199,7 @@ class StridedRolling(ABC):
             elif segment_start_idxs is not None:  # segment_end_idxs is None
                 np_start_times = self._parse_segment_idxs(segment_start_idxs)
                 np_end_times = np_start_times + self._get_np_value(self.window)
-            elif segment_end_idxs is not None:  # segment_start_idxs is None
+            else:  # segment_end_idxs is not None and segment_start_idxs is None
                 np_end_times = self._parse_segment_idxs(segment_end_idxs)
                 np_start_times = np_end_times - self._get_np_value(self.window)
         else:
@@ -207,7 +208,7 @@ class StridedRolling(ABC):
 
         # Check the numpy start and end indices
         _check_start_end_array(np_start_times, np_end_times)
-        
+
         # 3. Create a new-index which will be used for DataFrame reconstruction
         # Note: the index-name of the first passed series will be re-used as index-name
         self.index = self._get_output_index(
@@ -230,8 +231,8 @@ class StridedRolling(ABC):
                         RuntimeWarning,
                     )
 
-    def _calc_nb_feats_for_stride(self, stride) -> int:
-        """Calculate the number of features for a given stride."""
+    def _calc_nb_segments_for_stride(self, stride) -> int:
+        """Calculate the number of output items (segments) for a given single stride."""
         nb_feats = max((self.end - self.start - self.window) // stride + 1, 0)
         # Add 1 if there is still some data after (including) the last window its
         # start index - this is only added when `include_last_window` is True.
@@ -241,22 +242,22 @@ class StridedRolling(ABC):
         return nb_feats
 
     def _get_np_start_idx_for_stride(self, stride: T) -> np.ndarray:
-        """Compute the start index for the given stride."""
+        """Compute the start index for the given single stride."""
         # ---------- Efficient numpy code -------
         np_start = self._get_np_value(self.start)
         np_stride = self._get_np_value(stride)
         # Compute the start times (these remain the same for each series)
         return np.arange(
             start=np_start,
-            stop=np_start + self._calc_nb_feats_for_stride(stride) * np_stride,
+            stop=np_start + self._calc_nb_segments_for_stride(stride) * np_stride,
             step=np_stride,
         )
 
     def _construct_start_idxs(self) -> np.ndarray:
         """Construct the start indices of the segments (for all stride values).
-        
+
         To realize this, we compute the start idxs for each stride and then merge them
-        together (without duplicates) in a sorted array. 
+        together (without duplicates) in a sorted array.
         """
         start_idxs = []
         for stride in self.strides:
@@ -264,7 +265,9 @@ class StridedRolling(ABC):
         # note - np.unique also sorts the array
         return np.unique(np.concatenate(start_idxs))
 
-    def _get_output_index(self, start_idxs: np.ndarray, end_idxs: Union[np.ndarray, None], name: str) -> pd.Index:
+    def _get_output_index(
+        self, start_idxs: np.ndarray, end_idxs: Union[np.ndarray, None], name: str
+    ) -> pd.Index:
         """Construct the output index."""
         if self.window_idx == "end":
             return pd.Index(end_idxs, name=name)
@@ -291,6 +294,7 @@ class StridedRolling(ABC):
                 np_idx_times = series.index.values
             else:
                 np_idx_times = np.arange(len(series))
+                # note: using pd.RangeIndex instead of arange gives the same performance
 
             series_name = series.name
             if self.data_type is np.array:
@@ -360,7 +364,7 @@ class StridedRolling(ABC):
         # expression only once, whereas a list comprehension evaluates its expression
         # every time).
         # See more why: https://stackoverflow.com/a/59838723
-        out: np.array = None
+        out: np.array
         if func.vectorized:
             # Vectorized function execution
 
@@ -419,7 +423,10 @@ class StridedRolling(ABC):
                     ), "Vectorized functions require same number of samples as stride!"
                     views.append(
                         _sliding_strided_window_1d(
-                            sc.values[sc.start_indexes[0]:], windows[0], strides[0], len(self.index)
+                            sc.values[sc.start_indexes[0] :],
+                            windows[0],
+                            strides[0],
+                            len(self.index),
                         )
                     )
 
@@ -478,7 +485,9 @@ class StridedRolling(ABC):
                 ]
 
         elapsed = time.time() - t_start
-        log_strides = "manual" if self.strides is None else tuple(map(str, self.strides))
+        log_strides = (
+            "manual" if self.strides is None else tuple(map(str, self.strides))
+        )
         log_window = "manual" if self.window is None else self.window
         logger.info(
             f"Finished function [{func.func.__name__}] on "
@@ -492,14 +501,6 @@ class StridedRolling(ABC):
         pass
 
     # --------------------------------- STATIC METHODS ---------------------------------
-    # @staticmethod
-    # def calc_nb_features(start, end, window, stride, include_final_window=False) -> int:
-    #     nb_feats = max((end - start - window) // stride + 1, 0)
-    #     # Add 1 if there is still some data after (including) the last window its
-    #     # start index - this is only added when `include_last_window` is True.
-    #     nb_feats += include_final_window * (start + stride * nb_feats <= end)
-    #     return nb_feats
-
     @staticmethod
     def _get_np_value(val):
         # Convert everything to int64
@@ -510,9 +511,17 @@ class StridedRolling(ABC):
         else:
             return val
 
+    @staticmethod
+    def construct_output_index(
+        series_keys: Union[str, Tuple[str, ...]], feat_name: str, win_str: str
+    ) -> str:
+        series_keys = to_tuple(series_keys)
+        return f"{'|'.join(series_keys)}__{feat_name}__w={win_str}"
+
     # ----------------------------- OVERRIDE THESE METHODS -----------------------------
     @abstractmethod
     def _parse_segment_idxs(self, segment_idxs: np.ndarray) -> np.ndarray:
+        """Trim the segment indixes array to lie between self.start and self.end"""
         raise NotImplementedError
 
     @abstractmethod
@@ -540,12 +549,13 @@ class SequenceStridedRolling(StridedRolling):
     def _create_feat_col_name(self, feat_name: str) -> str:
         # TODO -> this is not that loosely coupled if we want somewhere else in the code
         #        to also reproduce col-name construction
-        win_str = "w="
         if self.window is not None:
-            win_str += str(self.window)
+            win_str = str(self.window)
         else:
-            win_str += "manual"
-        return f"{'|'.join(self.series_key)}__{feat_name}__{win_str}"
+            win_str = "manual"
+        return self.construct_output_index(
+            series_keys=self.series_key, feat_name=feat_name, win_str=win_str
+        )
 
 
 class TimeStridedRolling(StridedRolling):
@@ -561,14 +571,18 @@ class TimeStridedRolling(StridedRolling):
         data = to_series_list(data)
         tz_index = data[0].index.tz
         for data_entry in to_series_list(data)[1:]:
-            assert data_entry.index.tz == tz_index
+            assert (
+                data_entry.index.tz == tz_index
+            ), "strided rolling input data must all have same timezone"
         self._tz_index = tz_index
         # Set the data type & call the super constructor
         self.win_str_type = DataType.TIME
         super().__init__(data, window, strides, *args, **kwargs)
 
-    # -------------------------------- Extended methdos --------------------------------
-    def _get_output_index(self, start_idxs: np.ndarray, end_idxs: np.ndarray, name: str) -> pd.Index:
+    # -------------------------------- Extended methods --------------------------------
+    def _get_output_index(
+        self, start_idxs: np.ndarray, end_idxs: np.ndarray, name: str
+    ) -> pd.Index:
         assert start_idxs.dtype.type == np.datetime64
         assert end_idxs.dtype.type == np.datetime64
         start_idxs = pd.to_datetime(start_idxs, utc=True).tz_convert(self._tz_index)
@@ -579,7 +593,7 @@ class TimeStridedRolling(StridedRolling):
     def _parse_segment_idxs(self, segment_idxs: np.ndarray) -> np.ndarray:
         if len(segment_idxs) == 0:
             return segment_idxs.astype(np.datetime64)
-        start_ = self.start; end_ = self.end;
+        start_, end_ = self.start, self.end
         if start_.tz is not None:
             assert end_.tz is not None
             start_ = start_.tz_convert(None)
@@ -592,12 +606,13 @@ class TimeStridedRolling(StridedRolling):
 
     def _create_feat_col_name(self, feat_name: str) -> str:
         # Convert win to time-string if available :)
-        win_str = "w="
         if self.window is not None:
-            win_str += timedelta_to_str(self.window)
+            win_str = timedelta_to_str(self.window)
         else:
-            win_str += "manual"
-        return f"{'|'.join(self.series_key)}__{feat_name}__{win_str}"
+            win_str = "manual"
+        return self.construct_output_index(
+            series_keys=self.series_key, feat_name=feat_name, win_str=win_str
+        )
 
 
 class TimeIndexSampleStridedRolling(SequenceStridedRolling):
@@ -620,6 +635,11 @@ class TimeIndexSampleStridedRolling(SequenceStridedRolling):
             - must _roughly_ **share** the same **sample frequency**.
             - will be first time-aligned before transitioning to sample-segmentation by
               using the inner bounds
+        
+        .. Note::
+            `TimeIndexSampleStridedRolling` **does not support** the 
+            ``segment_start_idxs`` and ``segment_end_idxs`` arguments. Setting these 
+            will raise a NotImplementedError.
 
         """
         if segment_start_idxs is not None or segment_end_idxs is not None:
