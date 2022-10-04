@@ -30,8 +30,8 @@ class FeatureDescriptor(FrozenClass):
             function(*series: Union[np.array, pd.Series])
                 -> Union[Any, List[Any]]
 
-        Note that when the input type is ``pd.Series``, the function should be wrapped in
-        a `FuncWrapper` with `input_type` = ``pd.Series``.
+        Note that when the input type is ``pd.Series``, the function should be wrapped
+          in a `FuncWrapper` with `input_type` = ``pd.Series``.
 
     series_name : Union[str, Tuple[str, ...]]
         The names of the series on which the feature function should be applied.
@@ -43,7 +43,7 @@ class FeatureDescriptor(FrozenClass):
 
     window : Union[float, str, pd.Timedelta], optional
         The window size. By default None. This argument supports multiple types: \n
-        * If None, the `segment_start_idxs` and `segment_end_idxs` will need to be 
+        * If None, the `segment_start_idxs` and `segment_end_idxs` will need to be
           passed.
         * If the type is an `float` or an `int`, its value represents the series
             - its window **range** when a **non time-indexed** series is passed.
@@ -59,7 +59,7 @@ class FeatureDescriptor(FrozenClass):
               Note that this is the only case when it is allowed to pass None for the
               window argument.
             - When the window argument is None, than the stride argument should be None
-              as well (as it makes no sense to pass a stride value when the window is 
+              as well (as it makes no sense to pass a stride value when the window is
               None).
 
     stride : Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]], optional
@@ -73,8 +73,8 @@ class FeatureDescriptor(FrozenClass):
           the stride-time delta. The passed data **must have a time-index**.
         * If a `str`, it must represent a stride-time-delta-string. The **passed data
           must have a time-index**. \n
-        * If a `List[Union[float, str, pd.Timedelta]]`, then the set intersection of the
-          strides will be used (e.g., stride=[2,3] -> index: 0, 2, 3, 6, 8, 9, ...)
+        * If a `List[Union[float, str, pd.Timedelta]]`, then the set intersection,of the
+          strides will be used (e.g., stride=[2,3] -> index: 0, 2, 3, 4, 6, 8, 9, ...)
         .. Note::
             - The stride argument of `FeatureCollection.calculate` takes precedence over
               this value when set (i.e., not None value for `stride` passed to the
@@ -251,7 +251,9 @@ class MultipleFeatureDescriptors:
         self,
         functions: Union[FuncWrapper, Callable, List[Union[FuncWrapper, Callable]]],
         series_names: Union[str, Tuple[str, ...], List[str], List[Tuple[str, ...]]],
-        windows: Optional[Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]]] = None,
+        windows: Optional[
+            Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]]
+        ] = None,
         strides: Optional[
             Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]]
         ] = None,

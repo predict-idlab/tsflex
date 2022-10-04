@@ -80,9 +80,9 @@ def _parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
         # All should be manual
         assert (df["stride"] == "manual").all()
     elif (
-        df["stride"].apply(
-            lambda stride_tuple: np.char.isnumeric(stride_tuple).all()
-        ).all()
+        df["stride"]
+        .apply(lambda stride_tuple: np.char.isnumeric(stride_tuple).all())
+        .all()
     ):
         df["stride"] = df["stride"].apply(
             lambda stride_tuple: tuple(sorted(pd.to_numeric(s) for s in stride_tuple))

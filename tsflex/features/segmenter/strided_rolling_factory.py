@@ -47,14 +47,14 @@ class StridedRollingFactory:
         .. Note::
             When passing `time-based` data, but **int**-based window & stride params,
             the strided rolling will be `TimeIndexSampleStridedRolling`. This class
-            **assumes** that **all data series** _roughly_ have the 
-            **same sample frequency**, as  the windows and strides are interpreted in 
+            **assumes** that **all data series** _roughly_ have the
+            **same sample frequency**, as  the windows and strides are interpreted in
             terms of **number of samples**.
 
         Raises
         ------
         ValueError
-            When incompatible data & window-stride data types are passed (e.g. time 
+            When incompatible data & window-stride data types are passed (e.g. time
             window-stride args on sequence data-index).
 
         Returns
@@ -63,7 +63,7 @@ class StridedRollingFactory:
             The constructed StridedRolling instance.
 
         """
-        data_dtype = AttributeParser.determine_type(data)  
+        data_dtype = AttributeParser.determine_type(data)
         if strides is None:
             args_dtype = AttributeParser.determine_type(window)
         else:

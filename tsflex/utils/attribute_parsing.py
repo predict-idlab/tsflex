@@ -1,6 +1,6 @@
-"""AttributeParser class for for determining the datatype of the given data."""
+"""AttributeParser class for determining the datatype of the given data."""
 
-__author__ = 'Jonas Van Der Donckt'
+__author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt"
 
 import re
 from enum import IntEnum
@@ -12,7 +12,7 @@ from tsflex.utils.time import parse_time_arg
 
 
 class DataType(IntEnum):
-    """Emum class for supported data types."""
+    """Enum class for supported data types."""
 
     UNDEFINED = 0
     SEQUENCE = 1
@@ -35,7 +35,6 @@ class AttributeParser:
             dtype_str = str(data.index.dtype)
             if AttributeParser._datetime_regex.match(dtype_str) is not None:
                 return DataType.TIME
-
             elif any(r.match(dtype_str) for r in AttributeParser._numeric_regexes):
                 return DataType.SEQUENCE
 
@@ -59,5 +58,5 @@ class AttributeParser:
 
     @staticmethod
     def check_expected_type(data: Any, expected: DataType) -> bool:
-        """Check wether the given data has the expected datatype."""
+        """Check whether the given data has the expected datatype."""
         return AttributeParser.determine_type(data) == expected
