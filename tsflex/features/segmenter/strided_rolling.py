@@ -544,11 +544,9 @@ class SequenceStridedRolling(StridedRolling):
 
     # ------------------------------- Overridden methods -------------------------------
     def _parse_segment_idxs(self, segment_idxs: np.ndarray) -> np.ndarray:
-        return segment_idxs[(segment_idxs >= self.start) & (segment_idxs <= self.end)]
+        return segment_idxs
 
     def _create_feat_col_name(self, feat_name: str) -> str:
-        # TODO -> this is not that loosely coupled if we want somewhere else in the code
-        #        to also reproduce col-name construction
         if self.window is not None:
             win_str = str(self.window)
         else:
@@ -591,15 +589,7 @@ class TimeStridedRolling(StridedRolling):
 
     # ------------------------------- Overridden methods -------------------------------
     def _parse_segment_idxs(self, segment_idxs: np.ndarray) -> np.ndarray:
-        if len(segment_idxs) == 0:
-            return segment_idxs.astype(np.datetime64)
-        start_, end_ = self.start, self.end
-        if start_.tz is not None:
-            assert end_.tz is not None
-            start_ = start_.tz_convert(None)
-            end_ = end_.tz_convert(None)
-        valid_range = (segment_idxs >= start_) & (segment_idxs <= end_)
-        return segment_idxs[valid_range].astype(np.datetime64)
+        return segment_idxs.astype(np.datetime64)
 
     # TODO: how bad is it that we don't have freq information anymore?
     # def _construct_output_index(self, series: pd.Series) -> pd.DatetimeIndex:
