@@ -208,7 +208,7 @@ def tsfresh_combiner_wrapper(func: Callable, param: List[Dict]) -> FuncWrapper:
     )
 
 
-def tsfresh_settings_wrapper(settings: Dict) -> List[Callable]:
+def tsfresh_settings_wrapper(settings: Dict) -> List[Union[Callable, FuncWrapper]]:
     """Wrapper enabling compatibility with tsfresh feature extraction settings.
 
     [tsfresh feature extraction settings](https://tsfresh.readthedocs.io/en/latest/text/feature_extraction_settings.html)
@@ -249,7 +249,7 @@ def tsfresh_settings_wrapper(settings: Dict) -> List[Callable]:
 
     Returns
     -------
-    List[Callable]
+    List[Union[Callable, FuncWrapper]]
         List of the (wrapped) tsfresh functions that are now directly compatible with
         with tsflex.
  

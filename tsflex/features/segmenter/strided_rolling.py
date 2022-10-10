@@ -120,6 +120,9 @@ class StridedRolling(ABC):
     # Class variables which are used by subclasses
     win_str_type: DataType
     reset_series_index_b4_segmenting: bool = False
+    OUTSIDE_DATA_BOUNDS_WARNING: str = (
+        "Some segment indexes are outside the range of the data its index."
+    )
 
     # Create the named tuple
     _NumpySeriesContainer = namedtuple(
@@ -497,9 +500,6 @@ class StridedRolling(ABC):
 
         return pd.DataFrame(index=self.index, data=feat_out)
 
-    def _update_start_end_indices_to_stroll_type(self, series_list: List[pd.Series]):
-        pass
-
     # --------------------------------- STATIC METHODS ---------------------------------
     @staticmethod
     def _get_np_value(val):
@@ -520,8 +520,15 @@ class StridedRolling(ABC):
 
     # ----------------------------- OVERRIDE THESE METHODS -----------------------------
     @abstractmethod
+    def _update_start_end_indices_to_stroll_type(self, series_list: List[pd.Series]):
+        # NOTE: This method will only be implemented (with code != pass) in the 
+        # TimeIndexSampleStridedRolling
+        raise NotImplementedError
+
+    @abstractmethod
     def _parse_segment_idxs(self, segment_idxs: np.ndarray) -> np.ndarray:
-        """Trim the segment indixes array to lie between self.start and self.end"""
+        """Check the segment indexes array to lie between self.start and self.end and
+        convert it to the correct dtype (if necessary)."""
         raise NotImplementedError
 
     @abstractmethod
@@ -543,7 +550,12 @@ class SequenceStridedRolling(StridedRolling):
         super().__init__(data, window, strides, *args, **kwargs)
 
     # ------------------------------- Overridden methods -------------------------------
+    def _update_start_end_indices_to_stroll_type(self, series_list: List[pd.Series]):
+        pass
+
     def _parse_segment_idxs(self, segment_idxs: np.ndarray) -> np.ndarray:
+        if any((segment_idxs < self.start) | (segment_idxs > self.end)):
+            warnings.warn(self.OUTSIDE_DATA_BOUNDS_WARNING, RuntimeWarning)
         return segment_idxs
 
     def _create_feat_col_name(self, feat_name: str) -> str:
@@ -588,11 +600,20 @@ class TimeStridedRolling(StridedRolling):
         return super()._get_output_index(start_idxs, end_idxs, name)
 
     # ------------------------------- Overridden methods -------------------------------
-    def _parse_segment_idxs(self, segment_idxs: np.ndarray) -> np.ndarray:
-        return segment_idxs.astype(np.datetime64)
+    def _update_start_end_indices_to_stroll_type(self, series_list: List[pd.Series]):
+        pass
 
-    # TODO: how bad is it that we don't have freq information anymore?
-    # def _construct_output_index(self, series: pd.Series) -> pd.DatetimeIndex:
+    def _parse_segment_idxs(self, segment_idxs: np.ndarray) -> np.ndarray:
+        segment_idxs = segment_idxs.astype("datetime64")
+        start_, end_ = self.start, self.end
+        if start_.tz is not None:
+            # Convert to UTC (allowing comparison with the segment_idxs)
+            assert end_.tz is not None
+            start_ = start_.tz_convert(None)
+            end_ = end_.tz_convert(None)
+        if any((segment_idxs < start_) | (segment_idxs > end_)):
+            warnings.warn(self.OUTSIDE_DATA_BOUNDS_WARNING, RuntimeWarning)
+        return segment_idxs
 
     def _create_feat_col_name(self, feat_name: str) -> str:
         # Convert win to time-string if available :)

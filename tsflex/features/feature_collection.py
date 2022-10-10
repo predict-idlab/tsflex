@@ -330,6 +330,17 @@ class FeatureCollection:
             + " can only have 1 window (or None)"
         )
 
+    @staticmethod
+    def _process_segment_idxs(
+        segment_idxs: Union[list, np.ndarray, pd.Series, pd.Index]
+    ) -> np.ndarray:
+        if hasattr(segment_idxs, "values"):
+            segment_idxs = segment_idxs.values
+        segment_idxs = np.asarray(segment_idxs)
+        if segment_idxs.ndim > 1:
+            segment_idxs = segment_idxs.squeeze()  # remove singleton dimensions
+        return segment_idxs
+
     def calculate(
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
@@ -515,17 +526,9 @@ class FeatureCollection:
 
         # Convert to numpy array (if necessary)
         if segment_start_idxs is not None:
-            if hasattr(segment_start_idxs, "values"):
-                segment_start_idxs = segment_start_idxs.values
-            segment_start_idxs = np.asarray(
-                segment_start_idxs
-            ).squeeze()  # remove singleton dimensions
+            segment_start_idxs = FeatureCollection._process_segment_idxs(segment_start_idxs)
         if segment_end_idxs is not None:
-            if hasattr(segment_end_idxs, "values"):
-                segment_end_idxs = segment_end_idxs.values
-            segment_end_idxs = np.asarray(
-                segment_end_idxs
-            ).squeeze()  # remove singleton dimensions
+            segment_end_idxs = FeatureCollection._process_segment_idxs(segment_end_idxs)
 
         if segment_start_idxs is not None and segment_end_idxs is not None:
             # Check if segment indices have same length and whether every start idx
@@ -540,7 +543,7 @@ class FeatureCollection:
                 fd.window is not None
                 for fd in flatten(self._feature_desc_dict.values())
             ), (
-                "Each feature descriptor must have a window when not both"
+                "Each feature descriptor must have a window when not both "
                 + "segment_start_idxs and segment_end_idxs are provided"
             )
 
@@ -571,7 +574,11 @@ class FeatureCollection:
         series_dict: Dict[str, pd.Series] = {}
         for s in to_series_list(data):
             if not s.index.is_monotonic_increasing:
-                # TODO -> maybe raise a warning?
+                warnings.warn(
+                    f"The index of series '{s.name}' is not monotonic increasing. "
+                    + "The series will be sorted by the index.",
+                    RuntimeWarning,
+                )
                 s = s.sort_index(ascending=True, inplace=False, ignore_index=False)
 
             # Assert the assumptions we make!
@@ -590,31 +597,8 @@ class FeatureCollection:
             for n, s, in series_dict.items()
         }
 
-        # Trim the segment indices (if necessary)
-        # TODO: currently commented this as this also happens in StridedRolling
-        # if segment_start_idxs is not None:
-        #     start_ = start; end_ = end
-        #     if isinstance(start, pd.Timestamp) and start.tz is not None:
-        #         assert isinstance(end, pd.Timestamp) and end.tz == start.tz
-        #         start_ = start_.tz_convert(None)
-        #         end_ = end_.tz_convert(None)
-        #     mask = (segment_start_idxs >= start_) & (segment_start_idxs <= end_)
-        #     segment_start_idxs = segment_start_idxs[mask]
-        # if segment_end_idxs is not None:
-        #     start_ = start; end_ = end
-        #     if isinstance(start, pd.Timestamp) and start.tz is not None:
-        #         assert isinstance(end, pd.Timestamp) and end.tz == start.tz
-        #         start_ = start_.tz_convert(None)
-        #         end_ = end_.tz_convert(None)
-        #     mask = (segment_end_idxs >= start_) & (segment_end_idxs <= end_)
-        #     segment_end_idxs = segment_end_idxs[mask]
-        # if segment_start_idxs is not None and segment_end_idxs is not None:
-        #     # Check if segment indices have same length and whether every start idx
-        #     # <= end idx
-        #     _check_start_end_array(segment_start_idxs, segment_end_idxs)
-
         # Note: this variable has a global scope so this is shared in multiprocessing
-        # TODO: try to make this more efficient
+        # TODO: try to make this more efficient (but is not really the bottleneck)
         global get_stroll_func
         get_stroll_func = self._stroll_feat_generator(
             series_dict,

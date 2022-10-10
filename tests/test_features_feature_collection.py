@@ -1516,7 +1516,7 @@ def test_mixed_featuredescriptors_time_data(dummy_data):
              for warn in w])
 
     out = fc.calculate([df_eda, df_tmp], return_df=True)
-    assert all(out.notna().sum(axis=0))  # TODO what do we want to assert here?
+    assert all(out.notna().all())
 
 
 ### Test vectorized features
@@ -1948,13 +1948,23 @@ def test_not_sorted_fc(dummy_data):
     df_tmp = dummy_data["TMP"].reset_index(drop=True)
     df_eda = dummy_data["EDA"].reset_index(drop=True).sample(frac=1)
     assert not df_eda.index.is_monotonic_increasing
-    out = fc.calculate([df_tmp, df_eda], window_idx="end", return_df=True)
-    assert not df_eda.index.is_monotonic_increasing
+    with warnings.catch_warnings(record=True) as w:
+        out = fc.calculate([df_tmp, df_eda], return_df=True)
+        assert len(w) == 1
+        assert "not monotonic increasing" in str(w[0])
+        assert issubclass(w[0].category, RuntimeWarning)
+        assert not df_eda.index.is_monotonic_increasing
+        assert out.index.is_monotonic_increasing
 
     df_eda.index = df_eda.index.astype(float)
     assert not df_eda.index.is_monotonic_increasing
-    out = fc.calculate([df_tmp, df_eda], window_idx="end", return_df=True)
-    assert not df_eda.index.is_monotonic_increasing
+    with warnings.catch_warnings(record=True) as w:
+        out = fc.calculate([df_tmp, df_eda], window_idx="end", return_df=True)
+        assert len(w) == 1
+        assert "not monotonic increasing" in str(w[0])
+        assert issubclass(w[0].category, RuntimeWarning)
+        assert not df_eda.index.is_monotonic_increasing
+        assert out.index.is_monotonic_increasing
 
 
 def test_serialization(dummy_data):
@@ -2121,13 +2131,13 @@ def test_feature_collection_various_timezones_segment_start_idxs():
         assert np.all(res.values.ravel() == [0, 1, 2])
 
     fc = FeatureCollection(
-        FeatureDescriptor(np.min, "s_usa", "3h", "3h")
+        FeatureDescriptor(len, "s_usa", "3h", "3h")  # len bc it works on empty arrays
     )
     res = fc.calculate(s_usa, segment_start_idxs=s_eu.index[:3].values, n_jobs=0, return_df=True)
     assert np.all(res.values == [])
 
     fc = FeatureCollection(
-        FeatureDescriptor(np.min, "s_usa", "3h", "3h")
+        FeatureDescriptor(len, "s_usa", "3h", "3h")  # len bc it works on empty arrays
     )
     res = fc.calculate(s_usa, segment_start_idxs=s_none.index[:3].values, n_jobs=0, return_df=True)
     assert np.all(res.values == [])

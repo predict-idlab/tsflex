@@ -100,7 +100,25 @@ def test_simple_feature_descriptor_multiple_strides():
     assert fd.get_nb_output_features() == 1
     assert isinstance(fd.function, FuncWrapper)
 
-# TODO -> add new test in which floats represent the float position
+
+def test_simple_feature_descriptor_floats():
+    def sum_func(sig: np.ndarray) -> float:
+        return sum(sig)
+
+    fd = FeatureDescriptor(
+        function=sum_func,
+        series_name="EDA",
+        window=5.0,
+        stride=2.5,
+    )
+
+    assert fd.series_name == tuple(["EDA"])
+    assert fd.window == 5.0
+    assert fd.stride == [2.5]
+    assert fd.get_required_series() == ["EDA"]
+    assert fd.get_nb_output_features() == 1
+    assert isinstance(fd.function, FuncWrapper)
+
 
 def test_simple_feature_descriptor_str_str_seconds():
     def sum_func(sig: np.ndarray) -> float:

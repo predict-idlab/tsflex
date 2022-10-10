@@ -418,28 +418,28 @@ def test_sequence_stroll_indexing_segment_start_idxs_outside_valid_range():
     ## No Force
     sr = SequenceStridedRolling(s, window=3, segment_start_idxs=segment_start_idxs, window_idx="begin")
     assert sr.strides is None
-    assert np.all(sr.index == segment_start_idxs[:4])
+    assert np.all(sr.index == segment_start_idxs)
 
     sr = SequenceStridedRolling(s, window=3, strides=[3, 5], segment_start_idxs=segment_start_idxs, window_idx="begin")
     assert sr.strides is None
-    assert np.all(sr.index == segment_start_idxs[:4])
+    assert np.all(sr.index == segment_start_idxs)
 
     sr = SequenceStridedRolling(s, window=3, strides=[3, 5], segment_start_idxs=segment_start_idxs, window_idx="end")
     assert sr.strides is None
-    assert np.all(sr.index == segment_start_idxs[:4] + 3)
+    assert np.all(sr.index == segment_start_idxs + 3)
 
     ## Force
     sr = SequenceStridedRolling(s, window=3, segment_start_idxs=segment_start_idxs, window_idx="begin", include_final_window=True)
     assert sr.strides is None
-    assert np.all(sr.index == segment_start_idxs[:4])
+    assert np.all(sr.index == segment_start_idxs)
 
     sr = SequenceStridedRolling(s, window=3, strides=[3, 5], segment_start_idxs=segment_start_idxs, window_idx="begin", include_final_window=True)
     assert sr.strides is None
-    assert np.all(sr.index == segment_start_idxs[:4])
+    assert np.all(sr.index == segment_start_idxs)
 
     sr = SequenceStridedRolling(s, window=3, strides=[3, 5], segment_start_idxs=segment_start_idxs, window_idx="end", include_final_window=True)
     assert sr.strides is None
-    assert np.all(sr.index == segment_start_idxs[:4] + 3)
+    assert np.all(sr.index == segment_start_idxs + 3)
 
 
 def test_sequence_stroll_indexing_segment_end_idxs_outside_valid_range():
@@ -449,28 +449,28 @@ def test_sequence_stroll_indexing_segment_end_idxs_outside_valid_range():
     ## No Force
     sr = SequenceStridedRolling(s, window=3, segment_end_idxs=segment_end_idxs, window_idx="end")
     assert sr.strides is None
-    assert np.all(sr.index == segment_end_idxs[:4])
+    assert np.all(sr.index == segment_end_idxs)
 
     sr = SequenceStridedRolling(s, window=3, strides=[3, 5], segment_end_idxs=segment_end_idxs, window_idx="end")
     assert sr.strides is None
-    assert np.all(sr.index == segment_end_idxs[:4])
+    assert np.all(sr.index == segment_end_idxs)
 
     sr = SequenceStridedRolling(s, window=3, strides=[3, 5], segment_end_idxs=segment_end_idxs, window_idx="begin")
     assert sr.strides is None
-    assert np.all(sr.index == segment_end_idxs[:4] - 3)
+    assert np.all(sr.index == segment_end_idxs - 3)
 
     ## Force
     sr = SequenceStridedRolling(s, window=3, segment_end_idxs=segment_end_idxs, window_idx="end", include_final_window=True)
     assert sr.strides is None
-    assert np.all(sr.index == segment_end_idxs[:4])
+    assert np.all(sr.index == segment_end_idxs)
 
     sr = SequenceStridedRolling(s, window=3, strides=[3, 5], segment_end_idxs=segment_end_idxs, window_idx="end", include_final_window=True)
     assert sr.strides is None
-    assert np.all(sr.index == segment_end_idxs[:4])
+    assert np.all(sr.index == segment_end_idxs)
 
     sr = SequenceStridedRolling(s, window=3, strides=[3, 5], segment_end_idxs=segment_end_idxs, window_idx="begin", include_final_window=True)
     assert sr.strides is None
-    assert np.all(sr.index == segment_end_idxs[:4] - 3)
+    assert np.all(sr.index == segment_end_idxs - 3)
 
 
 def test_time_stroll_indexing_segment_start_idxs():
@@ -555,34 +555,31 @@ def test_time_stroll_indexing_segment_start_idxs_outside_valid_range():
     segment_start_idxs = s.index[[0, 5, 7, 10]].values
     segment_start_idxs = np.append(segment_start_idxs, (s.index[[0]] + pd.Timedelta(200, unit="h")).values)
 
-    def get_time_index(arr):
-        return [time_index[idx] for idx in arr]
-
     ## No Force
     sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), segment_start_idxs=segment_start_idxs, window_idx="begin")
     assert sr.strides is None
-    assert np.all(sr.index == get_time_index([0, 5, 7, 10]))
+    assert np.all(sr.index == segment_start_idxs)
 
     sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), strides=[pd.Timedelta(3, unit="h"), pd.Timedelta(5, unit="h")], segment_start_idxs=segment_start_idxs, window_idx="begin")
     assert sr.strides is None
-    assert np.all(sr.index == get_time_index([0, 5, 7, 10]))
+    assert np.all(sr.index == segment_start_idxs)
 
     sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), strides=[pd.Timedelta(3, unit="h"), pd.Timedelta(5, unit="h")], segment_start_idxs=segment_start_idxs, window_idx="end")
     assert sr.strides is None
-    assert np.all(sr.index == [t + pd.Timedelta(3, unit="h") for t in get_time_index([0, 5, 7, 10])])
+    assert np.all(sr.index == [t + pd.Timedelta(3, unit="h") for t in segment_start_idxs])
 
     ## No Force
     sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), segment_start_idxs=segment_start_idxs, window_idx="begin", include_final_window=True)
     assert sr.strides is None
-    assert np.all(sr.index == get_time_index([0, 5, 7, 10]))
+    assert np.all(sr.index == segment_start_idxs)
 
     sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), strides=[pd.Timedelta(3, unit="h"), pd.Timedelta(5, unit="h")], segment_start_idxs=segment_start_idxs, window_idx="begin", include_final_window=True)
     assert sr.strides is None
-    assert np.all(sr.index == get_time_index([0, 5, 7, 10]))
+    assert np.all(sr.index == segment_start_idxs)
 
     sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), strides=[pd.Timedelta(3, unit="h"), pd.Timedelta(5, unit="h")], segment_start_idxs=segment_start_idxs, window_idx="end", include_final_window=True)
     assert sr.strides is None
-    assert np.all(sr.index == [t + pd.Timedelta(3, unit="h") for t in get_time_index([0, 5, 7, 10])])
+    assert np.all(sr.index == [t + pd.Timedelta(3, unit="h") for t in segment_start_idxs])
 
 
 def test_time_stroll_indexing_segment_end_idxs_outside_valid_range():
@@ -593,34 +590,31 @@ def test_time_stroll_indexing_segment_end_idxs_outside_valid_range():
     segment_end_idxs = s.index[[0, 5, 7, 10]].values
     segment_end_idxs = np.append(segment_end_idxs, (s.index[[0]] + pd.Timedelta(200, unit="h")).values)
 
-    def get_time_index(arr):
-        return [time_index[idx] for idx in arr]
-
     ## No Force
     sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), segment_end_idxs=segment_end_idxs, window_idx="end")
     assert sr.strides is None
-    assert np.all(sr.index == get_time_index([0, 5, 7, 10]))
+    assert np.all(sr.index == segment_end_idxs)
 
     sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), strides=[pd.Timedelta(3, unit="h"), pd.Timedelta(5, unit="h")], segment_end_idxs=segment_end_idxs, window_idx="end")
     assert sr.strides is None
-    assert np.all(sr.index == get_time_index([0, 5, 7, 10]))
+    assert np.all(sr.index == segment_end_idxs)
 
     sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), strides=[pd.Timedelta(3, unit="h"), pd.Timedelta(5, unit="h")], segment_end_idxs=segment_end_idxs, window_idx="begin")
     assert sr.strides is None
-    assert np.all(sr.index == [t - pd.Timedelta(3, unit="h") for t in get_time_index([0, 5, 7, 10])])
+    assert np.all(sr.index == [t - pd.Timedelta(3, unit="h") for t in segment_end_idxs])
 
     ## No Force
     sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), segment_end_idxs=segment_end_idxs, window_idx="end", include_final_window=True)
     assert sr.strides is None
-    assert np.all(sr.index == get_time_index([0, 5, 7, 10]))
+    assert np.all(sr.index == segment_end_idxs)
 
     sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), strides=[pd.Timedelta(3, unit="h"), pd.Timedelta(5, unit="h")], segment_end_idxs=segment_end_idxs, window_idx="end", include_final_window=True)
     assert sr.strides is None
-    assert np.all(sr.index == get_time_index([0, 5, 7, 10]))
+    assert np.all(sr.index == segment_end_idxs)
 
     sr = TimeStridedRolling(s, window=pd.Timedelta(3, unit="h"), strides=[pd.Timedelta(3, unit="h"), pd.Timedelta(5, unit="h")], segment_end_idxs=segment_end_idxs, window_idx="begin", include_final_window=True)
     assert sr.strides is None
-    assert np.all(sr.index == [t - pd.Timedelta(3, unit="h") for t in get_time_index([0, 5, 7, 10])])
+    assert np.all(sr.index == [t - pd.Timedelta(3, unit="h") for t in segment_end_idxs])
 
 
 
