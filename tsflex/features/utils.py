@@ -11,7 +11,6 @@ from .feature import FuncWrapper
 
 
 # ---------------------------------- PRIVATE METHODS ----------------------------------
-
 def _determine_bounds(bound_method, series_list: List[pd.Series]) -> Tuple[Any, Any]:
     """Determine the bounds of the passed series.
 
@@ -53,6 +52,27 @@ def _determine_bounds(bound_method, series_list: List[pd.Series]) -> Tuple[Any, 
         raise ValueError(f"invalid bound method string passed {bound_method}")
 
 
+def _check_start_end_array(start_idxs: np.ndarray, end_idxs: np.ndarray):
+    """Check if the start and end indices are valid.
+
+    These are valid if they are of the same length and if the start indices are smaller
+    than the end indices.
+
+    Parameters
+    ----------
+    start_idxs: np.ndarray
+        The start indices.
+    end_idxs: np.ndarray
+        The end indices.
+    """
+    assert len(start_idxs) == len(
+        end_idxs
+    ), "start_idxs and end_ixs must have equal length"
+    assert np.all(
+        start_idxs <= end_idxs
+    ), "for all corresponding values: segment_start_idxs <= segment_end_idxs"
+
+
 def _get_name(func: Callable) -> str:
     """Get the name of the function.
 
@@ -72,8 +92,9 @@ def _get_name(func: Callable) -> str:
     assert callable(func), f"The given argument {func} is not callable!"
     try:
         return func.__name__
-    except:
+    except AttributeError:
         return type(func).__name__
+
 
 def _get_funcwrapper_func_and_kwargs(func: FuncWrapper) -> Tuple[Callable, dict]:
     """Extract the function and keyword arguments from the given FuncWrapper.
@@ -96,7 +117,7 @@ def _get_funcwrapper_func_and_kwargs(func: FuncWrapper) -> Tuple[Callable, dict]
     function = func.func
 
     # Extract the keyword arguments
-    func_wrapper_kwargs = {}
+    func_wrapper_kwargs = dict()
     func_wrapper_kwargs["output_names"] = func.output_names
     func_wrapper_kwargs["input_type"] = func.input_type
     func_wrapper_kwargs["vectorized"] = func.vectorized
@@ -151,14 +172,13 @@ def _make_single_func_robust(
         return func(*series, **kwargs)
 
     wrap_func.__name__ = "[robust]__" + _get_name(func)
-    if not "output_names" in func_wrapper_kwargs.keys():
+    if "output_names" not in func_wrapper_kwargs.keys():
         func_wrapper_kwargs["output_names"] = _get_name(func)
 
     return FuncWrapper(wrap_func, **func_wrapper_kwargs)
 
 
 # ---------------------------------- PUBLIC METHODS -----------------------------------
-
 def make_robust(
     funcs: Union[Callable, FuncWrapper, List[Union[Callable, FuncWrapper]]],
     min_nb_samples: Optional[int] = 1,

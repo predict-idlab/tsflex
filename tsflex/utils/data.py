@@ -4,7 +4,9 @@ __author__ = "Jeroen Van Der Donckt, Jonas Van Der Donckt"
 
 import itertools
 from typing import Any, Dict, Iterable, Iterator, List, Union, Tuple
+from pathlib import Path
 
+import os
 import numpy as np
 import pandas as pd
 
@@ -107,7 +109,7 @@ def to_list(x: Any) -> List:
     Parameters
     ----------
     x : Any
-        The input that needs to be convert to a list.
+        The input that needs to be converted into a list.
 
     Returns
     -------
@@ -126,7 +128,7 @@ def to_tuple(x: Any) -> Tuple[Any, ...]:
     Parameters
     ----------
     x : Any
-        The input that needs to be convert to a tuple.
+        The input that needs to be converted into a tuple.
 
     Returns
     -------
@@ -157,7 +159,7 @@ def flatten(data: Iterable) -> Iterator:
 
 
 def load_empatica_data(f_names: Union[str, List[str]]) -> List[pd.DataFrame]:
-    """load example empatica data from the github repository.
+    """load example empatica data from the GitHub repository.
 
     Parameters
     ----------
@@ -171,9 +173,21 @@ def load_empatica_data(f_names: Union[str, List[str]]) -> List[pd.DataFrame]:
     List[pd.DataFrame]
         Returns the empatica time-indexed data files in the same order as `f_names`
     """
+    empatica_dir = (
+        Path(__file__)
+        .parent.parent.parent.joinpath("examples", "data", "empatica")
+        .absolute()
+    )
+    empatica_dir = (
+        str(empatica_dir) + "/"
+    )  # allows compatible + operation (as with the url)
     url = "https://github.com/predict-idlab/tsflex/raw/main/examples/data/empatica/"
+    if not os.path.exists(empatica_dir):
+        empatica_dir = url  # fetch online if data not local
     f_names = [f_names] if isinstance(f_names, str) else f_names
     return [
-        pd.read_parquet(url + f"{f_name.lower()}.parquet").set_index("timestamp")
+        pd.read_parquet(empatica_dir + f"{f_name.lower()}.parquet").set_index(
+            "timestamp"
+        )
         for f_name in f_names
     ]

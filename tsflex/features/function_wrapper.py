@@ -43,10 +43,10 @@ class FuncWrapper(FrozenClass):
             For example a vectorized version of `np.max` is
             ``FuncWrapper(np.max, vectorized=True, axis=1)``.
         .. Note::
-            * A function can only be applied in vectorized manner when the required 
+            * A function can only be applied in vectorized manner when the required
               series are REGULARLY sampled (and have the same index in case of multiple
               required series).
-            * The `input_type` should be `np.array` when `vectorized` is True. It does 
+            * The `input_type` should be `np.array` when `vectorized` is True. It does
               not make sense to use a `pd.Series`, as the index should be regularly
               sampled (see requirement above).
     **kwargs: dict, optional
