@@ -27,7 +27,7 @@ jobs:
         python-version: ${{ matrix.python-version }}
 
     - name: Install poetry
-      uses: snok/install-poetry@v1
+      uses: snok/install-poetry@v1.3.1
     - name: Cache poetry
       id: cached-poetry-dependencies
       uses: actions/cache@v2
