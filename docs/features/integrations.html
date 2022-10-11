@@ -249,7 +249,7 @@ def tsfresh_combiner_wrapper(func: Callable, param: List[Dict]) -&gt; FuncWrappe
     )
 
 
-def tsfresh_settings_wrapper(settings: Dict) -&gt; List[Callable]:
+def tsfresh_settings_wrapper(settings: Dict) -&gt; List[Union[Callable, FuncWrapper]]:
     &#34;&#34;&#34;Wrapper enabling compatibility with tsfresh feature extraction settings.
 
     [tsfresh feature extraction settings](https://tsfresh.readthedocs.io/en/latest/text/feature_extraction_settings.html)
@@ -290,7 +290,7 @@ def tsfresh_settings_wrapper(settings: Dict) -&gt; List[Callable]:
 
     Returns
     -------
-    List[Callable]
+    List[Union[Callable, FuncWrapper]]
         List of the (wrapped) tsfresh functions that are now directly compatible with
         with tsflex.
  
@@ -319,6 +319,7 @@ def catch22_wrapper(catch22_all: Callable) -&gt; FuncWrapper:
 
     [catch22](https://github.com/chlubba/catch22) is a collection of 22 time series 
     features that are a high-performing subset of the over 7000 features in hctsa.
+    -&gt; [Python bindings](https://github.com/DynamicsAndNeuralSystems/pycatch22)
 
     By using this wrapper, we can plug the catch22 features in a tsflex
     ``FeatureCollection``.
@@ -326,7 +327,7 @@ def catch22_wrapper(catch22_all: Callable) -&gt; FuncWrapper:
     of tsflex.
 
     .. Note::
-        This wrapper wraps the `catch22_all` function from `catch22`.
+        This wrapper wraps the `catch22_all` function from `pycatch22`.
         See more [here](https://github.com/chlubba/catch22/blob/master/wrap_Python/catch22/catch22.py).
 
     Example
@@ -334,7 +335,7 @@ def catch22_wrapper(catch22_all: Callable) -&gt; FuncWrapper:
     ```python
     from tsflex.features import FeatureCollection, MultipleFeatureDescriptors
     from tsflex.features.integrations import catch22_wrapper
-    from catch22 import catch22_all
+    from pycatch22 import catch22_all
 
     catch22_feats = MultipleFeatureDescriptors(
         functions=catch22_wrapper(catch22_all),
@@ -349,7 +350,7 @@ def catch22_wrapper(catch22_all: Callable) -&gt; FuncWrapper:
     Parameters
     ----------
     catch22_all: Callable
-        The `catch22_all` function from the `catch22` package.
+        The `catch22_all` function from the `pycatch22` package.
 
     Returns
     -------
@@ -728,7 +729,7 @@ function.</dd>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def tsfresh_settings_wrapper(settings: Dict) -&gt; List[Callable]:
+<pre><code class="python">def tsfresh_settings_wrapper(settings: Dict) -&gt; List[Union[Callable, FuncWrapper]]:
     &#34;&#34;&#34;Wrapper enabling compatibility with tsfresh feature extraction settings.
 
     [tsfresh feature extraction settings](https://tsfresh.readthedocs.io/en/latest/text/feature_extraction_settings.html)
@@ -769,7 +770,7 @@ function.</dd>
 
     Returns
     -------
-    List[Callable]
+    List[Union[Callable, FuncWrapper]]
         List of the (wrapped) tsfresh functions that are now directly compatible with
         with tsflex.
  
@@ -826,7 +827,7 @@ fc.calculate(data)  # calculate the features on your data
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><code>List[Callable]</code></dt>
+<dt><code>List[Union[Callable, FuncWrapper]]</code></dt>
 <dd>List of the (wrapped) tsfresh functions that are now directly compatible with
 with tsflex.</dd>
 </dl></div>
@@ -844,6 +845,7 @@ with tsflex.</dd>
 
     [catch22](https://github.com/chlubba/catch22) is a collection of 22 time series 
     features that are a high-performing subset of the over 7000 features in hctsa.
+    -&gt; [Python bindings](https://github.com/DynamicsAndNeuralSystems/pycatch22)
 
     By using this wrapper, we can plug the catch22 features in a tsflex
     ``FeatureCollection``.
@@ -851,7 +853,7 @@ with tsflex.</dd>
     of tsflex.
 
     .. Note::
-        This wrapper wraps the `catch22_all` function from `catch22`.
+        This wrapper wraps the `catch22_all` function from `pycatch22`.
         See more [here](https://github.com/chlubba/catch22/blob/master/wrap_Python/catch22/catch22.py).
 
     Example
@@ -859,7 +861,7 @@ with tsflex.</dd>
     ```python
     from tsflex.features import FeatureCollection, MultipleFeatureDescriptors
     from tsflex.features.integrations import catch22_wrapper
-    from catch22 import catch22_all
+    from pycatch22 import catch22_all
 
     catch22_feats = MultipleFeatureDescriptors(
         functions=catch22_wrapper(catch22_all),
@@ -874,7 +876,7 @@ with tsflex.</dd>
     Parameters
     ----------
     catch22_all: Callable
-        The `catch22_all` function from the `catch22` package.
+        The `catch22_all` function from the `pycatch22` package.
 
     Returns
     -------
@@ -893,20 +895,21 @@ with tsflex.</dd>
 </details>
 <div class="desc"><p>Wrapper enabling compatibility with catch22.</p>
 <p><a href="https://github.com/chlubba/catch22">catch22</a> is a collection of 22 time series
-features that are a high-performing subset of the over 7000 features in hctsa.</p>
+features that are a high-performing subset of the over 7000 features in hctsa.
+-&gt; <a href="https://github.com/DynamicsAndNeuralSystems/pycatch22">Python bindings</a></p>
 <p>By using this wrapper, we can plug the catch22 features in a tsflex
 <code>FeatureCollection</code>.
 This enables to easily extract the catch22 features while leveraging the flexibility
 of tsflex.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
-<p>This wrapper wraps the <code>catch22_all</code> function from <code>catch22</code>.
+<p>This wrapper wraps the <code>catch22_all</code> function from <code>pycatch22</code>.
 See more <a href="https://github.com/chlubba/catch22/blob/master/wrap_Python/catch22/catch22.py">here</a>.</p>
 </div>
 <h2 id="example">Example</h2>
 <pre><code class="language-python">from tsflex.features import FeatureCollection, MultipleFeatureDescriptors
 from tsflex.features.integrations import catch22_wrapper
-from catch22 import catch22_all
+from pycatch22 import catch22_all
 
 catch22_feats = MultipleFeatureDescriptors(
     functions=catch22_wrapper(catch22_all),
@@ -920,7 +923,7 @@ fc.calculate(data)  # calculate the features on your data
 <h2 id="parameters">Parameters</h2>
 <dl>
 <dt><strong><code>catch22_all</code></strong> :&ensp;<code>Callable</code></dt>
-<dd>The <code>catch22_all</code> function from the <code>catch22</code> package.</dd>
+<dd>The <code>catch22_all</code> function from the <code>pycatch22</code> package.</dd>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>

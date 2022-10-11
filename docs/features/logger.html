@@ -55,6 +55,7 @@ FeatureCollection: its `logging_file_path` of the `calculate` method.
 __author__ = &#34;Jeroen Van Der Donckt&#34;
 
 import logging
+import numpy as np
 import pandas as pd
 import re
 
@@ -77,8 +78,11 @@ def _parse_message(message: str) -&gt; list:
     matches = re.findall(regex, remove_inner_brackets(message))
     assert len(matches) == 4
     func = matches[0]
-    key = matches[1].replace(&#34;&#39;&#34;, &#34;&#34;) 
-    window, stride = matches[2].split(&#34;,&#34;)[0], matches[2].split(&#34;,&#34;)[1]
+    key = matches[1].replace(&#34;&#39;&#34;, &#34;&#34;)
+    window = matches[2].split(&#34;,&#34;)[0].strip()
+    stride = &#34;,&#34;.join(matches[2].split(&#34;,&#34;)[1:]).strip()
+    if stride != &#34;manual&#34;:
+        stride = eval(stride)  # parse the tuple
     duration_s = float(matches[3].rstrip(&#34; seconds&#34;))
     return [func, key, window, stride, duration_s]
 
@@ -90,7 +94,7 @@ def _parse_logging_execution_to_df(logging_file_path: str) -&gt; pd.DataFrame:
     ----------
     logging_file_path: str
         The file path where the logged messages are stored. This is the file path that
-        is passed to the `FeatureCollection` its `calculate` method. 
+        is passed to the `FeatureCollection` its `calculate` method.
 
     Note
     ----
@@ -100,7 +104,7 @@ def _parse_logging_execution_to_df(logging_file_path: str) -&gt; pd.DataFrame:
     Returns
     -------
     pd.DataFrame
-        A DataFrame with the features its function, input series names and 
+        A DataFrame with the features its function, input series names and
         calculation duration.
 
     &#34;&#34;&#34;
@@ -109,8 +113,32 @@ def _parse_logging_execution_to_df(logging_file_path: str) -&gt; pd.DataFrame:
         list(df[&#34;message&#34;].apply(_parse_message)),
         index=df.index,
     )
-    df[&#34;window&#34;] = pd.to_timedelta(df[&#34;window&#34;]).apply(timedelta_to_str)
-    df[&#34;stride&#34;] = pd.to_timedelta(df[&#34;stride&#34;]).apply(timedelta_to_str)
+    # Parse the window
+    if (df[&#34;window&#34;] == &#34;manual&#34;).any():
+        # All should be manual
+        assert (df[&#34;window&#34;] == &#34;manual&#34;).all()
+    elif df[&#34;window&#34;].str.isnumeric().all():
+        df[&#34;window&#34;] = pd.to_numeric(df[&#34;window&#34;])
+    else:
+        df[&#34;window&#34;] = pd.to_timedelta(df[&#34;window&#34;]).apply(timedelta_to_str)
+    # Parse the stride
+    if (df[&#34;stride&#34;] == &#34;manual&#34;).any():
+        # All should be manual
+        assert (df[&#34;stride&#34;] == &#34;manual&#34;).all()
+    elif (
+        df[&#34;stride&#34;]
+        .apply(lambda stride_tuple: np.char.isnumeric(stride_tuple).all())
+        .all()
+    ):
+        df[&#34;stride&#34;] = df[&#34;stride&#34;].apply(
+            lambda stride_tuple: tuple(sorted(pd.to_numeric(s) for s in stride_tuple))
+        )
+    else:
+        df[&#34;stride&#34;] = df[&#34;stride&#34;].apply(
+            lambda stride_tuple: tuple(
+                timedelta_to_str(pd.to_timedelta(s)) for s in stride_tuple
+            )
+        )
     return df.drop(columns=[&#34;name&#34;, &#34;log_level&#34;, &#34;message&#34;])
 
 
@@ -126,7 +154,7 @@ def get_feature_logs(logging_file_path: str) -&gt; pd.DataFrame:
     Returns
     -------
     pd.DataFrame
-        A DataFrame with the features its function, input series names and 
+        A DataFrame with the features its function, input series names and
         calculation duration.
 
     &#34;&#34;&#34;
@@ -147,7 +175,7 @@ def get_function_stats(logging_file_path: str) -&gt; pd.DataFrame:
     Returns
     -------
     pd.DataFrame
-        A DataFrame with for each function (i.e., `function-(window,stride)`) 
+        A DataFrame with for each function (i.e., `function-(window,stride)`)
         combination the mean (time), std (time), sum (time), and number of executions.
 
     &#34;&#34;&#34;
@@ -164,6 +192,7 @@ def get_function_stats(logging_file_path: str) -&gt; pd.DataFrame:
         if all(idx in sorted_funcs for idx in idx_level):
             return [sorted_funcs.index(idx) for idx in idx_level]
         return idx_level
+
     return (
         df.groupby([&#34;function&#34;, &#34;window&#34;, &#34;stride&#34;])
         .agg({&#34;duration&#34;: [&#34;mean&#34;, &#34;std&#34;, &#34;sum&#34;, &#34;count&#34;]})
@@ -222,7 +251,7 @@ def get_series_names_stats(logging_file_path: str) -&gt; pd.DataFrame:
     Returns
     -------
     pd.DataFrame
-        A DataFrame with the features its function, input series names and 
+        A DataFrame with the features its function, input series names and
         calculation duration.
 
     &#34;&#34;&#34;
@@ -264,7 +293,7 @@ calculation duration.</dd>
     Returns
     -------
     pd.DataFrame
-        A DataFrame with for each function (i.e., `function-(window,stride)`) 
+        A DataFrame with for each function (i.e., `function-(window,stride)`)
         combination the mean (time), std (time), sum (time), and number of executions.
 
     &#34;&#34;&#34;
@@ -281,6 +310,7 @@ calculation duration.</dd>
         if all(idx in sorted_funcs for idx in idx_level):
             return [sorted_funcs.index(idx) for idx in idx_level]
         return idx_level
+
     return (
         df.groupby([&#34;function&#34;, &#34;window&#34;, &#34;stride&#34;])
         .agg({&#34;duration&#34;: [&#34;mean&#34;, &#34;std&#34;, &#34;sum&#34;, &#34;count&#34;]})

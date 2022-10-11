@@ -455,7 +455,7 @@ features.</p></div>
     Returns
     -------
     pd.DataFrame
-        A DataFrame with the features its function, input series names and 
+        A DataFrame with the features its function, input series names and
         calculation duration.
 
     &#34;&#34;&#34;
@@ -497,7 +497,7 @@ calculation duration.</dd>
     Returns
     -------
     pd.DataFrame
-        A DataFrame with for each function (i.e., `function-(window,stride)`) 
+        A DataFrame with for each function (i.e., `function-(window,stride)`)
         combination the mean (time), std (time), sum (time), and number of executions.
 
     &#34;&#34;&#34;
@@ -514,6 +514,7 @@ calculation duration.</dd>
         if all(idx in sorted_funcs for idx in idx_level):
             return [sorted_funcs.index(idx) for idx in idx_level]
         return idx_level
+
     return (
         df.groupby([&#34;function&#34;, &#34;window&#34;, &#34;stride&#34;])
         .agg({&#34;duration&#34;: [&#34;mean&#34;, &#34;std&#34;, &#34;sum&#34;, &#34;count&#34;]})
@@ -586,7 +587,7 @@ number of executions.</dd>
 <dl>
 <dt id="tsflex.features.FeatureDescriptor"><code class="flex name class">
 <span>class <span class="ident">FeatureDescriptor</span></span>
-<span>(</span><span>function, series_name, window, stride)</span>
+<span>(</span><span>function, series_name, window=None, stride=None)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -605,8 +606,8 @@ number of executions.</dd>
             function(*series: Union[np.array, pd.Series])
                 -&gt; Union[Any, List[Any]]
 
-        Note that when the input type is ``pd.Series``, the function should be wrapped in
-        a `FuncWrapper` with `input_type` = ``pd.Series``.
+        Note that when the input type is ``pd.Series``, the function should be wrapped
+          in a `FuncWrapper` with `input_type` = ``pd.Series``.
 
     series_name : Union[str, Tuple[str, ...]]
         The names of the series on which the feature function should be applied.
@@ -616,8 +617,10 @@ number of executions.</dd>
         * If `series_name` is a tuple of strings, then `function` should
             require `len(tuple)` series as input **and in exactly the same order**
 
-    window : Union[float, str, pd.Timedelta]
-        The window size, this argument supports multiple types: \n
+    window : Union[float, str, pd.Timedelta], optional
+        The window size. By default None. This argument supports multiple types: \n
+        * If None, the `segment_start_idxs` and `segment_end_idxs` will need to be
+          passed.
         * If the type is an `float` or an `int`, its value represents the series
             - its window **range** when a **non time-indexed** series is passed.
             - its window in **number of samples**, when a **time-indexed** series is
@@ -626,9 +629,18 @@ number of executions.</dd>
           the window-time-range. The passed data **must have a time-index**.
         * If a `str`, it must represents a window-time-range-string. The **passed data
           must have a time-index**.
+        .. Note::
+            - When the `segment_start_idxs` and `segment_end_idxs` are both passed to
+              the `FeatureCollection.calculate` method, this window argument is ignored.
+              Note that this is the only case when it is allowed to pass None for the
+              window argument.
+            - When the window argument is None, than the stride argument should be None
+              as well (as it makes no sense to pass a stride value when the window is
+              None).
 
-    stride : Union[int, str, pd.Timedelta]
-        The stride size, this argument supports multiple types: \n
+    stride : Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]], optional
+        The stride size(s). By default None. This argument supports multiple types: \n
+        * If None, the stride will need to be passed to `FeatureCollection.calculate`.
         * If the type is an `float` or an `int`, its value represents the series
             - its stride **range** when a **non time-indexed** series is passed.
             - the stride in **number of samples**, when a **time-indexed** series
@@ -637,6 +649,14 @@ number of executions.</dd>
           the stride-time delta. The passed data **must have a time-index**.
         * If a `str`, it must represent a stride-time-delta-string. The **passed data
           must have a time-index**. \n
+        * If a `List[Union[float, str, pd.Timedelta]]`, then the set intersection,of the
+          strides will be used (e.g., stride=[2,3] -&gt; index: 0, 2, 3, 4, 6, 8, 9, ...)
+        .. Note::
+            - The stride argument of `FeatureCollection.calculate` takes precedence over
+              this value when set (i.e., not None value for `stride` passed to the
+              `calculate` method).
+            - The stride argument should be None when the window argument is None (as it
+              makes no sense to pass a stride value when the window is None).
 
     .. Note::
         As described above, the `window-stride` argument can be sample-based (when using
@@ -649,7 +669,7 @@ number of executions.</dd>
     Notes
     -----
     * The `window` and `stride` argument should be either **both** numeric or
-      ``pd.Timedelta`` (depending on de index datatype).
+      ``pd.Timedelta`` (depending on de index datatype) - when `stride` is not None.
     * For each `function` - `input`(-series) - `window` - stride combination, one needs
       to create a distinct `FeatureDescriptor`. Hence it is more convenient to
       create a `MultipleFeatureDescriptors` when `function` - `window` - `stride`
@@ -666,7 +686,8 @@ number of executions.</dd>
     ------
     TypeError
         * Raised when the `function` is not an instance of Callable or FuncWrapper.
-        * Raised when `window` and `stride` are not of exactly the same type.
+        * Raised when `window` and `stride` are not of exactly the same type (when
+          `stride` is not None).
 
     See Also
     --------
@@ -678,21 +699,32 @@ number of executions.</dd>
         self,
         function: Union[FuncWrapper, Callable],
         series_name: Union[str, Tuple[str, ...]],
-        window: Union[float, str, pd.Timedelta],
-        stride: Union[float, str, pd.Timedelta],
+        window: Optional[Union[float, str, pd.Timedelta]] = None,
+        stride: Optional[
+            Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]]
+        ] = None,
     ):
+        strides = sorted(set(to_list(stride)))  # omit duplicate stride values
+        if window is None:
+            assert strides == [None], &#34;stride must be None if window is None&#34;
         self.series_name: Tuple[str, ...] = to_tuple(series_name)
         self.window = parse_time_arg(window) if isinstance(window, str) else window
-        self.stride = parse_time_arg(stride) if isinstance(stride, str) else stride
+        if strides == [None]:
+            self.stride = None
+        else:
+            self.stride = [
+                parse_time_arg(s) if isinstance(s, str) else s for s in strides
+            ]
 
         # Verify whether window and stride are either both sequence or time based
         dtype_set = set(
-            AttributeParser.determine_type(v) for v in [self.window, self.stride]
-        )
+            AttributeParser.determine_type(v)
+            for v in [self.window] + to_list(self.stride)
+        ).difference([DataType.UNDEFINED])
         if len(dtype_set) &gt; 1:
             raise TypeError(
                 f&#34;a combination of window ({self.window} type={type(self.window)}) and&#34;
-                f&#34; stride ({self.stride} type={type(self.stride)}) is not supported!&#34;
+                f&#34; stride ({self.stride}) is not supported!&#34;
             )
 
         # Order of if statements is important (as FuncWrapper also is a Callable)!
@@ -726,6 +758,17 @@ number of executions.</dd>
         &#34;&#34;&#34;
         return list(set(self.series_name))
 
+    def get_nb_output_features(self) -&gt; int:
+        &#34;&#34;&#34;Return the number of output features of this feature descriptor.
+
+        Returns
+        -------
+        int
+            Number of output features.
+
+        &#34;&#34;&#34;
+        return len(self.function.output_names)
+
     def __repr__(self) -&gt; str:
         &#34;&#34;&#34;Representation string of Feature.&#34;&#34;&#34;
         return (
@@ -743,8 +786,8 @@ The prototype of the function should match: </p>
 <pre><code>function(*series: Union[np.array, pd.Series])
     -&gt; Union[Any, List[Any]]
 </code></pre>
-<p>Note that when the input type is <code>pd.Series</code>, the function should be wrapped in
-a <code><a title="tsflex.features.FuncWrapper" href="#tsflex.features.FuncWrapper">FuncWrapper</a></code> with <code>input_type</code> = <code>pd.Series</code>.</p>
+<p>Note that when the input type is <code>pd.Series</code>, the function should be wrapped
+in a <code><a title="tsflex.features.FuncWrapper" href="#tsflex.features.FuncWrapper">FuncWrapper</a></code> with <code>input_type</code> = <code>pd.Series</code>.</p>
 </dd>
 <dt><strong><code>series_name</code></strong> :&ensp;<code>Union[str, Tuple[str, &hellip;]]</code></dt>
 <dd>
@@ -757,10 +800,12 @@ This argument should match the <code>function</code> its input; </p>
 require <code>len(tuple)</code> series as input <strong>and in exactly the same order</strong></li>
 </ul>
 </dd>
-<dt><strong><code>window</code></strong> :&ensp;<code>Union[float, str, pd.Timedelta]</code></dt>
+<dt><strong><code>window</code></strong> :&ensp;<code>Union[float, str, pd.Timedelta]</code>, optional</dt>
 <dd>
-<p>The window size, this argument supports multiple types: </p>
+<p>The window size. By default None. This argument supports multiple types: </p>
 <ul>
+<li>If None, the <code>segment_start_idxs</code> and <code>segment_end_idxs</code> will need to be
+passed.</li>
 <li>If the type is an <code>float</code> or an <code>int</code>, its value represents the series<ul>
 <li>its window <strong>range</strong> when a <strong>non time-indexed</strong> series is passed.</li>
 <li>its window in <strong>number of samples</strong>, when a <strong>time-indexed</strong> series is
@@ -772,11 +817,24 @@ the window-time-range. The passed data <strong>must have a time-index</strong>.<
 <li>If a <code>str</code>, it must represents a window-time-range-string. The <strong>passed data
 must have a time-index</strong>.</li>
 </ul>
-</dd>
-<dt><strong><code>stride</code></strong> :&ensp;<code>Union[int, str, pd.Timedelta]</code></dt>
-<dd>
-<p>The stride size, this argument supports multiple types: </p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
 <ul>
+<li>When the <code>segment_start_idxs</code> and <code>segment_end_idxs</code> are both passed to
+the <code><a title="tsflex.features.FeatureCollection.calculate" href="#tsflex.features.FeatureCollection.calculate">.calculate()</a></code> method, this window argument is ignored.
+Note that this is the only case when it is allowed to pass None for the
+window argument.</li>
+<li>When the window argument is None, than the stride argument should be None
+as well (as it makes no sense to pass a stride value when the window is
+None).</li>
+</ul>
+</div>
+</dd>
+<dt><strong><code>stride</code></strong> :&ensp;<code>Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]]</code>, optional</dt>
+<dd>
+<p>The stride size(s). By default None. This argument supports multiple types: </p>
+<ul>
+<li>If None, the stride will need to be passed to <code><a title="tsflex.features.FeatureCollection.calculate" href="#tsflex.features.FeatureCollection.calculate">.calculate()</a></code>.</li>
 <li>If the type is an <code>float</code> or an <code>int</code>, its value represents the series<ul>
 <li>its stride <strong>range</strong> when a <strong>non time-indexed</strong> series is passed.</li>
 <li>the stride in <strong>number of samples</strong>, when a <strong>time-indexed</strong> series
@@ -785,9 +843,25 @@ is passed (must then be and <code>int</code>)</li>
 </li>
 <li>If the stride's type is a <code>pd.Timedelta</code>, the stride size represents
 the stride-time delta. The passed data <strong>must have a time-index</strong>.</li>
-<li>If a <code>str</code>, it must represent a stride-time-delta-string. The <strong>passed data
-must have a time-index</strong>.</li>
+<li>
+<p>If a <code>str</code>, it must represent a stride-time-delta-string. The <strong>passed data
+must have a time-index</strong>. </p>
+</li>
+<li>
+<p>If a <code>List[Union[float, str, pd.Timedelta]]</code>, then the set intersection,of the
+strides will be used (e.g., stride=[2,3] -&gt; index: 0, 2, 3, 4, 6, 8, 9, &hellip;)</p>
+</li>
 </ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<ul>
+<li>The stride argument of <code><a title="tsflex.features.FeatureCollection.calculate" href="#tsflex.features.FeatureCollection.calculate">.calculate()</a></code> takes precedence over
+this value when set (i.e., not None value for <code>stride</code> passed to the
+<code>calculate</code> method).</li>
+<li>The stride argument should be None when the window argument is None (as it
+makes no sense to pass a stride value when the window is None).</li>
+</ul>
+</div>
 </dd>
 </dl>
 <div class="admonition note">
@@ -802,7 +876,7 @@ arguments.</p>
 <h2 id="notes">Notes</h2>
 <ul>
 <li>The <code>window</code> and <code>stride</code> argument should be either <strong>both</strong> numeric or
-<code>pd.Timedelta</code> (depending on de index datatype).</li>
+<code>pd.Timedelta</code> (depending on de index datatype) - when <code>stride</code> is not None.</li>
 <li>For each <code>function</code> - <code>input</code>(-series) - <code>window</code> - stride combination, one needs
 to create a distinct <code><a title="tsflex.features.FeatureDescriptor" href="#tsflex.features.FeatureDescriptor">FeatureDescriptor</a></code>. Hence it is more convenient to
 create a <code><a title="tsflex.features.MultipleFeatureDescriptors" href="#tsflex.features.MultipleFeatureDescriptors">MultipleFeatureDescriptors</a></code> when <code>function</code> - <code>window</code> - <code>stride</code>
@@ -822,7 +896,8 @@ this!</li>
 <dd>
 <ul>
 <li>Raised when the <code>function</code> is not an instance of Callable or FuncWrapper.</li>
-<li>Raised when <code>window</code> and <code>stride</code> are not of exactly the same type.</li>
+<li>Raised when <code>window</code> and <code>stride</code> are not of exactly the same type (when
+<code>stride</code> is not None).</li>
 </ul>
 </dd>
 </dl>
@@ -868,11 +943,37 @@ feature function.</p>
 <dd>List of all the required series names.</dd>
 </dl></div>
 </dd>
+<dt id="tsflex.features.FeatureDescriptor.get_nb_output_features"><code class="name flex">
+<span>def <span class="ident">get_nb_output_features</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_nb_output_features(self) -&gt; int:
+    &#34;&#34;&#34;Return the number of output features of this feature descriptor.
+
+    Returns
+    -------
+    int
+        Number of output features.
+
+    &#34;&#34;&#34;
+    return len(self.function.output_names)</code></pre>
+</details>
+<div class="desc"><p>Return the number of output features of this feature descriptor.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>int</code></dt>
+<dd>Number of output features.</dd>
+</dl></div>
+</dd>
 </dl>
 </dd>
 <dt id="tsflex.features.MultipleFeatureDescriptors"><code class="flex name class">
 <span>class <span class="ident">MultipleFeatureDescriptors</span></span>
-<span>(</span><span>functions, series_names, windows, strides)</span>
+<span>(</span><span>functions, series_names, windows=None, strides=None)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -906,22 +1007,22 @@ feature function.</p>
         * If `series_names` is a list of either strings or tuple of strings, then
           `function` will be called for each entry of this list.
 
-        .. Note:: 
+        .. Note::
             when passing a list as `series_names`, all items in this list should
             have the same type, i.e, either \n
             * all a str
             * or, all a tuple _with same length_.\n
             And perfectly match the func-input size.
 
-    windows : Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
+    windows : Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]]
         All the window sizes.
-    strides : Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
-        All the strides.
+    strides : Union[float, str, pd.Timedelta, None, List[Union[float, str, pd.Timedelta]]], optional
+        All the strides. By default None.
 
     Note
     ----
     The `windows` and `strides` argument should be either both numeric or
-    ``pd.Timedelta`` (depending on de index datatype).
+    ``pd.Timedelta`` (depending on de index datatype) - when `strides` is not None.
 
     &#34;&#34;&#34;
 
@@ -929,8 +1030,12 @@ feature function.</p>
         self,
         functions: Union[FuncWrapper, Callable, List[Union[FuncWrapper, Callable]]],
         series_names: Union[str, Tuple[str, ...], List[str], List[Tuple[str, ...]]],
-        windows: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
-        strides: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],
+        windows: Optional[
+            Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]]
+        ] = None,
+        strides: Optional[
+            Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]]
+        ] = None,
     ):
         # Cast functions to FuncWrapper, this avoids creating multiple
         # FuncWrapper objects for the same function in the FeatureDescriptor
@@ -947,14 +1052,13 @@ feature function.</p>
         )
         # Convert the other types to list
         windows = to_list(windows)
-        strides = to_list(strides)
 
         self.feature_descriptions: List[FeatureDescriptor] = []
         # Iterate over all combinations
-        combinations = [functions, series_names, windows, strides]
-        for function, series_name, window, stride in itertools.product(*combinations):
+        combinations = [functions, series_names, windows]
+        for function, series_name, window in itertools.product(*combinations):
             self.feature_descriptions.append(
-                FeatureDescriptor(function, series_name, window, stride)
+                FeatureDescriptor(function, series_name, window, strides)
             )</code></pre>
 </details>
 <div class="desc"><p>Create a MultipleFeatureDescriptors object.</p>
@@ -994,14 +1098,14 @@ have the same type, i.e, either </p>
 <p>And perfectly match the func-input size.</p>
 </div>
 </dd>
-<dt><strong><code>windows</code></strong> :&ensp;<code>Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],</code></dt>
+<dt><strong><code>windows</code></strong> :&ensp;<code>Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]]</code></dt>
 <dd>All the window sizes.</dd>
-<dt><strong><code>strides</code></strong> :&ensp;<code>Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta]]],</code></dt>
-<dd>All the strides.</dd>
+<dt><strong><code>strides</code></strong> :&ensp;<code>Union[float, str, pd.Timedelta, None, List[Union[float, str, pd.Timedelta]]]</code>, optional</dt>
+<dd>All the strides. By default None.</dd>
 </dl>
 <h2 id="note">Note</h2>
 <p>The <code>windows</code> and <code>strides</code> argument should be either both numeric or
-<code>pd.Timedelta</code> (depending on de index datatype).</p></div>
+<code>pd.Timedelta</code> (depending on de index datatype) - when <code>strides</code> is not None.</p></div>
 </dd>
 <dt id="tsflex.features.FeatureCollection"><code class="flex name class">
 <span>class <span class="ident">FeatureCollection</span></span>
@@ -1045,18 +1149,19 @@ have the same type, i.e, either </p>
                 FeatureDescriptor,
                 MultipleFeatureDescriptors,
                 FeatureCollection,
-                List[Union[FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection]],
+                List[
+                    Union[
+                        FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection
+                    ]
+                ],
             ]
         ] = None,
     ):
         # The feature collection is a dict with keys of type:
-        #   tuple(tuple(str), float OR pd.timedelta, float OR pd.timedelta)
-        # The outer tuple&#39;s values correspond to (series_key(s), window, stride)
+        #   tuple(tuple(str), float OR pd.timedelta)
+        # The outer tuple&#39;s values correspond to (series_key(s), window)
         self._feature_desc_dict: Dict[
-            Tuple[
-                Tuple[str, ...], Union[float, pd.Timedelta], Union[float, pd.Timedelta]
-            ],
-            List[FeatureDescriptor],
+            Tuple[Tuple[str, ...], Union[float, pd.Timedelta]], List[FeatureDescriptor]
         ] = {}
 
         if feature_descriptors:
@@ -1079,23 +1184,79 @@ have the same type, i.e, either </p>
             set(flatten([fr_key[0] for fr_key in self._feature_desc_dict.keys()]))
         )
 
+    def get_nb_output_features(self) -&gt; int:
+        &#34;&#34;&#34;Return the number of output features in this feature collection.
+
+        Returns
+        -------
+        int
+            The number of output features in this feature collection.
+
+        &#34;&#34;&#34;
+        fd_list: Iterable[FeatureDescriptor] = flatten(self._feature_desc_dict.values())
+        return sum(fd.get_nb_output_features() for fd in fd_list)
+
+    def _get_nb_output_features_without_window(self) -&gt; int:
+        &#34;&#34;&#34;Return the number of output features in this feature collection, without
+        using the window as a unique identifier.
+
+        This is relevant for when the window value(s) are overridden by passing
+        `segment_start_idxs` and `segment_end_idxs` to the `calculate` method.
+
+        Returns
+        -------
+        int:
+            The number of output features in this feature collection without using the
+            window as a unique identifier.
+
+        &#34;&#34;&#34;
+        return len(
+            set(
+                (series, o)
+                for (series, _), fd_list in self._feature_desc_dict.items()
+                for fd in fd_list
+                for o in fd.function.output_names
+            )
+        )
+
     @staticmethod
     def _get_collection_key(
         feature: FeatureDescriptor,
-    ) -&gt; Tuple[tuple, Union[pd.Timedelta, float], Union[pd.Timedelta, float]]:
-        # Note: `window` &amp; `stride` properties can either be a pd.Timedelta or an int
-        return feature.series_name, feature.window, feature.stride
+    ) -&gt; Tuple[Tuple[str, ...], Union[pd.Timedelta, float, None]]:
+        # Note: `window` property can be either a pd.Timedelta or a float or None
+        # assert feature.window is not None
+        return feature.series_name, feature.window
 
-    def _check_feature_descriptors(self):
+    def _check_feature_descriptors(
+        self,
+        skip_none: bool,
+        calc_stride: Optional[Union[float, pd.Timedelta, None]] = None,
+    ):
         &#34;&#34;&#34;Verify whether all added FeatureDescriptors imply the same-input data type.
 
         If this condition is not met, a warning will be raised.
 
+        Parameters
+        ----------
+        skip_none: bool
+            Whether to include None stride values in the checks.
+        calc_stride: Union[float, pd.Timedelta, None], optional
+            The `FeatureCollection.calculate` its stride argument, by default None.
+            This stride takes precedence over a `FeatureDescriptor` its stride when
+            it is not None.
+
         &#34;&#34;&#34;
-        dtype_set = set(
-            AttributeParser.determine_type([win, stride])
-            for _, win, stride in self._feature_desc_dict.keys()
-        )
+        dtype_set = set()
+        for series_names, win in self._feature_desc_dict.keys():
+            for fd in self._feature_desc_dict[(series_names, win)]:
+                stride = calc_stride if calc_stride is not None else fd.stride
+                if skip_none and stride is None:
+                    dtype_set.add(AttributeParser.determine_type(win))
+                else:
+                    dtype_set.add(
+                        AttributeParser.determine_type([win] + to_list(stride))
+                    )
+
         if len(dtype_set) &gt; 1:
             warnings.warn(
                 &#34;There are multiple FeatureDescriptor window-stride &#34;
@@ -1176,7 +1337,7 @@ have the same type, i.e, either </p>
                 raise TypeError(f&#34;type: {type(feature)} is not supported - {feature}&#34;)
 
         # After adding the features, check whether the descriptors are compatible
-        self._check_feature_descriptors()
+        self._check_feature_descriptors(skip_none=True)
 
     @staticmethod
     def _executor(idx: int):
@@ -1184,14 +1345,21 @@ have the same type, i.e, either </p>
         stroll, function = get_stroll_func(idx)
         return stroll.apply_func(function)
 
+    # def _get_stroll(self, kwargs):
+    #     return StridedRollingFactory.get_segmenter(**kwargs)
+
     def _stroll_feat_generator(
         self,
         series_dict: Dict[str, pd.Series],
+        calc_stride: Union[List[Union[float, pd.Timedelta]], None],
+        segment_start_idxs: Union[np.ndarray, None],
+        segment_end_idxs: Union[np.ndarray, None],
         start_idx: Any,
         end_idx: Any,
         window_idx: str,
+        include_final_window: bool,
         approve_sparsity: bool,
-    ) -&gt; List[Tuple[StridedRolling, FuncWrapper]]:
+    ) -&gt; Callable[[int], Tuple[StridedRolling, FuncWrapper]]:
         # --- Future work ---
         # We could also make the StridedRolling creation multithreaded
         # Very low priority because the STROLL __init__ is rather efficient!
@@ -1200,21 +1368,26 @@ have the same type, i.e, either </p>
             [len(self._feature_desc_dict[k]) for k in keys_wins_strides]
         )
 
-        def get_stroll_function(idx):
+        def get_stroll_function(idx) -&gt; Tuple[StridedRolling, FuncWrapper]:
             key_idx = np.searchsorted(lengths, idx, &#34;right&#34;)  # right bc idx starts at 0
-            key, win, stride = keys_wins_strides[key_idx]
+            key, win = keys_wins_strides[key_idx]
+
             feature = self._feature_desc_dict[keys_wins_strides[key_idx]][
                 idx - lengths[key_idx]
             ]
+            stride = feature.stride if calc_stride is None else calc_stride
             function: FuncWrapper = feature.function
             # The factory method will instantiate the right StridedRolling object
             stroll_arg_dict = dict(
                 data=[series_dict[k] for k in key],
                 window=win,
-                stride=stride,
+                strides=stride,
+                segment_start_idxs=segment_start_idxs,
+                segment_end_idxs=segment_end_idxs,
                 start_idx=start_idx,
                 end_idx=end_idx,
                 window_idx=window_idx,
+                include_final_window=include_final_window,
                 approve_sparsity=approve_sparsity,
                 func_data_type=function.input_type,
             )
@@ -1228,11 +1401,37 @@ have the same type, i.e, either </p>
             len(self._feature_desc_dict[k]) for k in self._feature_desc_dict.keys()
         )
 
+    def _check_no_multiple_windows(self):
+        assert (
+            self._get_nb_output_features_without_window()
+            == self.get_nb_output_features()
+        ), (
+            &#34;When using `segment_XXX_idxs`; each output name - series_input combination&#34;
+            + &#34; can only have 1 window (or None)&#34;
+        )
+
+    @staticmethod
+    def _process_segment_idxs(
+        segment_idxs: Union[list, np.ndarray, pd.Series, pd.Index]
+    ) -&gt; np.ndarray:
+        if hasattr(segment_idxs, &#34;values&#34;):
+            segment_idxs = segment_idxs.values
+        segment_idxs = np.asarray(segment_idxs)
+        if segment_idxs.ndim &gt; 1:
+            segment_idxs = segment_idxs.squeeze()  # remove singleton dimensions
+        return segment_idxs
+
     def calculate(
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
+        stride: Optional[Union[float, str, pd.Timedelta, List, None]] = None,
+        segment_start_idxs: Optional[
+            Union[list, np.ndarray, pd.Series, pd.Index]
+        ] = None,
+        segment_end_idxs: Optional[Union[list, np.ndarray, pd.Series, pd.Index]] = None,
         return_df: Optional[bool] = False,
-        window_idx: Optional[str] = &#34;begin&#34;,
+        window_idx: Optional[str] = &#34;end&#34;,
+        include_final_window: Optional[bool] = False,
         bound_method: Optional[str] = &#34;inner&#34;,
         approve_sparsity: Optional[bool] = False,
         show_progress: Optional[bool] = False,
@@ -1240,15 +1439,6 @@ have the same type, i.e, either </p>
         n_jobs: Optional[int] = None,
     ) -&gt; Union[List[pd.DataFrame], pd.DataFrame]:
         &#34;&#34;&#34;Calculate features on the passed data.
-
-        Notes
-        ------
-        * The (column-)names of the series in `data` represent the `series_names`.
-        * If a `logging_file_path` is provided, the execution (time) info can be
-          retrieved by calling `logger.get_feature_logs(logging_file_path)`.
-          Be aware that the `logging_file_path` gets cleared before the logger pushes
-          logged messages. Hence, one should use a separate logging file for each
-          constructed processing and feature instance with this library.
 
         Parameters
         ----------
@@ -1259,8 +1449,56 @@ have the same type, i.e, either </p>
             * each Series / DataFrame must have a sortable index. This index represents
             the sequence position of the corresponding values, the index can be either
             numeric or a ``pd.DatetimeIndex``.
-            * each Series / DataFrame index must be comparable.with all others
+            * each Series / DataFrame index must be comparable with all others
             * we assume that each series-name / dataframe-column-name is unique.
+        stride: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta], None], optional
+            The stride size. By default None. This argument supports multiple types: \n
+            * If None, the stride of the `FeatureDescriptor` objects will be used.
+            * If the type is an `float` or an `int`, its value represents the series:\n
+                - its stride **range** when a **non time-indexed** series is passed.
+                - the stride in **number of samples**, when a **time-indexed** series
+                is passed (must then be and `int`)
+            * If the stride&#39;s type is a `pd.Timedelta`, the stride size represents
+            the stride-time delta. The passed data **must have a time-index**.
+            * If a `str`, it must represent a stride-time-delta-string. Hence, the
+            **passed data must have a time-index**. \n
+            .. Note::
+                When set, this stride argument takes precedence over the stride property
+                of the `FeatureDescriptor`s in this `FeatureCollection` (i.e., when a
+                not None value for `stride` passed to this method).
+        segment_start_idxs: Union[list, np.ndarray, pd.Series, pd.Index], optional
+            The start indices of the segments. If None, the start indices will be
+            computed from the data using either:\n
+            - the `segment_end_idxs` - the `window` size property of the
+                `FeatureDescriptor` in this `FeatureCollection` (if `segment_end_idxs`
+                is not None)
+            - strided-window rolling on the data using `window` and `stride` of the
+                `FeatureDescriptor` in this `FeatureCollection` (if `segment_end_idxs`
+                 is also None). (Note that the `stride` argument of this method takes
+                 precedence over the `stride` property of the `FeatureDescriptor`s).
+            By default None.
+        segment_end_idxs: Union[list, np.ndarray, pd.Series, pd.Index], optional
+            The end indices for the segmented windows. If None, the end indices will be
+            computed from the data using either:\n
+            - the `segment_start_idxs` + the `window` size property of the
+                `FeatureDescriptor` in this `FeatureCollection` (if `segment_start_idxs`
+                is not None)
+            - strided-window rolling on the data using `window` and `stride` of the
+                `FeatureDescriptor` in this `FeatureCollection` (if `segment_start_idxs`
+                 is also None). (Note that the `stride` argument of this method takes
+                 precedence over the `stride` property of the `FeatureDescriptor`s).
+            By default None.
+
+            ..Note::
+                When passing both `segment_start_idxs` and `segment_end_idxs`, these two
+                arguments must have the same length and every start index must be &lt;=
+                than the corresponding end index.
+                Note that passing both arguments, discards any meaning of the `window`
+                and `stride` values (as these segment indices define the segmented data,
+                and thus no strided-window rolling index calculation has to be executed).
+                As such, the user can create variable-length segmented windows. However,
+                in such cases, the user should be weary that the feature functions are
+                invariant to these (potentially variable-length) windows.
         return_df : bool, optional
             Whether the output needs to be a DataFrame or a list thereof, by default
             False. If `True` the output dataframes will be merged to a DataFrame with an
@@ -1268,8 +1506,38 @@ have the same type, i.e, either </p>
         window_idx : str, optional
             The window&#39;s index position which will be used as index for the
             feature_window aggregation. Must be either of: `[&#34;begin&#34;, &#34;middle&#34;, &#34;end&#34;]`.
-            by default &#34;begin&#34;. All features in this collection will use the same
+            by **default &#34;end&#34;**. All features in this collection will use the same
             window_idx.
+
+            ..Note::
+                `window_idx`=&#34;end&#34; uses the window&#39;s end (= right open bound) as
+                output index. \n
+                `window_idx`=&#34;begin&#34; uses the window&#39;s start idx (= left closed bound)
+                as output index.
+        include_final_window : bool, optional
+            Whether the final (possibly incomplete) window should be included in the
+            strided-window segmentation, by default False.
+
+            .. Note::
+                The remarks below apply when `include_final_window` is set to True.
+                The user should be aware that the last window *might* be incomplete,
+                i.e.;
+
+                - when equally sampled, the last window *might* be smaller than the
+                  the other windows.
+                - when not equally sampled, the last window *might* not include all the
+                  data points (as the begin-time + window-size comes after the last data
+                  point).
+
+                Note, that when equally sampled, the last window *will* be a full window
+                when:
+
+                - the stride is the sampling rate of the data (or stride = 1 for
+                sample-based configurations).&lt;br&gt;
+                **Remark**: that when `include_final_window` is set to False, the last
+                window (which is a full) window will not be included!
+                - *(len * sampling_rate - window_size) % stride = 0*. Remark that the
+                  above case is a base case of this.
         bound_method: str, optional
             The start-end bound methodology which is used to generate the slice ranges
             when ``data`` consists of multiple series / columns.
@@ -1296,18 +1564,17 @@ have the same type, i.e, either </p>
             If n_jobs is either 0 or 1, the code will be executed sequentially without
             creating a process pool. This is very useful when debugging, as the stack
             trace will be more comprehensible.
-            .. note:
+            .. note::
                 Multiprocessed execution is not supported on Windows. Even when,
                 `n_jobs` is set &gt; 1, the feature extraction will still be executed
                 sequentially.
                 Why do we not support multiprocessing on Windows; see this issue
                 https://github.com/predict-idlab/tsflex/issues/51
 
-
             .. tip::
                 It takes on avg. _300ms_ to schedule everything with
                 multiprocessing. So if your sequential feature extraction code runs
-                faster than ~1.5s, it might not be worth it to parallelize the process
+                faster than ~1s, it might not be worth it to parallelize the process
                 (and thus better leave `n_jobs` to 0 or 1).
 
         Returns
@@ -1320,6 +1587,16 @@ have the same type, i.e, either </p>
         KeyError
             Raised when a required key is not found in `data`.
 
+        Notes
+        ------
+        * The (column-)names of the series in `data` represent the `series_names`.
+        * If a `logging_file_path` is provided, the execution (time) info can be
+          retrieved by calling `logger.get_feature_logs(logging_file_path)`.
+          Be aware that the `logging_file_path` gets cleared before the logger pushes
+          logged messages. Hence, one should use a separate logging file for each
+          constructed processing and feature instance with this library.
+
+
         &#34;&#34;&#34;
         # Delete other logging handlers
         delete_logging_handlers(logger)
@@ -1327,11 +1604,61 @@ have the same type, i.e, either </p>
         if logging_file_path:
             f_handler = add_logging_handler(logger, logging_file_path)
 
+        # Convert to numpy array (if necessary)
+        if segment_start_idxs is not None:
+            segment_start_idxs = FeatureCollection._process_segment_idxs(segment_start_idxs)
+        if segment_end_idxs is not None:
+            segment_end_idxs = FeatureCollection._process_segment_idxs(segment_end_idxs)
+
+        if segment_start_idxs is not None and segment_end_idxs is not None:
+            # Check if segment indices have same length and whether every start idx
+            # &lt;= end idx
+            _check_start_end_array(segment_start_idxs, segment_end_idxs)
+            # Check if there is either 1 or No(ne) window value for every output name -
+            # input_series combination
+            self._check_no_multiple_windows()
+
+        if segment_start_idxs is None or segment_end_idxs is None:
+            assert all(
+                fd.window is not None
+                for fd in flatten(self._feature_desc_dict.values())
+            ), (
+                &#34;Each feature descriptor must have a window when not both &#34;
+                + &#34;segment_start_idxs and segment_end_idxs are provided&#34;
+            )
+
+        if stride is None and segment_start_idxs is None and segment_end_idxs is None:
+            assert all(
+                fd.stride is not None
+                for fd in flatten(self._feature_desc_dict.values())
+            ), (
+                &#34;Each feature descriptor must have a stride when no stride or &#34;
+                + &#34;segment indices are passed to this method!&#34;
+            )
+        elif stride is not None and (
+            segment_start_idxs is not None or segment_end_idxs is not None
+        ):
+            raise ValueError(
+                &#34;The stride and any segment index argument cannot be set together! &#34;
+                + &#34;At least one of both should be None.&#34;
+            )
+
+        if stride is not None:
+            # Verify whether the stride complies with the input data dtype
+            stride = [
+                parse_time_arg(s) if isinstance(s, str) else s for s in to_list(stride)
+            ]
+            self._check_feature_descriptors(skip_none=False, calc_stride=stride)
+
         # Convert the data to a series_dict
         series_dict: Dict[str, pd.Series] = {}
         for s in to_series_list(data):
             if not s.index.is_monotonic_increasing:
-                # TODO -&gt; maybe raise a warning?
+                warnings.warn(
+                    f&#34;The index of series &#39;{s.name}&#39; is not monotonic increasing. &#34;
+                    + &#34;The series will be sorted by the index.&#34;,
+                    RuntimeWarning,
+                )
                 s = s.sort_index(ascending=True, inplace=False, ignore_index=False)
 
             # Assert the assumptions we make!
@@ -1340,22 +1667,35 @@ have the same type, i.e, either </p>
             if s.name in self.get_required_series():
                 series_dict[str(s.name)] = s
 
-        # determing the bounds of the series dict items and slice on them
+        # Determine the bounds of the series dict items and slice on them
+        # TODO: is dit wel nodig `hier? want we doen dat ook in de strided rolling
         start, end = _determine_bounds(bound_method, list(series_dict.values()))
         series_dict = {
-            n: s.loc[s.index.dtype.type(start) : s.index.dtype.type(end)]  # TODO: check memory efficiency of ths
+            n: s.loc[
+                s.index.dtype.type(start) : s.index.dtype.type(end)
+            ]  # TODO: check memory efficiency of ths
             for n, s, in series_dict.items()
         }
 
         # Note: this variable has a global scope so this is shared in multiprocessing
-        # TODO: try to make this more efficient
+        # TODO: try to make this more efficient (but is not really the bottleneck)
         global get_stroll_func
         get_stroll_func = self._stroll_feat_generator(
-            series_dict, start, end, window_idx, approve_sparsity
+            series_dict,
+            calc_stride=stride,
+            segment_start_idxs=segment_start_idxs,
+            segment_end_idxs=segment_end_idxs,
+            start_idx=start,
+            end_idx=end,
+            window_idx=window_idx,
+            include_final_window=include_final_window,
+            approve_sparsity=approve_sparsity,
         )
         nb_stroll_funcs = self._get_stroll_feat_length()
 
-        if os.name == &#34;nt&#34;:  # On Windows no multiprocessing is supported, see https://github.com/predict-idlab/tsflex/issues/51
+        if (
+            os.name == &#34;nt&#34;
+        ):  # On Windows no multiprocessing is supported, see https://github.com/predict-idlab/tsflex/issues/51
             n_jobs = 1
         elif n_jobs is None:
             n_jobs = os.cpu_count()
@@ -1392,8 +1732,8 @@ have the same type, i.e, either </p>
 
         if calculated_feature_list is None:
             raise RuntimeError(
-                &#34;Feature Extraction halted due to error while extracting one (or multiple) feature(s)! &#34;
-                + &#34;See stack trace above.&#34;
+                &#34;Feature Extraction halted due to error while extracting one &#34;
+                + &#34;(or multiple) feature(s)! See stack trace above.&#34;
             )
 
         if return_df:
@@ -1450,11 +1790,18 @@ have the same type, i.e, either </p>
 
         &#34;&#34;&#34;
         # dict in which we store all the { output_col_name : (UUID, FeatureDescriptor) }
-        # items of our current Featurecollection object
+        # items of our current FeatureCollection object
+        manual_window = False
+        if any(c.endswith(&#34;w=manual&#34;) for c in feat_cols_to_keep):
+            assert all(c.endswith(&#34;w=manual&#34;) for c in feat_cols_to_keep)
+            # As the windows are created manual, the FeatureCollection cannot contain
+            # multiple windows for the same output name - input_series combination
+            self._check_no_multiple_windows()
+            manual_window = True
         feat_col_fd_mapping: Dict[str, Tuple[str, FeatureDescriptor]] = {}
-        for (s_names, window, stride), fds in self._feature_desc_dict.items():
-            fd: FeatureDescriptor
-            for fd in fds:
+        for (s_names, window), fd_list in self._feature_desc_dict.items():
+            window = &#34;manual&#34; if manual_window else self._ws_to_str(window)
+            for fd in fd_list:
                 # As a single FeatureDescriptor can have multiple output col names, we
                 # create a unique identifier for each FeatureDescriptor (on which we
                 # will apply set-like operations later on to only retain all the unique
@@ -1462,14 +1809,8 @@ have the same type, i.e, either </p>
                 uuid_str = str(uuid.uuid4())
                 for output_name in fd.function.output_names:
                     # Reconstruct the feature column name
-                    feat_col_name = &#34;__&#34;.join(
-                        [
-                            &#34;|&#34;.join(s_names)
-                            if isinstance(s_names, tuple)
-                            else s_names,
-                            output_name,
-                            f&#34;w={self._ws_to_str(window)}_s={self._ws_to_str(stride)}&#34;,
-                        ]
+                    feat_col_name = StridedRolling.construct_output_index(
+                        series_keys=s_names, feat_name=output_name, win_str=window
                     )
                     feat_col_fd_mapping[feat_col_name] = (uuid_str, fd)
 
@@ -1496,6 +1837,7 @@ have the same type, i.e, either </p>
 
     @staticmethod
     def _ws_to_str(window_or_stride: Any) -&gt; str:
+        &#34;&#34;&#34;Convert the window/stride value to a (shortend) string representation.&#34;&#34;&#34;
         if isinstance(window_or_stride, pd.Timedelta):
             return timedelta_to_str(window_or_stride)
         else:
@@ -1508,13 +1850,16 @@ have the same type, i.e, either </p>
         for feature_key in feature_keys:
             output_str += f&#34;{&#39;|&#39;.join(feature_key)}: (&#34;
             keys = (x for x in self._feature_desc_dict.keys() if x[0] == feature_key)
-            for _, win_size, stride in keys:
+            for _, win_size in keys:
                 output_str += f&#34;\n\twin: &#34;
                 win_str = self._ws_to_str(win_size)
-                stride_str = self._ws_to_str(stride)
-                output_str += f&#34;{win_str:&lt;6}, stride: {stride_str}: [&#34;
-                for feat_desc in self._feature_desc_dict[feature_key, win_size, stride]:
-                    output_str += f&#34;\n\t\t{feat_desc._func_str},&#34;
+                output_str += f&#34;{win_str:&lt;6}: [&#34;
+                for feat_desc in self._feature_desc_dict[feature_key, win_size]:
+                    stride_str = feat_desc.stride
+                    if stride_str is not None:
+                        stride_str = [self._ws_to_str(s) for s in stride_str]
+                    output_str += f&#34;\n\t\t{feat_desc._func_str}&#34;
+                    output_str += f&#34;    stride: {stride_str},&#34;
                 output_str += &#34;\n\t]&#34;
             output_str += &#34;\n)\n&#34;
         return output_str</code></pre>
@@ -1579,6 +1924,33 @@ collection.</p>
 <dd>List of all the required series names.</dd>
 </dl></div>
 </dd>
+<dt id="tsflex.features.FeatureCollection.get_nb_output_features"><code class="name flex">
+<span>def <span class="ident">get_nb_output_features</span></span>(<span>self)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_nb_output_features(self) -&gt; int:
+    &#34;&#34;&#34;Return the number of output features in this feature collection.
+
+    Returns
+    -------
+    int
+        The number of output features in this feature collection.
+
+    &#34;&#34;&#34;
+    fd_list: Iterable[FeatureDescriptor] = flatten(self._feature_desc_dict.values())
+    return sum(fd.get_nb_output_features() for fd in fd_list)</code></pre>
+</details>
+<div class="desc"><p>Return the number of output features in this feature collection.</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><code>int</code></dt>
+<dd>The number of output features in this feature collection.</dd>
+</dl></div>
+</dd>
 <dt id="tsflex.features.FeatureCollection.add"><code class="name flex">
 <span>def <span class="ident">add</span></span>(<span>self, features)</span>
 </code></dt>
@@ -1627,7 +1999,7 @@ collection.</p>
             raise TypeError(f&#34;type: {type(feature)} is not supported - {feature}&#34;)
 
     # After adding the features, check whether the descriptors are compatible
-    self._check_feature_descriptors()</code></pre>
+    self._check_feature_descriptors(skip_none=True)</code></pre>
 </details>
 <div class="desc"><p>Add feature(s) to the FeatureCollection.</p>
 <h2 id="parameters">Parameters</h2>
@@ -1643,7 +2015,7 @@ collection.</p>
 </dl></div>
 </dd>
 <dt id="tsflex.features.FeatureCollection.calculate"><code class="name flex">
-<span>def <span class="ident">calculate</span></span>(<span>self, data, return_df=False, window_idx='begin', bound_method='inner', approve_sparsity=False, show_progress=False, logging_file_path=None, n_jobs=None)</span>
+<span>def <span class="ident">calculate</span></span>(<span>self, data, stride=None, segment_start_idxs=None, segment_end_idxs=None, return_df=False, window_idx='end', include_final_window=False, bound_method='inner', approve_sparsity=False, show_progress=False, logging_file_path=None, n_jobs=None)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -1653,8 +2025,14 @@ collection.</p>
 <pre><code class="python">def calculate(
     self,
     data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
+    stride: Optional[Union[float, str, pd.Timedelta, List, None]] = None,
+    segment_start_idxs: Optional[
+        Union[list, np.ndarray, pd.Series, pd.Index]
+    ] = None,
+    segment_end_idxs: Optional[Union[list, np.ndarray, pd.Series, pd.Index]] = None,
     return_df: Optional[bool] = False,
-    window_idx: Optional[str] = &#34;begin&#34;,
+    window_idx: Optional[str] = &#34;end&#34;,
+    include_final_window: Optional[bool] = False,
     bound_method: Optional[str] = &#34;inner&#34;,
     approve_sparsity: Optional[bool] = False,
     show_progress: Optional[bool] = False,
@@ -1662,15 +2040,6 @@ collection.</p>
     n_jobs: Optional[int] = None,
 ) -&gt; Union[List[pd.DataFrame], pd.DataFrame]:
     &#34;&#34;&#34;Calculate features on the passed data.
-
-    Notes
-    ------
-    * The (column-)names of the series in `data` represent the `series_names`.
-    * If a `logging_file_path` is provided, the execution (time) info can be
-      retrieved by calling `logger.get_feature_logs(logging_file_path)`.
-      Be aware that the `logging_file_path` gets cleared before the logger pushes
-      logged messages. Hence, one should use a separate logging file for each
-      constructed processing and feature instance with this library.
 
     Parameters
     ----------
@@ -1681,8 +2050,56 @@ collection.</p>
         * each Series / DataFrame must have a sortable index. This index represents
         the sequence position of the corresponding values, the index can be either
         numeric or a ``pd.DatetimeIndex``.
-        * each Series / DataFrame index must be comparable.with all others
+        * each Series / DataFrame index must be comparable with all others
         * we assume that each series-name / dataframe-column-name is unique.
+    stride: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta], None], optional
+        The stride size. By default None. This argument supports multiple types: \n
+        * If None, the stride of the `FeatureDescriptor` objects will be used.
+        * If the type is an `float` or an `int`, its value represents the series:\n
+            - its stride **range** when a **non time-indexed** series is passed.
+            - the stride in **number of samples**, when a **time-indexed** series
+            is passed (must then be and `int`)
+        * If the stride&#39;s type is a `pd.Timedelta`, the stride size represents
+        the stride-time delta. The passed data **must have a time-index**.
+        * If a `str`, it must represent a stride-time-delta-string. Hence, the
+        **passed data must have a time-index**. \n
+        .. Note::
+            When set, this stride argument takes precedence over the stride property
+            of the `FeatureDescriptor`s in this `FeatureCollection` (i.e., when a
+            not None value for `stride` passed to this method).
+    segment_start_idxs: Union[list, np.ndarray, pd.Series, pd.Index], optional
+        The start indices of the segments. If None, the start indices will be
+        computed from the data using either:\n
+        - the `segment_end_idxs` - the `window` size property of the
+            `FeatureDescriptor` in this `FeatureCollection` (if `segment_end_idxs`
+            is not None)
+        - strided-window rolling on the data using `window` and `stride` of the
+            `FeatureDescriptor` in this `FeatureCollection` (if `segment_end_idxs`
+             is also None). (Note that the `stride` argument of this method takes
+             precedence over the `stride` property of the `FeatureDescriptor`s).
+        By default None.
+    segment_end_idxs: Union[list, np.ndarray, pd.Series, pd.Index], optional
+        The end indices for the segmented windows. If None, the end indices will be
+        computed from the data using either:\n
+        - the `segment_start_idxs` + the `window` size property of the
+            `FeatureDescriptor` in this `FeatureCollection` (if `segment_start_idxs`
+            is not None)
+        - strided-window rolling on the data using `window` and `stride` of the
+            `FeatureDescriptor` in this `FeatureCollection` (if `segment_start_idxs`
+             is also None). (Note that the `stride` argument of this method takes
+             precedence over the `stride` property of the `FeatureDescriptor`s).
+        By default None.
+
+        ..Note::
+            When passing both `segment_start_idxs` and `segment_end_idxs`, these two
+            arguments must have the same length and every start index must be &lt;=
+            than the corresponding end index.
+            Note that passing both arguments, discards any meaning of the `window`
+            and `stride` values (as these segment indices define the segmented data,
+            and thus no strided-window rolling index calculation has to be executed).
+            As such, the user can create variable-length segmented windows. However,
+            in such cases, the user should be weary that the feature functions are
+            invariant to these (potentially variable-length) windows.
     return_df : bool, optional
         Whether the output needs to be a DataFrame or a list thereof, by default
         False. If `True` the output dataframes will be merged to a DataFrame with an
@@ -1690,8 +2107,38 @@ collection.</p>
     window_idx : str, optional
         The window&#39;s index position which will be used as index for the
         feature_window aggregation. Must be either of: `[&#34;begin&#34;, &#34;middle&#34;, &#34;end&#34;]`.
-        by default &#34;begin&#34;. All features in this collection will use the same
+        by **default &#34;end&#34;**. All features in this collection will use the same
         window_idx.
+
+        ..Note::
+            `window_idx`=&#34;end&#34; uses the window&#39;s end (= right open bound) as
+            output index. \n
+            `window_idx`=&#34;begin&#34; uses the window&#39;s start idx (= left closed bound)
+            as output index.
+    include_final_window : bool, optional
+        Whether the final (possibly incomplete) window should be included in the
+        strided-window segmentation, by default False.
+
+        .. Note::
+            The remarks below apply when `include_final_window` is set to True.
+            The user should be aware that the last window *might* be incomplete,
+            i.e.;
+
+            - when equally sampled, the last window *might* be smaller than the
+              the other windows.
+            - when not equally sampled, the last window *might* not include all the
+              data points (as the begin-time + window-size comes after the last data
+              point).
+
+            Note, that when equally sampled, the last window *will* be a full window
+            when:
+
+            - the stride is the sampling rate of the data (or stride = 1 for
+            sample-based configurations).&lt;br&gt;
+            **Remark**: that when `include_final_window` is set to False, the last
+            window (which is a full) window will not be included!
+            - *(len * sampling_rate - window_size) % stride = 0*. Remark that the
+              above case is a base case of this.
     bound_method: str, optional
         The start-end bound methodology which is used to generate the slice ranges
         when ``data`` consists of multiple series / columns.
@@ -1718,18 +2165,17 @@ collection.</p>
         If n_jobs is either 0 or 1, the code will be executed sequentially without
         creating a process pool. This is very useful when debugging, as the stack
         trace will be more comprehensible.
-        .. note:
+        .. note::
             Multiprocessed execution is not supported on Windows. Even when,
             `n_jobs` is set &gt; 1, the feature extraction will still be executed
             sequentially.
             Why do we not support multiprocessing on Windows; see this issue
             https://github.com/predict-idlab/tsflex/issues/51
 
-
         .. tip::
             It takes on avg. _300ms_ to schedule everything with
             multiprocessing. So if your sequential feature extraction code runs
-            faster than ~1.5s, it might not be worth it to parallelize the process
+            faster than ~1s, it might not be worth it to parallelize the process
             (and thus better leave `n_jobs` to 0 or 1).
 
     Returns
@@ -1742,6 +2188,16 @@ collection.</p>
     KeyError
         Raised when a required key is not found in `data`.
 
+    Notes
+    ------
+    * The (column-)names of the series in `data` represent the `series_names`.
+    * If a `logging_file_path` is provided, the execution (time) info can be
+      retrieved by calling `logger.get_feature_logs(logging_file_path)`.
+      Be aware that the `logging_file_path` gets cleared before the logger pushes
+      logged messages. Hence, one should use a separate logging file for each
+      constructed processing and feature instance with this library.
+
+
     &#34;&#34;&#34;
     # Delete other logging handlers
     delete_logging_handlers(logger)
@@ -1749,11 +2205,61 @@ collection.</p>
     if logging_file_path:
         f_handler = add_logging_handler(logger, logging_file_path)
 
+    # Convert to numpy array (if necessary)
+    if segment_start_idxs is not None:
+        segment_start_idxs = FeatureCollection._process_segment_idxs(segment_start_idxs)
+    if segment_end_idxs is not None:
+        segment_end_idxs = FeatureCollection._process_segment_idxs(segment_end_idxs)
+
+    if segment_start_idxs is not None and segment_end_idxs is not None:
+        # Check if segment indices have same length and whether every start idx
+        # &lt;= end idx
+        _check_start_end_array(segment_start_idxs, segment_end_idxs)
+        # Check if there is either 1 or No(ne) window value for every output name -
+        # input_series combination
+        self._check_no_multiple_windows()
+
+    if segment_start_idxs is None or segment_end_idxs is None:
+        assert all(
+            fd.window is not None
+            for fd in flatten(self._feature_desc_dict.values())
+        ), (
+            &#34;Each feature descriptor must have a window when not both &#34;
+            + &#34;segment_start_idxs and segment_end_idxs are provided&#34;
+        )
+
+    if stride is None and segment_start_idxs is None and segment_end_idxs is None:
+        assert all(
+            fd.stride is not None
+            for fd in flatten(self._feature_desc_dict.values())
+        ), (
+            &#34;Each feature descriptor must have a stride when no stride or &#34;
+            + &#34;segment indices are passed to this method!&#34;
+        )
+    elif stride is not None and (
+        segment_start_idxs is not None or segment_end_idxs is not None
+    ):
+        raise ValueError(
+            &#34;The stride and any segment index argument cannot be set together! &#34;
+            + &#34;At least one of both should be None.&#34;
+        )
+
+    if stride is not None:
+        # Verify whether the stride complies with the input data dtype
+        stride = [
+            parse_time_arg(s) if isinstance(s, str) else s for s in to_list(stride)
+        ]
+        self._check_feature_descriptors(skip_none=False, calc_stride=stride)
+
     # Convert the data to a series_dict
     series_dict: Dict[str, pd.Series] = {}
     for s in to_series_list(data):
         if not s.index.is_monotonic_increasing:
-            # TODO -&gt; maybe raise a warning?
+            warnings.warn(
+                f&#34;The index of series &#39;{s.name}&#39; is not monotonic increasing. &#34;
+                + &#34;The series will be sorted by the index.&#34;,
+                RuntimeWarning,
+            )
             s = s.sort_index(ascending=True, inplace=False, ignore_index=False)
 
         # Assert the assumptions we make!
@@ -1762,22 +2268,35 @@ collection.</p>
         if s.name in self.get_required_series():
             series_dict[str(s.name)] = s
 
-    # determing the bounds of the series dict items and slice on them
+    # Determine the bounds of the series dict items and slice on them
+    # TODO: is dit wel nodig `hier? want we doen dat ook in de strided rolling
     start, end = _determine_bounds(bound_method, list(series_dict.values()))
     series_dict = {
-        n: s.loc[s.index.dtype.type(start) : s.index.dtype.type(end)]  # TODO: check memory efficiency of ths
+        n: s.loc[
+            s.index.dtype.type(start) : s.index.dtype.type(end)
+        ]  # TODO: check memory efficiency of ths
         for n, s, in series_dict.items()
     }
 
     # Note: this variable has a global scope so this is shared in multiprocessing
-    # TODO: try to make this more efficient
+    # TODO: try to make this more efficient (but is not really the bottleneck)
     global get_stroll_func
     get_stroll_func = self._stroll_feat_generator(
-        series_dict, start, end, window_idx, approve_sparsity
+        series_dict,
+        calc_stride=stride,
+        segment_start_idxs=segment_start_idxs,
+        segment_end_idxs=segment_end_idxs,
+        start_idx=start,
+        end_idx=end,
+        window_idx=window_idx,
+        include_final_window=include_final_window,
+        approve_sparsity=approve_sparsity,
     )
     nb_stroll_funcs = self._get_stroll_feat_length()
 
-    if os.name == &#34;nt&#34;:  # On Windows no multiprocessing is supported, see https://github.com/predict-idlab/tsflex/issues/51
+    if (
+        os.name == &#34;nt&#34;
+    ):  # On Windows no multiprocessing is supported, see https://github.com/predict-idlab/tsflex/issues/51
         n_jobs = 1
     elif n_jobs is None:
         n_jobs = os.cpu_count()
@@ -1814,8 +2333,8 @@ collection.</p>
 
     if calculated_feature_list is None:
         raise RuntimeError(
-            &#34;Feature Extraction halted due to error while extracting one (or multiple) feature(s)! &#34;
-            + &#34;See stack trace above.&#34;
+            &#34;Feature Extraction halted due to error while extracting one &#34;
+            + &#34;(or multiple) feature(s)! See stack trace above.&#34;
         )
 
     if return_df:
@@ -1826,15 +2345,6 @@ collection.</p>
         return calculated_feature_list</code></pre>
 </details>
 <div class="desc"><p>Calculate features on the passed data.</p>
-<h2 id="notes">Notes</h2>
-<ul>
-<li>The (column-)names of the series in <code>data</code> represent the <code>series_names</code>.</li>
-<li>If a <code>logging_file_path</code> is provided, the execution (time) info can be
-retrieved by calling <code><a title="tsflex.features.logger.get_feature_logs" href="logger.html#tsflex.features.logger.get_feature_logs">get_feature_logs()</a>(logging_file_path)</code>.
-Be aware that the <code>logging_file_path</code> gets cleared before the logger pushes
-logged messages. Hence, one should use a separate logging file for each
-constructed processing and feature instance with this library.</li>
-</ul>
 <h2 id="parameters">Parameters</h2>
 <dl>
 <dt><strong><code>data</code></strong> :&ensp;<code>Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]</code></dt>
@@ -1846,19 +2356,125 @@ feature calculation. </p>
 <li>each Series / DataFrame must have a sortable index. This index represents
 the sequence position of the corresponding values, the index can be either
 numeric or a <code>pd.DatetimeIndex</code>.</li>
-<li>each Series / DataFrame index must be comparable.with all others</li>
+<li>each Series / DataFrame index must be comparable with all others</li>
 <li>we assume that each series-name / dataframe-column-name is unique.</li>
 </ul>
+</dd>
+<dt><strong><code>stride</code></strong> :&ensp;<code>Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta], None]</code>, optional</dt>
+<dd>
+<p>The stride size. By default None. This argument supports multiple types: </p>
+<ul>
+<li>If None, the stride of the <code><a title="tsflex.features.FeatureDescriptor" href="#tsflex.features.FeatureDescriptor">FeatureDescriptor</a></code> objects will be used.</li>
+<li>
+<p>If the type is an <code>float</code> or an <code>int</code>, its value represents the series:</p>
+<ul>
+<li>its stride <strong>range</strong> when a <strong>non time-indexed</strong> series is passed.</li>
+<li>the stride in <strong>number of samples</strong>, when a <strong>time-indexed</strong> series
+is passed (must then be and <code>int</code>)<ul>
+<li>If the stride's type is a <code>pd.Timedelta</code>, the stride size represents
+the stride-time delta. The passed data <strong>must have a time-index</strong>.</li>
+<li>If a <code>str</code>, it must represent a stride-time-delta-string. Hence, the
+<strong>passed data must have a time-index</strong>. </li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When set, this stride argument takes precedence over the stride property
+of the <code><a title="tsflex.features.FeatureDescriptor" href="#tsflex.features.FeatureDescriptor">FeatureDescriptor</a></code>s in this <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> (i.e., when a
+not None value for <code>stride</code> passed to this method).</p>
+</div>
+</dd>
+<dt><strong><code>segment_start_idxs</code></strong> :&ensp;<code>Union[list, np.ndarray, pd.Series, pd.Index]</code>, optional</dt>
+<dd>
+<p>The start indices of the segments. If None, the start indices will be
+computed from the data using either:</p>
+<ul>
+<li>the <code>segment_end_idxs</code> - the <code>window</code> size property of the
+<code><a title="tsflex.features.FeatureDescriptor" href="#tsflex.features.FeatureDescriptor">FeatureDescriptor</a></code> in this <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> (if <code>segment_end_idxs</code>
+is not None)</li>
+<li>strided-window rolling on the data using <code>window</code> and <code>stride</code> of the
+<code><a title="tsflex.features.FeatureDescriptor" href="#tsflex.features.FeatureDescriptor">FeatureDescriptor</a></code> in this <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> (if <code>segment_end_idxs</code>
+is also None). (Note that the <code>stride</code> argument of this method takes
+precedence over the <code>stride</code> property of the <code><a title="tsflex.features.FeatureDescriptor" href="#tsflex.features.FeatureDescriptor">FeatureDescriptor</a></code>s).
+By default None.</li>
+</ul>
+</dd>
+<dt><strong><code>segment_end_idxs</code></strong> :&ensp;<code>Union[list, np.ndarray, pd.Series, pd.Index]</code>, optional</dt>
+<dd>
+<p>The end indices for the segmented windows. If None, the end indices will be
+computed from the data using either:</p>
+<ul>
+<li>the <code>segment_start_idxs</code> + the <code>window</code> size property of the
+<code><a title="tsflex.features.FeatureDescriptor" href="#tsflex.features.FeatureDescriptor">FeatureDescriptor</a></code> in this <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> (if <code>segment_start_idxs</code>
+is not None)</li>
+<li>strided-window rolling on the data using <code>window</code> and <code>stride</code> of the
+<code><a title="tsflex.features.FeatureDescriptor" href="#tsflex.features.FeatureDescriptor">FeatureDescriptor</a></code> in this <code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code> (if <code>segment_start_idxs</code>
+is also None). (Note that the <code>stride</code> argument of this method takes
+precedence over the <code>stride</code> property of the <code><a title="tsflex.features.FeatureDescriptor" href="#tsflex.features.FeatureDescriptor">FeatureDescriptor</a></code>s).
+By default None.</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>When passing both <code>segment_start_idxs</code> and <code>segment_end_idxs</code>, these two
+arguments must have the same length and every start index must be &lt;=
+than the corresponding end index.
+Note that passing both arguments, discards any meaning of the <code>window</code>
+and <code>stride</code> values (as these segment indices define the segmented data,
+and thus no strided-window rolling index calculation has to be executed).
+As such, the user can create variable-length segmented windows. However,
+in such cases, the user should be weary that the feature functions are
+invariant to these (potentially variable-length) windows.</p>
+</div>
 </dd>
 <dt><strong><code>return_df</code></strong> :&ensp;<code>bool</code>, optional</dt>
 <dd>Whether the output needs to be a DataFrame or a list thereof, by default
 False. If <code>True</code> the output dataframes will be merged to a DataFrame with an
 outer merge.</dd>
 <dt><strong><code>window_idx</code></strong> :&ensp;<code>str</code>, optional</dt>
-<dd>The window's index position which will be used as index for the
+<dd>
+<p>The window's index position which will be used as index for the
 feature_window aggregation. Must be either of: <code>["begin", "middle", "end"]</code>.
-by default "begin". All features in this collection will use the same
-window_idx.</dd>
+by <strong>default "end"</strong>. All features in this collection will use the same
+window_idx.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p><code>window_idx</code>="end" uses the window's end (= right open bound) as
+output index. </p>
+<p><code>window_idx</code>="begin" uses the window's start idx (= left closed bound)
+as output index.</p>
+</div>
+</dd>
+<dt><strong><code>include_final_window</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>
+<p>Whether the final (possibly incomplete) window should be included in the
+strided-window segmentation, by default False.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The remarks below apply when <code>include_final_window</code> is set to True.
+The user should be aware that the last window <em>might</em> be incomplete,
+i.e.;</p>
+<ul>
+<li>when equally sampled, the last window <em>might</em> be smaller than the
+the other windows.</li>
+<li>when not equally sampled, the last window <em>might</em> not include all the
+data points (as the begin-time + window-size comes after the last data
+point).</li>
+</ul>
+<p>Note, that when equally sampled, the last window <em>will</em> be a full window
+when:</p>
+<ul>
+<li>the stride is the sampling rate of the data (or stride = 1 for
+sample-based configurations).<br>
+<strong>Remark</strong>: that when <code>include_final_window</code> is set to False, the last
+window (which is a full) window will not be included!</li>
+<li><em>(len * sampling_rate - window_size) % stride = 0</em>. Remark that the
+above case is a base case of this.</li>
+</ul>
+</div>
+</dd>
 <dt><strong><code>bound_method</code></strong> :&ensp;<code>str</code>, optional</dt>
 <dd>
 <p>The start-end bound methodology which is used to generate the slice ranges
@@ -1888,18 +2504,20 @@ to the given file path. See also the <code><a title="tsflex.features.logger" hre
 the number returned by <em>os.cpu_count()</em> is used, by default None. </p>
 <p>If n_jobs is either 0 or 1, the code will be executed sequentially without
 creating a process pool. This is very useful when debugging, as the stack
-trace will be more comprehensible.
-.. note:
-Multiprocessed execution is not supported on Windows. Even when,
+trace will be more comprehensible.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Multiprocessed execution is not supported on Windows. Even when,
 <code>n_jobs</code> is set &gt; 1, the feature extraction will still be executed
 sequentially.
 Why do we not support multiprocessing on Windows; see this issue
 <a href="https://github.com/predict-idlab/tsflex/issues/51">https://github.com/predict-idlab/tsflex/issues/51</a></p>
+</div>
 <div class="admonition tip">
 <p class="admonition-title">Tip</p>
 <p>It takes on avg. <em>300ms</em> to schedule everything with
 multiprocessing. So if your sequential feature extraction code runs
-faster than ~1.5s, it might not be worth it to parallelize the process
+faster than ~1s, it might not be worth it to parallelize the process
 (and thus better leave <code>n_jobs</code> to 0 or 1).</p>
 </div>
 </dd>
@@ -1913,7 +2531,16 @@ faster than ~1.5s, it might not be worth it to parallelize the process
 <dl>
 <dt><code>KeyError</code></dt>
 <dd>Raised when a required key is not found in <code>data</code>.</dd>
-</dl></div>
+</dl>
+<h2 id="notes">Notes</h2>
+<ul>
+<li>The (column-)names of the series in <code>data</code> represent the <code>series_names</code>.</li>
+<li>If a <code>logging_file_path</code> is provided, the execution (time) info can be
+retrieved by calling <code><a title="tsflex.features.logger.get_feature_logs" href="logger.html#tsflex.features.logger.get_feature_logs">get_feature_logs()</a>(logging_file_path)</code>.
+Be aware that the <code>logging_file_path</code> gets cleared before the logger pushes
+logged messages. Hence, one should use a separate logging file for each
+constructed processing and feature instance with this library.</li>
+</ul></div>
 </dd>
 <dt id="tsflex.features.FeatureCollection.serialize"><code class="name flex">
 <span>def <span class="ident">serialize</span></span>(<span>self, file_path)</span>
@@ -1989,11 +2616,18 @@ the local scope, like lambdas.</strong></p></div>
 
     &#34;&#34;&#34;
     # dict in which we store all the { output_col_name : (UUID, FeatureDescriptor) }
-    # items of our current Featurecollection object
+    # items of our current FeatureCollection object
+    manual_window = False
+    if any(c.endswith(&#34;w=manual&#34;) for c in feat_cols_to_keep):
+        assert all(c.endswith(&#34;w=manual&#34;) for c in feat_cols_to_keep)
+        # As the windows are created manual, the FeatureCollection cannot contain
+        # multiple windows for the same output name - input_series combination
+        self._check_no_multiple_windows()
+        manual_window = True
     feat_col_fd_mapping: Dict[str, Tuple[str, FeatureDescriptor]] = {}
-    for (s_names, window, stride), fds in self._feature_desc_dict.items():
-        fd: FeatureDescriptor
-        for fd in fds:
+    for (s_names, window), fd_list in self._feature_desc_dict.items():
+        window = &#34;manual&#34; if manual_window else self._ws_to_str(window)
+        for fd in fd_list:
             # As a single FeatureDescriptor can have multiple output col names, we
             # create a unique identifier for each FeatureDescriptor (on which we
             # will apply set-like operations later on to only retain all the unique
@@ -2001,14 +2635,8 @@ the local scope, like lambdas.</strong></p></div>
             uuid_str = str(uuid.uuid4())
             for output_name in fd.function.output_names:
                 # Reconstruct the feature column name
-                feat_col_name = &#34;__&#34;.join(
-                    [
-                        &#34;|&#34;.join(s_names)
-                        if isinstance(s_names, tuple)
-                        else s_names,
-                        output_name,
-                        f&#34;w={self._ws_to_str(window)}_s={self._ws_to_str(stride)}&#34;,
-                    ]
+                feat_col_name = StridedRolling.construct_output_index(
+                    series_keys=s_names, feat_name=output_name, win_str=window
                 )
                 feat_col_fd_mapping[feat_col_name] = (uuid_str, fd)
 
@@ -2097,10 +2725,10 @@ list and we thus not alter these FeatureDescriptor objects themselves.</p></div>
             For example a vectorized version of `np.max` is
             ``FuncWrapper(np.max, vectorized=True, axis=1)``.
         .. Note::
-            * A function can only be applied in vectorized manner when the required 
+            * A function can only be applied in vectorized manner when the required
               series are REGULARLY sampled (and have the same index in case of multiple
               required series).
-            * The `input_type` should be `np.array` when `vectorized` is True. It does 
+            * The `input_type` should be `np.array` when `vectorized` is True. It does
               not make sense to use a `pd.Series`, as the index should be regularly
               sampled (see requirement above).
     **kwargs: dict, optional
@@ -2277,7 +2905,7 @@ sampled (see requirement above).</li>
     }
 
     @staticmethod
-    def get_segmenter(data, window, stride, **kwargs) -&gt; StridedRolling:
+    def get_segmenter(data, window, strides, **kwargs) -&gt; StridedRolling:
         &#34;&#34;&#34;Get the appropriate StridedRolling instance for the passed data.
 
         The returned instance will be determined by the data its index type
@@ -2288,8 +2916,8 @@ sampled (see requirement above).</li>
             The data to segment.
         window : Union[float, pd.TimeDelta]
              The window size to use for the segmentation.
-        stride : Union[float, pd.TimeDelta]
-            The stride to use for the segmentation.
+        strides : Union[List[Union[float, pd.TimeDelta]], None]
+            The stride(s) to use for the segmentation.
         **kwargs : dict, optional
             Additional keyword arguments, see the `StridedRolling` its documentation
             for more info.
@@ -2297,14 +2925,14 @@ sampled (see requirement above).</li>
         .. Note::
             When passing `time-based` data, but **int**-based window &amp; stride params,
             the strided rolling will be `TimeIndexSampleStridedRolling`. This class
-            **assumes** that **all data series** _roughly_ have the 
-            **same sample frequency**, as  the windows and strides are interpreted in 
+            **assumes** that **all data series** _roughly_ have the
+            **same sample frequency**, as  the windows and strides are interpreted in
             terms of **number of samples**.
 
         Raises
         ------
         ValueError
-            When incompatible data &amp; window-stride data types are passed (e.g. time 
+            When incompatible data &amp; window-stride data types are passed (e.g. time
             window-stride args on sequence data-index).
 
         Returns
@@ -2314,15 +2942,18 @@ sampled (see requirement above).</li>
 
         &#34;&#34;&#34;
         data_dtype = AttributeParser.determine_type(data)
-        args_dtype = AttributeParser.determine_type([window, stride])
+        if strides is None:
+            args_dtype = AttributeParser.determine_type(window)
+        else:
+            args_dtype = AttributeParser.determine_type([window] + strides)
 
-        if data_dtype.value == args_dtype.value:
+        if window is None or data_dtype.value == args_dtype.value:
             return StridedRollingFactory._datatype_to_stroll[data_dtype](
-                data, window, stride, **kwargs
+                data, window, strides, **kwargs
             )
         elif data_dtype == DataType.TIME and args_dtype == DataType.SEQUENCE:
             # Note: this is very niche and thus requires advanced knowledge
-            return TimeIndexSampleStridedRolling(data, window, stride, **kwargs)
+            return TimeIndexSampleStridedRolling(data, window, strides, **kwargs)
         elif data_dtype == DataType.SEQUENCE and args_dtype == DataType.TIME:
             raise ValueError(&#34;Cannot segment a sequence-series with a time window&#34;)</code></pre>
 </details>
@@ -2330,7 +2961,7 @@ sampled (see requirement above).</li>
 <h3>Static methods</h3>
 <dl>
 <dt id="tsflex.features.StridedRollingFactory.get_segmenter"><code class="name flex">
-<span>def <span class="ident">get_segmenter</span></span>(<span>data, window, stride, **kwargs)</span>
+<span>def <span class="ident">get_segmenter</span></span>(<span>data, window, strides, **kwargs)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -2338,7 +2969,7 @@ sampled (see requirement above).</li>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@staticmethod
-def get_segmenter(data, window, stride, **kwargs) -&gt; StridedRolling:
+def get_segmenter(data, window, strides, **kwargs) -&gt; StridedRolling:
     &#34;&#34;&#34;Get the appropriate StridedRolling instance for the passed data.
 
     The returned instance will be determined by the data its index type
@@ -2349,8 +2980,8 @@ def get_segmenter(data, window, stride, **kwargs) -&gt; StridedRolling:
         The data to segment.
     window : Union[float, pd.TimeDelta]
          The window size to use for the segmentation.
-    stride : Union[float, pd.TimeDelta]
-        The stride to use for the segmentation.
+    strides : Union[List[Union[float, pd.TimeDelta]], None]
+        The stride(s) to use for the segmentation.
     **kwargs : dict, optional
         Additional keyword arguments, see the `StridedRolling` its documentation
         for more info.
@@ -2358,14 +2989,14 @@ def get_segmenter(data, window, stride, **kwargs) -&gt; StridedRolling:
     .. Note::
         When passing `time-based` data, but **int**-based window &amp; stride params,
         the strided rolling will be `TimeIndexSampleStridedRolling`. This class
-        **assumes** that **all data series** _roughly_ have the 
-        **same sample frequency**, as  the windows and strides are interpreted in 
+        **assumes** that **all data series** _roughly_ have the
+        **same sample frequency**, as  the windows and strides are interpreted in
         terms of **number of samples**.
 
     Raises
     ------
     ValueError
-        When incompatible data &amp; window-stride data types are passed (e.g. time 
+        When incompatible data &amp; window-stride data types are passed (e.g. time
         window-stride args on sequence data-index).
 
     Returns
@@ -2375,15 +3006,18 @@ def get_segmenter(data, window, stride, **kwargs) -&gt; StridedRolling:
 
     &#34;&#34;&#34;
     data_dtype = AttributeParser.determine_type(data)
-    args_dtype = AttributeParser.determine_type([window, stride])
+    if strides is None:
+        args_dtype = AttributeParser.determine_type(window)
+    else:
+        args_dtype = AttributeParser.determine_type([window] + strides)
 
-    if data_dtype.value == args_dtype.value:
+    if window is None or data_dtype.value == args_dtype.value:
         return StridedRollingFactory._datatype_to_stroll[data_dtype](
-            data, window, stride, **kwargs
+            data, window, strides, **kwargs
         )
     elif data_dtype == DataType.TIME and args_dtype == DataType.SEQUENCE:
         # Note: this is very niche and thus requires advanced knowledge
-        return TimeIndexSampleStridedRolling(data, window, stride, **kwargs)
+        return TimeIndexSampleStridedRolling(data, window, strides, **kwargs)
     elif data_dtype == DataType.SEQUENCE and args_dtype == DataType.TIME:
         raise ValueError(&#34;Cannot segment a sequence-series with a time window&#34;)</code></pre>
 </details>
@@ -2395,8 +3029,8 @@ def get_segmenter(data, window, stride, **kwargs) -&gt; StridedRolling:
 <dd>The data to segment.</dd>
 <dt><strong><code>window</code></strong> :&ensp;<code>Union[float, pd.TimeDelta]</code></dt>
 <dd>The window size to use for the segmentation.</dd>
-<dt><strong><code>stride</code></strong> :&ensp;<code>Union[float, pd.TimeDelta]</code></dt>
-<dd>The stride to use for the segmentation.</dd>
+<dt><strong><code>strides</code></strong> :&ensp;<code>Union[List[Union[float, pd.TimeDelta]], None]</code></dt>
+<dd>The stride(s) to use for the segmentation.</dd>
 <dt><strong><code>**kwargs</code></strong> :&ensp;<code>dict</code>, optional</dt>
 <dd>Additional keyword arguments, see the <code>StridedRolling</code> its documentation
 for more info.</dd>
@@ -2495,6 +3129,7 @@ alt="logo should be displayed here" width="95%"></a>
 <h4><code><a title="tsflex.features.FeatureDescriptor" href="#tsflex.features.FeatureDescriptor">FeatureDescriptor</a></code></h4>
 <ul class="">
 <li><code><a title="tsflex.features.FeatureDescriptor.get_required_series" href="#tsflex.features.FeatureDescriptor.get_required_series">get_required_series</a></code></li>
+<li><code><a title="tsflex.features.FeatureDescriptor.get_nb_output_features" href="#tsflex.features.FeatureDescriptor.get_nb_output_features">get_nb_output_features</a></code></li>
 </ul>
 </li>
 <li>
@@ -2504,6 +3139,7 @@ alt="logo should be displayed here" width="95%"></a>
 <h4><code><a title="tsflex.features.FeatureCollection" href="#tsflex.features.FeatureCollection">FeatureCollection</a></code></h4>
 <ul class="">
 <li><code><a title="tsflex.features.FeatureCollection.get_required_series" href="#tsflex.features.FeatureCollection.get_required_series">get_required_series</a></code></li>
+<li><code><a title="tsflex.features.FeatureCollection.get_nb_output_features" href="#tsflex.features.FeatureCollection.get_nb_output_features">get_nb_output_features</a></code></li>
 <li><code><a title="tsflex.features.FeatureCollection.add" href="#tsflex.features.FeatureCollection.add">add</a></code></li>
 <li><code><a title="tsflex.features.FeatureCollection.calculate" href="#tsflex.features.FeatureCollection.calculate">calculate</a></code></li>
 <li><code><a title="tsflex.features.FeatureCollection.serialize" href="#tsflex.features.FeatureCollection.serialize">serialize</a></code></li>

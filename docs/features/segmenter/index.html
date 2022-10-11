@@ -75,7 +75,7 @@ __all__ = [
 <dl>
 <dt id="tsflex.features.segmenter.StridedRolling"><code class="flex name class">
 <span>class <span class="ident">StridedRolling</span></span>
-<span>(</span><span>data, window, stride, start_idx=None, end_idx=None, func_data_type=&lt;built-in function array&gt;, window_idx='end', approve_sparsity=False)</span>
+<span>(</span><span>data, window, strides=None, segment_start_idxs=None, segment_end_idxs=None, start_idx=None, end_idx=None, func_data_type=&lt;built-in function array&gt;, window_idx='end', include_final_window=False, approve_sparsity=False)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -87,20 +87,34 @@ __all__ = [
 
     Parameters
     ----------
-    data : Union[pd.Series, pd.DataFrame]
+    data : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
         ``pd.Series`` or ``pd.DataFrame`` to slide over, the index must be either
         numeric or a ``pd.DatetimeIndex``.
     window : Union[float, pd.Timedelta]
         Either an int, float, or ``pd.Timedelta``, representing the sliding window size
         in terms of the index (in case of a int or float) or the sliding window duration
         (in case of ``pd.Timedelta``).
-    stride : Union[float, pd.Timedelta]
-        Either an int, float, or ``pd.Timedelta``, representing the stride size in terms
-        of the index (in case of a int or float) or the stride duration (in case of
-        ``pd.Timedelta``).
+    strides : Union[float, pd.Timedelta, List[Union[float, pd.Timedelta]]], optional
+        Either a list of int, float, or ``pd.Timedelta``, representing the stride sizes
+        in terms of the index (in case of a int or float) or the stride duration (in
+        case of ``pd.Timedelta``). By default None.
+    segment_start_idxs: np.ndarray, optional
+        The start indices for the segmented windows. If not provided, the start indices
+        will be computed from the data using the passed ``strides`` or by using the
+        ``segment_end_idxs`` (if not none) + ``window``. By default None.
+    segment_end_idxs: np.ndarray, optional
+        The end indices for the segmented windows. If not provided, the end indices will
+        be computed from either (1) the data using the passed ``window`` + ``strides``
+        or (2) the ``segment_start_idxs`` + ``window``, By default None.
+        .. Note::
+            When you pass arrays to both ``segment_start_idxs`` and
+            ``segment_end_idxs``, the corresponding index-values of these arrays will be
+            used as segment-ranges. As a result, the following properties must be met:\n
+              - both arrays should have equal length
+              - all values in ``segment_start_idxs`` should be &lt;= ``segment_end_idxs``
     start_idx: Union[float, pd.Timestamp], optional
         The start-index which will be used for each series passed to `data`. This is
-        especially useful if multiple `StridedRolling` instances are created and the
+        especially useful if multiple ``StridedRolling`` instances are created and the
         user want to ensure same (start-)indexes for each of them.
     end_idx: Union[float, pd.Timestamp], optional
         The end-index which will be used as sliding end-limit for each series passed to
@@ -111,12 +125,36 @@ __all__ = [
         .. Note::
             Make sure to only set this argument to pd.Series when this is really
             required, since pd.Series strided-rolling is significantly less efficient.
-            For a np.array it is possible to create very efficient views, but there is no
-            such thing as a pd.Series view. Thus, for each stroll, a new series is created.
+            For a np.array it is possible to create very efficient views, but there is
+            no such thing as a pd.Series view. Thus, for each stroll, a new series is
+            created, inducing a lot of non-feature calculation of overhead.
     window_idx : str, optional
         The window&#39;s index position which will be used as index for the
         feature_window aggregation. Must be either of: `[&#34;begin&#34;, &#34;middle&#34;, &#34;end&#34;]`, by
         default &#34;end&#34;.
+    include_final_window: bool, optional
+        Whether the final (possibly incomplete) window should be included in the
+        strided-window segmentation, by default False.
+
+        .. Note::
+            The remarks below apply when ``include_final_window`` is set to True.
+            The user should be aware that the last window *might* be incomplete, i.e.;
+
+            - when equally sampled, the last window *might* be smaller than the
+              the other windows.
+            - when not equally sampled, the last window *might* not include all the
+                data points (as the begin-time + window-size comes after the last data
+                point).
+
+            Note, that when equally sampled, the last window *will* be a full window
+            when:
+
+            - the stride is the sampling rate of the data (or stride = 1 for
+              sample-based configurations).&lt;br&gt;
+              **Remark**: that when `include_final_window` is set to False, the last
+              window (which is a full) window will not be included!
+            - *(len * sampling_rate - window_size) % stride = 0*. Remark that the above
+              case is a base case of this.
     approve_sparsity: bool, optional
         Bool indicating whether the user acknowledges that there may be sparsity (i.e.,
         irregularly sampled data), by default False.
@@ -128,9 +166,12 @@ __all__ = [
 
     &#34;&#34;&#34;
 
-    # Class variables which are used by sub-classes
+    # Class variables which are used by subclasses
     win_str_type: DataType
     reset_series_index_b4_segmenting: bool = False
+    OUTSIDE_DATA_BOUNDS_WARNING: str = (
+        &#34;Some segment indexes are outside the range of the data its index.&#34;
+    )
 
     # Create the named tuple
     _NumpySeriesContainer = namedtuple(
@@ -141,33 +182,48 @@ __all__ = [
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         window: T,
-        stride: T,
+        strides: Optional[Union[T, List[T]]] = None,
+        segment_start_idxs: Optional[np.ndarray] = None,
+        segment_end_idxs: Optional[np.ndarray] = None,
         start_idx: Optional[T] = None,
         end_idx: Optional[T] = None,
         func_data_type: Optional[Union[np.array, pd.Series]] = np.array,
         window_idx: Optional[str] = &#34;end&#34;,
+        include_final_window: bool = False,
         approve_sparsity: Optional[bool] = False,
     ):
-        self.window = window
-        self.stride = stride
+        if strides is not None:
+            strides = to_list(strides)
 
-        # Note: the sub-class should set the self.func_data_type attribute
-        assert AttributeParser.check_expected_type([window, stride], self.win_str_type)
+        # Check the passed segment indices
+        if segment_start_idxs is not None and segment_end_idxs is not None:
+            _check_start_end_array(segment_start_idxs, segment_end_idxs)
+
+        if window is not None:
+            assert AttributeParser.check_expected_type(
+                [window] + ([] if strides is None else strides), self.win_str_type
+            )
+
+        self.window = window
+        self.strides = strides
 
         self.window_idx = window_idx
+        self.include_final_window = include_final_window
         self.approve_sparsity = approve_sparsity
 
         assert func_data_type in SUPPORTED_STROLL_TYPES
         self.data_type = func_data_type
 
         # 0. Standardize the input
-        series_list: List[pd.Series] = to_series_list(data)  # TODO: isn&#39;t it always a list of series?
+        series_list: List[pd.Series] = to_series_list(data)
         self.series_dtype = AttributeParser.determine_type(series_list)
         self.series_key: Tuple[str, ...] = tuple([str(s.name) for s in series_list])
 
         # 1. Determine the start index
         self.start, self.end = start_idx, end_idx
         if self.start is None or self.end is None:
+            # We always pass start_idx and end_idx from the FeatureCollection.calculate
+            # Hence, this code is only useful for testing purposes
             start, end = _determine_bounds(&#34;inner&#34;, series_list)
 
             # update self.start &amp; self.end if it was not passed
@@ -177,20 +233,47 @@ __all__ = [
         # Especially useful when the index dtype differs from the win-stride-dtype
         # e.g. -&gt; performing a int-based stroll on time-indexed data
         # Note: this is very niche and thus requires advanced knowledge
+        # TODO: this code can be omitted if we remove TimeIndexSampleStridedRolling
         self._update_start_end_indices_to_stroll_type(series_list)
 
-        # 2. Create a new-index which will be used for DataFrame reconstruction
-        # Note: the index-name of the first passed series will be re-used as index-name
-        self.index = self._construct_output_index(series_list[0])
+        # 2. Construct the index ranges
+        # Either use the passed segment indices or compute the start or end times of the
+        # segments. The segment indices have precedence over the stride (and window) for
+        # index computation.
+        if segment_start_idxs is not None or segment_end_idxs is not None:
+            self.strides = None
+            if segment_start_idxs is not None and segment_end_idxs is not None:
+                # When both the start and end points are passed, the window does not
+                # matter.
+                self.window = None
+                np_start_times = self._parse_segment_idxs(segment_start_idxs)
+                np_end_times = self._parse_segment_idxs(segment_end_idxs)
+            elif segment_start_idxs is not None:  # segment_end_idxs is None
+                np_start_times = self._parse_segment_idxs(segment_start_idxs)
+                np_end_times = np_start_times + self._get_np_value(self.window)
+            else:  # segment_end_idxs is not None and segment_start_idxs is None
+                np_end_times = self._parse_segment_idxs(segment_end_idxs)
+                np_start_times = np_end_times - self._get_np_value(self.window)
+        else:
+            np_start_times = self._construct_start_idxs()
+            np_end_times = np_start_times + self._get_np_value(self.window)
 
-        # 3. Construct the index ranges and store the series containers
-        np_start_times, np_end_times = self._construct_start_end_times()
+        # Check the numpy start and end indices
+        _check_start_end_array(np_start_times, np_end_times)
+
+        # 3. Create a new-index which will be used for DataFrame reconstruction
+        # Note: the index-name of the first passed series will be re-used as index-name
+        self.index = self._get_output_index(
+            np_start_times, np_end_times, name=series_list[0].index.name
+        )
+
+        # 4. Store the series containers
         self.series_containers = self._construct_series_containers(
             series_list, np_start_times, np_end_times
         )
 
-        # 4. Check the sparsity assumption
-        if not self.approve_sparsity:
+        # 5. Check the sparsity assumption
+        if not self.approve_sparsity and len(self.index):
             for container in self.series_containers:
                 # Warn when min != max
                 if np.ptp(container.end_indexes - container.start_indexes) != 0:
@@ -200,15 +283,53 @@ __all__ = [
                         RuntimeWarning,
                     )
 
-    def _get_window_offset(self, window: T) -&gt; T:
+    def _calc_nb_segments_for_stride(self, stride) -&gt; int:
+        &#34;&#34;&#34;Calculate the number of output items (segments) for a given single stride.&#34;&#34;&#34;
+        nb_feats = max((self.end - self.start - self.window) // stride + 1, 0)
+        # Add 1 if there is still some data after (including) the last window its
+        # start index - this is only added when `include_last_window` is True.
+        nb_feats += self.include_final_window * (
+            self.start + stride * nb_feats &lt;= self.end
+        )
+        return nb_feats
+
+    def _get_np_start_idx_for_stride(self, stride: T) -&gt; np.ndarray:
+        &#34;&#34;&#34;Compute the start index for the given single stride.&#34;&#34;&#34;
+        # ---------- Efficient numpy code -------
+        np_start = self._get_np_value(self.start)
+        np_stride = self._get_np_value(stride)
+        # Compute the start times (these remain the same for each series)
+        return np.arange(
+            start=np_start,
+            stop=np_start + self._calc_nb_segments_for_stride(stride) * np_stride,
+            step=np_stride,
+        )
+
+    def _construct_start_idxs(self) -&gt; np.ndarray:
+        &#34;&#34;&#34;Construct the start indices of the segments (for all stride values).
+
+        To realize this, we compute the start idxs for each stride and then merge them
+        together (without duplicates) in a sorted array.
+        &#34;&#34;&#34;
+        start_idxs = []
+        for stride in self.strides:
+            start_idxs += [self._get_np_start_idx_for_stride(stride)]
+        # note - np.unique also sorts the array
+        return np.unique(np.concatenate(start_idxs))
+
+    def _get_output_index(
+        self, start_idxs: np.ndarray, end_idxs: Union[np.ndarray, None], name: str
+    ) -&gt; pd.Index:
+        &#34;&#34;&#34;Construct the output index.&#34;&#34;&#34;
         if self.window_idx == &#34;end&#34;:
-            return window
+            return pd.Index(end_idxs, name=name)
         elif self.window_idx == &#34;middle&#34;:
-            return window / 2
+            return pd.Index(
+                start_idxs + ((end_idxs - start_idxs) / 2),
+                name=name,
+            )
         elif self.window_idx == &#34;begin&#34;:
-            if isinstance(window, pd.Timedelta):
-                return pd.Timedelta(seconds=0)
-            return 0
+            return pd.Index(start_idxs, name=name)
         else:
             raise ValueError(
                 f&#34;window index {self.window_idx} must be either of: &#34;
@@ -225,6 +346,7 @@ __all__ = [
                 np_idx_times = series.index.values
             else:
                 np_idx_times = np.arange(len(series))
+                # note: using pd.RangeIndex instead of arange gives the same performance
 
             series_name = series.name
             if self.data_type is np.array:
@@ -265,7 +387,7 @@ __all__ = [
         pd.DataFrame
             The merged output of the function applied to every column in a
             new DataFrame. The DataFrame&#39;s column-names have the format:
-                `&lt;series_col_name(s)&gt;_&lt;feature_name&gt;__w=&lt;window&gt;_s=&lt;stride&gt;`.
+                `&lt;series_col_name(s)&gt;_&lt;feature_name&gt;__w=&lt;window&gt;`.
 
         Raises
         ------
@@ -294,7 +416,7 @@ __all__ = [
         # expression only once, whereas a list comprehension evaluates its expression
         # every time).
         # See more why: https://stackoverflow.com/a/59838723
-        out: np.array = None
+        out: np.array
         if func.vectorized:
             # Vectorized function execution
 
@@ -315,7 +437,7 @@ __all__ = [
 
             ## IMPL 2
             ## Is a good implementation (equivalent to the one below), will also fail in
-            ## the same cases, but it does not perform clear assertions (with their 
+            ## the same cases, but it does not perform clear assertions (with their
             ## accompanied clear messages).
             # out = np.asarray(
             #     func(
@@ -328,18 +450,42 @@ __all__ = [
 
             views = []
             for sc in self.series_containers:
-                windows = sc.end_indexes - sc.start_indexes
-                strides = sc.start_indexes[1:] - sc.start_indexes[:-1]
-                assert np.all(
-                    windows == windows[0]
-                ), &#34;Vectorized functions require same number of samples in each segmented window!&#34;
-                assert np.all(
-                    strides == strides[0]
-                ), &#34;Vectorized functions require same number of samples as stride!&#34;
-                views.append(
-                    _sliding_strided_window_1d(sc.values, windows[0], strides[0])
-                )
-            out = func(*views)
+                if len(sc.start_indexes) == 0:
+                    # There are no feature windows  -&gt; return empty array (see below)
+                    views = []
+                    break
+                elif len(sc.start_indexes) == 1:
+                    # There is only 1 feature window (bc no steps in the sliding window)
+                    views.append(
+                        np.expand_dims(
+                            sc.values[sc.start_indexes[0] : sc.end_indexes[0]],
+                            axis=0,
+                        )
+                    )
+                else:
+                    # There are &gt;1 feature windows (bc &gt;=1 steps in the sliding window)
+                    windows = sc.end_indexes - sc.start_indexes
+                    strides = sc.start_indexes[1:] - sc.start_indexes[:-1]
+                    assert np.all(windows == windows[0]), (
+                        &#34;Vectorized functions require same number of samples in each &#34;
+                        + &#34;segmented window!&#34;
+                    )
+                    assert np.all(
+                        strides == strides[0]
+                    ), &#34;Vectorized functions require same number of samples as stride!&#34;
+                    views.append(
+                        _sliding_strided_window_1d(
+                            sc.values[sc.start_indexes[0] :],
+                            windows[0],
+                            strides[0],
+                            len(self.index),
+                        )
+                    )
+
+            # Assign empty array as output when there is no view to apply the vectorized
+            # function on (this is the case when there is at least for one series no
+            # feature windows)
+            out = func(*views) if len(views) &gt;= 1 else np.array([])
 
             out_type = type(out)
             out = np.asarray(out)
@@ -371,10 +517,17 @@ __all__ = [
 
         # Aggregate function output in a dictionary
         feat_out = {}
-        if out.ndim == 1 or (out.ndim == 2 and out.shape[1] == 1):
+        if out.ndim == 1 and not len(out):
+            # When there are no features calculated (due to no feature windows)
+            assert not len(self.index)
+            for f_name in feat_names:
+                # Will be discarded (bc no index)
+                feat_out[self._create_feat_col_name(f_name)] = None
+        elif out.ndim == 1 or (out.ndim == 2 and out.shape[1] == 1):
             assert len(feat_names) == 1, f&#34;Func {func} returned more than 1 output!&#34;
             feat_out[self._create_feat_col_name(feat_names[0])] = out.flatten()
-        if out.ndim == 2 and out.shape[1] &gt; 1:
+        else:
+            assert out.ndim == 2 and out.shape[1] &gt; 1
             assert (
                 len(feat_names) == out.shape[1]
             ), f&#34;Func {func} returned incorrect number of outputs ({out.shape[1]})!&#34;
@@ -384,24 +537,47 @@ __all__ = [
                 ]
 
         elapsed = time.time() - t_start
+        log_strides = (
+            &#34;manual&#34; if self.strides is None else tuple(map(str, self.strides))
+        )
+        log_window = &#34;manual&#34; if self.window is None else self.window
         logger.info(
             f&#34;Finished function [{func.func.__name__}] on &#34;
             f&#34;{[self.series_key]} with window-stride &#34;
-            f&#34;[{self.window}, {self.stride}] in [{elapsed} seconds]!&#34;
+            f&#34;[{log_window}, {log_strides}] in [{elapsed} seconds]!&#34;
         )
 
         return pd.DataFrame(index=self.index, data=feat_out)
 
-    def _update_start_end_indices_to_stroll_type(self, series_list: List[pd.Series]):
-        pass
+    # --------------------------------- STATIC METHODS ---------------------------------
+    @staticmethod
+    def _get_np_value(val):
+        # Convert everything to int64
+        if isinstance(val, pd.Timestamp):
+            return val.to_datetime64()
+        elif isinstance(val, pd.Timedelta):
+            return val.to_timedelta64()
+        else:
+            return val
+
+    @staticmethod
+    def construct_output_index(
+        series_keys: Union[str, Tuple[str, ...]], feat_name: str, win_str: str
+    ) -&gt; str:
+        series_keys = to_tuple(series_keys)
+        return f&#34;{&#39;|&#39;.join(series_keys)}__{feat_name}__w={win_str}&#34;
 
     # ----------------------------- OVERRIDE THESE METHODS -----------------------------
     @abstractmethod
-    def _construct_output_index(self, series: pd.Series) -&gt; pd.Index:
+    def _update_start_end_indices_to_stroll_type(self, series_list: List[pd.Series]):
+        # NOTE: This method will only be implemented (with code != pass) in the 
+        # TimeIndexSampleStridedRolling
         raise NotImplementedError
 
     @abstractmethod
-    def _construct_start_end_times(self) -&gt; Tuple[np.ndarray, np.ndarray]:
+    def _parse_segment_idxs(self, segment_idxs: np.ndarray) -&gt; np.ndarray:
+        &#34;&#34;&#34;Check the segment indexes array to lie between self.start and self.end and
+        convert it to the correct dtype (if necessary).&#34;&#34;&#34;
         raise NotImplementedError
 
     @abstractmethod
@@ -411,17 +587,34 @@ __all__ = [
 <div class="desc"><p>Custom time-based sliding window with stride.</p>
 <h2 id="parameters">Parameters</h2>
 <dl>
-<dt><strong><code>data</code></strong> :&ensp;<code>Union[pd.Series, pd.DataFrame]</code></dt>
+<dt><strong><code>data</code></strong> :&ensp;<code>Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]</code></dt>
 <dd><code>pd.Series</code> or <code>pd.DataFrame</code> to slide over, the index must be either
 numeric or a <code>pd.DatetimeIndex</code>.</dd>
 <dt><strong><code>window</code></strong> :&ensp;<code>Union[float, pd.Timedelta]</code></dt>
 <dd>Either an int, float, or <code>pd.Timedelta</code>, representing the sliding window size
 in terms of the index (in case of a int or float) or the sliding window duration
 (in case of <code>pd.Timedelta</code>).</dd>
-<dt><strong><code>stride</code></strong> :&ensp;<code>Union[float, pd.Timedelta]</code></dt>
-<dd>Either an int, float, or <code>pd.Timedelta</code>, representing the stride size in terms
-of the index (in case of a int or float) or the stride duration (in case of
-<code>pd.Timedelta</code>).</dd>
+<dt><strong><code>strides</code></strong> :&ensp;<code>Union[float, pd.Timedelta, List[Union[float, pd.Timedelta]]]</code>, optional</dt>
+<dd>Either a list of int, float, or <code>pd.Timedelta</code>, representing the stride sizes
+in terms of the index (in case of a int or float) or the stride duration (in
+case of <code>pd.Timedelta</code>). By default None.</dd>
+<dt><strong><code>segment_start_idxs</code></strong> :&ensp;<code>np.ndarray</code>, optional</dt>
+<dd>The start indices for the segmented windows. If not provided, the start indices
+will be computed from the data using the passed <code>strides</code> or by using the
+<code>segment_end_idxs</code> (if not none) + <code>window</code>. By default None.</dd>
+<dt><strong><code>segment_end_idxs</code></strong> :&ensp;<code>np.ndarray</code>, optional</dt>
+<dd>The end indices for the segmented windows. If not provided, the end indices will
+be computed from either (1) the data using the passed <code>window</code> + <code>strides</code>
+or (2) the <code>segment_start_idxs</code> + <code>window</code>, By default None.<div class="admonition note">
+<p class="admonition-title">Note</p>
+When you pass arrays to both <code>segment_start_idxs</code> and
+<code>segment_end_idxs</code>, the corresponding index-values of these arrays will be
+used as segment-ranges. As a result, the following properties must be met:<ul>
+<li>both arrays should have equal length</li>
+<li>all values in <code>segment_start_idxs</code> should be &lt;= <code>segment_end_idxs</code></li>
+</ul>
+</div>
+</dd>
 <dt><strong><code>start_idx</code></strong> :&ensp;<code>Union[float, pd.Timestamp]</code>, optional</dt>
 <dd>The start-index which will be used for each series passed to <code>data</code>. This is
 especially useful if multiple <code><a title="tsflex.features.segmenter.StridedRolling" href="#tsflex.features.segmenter.StridedRolling">StridedRolling</a></code> instances are created and the
@@ -435,13 +628,41 @@ user want to ensure same (start-)indexes for each of them.</dd>
 <p class="admonition-title">Note</p>
 Make sure to only set this argument to pd.Series when this is really
 required, since pd.Series strided-rolling is significantly less efficient.
-For a np.array it is possible to create very efficient views, but there is no
-such thing as a pd.Series view. Thus, for each stroll, a new series is created.</div>
+For a np.array it is possible to create very efficient views, but there is
+no such thing as a pd.Series view. Thus, for each stroll, a new series is
+created, inducing a lot of non-feature calculation of overhead.</div>
 </dd>
 <dt><strong><code>window_idx</code></strong> :&ensp;<code>str</code>, optional</dt>
 <dd>The window's index position which will be used as index for the
 feature_window aggregation. Must be either of: <code>["begin", "middle", "end"]</code>, by
 default "end".</dd>
+<dt><strong><code>include_final_window</code></strong> :&ensp;<code>bool</code>, optional</dt>
+<dd>
+<p>Whether the final (possibly incomplete) window should be included in the
+strided-window segmentation, by default False.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The remarks below apply when <code>include_final_window</code> is set to True.
+The user should be aware that the last window <em>might</em> be incomplete, i.e.;</p>
+<ul>
+<li>when equally sampled, the last window <em>might</em> be smaller than the
+the other windows.</li>
+<li>when not equally sampled, the last window <em>might</em> not include all the
+data points (as the begin-time + window-size comes after the last data
+point).</li>
+</ul>
+<p>Note, that when equally sampled, the last window <em>will</em> be a full window
+when:</p>
+<ul>
+<li>the stride is the sampling rate of the data (or stride = 1 for
+sample-based configurations).<br>
+<strong>Remark</strong>: that when <code>include_final_window</code> is set to False, the last
+window (which is a full) window will not be included!</li>
+<li><em>(len * sampling_rate - window_size) % stride = 0</em>. Remark that the above
+case is a base case of this.</li>
+</ul>
+</div>
+</dd>
 <dt><strong><code>approve_sparsity</code></strong> :&ensp;<code>bool</code>, optional</dt>
 <dd>Bool indicating whether the user acknowledges that there may be sparsity (i.e.,
 irregularly sampled data), by default False.
@@ -470,6 +691,30 @@ If False and sparsity is observed, a warning is raised.</dd>
 <dd>
 <div class="desc"></div>
 </dd>
+<dt id="tsflex.features.segmenter.StridedRolling.OUTSIDE_DATA_BOUNDS_WARNING"><code class="name">var <span class="ident">OUTSIDE_DATA_BOUNDS_WARNING</span></code></dt>
+<dd>
+<div class="desc"></div>
+</dd>
+</dl>
+<h3>Static methods</h3>
+<dl>
+<dt id="tsflex.features.segmenter.StridedRolling.construct_output_index"><code class="name flex">
+<span>def <span class="ident">construct_output_index</span></span>(<span>series_keys, feat_name, win_str)</span>
+</code></dt>
+<dd>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">@staticmethod
+def construct_output_index(
+    series_keys: Union[str, Tuple[str, ...]], feat_name: str, win_str: str
+) -&gt; str:
+    series_keys = to_tuple(series_keys)
+    return f&#34;{&#39;|&#39;.join(series_keys)}__{feat_name}__w={win_str}&#34;</code></pre>
+</details>
+<div class="desc"></div>
+</dd>
 </dl>
 <h3>Methods</h3>
 <dl>
@@ -494,7 +739,7 @@ If False and sparsity is observed, a warning is raised.</dd>
     pd.DataFrame
         The merged output of the function applied to every column in a
         new DataFrame. The DataFrame&#39;s column-names have the format:
-            `&lt;series_col_name(s)&gt;_&lt;feature_name&gt;__w=&lt;window&gt;_s=&lt;stride&gt;`.
+            `&lt;series_col_name(s)&gt;_&lt;feature_name&gt;__w=&lt;window&gt;`.
 
     Raises
     ------
@@ -523,7 +768,7 @@ If False and sparsity is observed, a warning is raised.</dd>
     # expression only once, whereas a list comprehension evaluates its expression
     # every time).
     # See more why: https://stackoverflow.com/a/59838723
-    out: np.array = None
+    out: np.array
     if func.vectorized:
         # Vectorized function execution
 
@@ -544,7 +789,7 @@ If False and sparsity is observed, a warning is raised.</dd>
 
         ## IMPL 2
         ## Is a good implementation (equivalent to the one below), will also fail in
-        ## the same cases, but it does not perform clear assertions (with their 
+        ## the same cases, but it does not perform clear assertions (with their
         ## accompanied clear messages).
         # out = np.asarray(
         #     func(
@@ -557,18 +802,42 @@ If False and sparsity is observed, a warning is raised.</dd>
 
         views = []
         for sc in self.series_containers:
-            windows = sc.end_indexes - sc.start_indexes
-            strides = sc.start_indexes[1:] - sc.start_indexes[:-1]
-            assert np.all(
-                windows == windows[0]
-            ), &#34;Vectorized functions require same number of samples in each segmented window!&#34;
-            assert np.all(
-                strides == strides[0]
-            ), &#34;Vectorized functions require same number of samples as stride!&#34;
-            views.append(
-                _sliding_strided_window_1d(sc.values, windows[0], strides[0])
-            )
-        out = func(*views)
+            if len(sc.start_indexes) == 0:
+                # There are no feature windows  -&gt; return empty array (see below)
+                views = []
+                break
+            elif len(sc.start_indexes) == 1:
+                # There is only 1 feature window (bc no steps in the sliding window)
+                views.append(
+                    np.expand_dims(
+                        sc.values[sc.start_indexes[0] : sc.end_indexes[0]],
+                        axis=0,
+                    )
+                )
+            else:
+                # There are &gt;1 feature windows (bc &gt;=1 steps in the sliding window)
+                windows = sc.end_indexes - sc.start_indexes
+                strides = sc.start_indexes[1:] - sc.start_indexes[:-1]
+                assert np.all(windows == windows[0]), (
+                    &#34;Vectorized functions require same number of samples in each &#34;
+                    + &#34;segmented window!&#34;
+                )
+                assert np.all(
+                    strides == strides[0]
+                ), &#34;Vectorized functions require same number of samples as stride!&#34;
+                views.append(
+                    _sliding_strided_window_1d(
+                        sc.values[sc.start_indexes[0] :],
+                        windows[0],
+                        strides[0],
+                        len(self.index),
+                    )
+                )
+
+        # Assign empty array as output when there is no view to apply the vectorized
+        # function on (this is the case when there is at least for one series no
+        # feature windows)
+        out = func(*views) if len(views) &gt;= 1 else np.array([])
 
         out_type = type(out)
         out = np.asarray(out)
@@ -600,10 +869,17 @@ If False and sparsity is observed, a warning is raised.</dd>
 
     # Aggregate function output in a dictionary
     feat_out = {}
-    if out.ndim == 1 or (out.ndim == 2 and out.shape[1] == 1):
+    if out.ndim == 1 and not len(out):
+        # When there are no features calculated (due to no feature windows)
+        assert not len(self.index)
+        for f_name in feat_names:
+            # Will be discarded (bc no index)
+            feat_out[self._create_feat_col_name(f_name)] = None
+    elif out.ndim == 1 or (out.ndim == 2 and out.shape[1] == 1):
         assert len(feat_names) == 1, f&#34;Func {func} returned more than 1 output!&#34;
         feat_out[self._create_feat_col_name(feat_names[0])] = out.flatten()
-    if out.ndim == 2 and out.shape[1] &gt; 1:
+    else:
+        assert out.ndim == 2 and out.shape[1] &gt; 1
         assert (
             len(feat_names) == out.shape[1]
         ), f&#34;Func {func} returned incorrect number of outputs ({out.shape[1]})!&#34;
@@ -613,10 +889,14 @@ If False and sparsity is observed, a warning is raised.</dd>
             ]
 
     elapsed = time.time() - t_start
+    log_strides = (
+        &#34;manual&#34; if self.strides is None else tuple(map(str, self.strides))
+    )
+    log_window = &#34;manual&#34; if self.window is None else self.window
     logger.info(
         f&#34;Finished function [{func.func.__name__}] on &#34;
         f&#34;{[self.series_key]} with window-stride &#34;
-        f&#34;[{self.window}, {self.stride}] in [{elapsed} seconds]!&#34;
+        f&#34;[{log_window}, {log_strides}] in [{elapsed} seconds]!&#34;
     )
 
     return pd.DataFrame(index=self.index, data=feat_out)</code></pre>
@@ -632,7 +912,7 @@ If False and sparsity is observed, a warning is raised.</dd>
 <dt><code>pd.DataFrame</code></dt>
 <dd>The merged output of the function applied to every column in a
 new DataFrame. The DataFrame's column-names have the format:
-<code>&lt;series_col_name(s)&gt;_&lt;feature_name&gt;__w=&lt;window&gt;_s=&lt;stride&gt;</code>.</dd>
+<code>&lt;series_col_name(s)&gt;_&lt;feature_name&gt;__w=&lt;window&gt;</code>.</dd>
 </dl>
 <h2 id="raises">Raises</h2>
 <dl>
@@ -668,7 +948,7 @@ the <code>output_names</code> attributes of its constructor.</li>
     }
 
     @staticmethod
-    def get_segmenter(data, window, stride, **kwargs) -&gt; StridedRolling:
+    def get_segmenter(data, window, strides, **kwargs) -&gt; StridedRolling:
         &#34;&#34;&#34;Get the appropriate StridedRolling instance for the passed data.
 
         The returned instance will be determined by the data its index type
@@ -679,8 +959,8 @@ the <code>output_names</code> attributes of its constructor.</li>
             The data to segment.
         window : Union[float, pd.TimeDelta]
              The window size to use for the segmentation.
-        stride : Union[float, pd.TimeDelta]
-            The stride to use for the segmentation.
+        strides : Union[List[Union[float, pd.TimeDelta]], None]
+            The stride(s) to use for the segmentation.
         **kwargs : dict, optional
             Additional keyword arguments, see the `StridedRolling` its documentation
             for more info.
@@ -688,14 +968,14 @@ the <code>output_names</code> attributes of its constructor.</li>
         .. Note::
             When passing `time-based` data, but **int**-based window &amp; stride params,
             the strided rolling will be `TimeIndexSampleStridedRolling`. This class
-            **assumes** that **all data series** _roughly_ have the 
-            **same sample frequency**, as  the windows and strides are interpreted in 
+            **assumes** that **all data series** _roughly_ have the
+            **same sample frequency**, as  the windows and strides are interpreted in
             terms of **number of samples**.
 
         Raises
         ------
         ValueError
-            When incompatible data &amp; window-stride data types are passed (e.g. time 
+            When incompatible data &amp; window-stride data types are passed (e.g. time
             window-stride args on sequence data-index).
 
         Returns
@@ -705,15 +985,18 @@ the <code>output_names</code> attributes of its constructor.</li>
 
         &#34;&#34;&#34;
         data_dtype = AttributeParser.determine_type(data)
-        args_dtype = AttributeParser.determine_type([window, stride])
+        if strides is None:
+            args_dtype = AttributeParser.determine_type(window)
+        else:
+            args_dtype = AttributeParser.determine_type([window] + strides)
 
-        if data_dtype.value == args_dtype.value:
+        if window is None or data_dtype.value == args_dtype.value:
             return StridedRollingFactory._datatype_to_stroll[data_dtype](
-                data, window, stride, **kwargs
+                data, window, strides, **kwargs
             )
         elif data_dtype == DataType.TIME and args_dtype == DataType.SEQUENCE:
             # Note: this is very niche and thus requires advanced knowledge
-            return TimeIndexSampleStridedRolling(data, window, stride, **kwargs)
+            return TimeIndexSampleStridedRolling(data, window, strides, **kwargs)
         elif data_dtype == DataType.SEQUENCE and args_dtype == DataType.TIME:
             raise ValueError(&#34;Cannot segment a sequence-series with a time window&#34;)</code></pre>
 </details>
@@ -721,7 +1004,7 @@ the <code>output_names</code> attributes of its constructor.</li>
 <h3>Static methods</h3>
 <dl>
 <dt id="tsflex.features.segmenter.StridedRollingFactory.get_segmenter"><code class="name flex">
-<span>def <span class="ident">get_segmenter</span></span>(<span>data, window, stride, **kwargs)</span>
+<span>def <span class="ident">get_segmenter</span></span>(<span>data, window, strides, **kwargs)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -729,7 +1012,7 @@ the <code>output_names</code> attributes of its constructor.</li>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@staticmethod
-def get_segmenter(data, window, stride, **kwargs) -&gt; StridedRolling:
+def get_segmenter(data, window, strides, **kwargs) -&gt; StridedRolling:
     &#34;&#34;&#34;Get the appropriate StridedRolling instance for the passed data.
 
     The returned instance will be determined by the data its index type
@@ -740,8 +1023,8 @@ def get_segmenter(data, window, stride, **kwargs) -&gt; StridedRolling:
         The data to segment.
     window : Union[float, pd.TimeDelta]
          The window size to use for the segmentation.
-    stride : Union[float, pd.TimeDelta]
-        The stride to use for the segmentation.
+    strides : Union[List[Union[float, pd.TimeDelta]], None]
+        The stride(s) to use for the segmentation.
     **kwargs : dict, optional
         Additional keyword arguments, see the `StridedRolling` its documentation
         for more info.
@@ -749,14 +1032,14 @@ def get_segmenter(data, window, stride, **kwargs) -&gt; StridedRolling:
     .. Note::
         When passing `time-based` data, but **int**-based window &amp; stride params,
         the strided rolling will be `TimeIndexSampleStridedRolling`. This class
-        **assumes** that **all data series** _roughly_ have the 
-        **same sample frequency**, as  the windows and strides are interpreted in 
+        **assumes** that **all data series** _roughly_ have the
+        **same sample frequency**, as  the windows and strides are interpreted in
         terms of **number of samples**.
 
     Raises
     ------
     ValueError
-        When incompatible data &amp; window-stride data types are passed (e.g. time 
+        When incompatible data &amp; window-stride data types are passed (e.g. time
         window-stride args on sequence data-index).
 
     Returns
@@ -766,15 +1049,18 @@ def get_segmenter(data, window, stride, **kwargs) -&gt; StridedRolling:
 
     &#34;&#34;&#34;
     data_dtype = AttributeParser.determine_type(data)
-    args_dtype = AttributeParser.determine_type([window, stride])
+    if strides is None:
+        args_dtype = AttributeParser.determine_type(window)
+    else:
+        args_dtype = AttributeParser.determine_type([window] + strides)
 
-    if data_dtype.value == args_dtype.value:
+    if window is None or data_dtype.value == args_dtype.value:
         return StridedRollingFactory._datatype_to_stroll[data_dtype](
-            data, window, stride, **kwargs
+            data, window, strides, **kwargs
         )
     elif data_dtype == DataType.TIME and args_dtype == DataType.SEQUENCE:
         # Note: this is very niche and thus requires advanced knowledge
-        return TimeIndexSampleStridedRolling(data, window, stride, **kwargs)
+        return TimeIndexSampleStridedRolling(data, window, strides, **kwargs)
     elif data_dtype == DataType.SEQUENCE and args_dtype == DataType.TIME:
         raise ValueError(&#34;Cannot segment a sequence-series with a time window&#34;)</code></pre>
 </details>
@@ -786,8 +1072,8 @@ def get_segmenter(data, window, stride, **kwargs) -&gt; StridedRolling:
 <dd>The data to segment.</dd>
 <dt><strong><code>window</code></strong> :&ensp;<code>Union[float, pd.TimeDelta]</code></dt>
 <dd>The window size to use for the segmentation.</dd>
-<dt><strong><code>stride</code></strong> :&ensp;<code>Union[float, pd.TimeDelta]</code></dt>
-<dd>The stride to use for the segmentation.</dd>
+<dt><strong><code>strides</code></strong> :&ensp;<code>Union[List[Union[float, pd.TimeDelta]], None]</code></dt>
+<dd>The stride(s) to use for the segmentation.</dd>
 <dt><strong><code>**kwargs</code></strong> :&ensp;<code>dict</code>, optional</dt>
 <dd>Additional keyword arguments, see the <code><a title="tsflex.features.segmenter.StridedRolling" href="#tsflex.features.segmenter.StridedRolling">StridedRolling</a></code> its documentation
 for more info.</dd>
@@ -852,6 +1138,7 @@ alt="logo should be displayed here" width="95%"></a>
 <li>
 <h4><code><a title="tsflex.features.segmenter.StridedRolling" href="#tsflex.features.segmenter.StridedRolling">StridedRolling</a></code></h4>
 <ul class="">
+<li><code><a title="tsflex.features.segmenter.StridedRolling.construct_output_index" href="#tsflex.features.segmenter.StridedRolling.construct_output_index">construct_output_index</a></code></li>
 <li><code><a title="tsflex.features.segmenter.StridedRolling.apply_func" href="#tsflex.features.segmenter.StridedRolling.apply_func">apply_func</a></code></li>
 </ul>
 </li>
