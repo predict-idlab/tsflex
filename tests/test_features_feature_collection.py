@@ -2141,3 +2141,155 @@ def test_feature_collection_various_timezones_segment_start_idxs():
     )
     res = fc.calculate(s_usa, segment_start_idxs=s_none.index[:3].values, n_jobs=0, return_df=True)
     assert np.all(res.values == [])
+
+
+
+# --------------------------- global_segmentation ---------------------------
+
+
+
+# --------------------------- Start & end indices ---------------------------
+def test_int_segment_idxs_time_indexed_data():
+    # Create some time-indexed data
+    series = np.random.rand(100)
+    ts_index = pd.date_range(start="2022-06-09 00:00:00", periods=len(series), freq="min")
+    df = pd.DataFrame({"Value": series}, index=ts_index)
+
+    # NOTE the window is of int dtype -> `TimeIndexSampleTridedRolling`
+    fc_tis_stroll = FeatureCollection(
+        FeatureDescriptor(
+            function = np.mean,
+            series_name="Value",
+            window=len(df)+20,
+            stride=100
+        )
+    )
+
+    # NOTE: The window and sride are of time dtype -> TimeStridedRolling
+    fc_t_stroll = FeatureCollection(
+        FeatureDescriptor(
+            function = np.mean,
+            series_name="Value",
+            window="100min",
+            stride="1min"
+        )
+    )
+
+    # Integer alike segment indices are not supported for time-indexed data
+    # -> `TimeIndexSampleTridedRolling` is used (based on win-stride-data dtype)
+    with pytest.raises((NotImplementedError, RuntimeError)):
+        fc_tis_stroll.calculate(data=df, segment_start_idxs=[0, 50, 100], n_jobs=0, return_df=True)
+
+    # Integer alike segment indices are not supported for time-indxed data
+    # -> `TimeStridedRolling` is used (based on win-stride-data dtype)
+    with pytest.raises((NotImplementedError, RuntimeError)):
+        fc_t_stroll.calculate(data=df, segment_start_idxs=[0, 50, 100], n_jobs=0, return_df=True)
+
+def test_time_segment_idxs_time_indexed_data():
+    # Create some time-indexed data
+    series = np.random.rand(100)
+    ts_index = pd.date_range(start="2022-06-09 00:00:00", periods=len(series), freq="min")
+    df = pd.DataFrame({"Value": series}, index=ts_index)
+
+    # NOTE the window is of int dtype -> `TimeIndexSampleTridedRolling`
+    fc_tis_stroll = FeatureCollection(
+        FeatureDescriptor(
+            function = np.mean,
+            series_name="Value",
+            window=len(df)+20,
+            stride=100
+        )
+    )
+    # NOTE: The window and sride are of time dtype -> TimeStridedRolling
+    fc_t_stroll = FeatureCollection(
+        FeatureDescriptor(
+            function = np.mean,
+            series_name="Value",
+            window="100min",
+            stride="1min"
+        )
+    )
+
+    # Time based segment indices are supported for time-indexed data
+    # NOTE: it does not matter whether the window and stride are of int or time dtype
+    #   within the FeatureDescriptors When both the segment_start_idxs and 
+    #   segment_end_idxs are set
+    fc_tis_stroll.calculate(
+        data=df, 
+        segment_start_idxs=[df.index[0]], 
+        segment_end_idxs=[df.index[-1]], 
+        n_jobs=0, 
+        return_df=True
+    )
+
+    # And this must most certainly work for a FeatureCollection withholding time-based
+    # window-stride featureDescriptors
+    fc_t_stroll.calculate(
+        data=df, 
+        segment_start_idxs=[df.index[0]], 
+        segment_end_idxs=[df.index[-1]], 
+        n_jobs=0, 
+        return_df=True
+      )
+
+# --------------------------- calculate unsegmented ---------------------------
+def test_calculate_unsegmented_time_index_data():
+    series = np.random.rand(100)
+    ts_index = pd.date_range(start="2022-06-09 00:00:00", periods=len(series), freq="min")
+    df = pd.DataFrame({"Value": series}, index=ts_index)
+
+    fc_no_ws_args = FeatureCollection(
+        FeatureDescriptor(
+            function = len, #np.mean,
+            series_name="Value",
+        )
+    )
+    fc_ws_int = FeatureCollection(
+        FeatureDescriptor(
+            function = len, #np.mean,
+            series_name="Value",
+            window=10,
+            stride=10
+        )
+    )
+    fc_ws_float = FeatureCollection(
+        FeatureDescriptor(
+            function = len, #np.mean,
+            series_name="Value",
+            window=5.6,
+            stride=6.6
+        )
+    )
+    fc_ws_time = FeatureCollection(
+        FeatureDescriptor(
+            function = len, #np.mean,
+            series_name="Value",
+            window="5min",
+            stride="1hour"
+        )
+    )
+
+    for fc in [fc_ws_int, fc_no_ws_args, fc_ws_time]:
+        out = fc.calculate_unsegmented(data=df, window_idx='end', return_df=True, include_final_window=True, n_jobs=0)
+        # assert that all the data was used
+        assert out.values[0] == len(df)
+        assert out.index[-1] > df.index[-1]
+
+
+def test_calculate_unsegmented_time_index_data():
+    series = np.random.rand(100)
+    ts_index = pd.date_range(start="2022-06-09 00:00:00", periods=len(series), freq="min")
+    df = pd.DataFrame({"Value": series}, index=ts_index)
+
+    fc = FeatureCollection(
+        FeatureDescriptor(
+            function = len, #np.mean,
+            series_name="Value",
+            window=len(df)+20,
+            # stride=100
+        )
+    )
+    out = fc.calculate_unsegmented(data=df, window_idx='end', return_df=True, include_final_window=True, n_jobs=0)
+    # assert that all the data was used
+    assert out.values[0] == len(df)
+    assert out.index[-1] > df.index[-1]
