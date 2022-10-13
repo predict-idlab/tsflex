@@ -7,6 +7,7 @@ from enum import IntEnum
 from typing import Any
 
 import pandas as pd
+import numpy as np
 
 from tsflex.utils.time import parse_time_arg
 
@@ -31,16 +32,26 @@ class AttributeParser:
         if data is None:
             return DataType.UNDEFINED
 
-        elif isinstance(data, (pd.Series, pd.DataFrame)):
-            dtype_str = str(data.index.dtype)
+        elif isinstance(data, (pd.Series, pd.DataFrame, np.ndarray)):
+            if isinstance(data, np.ndarray):
+                if not len(data):
+                    return DataType.UNDEFINED
+                dtype_str = str(data.dtype)
+            else:
+                dtype_str = str(data.index.dtype)
             if AttributeParser._datetime_regex.match(dtype_str) is not None:
                 return DataType.TIME
+            elif dtype_str == 'object':
+                # we make the assumption that the fist element is the same type as the 
+                # rest
+                return AttributeParser.determine_type(data[0])
             elif any(r.match(dtype_str) for r in AttributeParser._numeric_regexes):
                 return DataType.SEQUENCE
 
         elif isinstance(data, (int, float)):
             return DataType.SEQUENCE
-
+        elif isinstance(data, pd.Timestamp):
+            return DataType.TIME
         elif isinstance(data, (str, pd.Timedelta)):
             # parse_time_arg already raises an error when an invalid datatype is passed
             parse_time_arg(data)
@@ -54,7 +65,7 @@ class AttributeParser:
                 )
             return dtype_list[0]
 
-        raise ValueError(f"Unsupported data type {type(data)}")
+        raise ValueError(f"Unsupported data type {type(data)} {str(data.dtype)} {data[:10]}")
 
     @staticmethod
     def check_expected_type(data: Any, expected: DataType) -> bool:
