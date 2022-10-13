@@ -341,6 +341,55 @@ class FeatureCollection:
             segment_idxs = segment_idxs.squeeze()  # remove singleton dimensions
         return segment_idxs
 
+    def calculate_unsegmented(
+        self,
+        data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
+        **kwargs,
+    ) -> Union[List[pd.DataFrame], pd.DataFrame]:
+        """Calculate features over the whole series (`data`).
+
+        This implies that all FeatureDescriptors will use the whole, unsegmented `data`.
+
+         Parameters
+         ----------
+         data : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
+             The data for which the features will be calculated over.
+         **kwargs
+             Additional keyword arguments passed to the `calculate` method.
+
+         Returns
+         -------
+        Union[List[pd.DataFrame], pd.DataFrame]
+             The calculated features.
+
+        """
+        # Make sure that kwargs does not contain start_idx or end_idx
+        for k in ["segment_start_idxs", "segment_end_idxs", "stride"]:
+            assert k not in kwargs, f"`{k}` is not allowed in `calculate_unsegmented`"
+
+        data = to_list(data)
+        min_idx = min([s.index[0] for s in data])
+        max_idx = max([s.index[-1] for s in data])
+
+        # Add a small offset to max_idx to ensure that the last index is included
+        # TODO: can this be made any cleaner?
+        if isinstance(max_idx, int):
+            max_idx += 1
+        elif isinstance(max_idx, float):
+            max_idx += 1e-6
+        elif isinstance(max_idx, pd.Timestamp):
+            max_idx += pd.Timedelta("1us")
+        else:
+            raise ValueError(f"invalid index dtype {type(max_idx)}")
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore", category=RuntimeWarning)
+            out = self.calculate(
+                data, segment_start_idxs=[min_idx], segment_end_idxs=[max_idx], **kwargs
+            )
+            
+        return out
+
     def calculate(
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
@@ -526,7 +575,9 @@ class FeatureCollection:
 
         # Convert to numpy array (if necessary)
         if segment_start_idxs is not None:
-            segment_start_idxs = FeatureCollection._process_segment_idxs(segment_start_idxs)
+            segment_start_idxs = FeatureCollection._process_segment_idxs(
+                segment_start_idxs
+            )
         if segment_end_idxs is not None:
             segment_end_idxs = FeatureCollection._process_segment_idxs(segment_end_idxs)
 

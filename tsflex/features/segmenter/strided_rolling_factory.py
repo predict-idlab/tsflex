@@ -9,13 +9,17 @@ Factory class for creating the proper StridedRolling instances.
 
 __author__ = "Jonas Van Der Donckt"
 
-from .strided_rolling import (
-    StridedRolling,
-    TimeStridedRolling,
-    SequenceStridedRolling,
-    TimeIndexSampleStridedRolling,
-)
+from tracemalloc import start
+
+import numpy as np
+
 from ...utils.attribute_parsing import AttributeParser, DataType
+from .strided_rolling import (
+    SequenceStridedRolling,
+    StridedRolling,
+    TimeIndexSampleStridedRolling,
+    TimeStridedRolling,
+)
 
 
 class StridedRollingFactory:
@@ -54,8 +58,8 @@ class StridedRollingFactory:
         Raises
         ------
         ValueError
-            When incompatible data & window-stride data types are passed (e.g. time
-            window-stride args on sequence data-index).
+            When incompatible segment_indices, data & window-stride data types are
+            passed (e.g. time window-stride args on sequence data-index).
 
         Returns
         -------
@@ -64,17 +68,54 @@ class StridedRollingFactory:
 
         """
         data_dtype = AttributeParser.determine_type(data)
-        if strides is None:
-            args_dtype = AttributeParser.determine_type(window)
-        else:
-            args_dtype = AttributeParser.determine_type([window] + strides)
 
-        if window is None or data_dtype.value == args_dtype.value:
+        # Get the start and end indices of the data and replace them with [] when None
+        start_indices = kwargs.get("segment_start_idxs")
+        # start_indices = [] if start_indices is None else start_indices
+        end_indices = kwargs.get("segment_end_idxs")
+        # end_indices = [] if end_indices is None else end_indices
+
+        if strides is None:
+            ws_dtype = AttributeParser.determine_type(window)
+        else:
+            ws_dtype = AttributeParser.determine_type([window] + strides)
+
+        if isinstance(start_indices, np.ndarray) and isinstance(
+            end_indices, np.ndarray
+        ):
+            # When both segment_indices are passed, this must match the data dtype
+            segment_dtype = AttributeParser.determine_type(start_indices)
+            assert segment_dtype == AttributeParser.determine_type(end_indices)
+            if segment_dtype != DataType.UNDEFINED:
+                assert segment_dtype == data_dtype, (
+                    "Currently, only TimeStridedRolling and SequenceStridedRolling are "
+                    + "supported, as such, the segment and data dtype must match;"
+                    + f"Got seg_dtype={segment_dtype} and data_dtype={data_dtype}."
+                )
+                window = None
+                return StridedRollingFactory._datatype_to_stroll[segment_dtype](
+                    data, window, strides, **kwargs
+                )
+        elif isinstance(start_indices, np.ndarray) or isinstance(
+            end_indices, np.ndarray
+        ):
+            # if only one of the start and end-indices are passed, we must check
+            # if these are compatible with the window and stride params
+            segment_dtype = AttributeParser.determine_type(
+                start_indices if start_indices is not None else end_indices
+            )
+            assert segment_dtype == ws_dtype, (
+                f"Segment start/end indices must be of the same type as the window "
+                + "and stride params when only one of the two segment indices is given."
+                + f"Got seg_dtype={segment_dtype} and ws_dtype={ws_dtype}."
+            )
+
+        if window is None or data_dtype.value == ws_dtype.value:
             return StridedRollingFactory._datatype_to_stroll[data_dtype](
                 data, window, strides, **kwargs
             )
-        elif data_dtype == DataType.TIME and args_dtype == DataType.SEQUENCE:
+        elif data_dtype == DataType.TIME and ws_dtype == DataType.SEQUENCE:
             # Note: this is very niche and thus requires advanced knowledge
             return TimeIndexSampleStridedRolling(data, window, strides, **kwargs)
-        elif data_dtype == DataType.SEQUENCE and args_dtype == DataType.TIME:
+        elif data_dtype == DataType.SEQUENCE and ws_dtype == DataType.TIME:
             raise ValueError("Cannot segment a sequence-series with a time window")
