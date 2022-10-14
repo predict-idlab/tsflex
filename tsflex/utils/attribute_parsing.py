@@ -65,7 +65,7 @@ class AttributeParser:
                 )
             return dtype_list[0]
 
-        raise ValueError(f"Unsupported data type {type(data)} {str(data.dtype)} {data[:10]}")
+        raise ValueError(f"Unsupported data type {type(data)}")
 
     @staticmethod
     def check_expected_type(data: Any, expected: DataType) -> bool:
