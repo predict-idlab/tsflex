@@ -4,7 +4,7 @@ First of all, thank you for considering contributing to `tsflex`.<br>
 It's people like you that will help make `tsflex` a great toolkit! 🤝
 
 As usual, contributions are managed through GitHub Issues and Pull Requests.  
-We invite you to use GitHub's [issues](https://github.com/predict-idlab/tsflex/issues) to report bugs, request features, or ask questions about the project. To ask use-specific questions, please use the [discussions](https://github.com/predict-idlab/tsflex/discussions) instead.
+We invite you to use GitHub's [Issues](https://github.com/predict-idlab/tsflex/issues) to report bugs, request features, or ask questions about the project. To ask use-specific questions, please use the [Discussions](https://github.com/predict-idlab/tsflex/discussions) instead.
 
 If you are new to GitHub, you can read more about how to contribute [here](https://docs.github.com/en/get-started/quickstart/contributing-to-projects).
 
@@ -44,15 +44,15 @@ Make sure that this environment is activated when developing (e.g., installing d
 
 ### Installing & building the dependencies
 
-We use [poetry](https://python-poetry.org/) as dependency manager for this project. 
-- The dependencies for installation & development are written in the [pyproject.toml](pyproject.toml) file (which is quite similar to a requirements.txt file). 
-- To ensure that package versions are consistent with everyone who works on this project poetry uses a [poetry.lock](poetry.lock) file (read more [here](https://python-poetry.org/docs/basic-usage/#installing-with-poetrylock)).
+We use [`poetry`](https://python-poetry.org/) as dependency manager for this project. 
+- The dependencies for installation & development are written in the [`pyproject.toml`](pyproject.toml) file (which is quite similar to a requirements.txt file). 
+- To ensure that package versions are consistent with everyone who works on this project poetry uses a [`poetry.lock`](poetry.lock) file (read more [here](https://python-poetry.org/docs/basic-usage/#installing-with-poetrylock)).
 
 To install the requirements
 ```sh
 pip install poetry  # install poetry (if you do use the venv option)
-poetry install  # install all the dependencies
-poetry build  # build the underlying C code
+poetry install      # install all the dependencies
+poetry build        # build the underlying C code
 ```
 
 ### Formatting the code
