@@ -18,7 +18,7 @@ jobs:
         python-version: 3.8
     
     - name: Install poetry
-      uses: Gr1N/setup-poetry@v4
+      uses: snok/install-poetry@v1
     - name: Cache poetry
       id: cached-poetry-dependencies
       uses: actions/cache@v2

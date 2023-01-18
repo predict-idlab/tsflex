@@ -208,7 +208,7 @@ def tsfresh_combiner_wrapper(func: Callable, param: List[Dict]) -> FuncWrapper:
     )
 
 
-def tsfresh_settings_wrapper(settings: Dict) -> List[Callable]:
+def tsfresh_settings_wrapper(settings: Dict) -> List[Union[Callable, FuncWrapper]]:
     """Wrapper enabling compatibility with tsfresh feature extraction settings.
 
     [tsfresh feature extraction settings](https://tsfresh.readthedocs.io/en/latest/text/feature_extraction_settings.html)
@@ -249,7 +249,7 @@ def tsfresh_settings_wrapper(settings: Dict) -> List[Callable]:
 
     Returns
     -------
-    List[Callable]
+    List[Union[Callable, FuncWrapper]]
         List of the (wrapped) tsfresh functions that are now directly compatible with
         with tsflex.
  
@@ -278,6 +278,7 @@ def catch22_wrapper(catch22_all: Callable) -> FuncWrapper:
 
     [catch22](https://github.com/chlubba/catch22) is a collection of 22 time series 
     features that are a high-performing subset of the over 7000 features in hctsa.
+    -> [Python bindings](https://github.com/DynamicsAndNeuralSystems/pycatch22)
 
     By using this wrapper, we can plug the catch22 features in a tsflex
     ``FeatureCollection``.
@@ -285,7 +286,7 @@ def catch22_wrapper(catch22_all: Callable) -> FuncWrapper:
     of tsflex.
 
     .. Note::
-        This wrapper wraps the `catch22_all` function from `catch22`.
+        This wrapper wraps the `catch22_all` function from `pycatch22`.
         See more [here](https://github.com/chlubba/catch22/blob/master/wrap_Python/catch22/catch22.py).
 
     Example
@@ -293,7 +294,7 @@ def catch22_wrapper(catch22_all: Callable) -> FuncWrapper:
     ```python
     from tsflex.features import FeatureCollection, MultipleFeatureDescriptors
     from tsflex.features.integrations import catch22_wrapper
-    from catch22 import catch22_all
+    from pycatch22 import catch22_all
 
     catch22_feats = MultipleFeatureDescriptors(
         functions=catch22_wrapper(catch22_all),
@@ -308,7 +309,7 @@ def catch22_wrapper(catch22_all: Callable) -> FuncWrapper:
     Parameters
     ----------
     catch22_all: Callable
-        The `catch22_all` function from the `catch22` package.
+        The `catch22_all` function from the `pycatch22` package.
 
     Returns
     -------
