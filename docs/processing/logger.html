@@ -52,7 +52,7 @@ SeriesPipeline : its `logging_file_path` of the `process` method.
 
 &#34;&#34;&#34;
 
-__author__ = &#34;Jeroen Van Der Donckt&#34;
+__author__ = &#34;Jeroen Van Der Donckt, Jonas Van Der Donckt&#34;
 
 import logging
 import pandas as pd
@@ -74,39 +74,41 @@ def _parse_message(message: str) -&gt; list:
     &#34;&#34;&#34;Parse the message of the logged info.&#34;&#34;&#34;
     regex = r&#34;\[(.*?)\]&#34;
     matches = re.findall(regex, remove_inner_brackets(message))
-    assert len(matches) == 3
+    assert len(matches) == 4
     func = matches[0]
     series_names = matches[1].replace(&#34;&#39;&#34;, &#34;&#34;)
-    duration_s = float(matches[2].rstrip(&#34; seconds&#34;))
-    return [func, series_names, duration_s]
+    output_names = matches[2].replace(&#34;&#39;&#34;, &#34;&#34;)
+    duration_s = float(matches[3].rstrip(&#34; seconds&#34;))
+    return [func, series_names, output_names, duration_s]
 
 
 def _parse_logging_execution_to_df(logging_file_path: str) -&gt; pd.DataFrame:
-    &#34;&#34;&#34;Parse the logged messages into a dataframe that contains execution info.
+    &#34;&#34;&#34;Parse the logged messages into a DataFrame that contains execution info.
 
     Parameters
     ----------
     logging_file_path: str
         The file path where the logged messages are stored. This is the file path that
-        is passed to the ``SeriesPipeline`` its process method.
+        is passed to the ``SeriesPipeline`` its ``process`` method.
 
     Returns
     -------
     pd.DataFrame
-        A DataFrame with the processor its method, series names and calculation 
-        duration.
+        A DataFrame with the processor its method, series names, output names, and
+        calculation duration.
 
     Note
     ----
-    This function only works when the ``logging_file_path`` used in a
-    ``SeriesPipeline`` its ``process`` method is passed.
+    This function only works when the ``logging_file_path`` used in a ``SeriesPipeline``
+    its ``process`` method is passed.
 
     &#34;&#34;&#34;
     df = logging_file_to_df(logging_file_path)
-    df[[&#34;function&#34;, &#34;series_names&#34;, &#34;duration&#34;]] = pd.DataFrame(
+    df[[&#34;function&#34;, &#34;series_names&#34;, &#34;output_names&#34;, &#34;duration&#34;]] = pd.DataFrame(
         list(df[&#34;message&#34;].apply(_parse_message)),
         index=df.index,
     )
+    df[&#34;duration %&#34;] = (100 * (df[&#39;duration&#39;] / df[&#34;duration&#34;].sum())).round(2)
     return df.drop(columns=[&#34;name&#34;, &#34;log_level&#34;, &#34;message&#34;])
 
 
@@ -122,7 +124,8 @@ def get_processor_logs(logging_file_path: str) -&gt; pd.DataFrame:
     Returns
     -------
     pd.DataFrame
-        A DataFrame containing each processor its duration and its series names.
+        A DataFrame containing each processor its series names, output names, and
+        duration.
     
     &#34;&#34;&#34;
     df = _parse_logging_execution_to_df(logging_file_path)
@@ -157,7 +160,8 @@ def get_processor_logs(logging_file_path: str) -&gt; pd.DataFrame:
     Returns
     -------
     pd.DataFrame
-        A DataFrame containing each processor its duration and its series names.
+        A DataFrame containing each processor its series names, output names, and
+        duration.
     
     &#34;&#34;&#34;
     df = _parse_logging_execution_to_df(logging_file_path)
@@ -174,7 +178,8 @@ is passed to the <code>SeriesPipeline</code> its <code>process</code> method.</d
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><code>pd.DataFrame</code></dt>
-<dd>A DataFrame containing each processor its duration and its series names.</dd>
+<dd>A DataFrame containing each processor its series names, output names, and
+duration.</dd>
 </dl></div>
 </dd>
 </dl>

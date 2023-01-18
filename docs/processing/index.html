@@ -372,7 +372,8 @@ be sufficient; as you can perform column-based operations on multiple <code>pd.S
     Returns
     -------
     pd.DataFrame
-        A DataFrame containing each processor its duration and its series names.
+        A DataFrame containing each processor its series names, output names, and
+        duration.
     
     &#34;&#34;&#34;
     df = _parse_logging_execution_to_df(logging_file_path)
@@ -389,7 +390,8 @@ is passed to the <code><a title="tsflex.processing.SeriesPipeline" href="#tsflex
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><code>pd.DataFrame</code></dt>
-<dd>A DataFrame containing each processor its duration and its series names.</dd>
+<dd>A DataFrame containing each processor its series names, output names, and
+duration.</dd>
 </dl></div>
 </dd>
 </dl>
@@ -571,8 +573,8 @@ is passed to the <code><a title="tsflex.processing.SeriesPipeline" href="#tsflex
 
         elapsed = time.time() - t_start
         logger.info(
-            f&#34;Finished function [{self.name}] on {self.series_names} in &#34;
-            f&#34;[{elapsed} seconds]!&#34;
+            f&#34;Finished function [{self.name}] on {self.series_names} with output &#34;
+            f&#34;{list(processed_output.keys())} in [{elapsed} seconds]!&#34;
         )
 
         return processed_output
@@ -767,8 +769,8 @@ processing function.</p>
 
     elapsed = time.time() - t_start
     logger.info(
-        f&#34;Finished function [{self.name}] on {self.series_names} in &#34;
-        f&#34;[{elapsed} seconds]!&#34;
+        f&#34;Finished function [{self.name}] on {self.series_names} with output &#34;
+        f&#34;{list(processed_output.keys())} in [{elapsed} seconds]!&#34;
     )
 
     return processed_output</code></pre>

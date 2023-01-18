@@ -257,8 +257,8 @@ class SeriesProcessor(FrozenClass):
 
         elapsed = time.time() - t_start
         logger.info(
-            f&#34;Finished function [{self.name}] on {self.series_names} in &#34;
-            f&#34;[{elapsed} seconds]!&#34;
+            f&#34;Finished function [{self.name}] on {self.series_names} with output &#34;
+            f&#34;{list(processed_output.keys())} in [{elapsed} seconds]!&#34;
         )
 
         return processed_output
@@ -649,8 +649,8 @@ be sufficient; as you can perform column-based operations on multiple <code>pd.S
 
         elapsed = time.time() - t_start
         logger.info(
-            f&#34;Finished function [{self.name}] on {self.series_names} in &#34;
-            f&#34;[{elapsed} seconds]!&#34;
+            f&#34;Finished function [{self.name}] on {self.series_names} with output &#34;
+            f&#34;{list(processed_output.keys())} in [{elapsed} seconds]!&#34;
         )
 
         return processed_output
@@ -845,8 +845,8 @@ processing function.</p>
 
     elapsed = time.time() - t_start
     logger.info(
-        f&#34;Finished function [{self.name}] on {self.series_names} in &#34;
-        f&#34;[{elapsed} seconds]!&#34;
+        f&#34;Finished function [{self.name}] on {self.series_names} with output &#34;
+        f&#34;{list(processed_output.keys())} in [{elapsed} seconds]!&#34;
     )
 
     return processed_output</code></pre>
