@@ -494,8 +494,8 @@ class StridedRolling(ABC):
         log_window = "manual" if self.window is None else self.window
         logger.info(
             f"Finished function [{func.func.__name__}] on "
-            f"{[self.series_key]} with window-stride "
-            f"[{log_window}, {log_strides}] in [{elapsed} seconds]!"
+            f"{[self.series_key]} with window-stride [{log_window}, {log_strides}] "
+            f"with output {list(feat_out.keys())} in [{elapsed} seconds]!"
         )
 
         return pd.DataFrame(index=self.index, data=feat_out)
