@@ -3,7 +3,6 @@
 __author__ = "Jeroen Van Der Donckt, Emiel Deprost, Jonas Van Der Donckt"
 
 import os
-import pytest
 import warnings
 import pandas as pd
 import numpy as np
@@ -43,7 +42,7 @@ def test_simple_processing_logging(dummy_data, logging_file_path):
     assert os.path.exists(logging_file_path)
     logging_df = get_processor_logs(logging_file_path)
 
-    assert all(logging_df.columns.values == ['log_time', 'function', 'series_names', 'duration'])
+    assert all(logging_df.columns.values == ['log_time', 'function', 'series_names', 'output_names', 'duration', 'duration %'])
 
     assert len(logging_df) == len(series_pipeline.processing_steps)
     assert logging_df.select_dtypes(include=[np.datetime64]).columns.values == ['log_time']
@@ -51,7 +50,7 @@ def test_simple_processing_logging(dummy_data, logging_file_path):
 
     assert all(logging_df["function"].values == [step.name for step in series_pipeline.processing_steps])
     assert all(logging_df["series_names"].values == ["(TMP,), (ACC_x,)", "(TMP,)"])
-
+    assert all(logging_df["output_names"].values == ["TMP, ACC_x", "TMP"])
 
 def test_file_warning_processing_logging(dummy_data, logging_file_path):
     def interpolate(series: pd.Series) -> pd.Series:
