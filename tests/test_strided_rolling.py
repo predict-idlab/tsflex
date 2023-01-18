@@ -25,7 +25,7 @@ def test_time_stroll_window_idx(dummy_data):
 
         f = FuncWrapper(np.mean, output_names="numpy_mean")
         out = stroll.apply_func(f)
-        assert f"EDA__numpy_mean__w=5s" in out.columns
+        assert "EDA__numpy_mean__w=5s" in out.columns
 
     with pytest.raises(ValueError):
         TimeStridedRolling(
@@ -121,14 +121,6 @@ def test_abstract_class(dummy_data):
 
     with pytest.raises(TypeError):
         StridedRolling(data=tmp_series, window=400, strides=[400])
-
-
-def test_time_index_sequence_stroll(dummy_data):
-    df_eda = dummy_data["EDA"]
-    stroll = TimeIndexSampleStridedRolling(
-        df_eda, window=1000, strides=[50], window_idx="end"
-    )
-    return stroll.apply_func(FuncWrapper(np.min))
 
 
 def test_time_index_sequence_stroll(dummy_data):

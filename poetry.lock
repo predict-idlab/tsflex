@@ -1559,6 +1559,14 @@ python-versions = ">=3.6,<4"
 pyasn1 = ">=0.1.3"
 
 [[package]]
+name = "ruff"
+version = "0.0.225"
+description = "An extremely fast Python linter, written in Rust."
+category = "dev"
+optional = false
+python-versions = ">=3.7"
+
+[[package]]
 name = "scikit-learn"
 version = "1.0.2"
 description = "A set of python modules for machine learning and data mining"
@@ -2071,7 +2079,7 @@ testing = ["flake8 (<5)", "func-timeout", "jaraco.functools", "jaraco.itertools"
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7.1,<3.11"  # When deploying set this to 3.7
-content-hash = "29d2d9bd5ed1500d33241f8235330b394d384ccb3290debbe9400682810499fe"
+content-hash = "6a5d12405e3d35e34f133a380461a10db9690861b06b572d9b23f4cd72c926b7"
 
 [metadata.files]
 alabaster = [
@@ -3253,6 +3261,24 @@ requests-oauthlib = [
 rsa = [
     {file = "rsa-4.9-py3-none-any.whl", hash = "sha256:90260d9058e514786967344d0ef75fa8727eed8a7d2e43ce9f4bcf1b536174f7"},
     {file = "rsa-4.9.tar.gz", hash = "sha256:e38464a49c6c85d7f1351b0126661487a7e0a14a50f1675ec50eb34d4f20ef21"},
+]
+ruff = [
+    {file = "ruff-0.0.225-py3-none-macosx_10_7_x86_64.whl", hash = "sha256:c2b67c55cb810756847ec0d01145f50470ff6f20f729b0a57216637463e58226"},
+    {file = "ruff-0.0.225-py3-none-macosx_10_9_x86_64.macosx_11_0_arm64.macosx_10_9_universal2.whl", hash = "sha256:16b2a8a1171f7a1a6126ea76e6f6a4e622352ee4518156f989c6b8563bcd86b6"},
+    {file = "ruff-0.0.225-py3-none-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:a48c298b78ab84634fa21c82bea9d355fcbebc6119980af4d88230acd53ba58c"},
+    {file = "ruff-0.0.225-py3-none-manylinux_2_17_armv7l.manylinux2014_armv7l.whl", hash = "sha256:6cfedd4f4df8b4a9352386e75714d86772d765f8eea16dc435633565e7513c33"},
+    {file = "ruff-0.0.225-py3-none-manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:31a82d4a0bb0163d967d2fc67d1dd50f244199fbf01b9034f4bc471a9f8b7a62"},
+    {file = "ruff-0.0.225-py3-none-manylinux_2_17_ppc64.manylinux2014_ppc64.whl", hash = "sha256:1b6b50b0d2db8e000c24d501c112d33cced64cb0bc0c3a6ed06621c83974ad37"},
+    {file = "ruff-0.0.225-py3-none-manylinux_2_17_ppc64le.manylinux2014_ppc64le.whl", hash = "sha256:fda14be1b8ea0a2bf4998cb12580fbd64f335f41cad1896b06a29beb6167bd61"},
+    {file = "ruff-0.0.225-py3-none-manylinux_2_17_s390x.manylinux2014_s390x.whl", hash = "sha256:bf92628dc1caf2dd747c4dc1124f744b7fe4714a26bb4f868493f92f4b4a9ebf"},
+    {file = "ruff-0.0.225-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:8f2d0f45bbd38aafabdc14777c74bf74dc5ea0aef10f329f52422f068d979a99"},
+    {file = "ruff-0.0.225-py3-none-musllinux_1_2_aarch64.whl", hash = "sha256:287734a8a9f94517e1aab345a6850225f190aadfa326a6947ed5013c2f44d8b2"},
+    {file = "ruff-0.0.225-py3-none-musllinux_1_2_armv7l.whl", hash = "sha256:53cd192e856c30131b44fc2e7d2b43db12244f373660fe451529b8e197a16f12"},
+    {file = "ruff-0.0.225-py3-none-musllinux_1_2_i686.whl", hash = "sha256:df0b37c2a5830087f3b915c353602d2c370e4778470e4509b2332dbf7a48bd59"},
+    {file = "ruff-0.0.225-py3-none-musllinux_1_2_x86_64.whl", hash = "sha256:a51928de667795b88541a81b064d900d947ff7be9daaf70f7f63d5d144e2129c"},
+    {file = "ruff-0.0.225-py3-none-win32.whl", hash = "sha256:434d7efbfca2de88d8173922cd86dda757924e1213e9b758153f850fe9d675be"},
+    {file = "ruff-0.0.225-py3-none-win_amd64.whl", hash = "sha256:2fee118f65100ada956ce6faeb0028635dd2ff9e2e00ce41bfe81edfd58993b8"},
+    {file = "ruff-0.0.225.tar.gz", hash = "sha256:61bd0ea623e04b57f7fbba74f49e5dc2bc6ebe66cc66594b6dc142a4ff5f0c37"},
 ]
 scikit-learn = [
     {file = "scikit-learn-1.0.2.tar.gz", hash = "sha256:b5870959a5484b614f26d31ca4c17524b1b0317522199dc985c3b4256e030767"},

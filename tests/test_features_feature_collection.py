@@ -867,7 +867,7 @@ def test_featurecollection_reduce_no_stride(dummy_data):
         fc_reduced = fc.reduce(col_subset)
         fc_reduced.calculate(dummy_data, stride="45s")
         for fd in flatten(fc._feature_desc_dict.values()):
-            assert fd.stride == None
+            assert fd.stride is None
 
     # also test the reduce function on a single column
     fc_reduced = fc.reduce(random.sample(list(df_feat_tot.columns), 1))
@@ -950,7 +950,7 @@ def test_featurecollection_reduce_segment_start_idx(dummy_data):
         fc_reduced = fc.reduce(col_subset)
         fc_reduced.calculate(dummy_data, segment_start_idxs=segment_start_idxs)
         for fd in flatten(fc._feature_desc_dict.values()):
-            assert fd.stride == None
+            assert fd.stride is None
 
     # also test the reduce function on a single column
     fc_reduced = fc.reduce(random.sample(list(df_feat_tot.columns), 1))
@@ -979,7 +979,7 @@ def test_featurecollection_reduce_segment_end_idx(dummy_data):
         fc_reduced = fc.reduce(col_subset)
         fc_reduced.calculate(dummy_data, segment_end_idxs=segment_end_idxs)
         for fd in flatten(fc._feature_desc_dict.values()):
-            assert fd.stride == None
+            assert fd.stride is None
 
     # also test the reduce function on a single column
     fc_reduced = fc.reduce(random.sample(list(df_feat_tot.columns), 1))
@@ -1008,7 +1008,7 @@ def test_featurecollection_reduce_segment_start_and_end_idx(dummy_data):
         fc_reduced = fc.reduce(col_subset)
         fc_reduced.calculate(dummy_data, segment_start_idxs=segment_start_idxs, segment_end_idxs=segment_end_idxs)
         for fd in flatten(fc._feature_desc_dict.values()):
-            assert fd.stride == None
+            assert fd.stride is None
 
     # also test the reduce function on a single column
     fc_reduced = fc.reduce(random.sample(list(df_feat_tot.columns), 1))
@@ -1046,7 +1046,7 @@ def test_featurecollection_error_val(dummy_data):
     eda_data = dummy_data["EDA"].dropna()
     eda_data[2: 1 + 25 * 4] = None  # Leave gap of 25 s
     eda_data = eda_data.dropna()
-    assert eda_data.isna().any() == False
+    assert not eda_data.isna().any()
     assert (eda_data.index[1:] - eda_data.index[:-1]).max() == pd.Timedelta("25 s")
 
     with pytest.raises(Exception):
@@ -1068,7 +1068,7 @@ def test_featurecollection_error_val_multiple_outputs(dummy_data):
     eda_data = dummy_data["EDA"].dropna()
     eda_data[2: 1 + 25 * 4] = None  # Leave gap of 25 s
     eda_data = eda_data.dropna()
-    assert eda_data.isna().any() == False
+    assert not eda_data.isna().any()
     assert (eda_data.index[1:] - eda_data.index[:-1]).max() == pd.Timedelta("25 s")
 
     with pytest.raises(Exception):
@@ -1084,7 +1084,7 @@ def test_feature_collection_invalid_series_names(dummy_data):
     )
 
     with pytest.raises(Exception):
-        fc = FeatureCollection(feature_descriptors=fd)
+        FeatureCollection(feature_descriptors=fd)
 
     fd = FeatureDescriptor(
         function=FuncWrapper(np.min, output_names=["min"]),
@@ -1094,7 +1094,7 @@ def test_feature_collection_invalid_series_names(dummy_data):
     )
 
     with pytest.raises(Exception):
-        fc = FeatureCollection(feature_descriptors=fd)
+        FeatureCollection(feature_descriptors=fd)
 
 
 def test_feature_collection_invalid_feature_output_names(dummy_data):
@@ -1106,7 +1106,7 @@ def test_feature_collection_invalid_feature_output_names(dummy_data):
     )
 
     # this should work, no error should be raised
-    fc = FeatureCollection(feature_descriptors=fd)
+    _ = FeatureCollection(feature_descriptors=fd)
 
     fd = FeatureDescriptor(
         function=FuncWrapper(np.max, output_names=["max__feat"]),
@@ -1117,7 +1117,7 @@ def test_feature_collection_invalid_feature_output_names(dummy_data):
     )
 
     with pytest.raises(Exception):
-        fc = FeatureCollection(feature_descriptors=fd)
+        FeatureCollection(feature_descriptors=fd)
 
 
 ### Test various feature descriptor functions
@@ -1313,7 +1313,7 @@ def test_series_funcs(dummy_data):
         dummy_data[: int(len(dummy_data) / downscale_factor)], return_df=True
     )
     # Note: testing this single-threaded allows the code-cov to fire
-    res_df_2 = fc.calculate(
+    _ = fc.calculate(
         dummy_data[: int(len(dummy_data) / downscale_factor)],
         return_df=True,
         n_jobs=1,
@@ -1438,7 +1438,7 @@ def test_pass_by_value(dummy_data):
 
     for n_jobs in [0, None]:
         with pytest.raises(Exception):
-            out = fc_gsr.calculate(dummy_data, return_df=True, n_jobs=n_jobs)
+            fc_gsr.calculate(dummy_data, return_df=True, n_jobs=n_jobs)
 
 
 def test_datatype_retention(dummy_data):
@@ -1805,7 +1805,7 @@ def test_error_same_output_feature_collection(dummy_data):
         strides="2.5s",
     )
     with pytest.raises(AssertionError):
-        fc = FeatureCollection(feature_descriptors=mfd)
+        FeatureCollection(feature_descriptors=mfd)
 
 
 def test_bound_method(dummy_data):

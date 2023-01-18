@@ -284,8 +284,8 @@ def test_single_signal_series_processor(dummy_data):
     assert isinstance(res["EDA"], pd.Series)
     assert res["EDA"].shape == dummy_data["EDA"].shape
 
-    assert all(res["EDA"][dummy_data["EDA"] <= thresh] == False)
-    assert all(res["EDA"][dummy_data["EDA"] > thresh] == True)
+    assert not any (res["EDA"][dummy_data["EDA"] <= thresh])
+    assert all(res["EDA"][dummy_data["EDA"] > thresh])
 
 
 def test_multi_signal_series_processor(dummy_data):

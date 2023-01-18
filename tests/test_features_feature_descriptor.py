@@ -59,7 +59,7 @@ def test_simple_feature_descriptor_optional_stride():
 
     assert fd.series_name == tuple(["EDA"])
     assert fd.window == pd.Timedelta(5, unit='seconds')
-    assert fd.stride == None
+    assert fd.stride is None
     assert fd.get_required_series() == ["EDA"]
     assert fd.get_nb_output_features() == 1
     assert isinstance(fd.function, FuncWrapper)
@@ -75,8 +75,8 @@ def test_simple_feature_descriptor_optional_window_and_stride():
     )
 
     assert fd.series_name == tuple(["EDA"])
-    assert fd.window == None
-    assert fd.stride == None
+    assert fd.window is None
+    assert fd.stride is None
     assert fd.get_required_series() == ["EDA"]
     assert fd.get_nb_output_features() == 1
     assert isinstance(fd.function, FuncWrapper)

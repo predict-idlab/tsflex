@@ -4,7 +4,6 @@ __author__ = "Jeroen Van Der Donckt, Emiel Deprost, Jonas Van Der Donckt"
 
 import os
 import pandas as pd
-import numpy as np
 
 from pandas.testing import assert_index_equal, assert_series_equal
 from .utils import (

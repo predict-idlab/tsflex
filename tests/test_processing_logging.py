@@ -9,7 +9,6 @@ import numpy as np
 
 from tsflex.processing import dataframe_func
 from tsflex.processing import SeriesProcessor, SeriesPipeline
-from tsflex.processing.series_pipeline import _ProcessingError
 from tsflex.processing import get_processor_logs
 
 from .utils import dummy_data, logging_file_path

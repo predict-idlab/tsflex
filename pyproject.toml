@@ -33,6 +33,25 @@ tsfresh = "^0.20.0"
 tsfel = "^0.1.4"
 fastparquet = "0.8.0"  # Lock to this version to resolve issue on macos with python 3.7
 pycatch22 = "^0.4.2"
+ruff = "^0.0.225"
+
+# Linting
+[tool.ruff]
+line-length = 88
+ignore = ["E501"] # Never enforce `E501` (line length violations).
+[tool.ruff.per-file-ignores]
+"tests/test_features_feature_collection.py" = ["F401", "F811"]
+"tests/test_features_func_wrapper.py" = ["F401", "F811"]
+"tests/test_features_integration.py" = ["F401", "F811"]
+"tests/test_features_logging.py" = ["F401", "F811"]
+"tests/test_features_utils.py" = ["F401", "F811"]
+"tests/test_processing_logging.py" = ["F401", "F811"]
+"tests/test_processing_series_pipeline.py" = ["F401", "F811"]
+"tests/test_processing_series_processor.py" = ["F401", "F811"]
+"tests/test_processing_utils.py" = ["F401", "F811"]
+"tests/test_strided_rolling.py" = ["F401", "F811"]
+"tests/test_stroll_factory.py" = ["F401", "F811"]
+"tests/test_utils.py" = ["F401", "F811"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

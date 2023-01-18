@@ -80,7 +80,7 @@ class SeriesPipeline:
             self.processing_steps.extend(processor.processing_steps)
         else:
             raise TypeError(
-                f"Can only append SeriesProcessor or SeriesPipeline, "
+                "Can only append SeriesProcessor or SeriesPipeline, "
                 + f"not {type(processor)}"
             )
 
@@ -109,7 +109,7 @@ class SeriesPipeline:
                 self.insert(idx + i, ps)
         else:
             raise TypeError(
-                f"Can only insert a SeriesProcessor or SeriesPipeline, "
+                "Can only insert a SeriesProcessor or SeriesPipeline, "
                 + f"not {type(processor)}"
             )
 

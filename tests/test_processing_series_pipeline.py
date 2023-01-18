@@ -236,7 +236,6 @@ def test_pipeline_steps_operations_series_pipeline(dummy_data):
         return series.clip(l_thresh, h_thresh)
 
     lower = 0.02
-    upper = 0.99  # The default value => do not pass
     series_pipeline = SeriesPipeline()
 
     assert series_pipeline.get_required_series() == []

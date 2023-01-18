@@ -31,7 +31,7 @@ def test_unrobust_gap_features(dummy_data):
     eda_data[2 : 1 + 25 * 4] = None  # Leave gap of 25 s
     # -> so there are empty windows -> will rase a ValueError
     eda_data = eda_data.dropna()
-    assert eda_data.isna().any() == False
+    assert not eda_data.isna().any()
     assert (eda_data.index[1:] - eda_data.index[:-1]).max() == pd.Timedelta("25 s")
 
     with pytest.raises(Exception):
@@ -52,14 +52,14 @@ def test_robust_gap_features(dummy_data):
     eda_data[2 : 1 + 25 * 4] = None  # Leave gap of 25 s
     eda_data = eda_data.dropna()
     # -> so there are empty windows -> will rase a ValueError
-    assert eda_data.isna().any() == False
+    assert not eda_data.isna().any()
     assert (eda_data.index[1:] - eda_data.index[:-1]).max() == pd.Timedelta("25 s")
 
     res_df = feature_collection.calculate(
         eda_data, return_df=True, approve_sparsity=True
     )
     assert res_df.isna()[1:4].all().all()
-    assert res_df[4:].isna().any().any() == False
+    assert not res_df[4:].isna().any().any()
 
 
 def test_robust_gap_features_multi_input(dummy_data):
@@ -78,7 +78,7 @@ def test_robust_gap_features_multi_input(dummy_data):
     eda_tmp_data = dummy_data[["EDA", "TMP"]].dropna()
     eda_tmp_data[2 : 1 + 25 * 4] = None  # Leave gap of 25 s
     eda_tmp_data = eda_tmp_data.dropna()
-    assert eda_tmp_data.isna().any().any() == False
+    assert not eda_tmp_data.isna().any().any()
     assert (eda_tmp_data.index[1:] - eda_tmp_data.index[:-1]).max() == pd.Timedelta(
         "25 s"
     )
@@ -87,7 +87,7 @@ def test_robust_gap_features_multi_input(dummy_data):
         eda_tmp_data, return_df=True, approve_sparsity=True
     )
     assert res_df.isna()[1:4].all().all()
-    assert res_df[4:].isna().any().any() == False
+    assert not res_df[4:].isna().any().any()
 
 
 def test_robust_gap_features_multi_output(dummy_data):
@@ -105,14 +105,14 @@ def test_robust_gap_features_multi_output(dummy_data):
     eda_data = dummy_data["EDA"].dropna()
     eda_data[2 : 1 + 25 * 4] = None  # Leave gap of 25 s
     eda_data = eda_data.dropna()
-    assert eda_data.isna().any() == False
+    assert not eda_data.isna().any()
     assert (eda_data.index[1:] - eda_data.index[:-1]).max() == pd.Timedelta("25 s")
 
     res_df = feature_collection.calculate(
         eda_data, return_df=True, approve_sparsity=True
     )
     assert res_df.isna()[1:4].all().all()
-    assert res_df[4:].isna().any().any() == False
+    assert not res_df[4:].isna().any().any()
 
 
 def test_unrobust_pass_through_features(dummy_data):
@@ -146,4 +146,4 @@ def test_robust_pass_through_features(dummy_data):
     eda_data[np.random.choice(dummy_data.index[1:-1], 10, replace=False)] = np.nan
 
     res_df = feature_collection.calculate(eda_data, return_df=True, n_jobs=0)
-    assert res_df.isna().any().any() == False
+    assert not res_df.isna().any().any()

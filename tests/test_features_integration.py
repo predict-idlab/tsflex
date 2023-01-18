@@ -41,7 +41,7 @@ def test_seglearn_basic_features(dummy_data):
     res_df = feature_collection.calculate(dummy_data, return_df=True, n_jobs=0)
     assert res_df.shape[1] == len(base_features()) * 2
     assert res_df.shape[0] > 0
-    assert res_df.isna().any().any() == False
+    assert not res_df.isna().any().any()
 
 
 def test_seglearn_feature_dict_wrapper(dummy_data):
@@ -59,7 +59,7 @@ def test_seglearn_feature_dict_wrapper(dummy_data):
     res_df = feature_collection.calculate(dummy_data, return_df=True)
     assert res_df.shape[1] == (len(all_features()) - 1 + 4) * 2
     assert res_df.shape[0] > 0
-    assert res_df.isna().any().any() == False
+    assert not res_df.isna().any().any()
 
 
 ## TSFRESH
@@ -89,7 +89,7 @@ def test_tsfresh_simple_features(dummy_data):
     res_df = feature_collection.calculate(dummy_data, return_df=True)
     assert res_df.shape[1] == 4 * 2
     assert res_df.shape[0] > 0
-    assert res_df.isna().any().any() == False
+    assert not res_df.isna().any().any()
 
 
 def test_tsfresh_combiner_features(dummy_data):
@@ -127,7 +127,7 @@ def test_tsfresh_combiner_features(dummy_data):
     res_df = feature_collection.calculate(dummy_data, return_df=True, n_jobs=0)
     assert res_df.shape[1] == (3 + 3 + 5 + 2) * 2
     assert res_df.shape[0] > 0
-    assert res_df.isna().any().any() == False
+    assert not res_df.isna().any().any()
 
 
 def test_tsfresh_settings_wrapper(dummy_data):
@@ -198,7 +198,7 @@ def test_tsfel_basic_features(dummy_data):
     res_df = feature_collection.calculate(dummy_data, return_df=True)
     assert res_df.shape[1] == 18 * 2
     assert res_df.shape[0] > 0
-    assert res_df.isna().any().any() == False
+    assert not res_df.isna().any().any()
 
 
 def test_tsfel_advanced_features(dummy_data):
@@ -265,7 +265,7 @@ def test_tsfel_advanced_features(dummy_data):
     res_df = feature_collection.calculate(dummy_data.first("15min"), return_df=True)
     assert res_df.shape[1] == (5 + 4 + 10 + 2 + 8 + 6 + 8 + 9 + 9 + 4) * 2
     assert res_df.shape[0] > 0
-    assert res_df.isna().any().any() == False
+    assert not res_df.isna().any().any()
 
 
 def test_tsfel_feature_dict_wrapper(dummy_data):

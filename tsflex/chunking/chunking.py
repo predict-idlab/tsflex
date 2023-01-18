@@ -54,9 +54,9 @@ def _chunk_time_data(
     assert all([str(s.name) in fs_dict for s in series_list])
 
     # Some range asserts
-    assert sub_chunk_overlap.total_seconds() >= 0, f"sub_chunk_overlap_s must be > 0"
+    assert sub_chunk_overlap.total_seconds() >= 0, "sub_chunk_overlap_s must be > 0"
     if max_chunk_dur is not None:
-        assert max_chunk_dur.total_seconds() > 0, f"max_chunk_dur_ must be > 0"
+        assert max_chunk_dur.total_seconds() > 0, "max_chunk_dur_ must be > 0"
 
     # Variable in which the same time-range chunks are stored
     # Each list item can be seen as (t_start_chunk, t_end_chunk, chunk_list)

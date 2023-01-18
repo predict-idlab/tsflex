@@ -9,7 +9,7 @@ import numpy as np
 from tsflex.features import FuncWrapper
 from typing import Tuple
 
-from .utils import dummy_data, dataframe_to_series_dict, series_to_series_dict
+from .utils import dummy_data 
 
 
 ## FuncWrapper

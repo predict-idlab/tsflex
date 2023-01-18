@@ -3,7 +3,6 @@
 """
 __author__ = 'Jonas Van Der Donckt'
 
-from pandas.core.indexes.datetimes import DatetimeIndex
 import pytest
 
 from tsflex.features.segmenter import StridedRollingFactory
@@ -34,6 +33,8 @@ def test_stroll_time_data(dummy_data):
     )
 
     out_f = stroll.apply_func(f_corr)
+    assert out_f.shape[1] == 1
+    assert out_f.columns[0] == 'EDA|TMP__corrcoef__w=30s'
 
 
 def test_stroll_sequence_data(dummy_data):
@@ -55,6 +56,7 @@ def test_stroll_sequence_data(dummy_data):
         strides=[stride],
     )
     out_f = stroll.apply_func(f_corr)
+    assert out_f.shape[1] == 1
     assert out_f.columns[0] == f'EDA|TMP__corrcoef__w={int(window)}'
 
 
@@ -91,7 +93,7 @@ def test_stroll_mixed_index_dtypes(dummy_data):
     tmp_data = dummy_data['TMP']
 
     with pytest.raises(ValueError):
-        stroll = StridedRollingFactory.get_segmenter(
+        StridedRollingFactory.get_segmenter(
             data=[eda_data, tmp_data],
             window=window,
             strides=[stride],
@@ -131,7 +133,7 @@ def test_stroll_mixed_input_dtypes(dummy_data):
     tmp_data = dummy_data['TMP'].reset_index(drop=True)
 
     with pytest.raises(ValueError):
-        stroll = StridedRollingFactory.get_segmenter(
+        StridedRollingFactory.get_segmenter(
             data=[eda_data, tmp_data],
             window=pd.Timedelta(seconds=300),
             strides=[pd.Timedelta(seconds=100)]

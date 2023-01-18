@@ -71,7 +71,7 @@ def process_chunks_multithreaded(
             results = tqdm(results, total=len(same_range_chunks_list))
         try:
             processed_out = [f for f in results]
-        except:
+        except Exception:
             traceback.print_exc()
             pool.terminate()
         finally:
