@@ -2,26 +2,23 @@
 
 __author__ = "Jeroen Van Der Donckt, Emiel Deprost, Jonas Van Der Donckt"
 
-import seglearn
-# import tsfresh
-# import tsfel
-
 import numpy as np
+import seglearn
 
-from .utils import dummy_data
-from tsflex.features import (
-    MultipleFeatureDescriptors,
-    FeatureCollection,
-    FuncWrapper,
-)
+from tsflex.features import FeatureCollection, FuncWrapper, MultipleFeatureDescriptors
 from tsflex.features.integrations import (
-    seglearn_wrapper,
+    catch22_wrapper,
     seglearn_feature_dict_wrapper,
+    seglearn_wrapper,
     tsfel_feature_dict_wrapper,
     tsfresh_combiner_wrapper,
     tsfresh_settings_wrapper,
-    catch22_wrapper,
 )
+
+from .utils import dummy_data
+
+# import tsfresh
+# import tsfel
 
 
 ## SEGLEARN
@@ -41,7 +38,7 @@ def test_seglearn_basic_features(dummy_data):
     res_df = feature_collection.calculate(dummy_data, return_df=True, n_jobs=0)
     assert res_df.shape[1] == len(base_features()) * 2
     assert res_df.shape[0] > 0
-    assert res_df.isna().any().any() == False
+    assert not res_df.isna().any().any()
 
 
 def test_seglearn_feature_dict_wrapper(dummy_data):
@@ -59,7 +56,7 @@ def test_seglearn_feature_dict_wrapper(dummy_data):
     res_df = feature_collection.calculate(dummy_data, return_df=True)
     assert res_df.shape[1] == (len(all_features()) - 1 + 4) * 2
     assert res_df.shape[0] > 0
-    assert res_df.isna().any().any() == False
+    assert not res_df.isna().any().any()
 
 
 ## TSFRESH
@@ -89,15 +86,15 @@ def test_tsfresh_simple_features(dummy_data):
     res_df = feature_collection.calculate(dummy_data, return_df=True)
     assert res_df.shape[1] == 4 * 2
     assert res_df.shape[0] > 0
-    assert res_df.isna().any().any() == False
+    assert not res_df.isna().any().any()
 
 
 def test_tsfresh_combiner_features(dummy_data):
     from tsfresh.feature_extraction.feature_calculators import (
         index_mass_quantile,
         linear_trend,
-        spkt_welch_density,
         linear_trend_timewise,
+        spkt_welch_density,
     )
 
     combiner_feats = MultipleFeatureDescriptors(
@@ -127,7 +124,7 @@ def test_tsfresh_combiner_features(dummy_data):
     res_df = feature_collection.calculate(dummy_data, return_df=True, n_jobs=0)
     assert res_df.shape[1] == (3 + 3 + 5 + 2) * 2
     assert res_df.shape[0] > 0
-    assert res_df.isna().any().any() == False
+    assert not res_df.isna().any().any()
 
 
 def test_tsfresh_settings_wrapper(dummy_data):
@@ -139,7 +136,8 @@ def test_tsfresh_settings_wrapper(dummy_data):
     all_tsfresh_feats = MultipleFeatureDescriptors(
         functions=tsfresh_settings_wrapper(settings),
         series_names=["EDA", "TMP"],
-        windows="2.5min", strides="10min",
+        windows="2.5min",
+        strides="10min",
     )
     feature_collection = FeatureCollection(all_tsfresh_feats)
 
@@ -151,8 +149,29 @@ def test_tsfresh_settings_wrapper(dummy_data):
 
 
 def test_tsfel_basic_features(dummy_data):
-    from tsfel.feature_extraction.features import (
-        # Some temporal features
+    from tsfel.feature_extraction.features import (  # Some temporal features; Some statistical features; Some spectral features; -> Almost all are "advanced" features
+        abs_energy,
+        autocorr,
+        calc_max,
+        calc_median,
+        distance,
+        entropy,
+        interq_range,
+        kurtosis,
+        mean_abs_diff,
+        mean_diff,
+        median_abs_deviation,
+        neighbourhood_peaks,
+        pk_pk_distance,
+        rms,
+        skewness,
+        slope,
+        wavelet_entropy,
+        zero_cross,
+    )
+
+    basic_funcs = [
+        # Temporal
         autocorr,
         mean_abs_diff,
         mean_diff,
@@ -163,7 +182,7 @@ def test_tsfel_basic_features(dummy_data):
         pk_pk_distance,
         entropy,
         neighbourhood_peaks,
-        # Some statistical features
+        # Statistical
         interq_range,
         kurtosis,
         skewness,
@@ -171,18 +190,6 @@ def test_tsfel_basic_features(dummy_data):
         calc_median,
         median_abs_deviation,
         rms,
-        # Some spectral features
-        #  -> Almost all are "advanced" features
-        wavelet_entropy,
-    )
-
-    basic_funcs = [
-        # Temporal
-        autocorr, mean_abs_diff, mean_diff, distance, zero_cross, slope, abs_energy, 
-        pk_pk_distance, entropy, neighbourhood_peaks,
-        # Statistical
-        interq_range, kurtosis, skewness, calc_max, calc_median, 
-        median_abs_deviation, rms,
         # Spectral
         wavelet_entropy,
     ]
@@ -198,20 +205,31 @@ def test_tsfel_basic_features(dummy_data):
     res_df = feature_collection.calculate(dummy_data, return_df=True)
     assert res_df.shape[1] == 18 * 2
     assert res_df.shape[0] > 0
-    assert res_df.isna().any().any() == False
+    assert not res_df.isna().any().any()
 
 
 def test_tsfel_advanced_features(dummy_data):
-    from tsfel.feature_extraction.features import (
-        # Some temporal features
-        calc_centroid, auc, entropy, neighbourhood_peaks,
-        # Some statistical features
-        hist, ecdf, ecdf_percentile_count,
-        # Some spectral features
-        spectral_distance, fundamental_frequency, max_power_spectrum,
-        spectral_centroid, spectral_decrease, spectral_kurtosis,
-        spectral_spread, human_range_energy, mfcc, fft_mean_coeff,
-        wavelet_abs_mean, wavelet_std, wavelet_energy,
+    from tsfel.feature_extraction.features import (  # Some temporal features; Some statistical features; Some spectral features
+        auc,
+        calc_centroid,
+        ecdf,
+        ecdf_percentile_count,
+        entropy,
+        fft_mean_coeff,
+        fundamental_frequency,
+        hist,
+        human_range_energy,
+        max_power_spectrum,
+        mfcc,
+        neighbourhood_peaks,
+        spectral_centroid,
+        spectral_decrease,
+        spectral_distance,
+        spectral_kurtosis,
+        spectral_spread,
+        wavelet_abs_mean,
+        wavelet_energy,
+        wavelet_std,
     )
 
     advanced_feats = MultipleFeatureDescriptors(
@@ -241,7 +259,9 @@ def test_tsfel_advanced_features(dummy_data):
                 mfcc, fs=4, num_ceps=6, output_names=[f"mfcc{i}" for i in range(1, 7)]
             ),
             FuncWrapper(
-                fft_mean_coeff, fs=4, nfreq=8,
+                fft_mean_coeff,
+                fs=4,
+                nfreq=8,
                 output_names=[f"fft_mean_coeff_{i}" for i in range(8)],
             ),
             FuncWrapper(
@@ -252,7 +272,8 @@ def test_tsfel_advanced_features(dummy_data):
                 wavelet_std, output_names=[f"wavelet_std_{i}" for i in range(1, 10)]
             ),
             FuncWrapper(
-                wavelet_energy, widths=np.arange(1, 5),
+                wavelet_energy,
+                widths=np.arange(1, 5),
                 output_names=[f"wavelet_energy_{i}" for i in range(1, 5)],
             ),
         ],
@@ -265,7 +286,7 @@ def test_tsfel_advanced_features(dummy_data):
     res_df = feature_collection.calculate(dummy_data.first("15min"), return_df=True)
     assert res_df.shape[1] == (5 + 4 + 10 + 2 + 8 + 6 + 8 + 9 + 9 + 4) * 2
     assert res_df.shape[0] > 0
-    assert res_df.isna().any().any() == False
+    assert not res_df.isna().any().any()
 
 
 def test_tsfel_feature_dict_wrapper(dummy_data):
@@ -286,6 +307,7 @@ def test_tsfel_feature_dict_wrapper(dummy_data):
 
 ## CATCH22
 
+
 def test_catch22_all_features(dummy_data):
     # Tests if we integrate with the catch22 features
     from pycatch22 import catch22_all
@@ -293,7 +315,8 @@ def test_catch22_all_features(dummy_data):
     catch22_feats = MultipleFeatureDescriptors(
         functions=catch22_wrapper(catch22_all),
         series_names=["EDA", "TMP"],
-        windows="2.5min", strides="10min",
+        windows="2.5min",
+        strides="10min",
     )
     feature_collection = FeatureCollection(catch22_feats)
 

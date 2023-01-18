@@ -2,16 +2,16 @@
 
 __author__ = "Jeroen Van Der Donckt, Emiel Deprost, Jonas Van Der Donckt"
 
-import os
-import pytest
 import logging
+import os
+from typing import Dict
+
 import pandas as pd
-
-from typing import Union, Dict
-
+import pytest
 
 # Get the project direcory
-proj_dir = os.path.abspath(os.path.join(os.path.dirname( __file__ ), '..'))
+proj_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
 
 @pytest.fixture
 def dummy_data() -> pd.DataFrame:
@@ -22,6 +22,7 @@ def dummy_data() -> pd.DataFrame:
     df = pd.merge(df, df3, how="inner", on="timestamp")
     df.set_index("timestamp", inplace=True)
     return df
+
 
 @pytest.fixture
 def logging_file_path() -> str:

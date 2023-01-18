@@ -9,9 +9,10 @@ FeatureCollection: its `logging_file_path` of the `calculate` method.
 __author__ = "Jeroen Van Der Donckt"
 
 import logging
+import re
+
 import numpy as np
 import pandas as pd
-import re
 
 from ..utils.logging import logging_file_to_df, remove_inner_brackets
 from ..utils.time import timedelta_to_str

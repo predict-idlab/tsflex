@@ -7,15 +7,15 @@
 
 """
 
-__docformat__ = 'numpy'
+__docformat__ = "numpy"
 __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
-__version__ = '0.3.0'
+__version__ = "0.3.0"
 __pdoc__ = {
     # do not show tue utils module
-    'tsflex.utils': False,
+    "tsflex.utils": False,
     # show the seriesprocessor & funcwrapper their call method
-    'SeriesProcessor.__call__': True,
-    'FuncWrapper.__call__': True,
+    "SeriesProcessor.__call__": True,
+    "FuncWrapper.__call__": True,
 }
 
 __all__ = ["__version__", "__pdoc__"]

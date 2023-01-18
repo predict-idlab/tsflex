@@ -1,9 +1,10 @@
 """Utility functions for time-related operations."""
 
-__author__ = 'Jonas Van Der Donckt'
+__author__ = "Jonas Van Der Donckt"
+
+from typing import Union
 
 import pandas as pd
-from typing import Union
 
 
 def timedelta_to_str(td: pd.Timedelta) -> str:
@@ -25,14 +26,14 @@ def timedelta_to_str(td: pd.Timedelta) -> str:
     # Edge case if we deal with negative
     if td < pd.Timedelta(seconds=0):
         td *= -1
-        out_str += 'NEG'
+        out_str += "NEG"
 
     # Note: this must happen after the *= -1
     c = td.components
     if c.days > 0:
-        out_str += f'{c.days}D'
+        out_str += f"{c.days}D"
     if c.hours > 0 or c.minutes > 0 or c.seconds > 0 or c.milliseconds > 0:
-        out_str += '_' if len(out_str) else ""
+        out_str += "_" if len(out_str) else ""
 
     if c.hours > 0:
         out_str += f"{c.hours}h"

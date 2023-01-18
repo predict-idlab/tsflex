@@ -2,17 +2,16 @@
 
 __author__ = "Jeroen Van Der Donckt, Emiel Deprost, Jonas Van Der Donckt"
 
-import pytest
-import pandas as pd
-import numpy as np
-
-from tsflex.processing import dataframe_func
-from tsflex.processing import SeriesProcessor
-
 from typing import List
-from pandas.testing import assert_index_equal, assert_series_equal
-from .utils import dummy_data, dataframe_to_series_dict, series_to_series_dict
 
+import numpy as np
+import pandas as pd
+import pytest
+from pandas.testing import assert_index_equal, assert_series_equal
+
+from tsflex.processing import SeriesProcessor, dataframe_func
+
+from .utils import dataframe_to_series_dict, dummy_data, series_to_series_dict
 
 ## Function wrappers
 
@@ -127,7 +126,7 @@ def test_numpy_list_series_names():
         series_names=np.array(["TMP", "GSR"]), function=to_numeric
     )
     assert set(processor.get_required_series()) == set(["TMP", "GSR"])
-    
+
 
 def test_repr_():
     def to_numeric(series: pd.Series) -> pd.Series:
@@ -284,8 +283,8 @@ def test_single_signal_series_processor(dummy_data):
     assert isinstance(res["EDA"], pd.Series)
     assert res["EDA"].shape == dummy_data["EDA"].shape
 
-    assert all(res["EDA"][dummy_data["EDA"] <= thresh] == False)
-    assert all(res["EDA"][dummy_data["EDA"] > thresh] == True)
+    assert not any(res["EDA"][dummy_data["EDA"] <= thresh])
+    assert all(res["EDA"][dummy_data["EDA"] > thresh])
 
 
 def test_multi_signal_series_processor(dummy_data):
@@ -483,7 +482,7 @@ def test_error_dataframe_no_name_single_input_series_processor(dummy_data):
     # If you perform multi-series operation on series with different / no names
     # => the output will also have no name
     def absx2(sig):
-        return pd.DataFrame(np.abs(sig ** 2 - sig.rename("")))
+        return pd.DataFrame(np.abs(sig**2 - sig.rename("")))
 
     # Check if abs_diff returns a series without a name
     absx2_tmp = absx2(dummy_data["TMP"])

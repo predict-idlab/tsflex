@@ -7,33 +7,33 @@ Methods, next to `FeatureCollection.calculate()`, worth looking at: \n
 """
 
 from __future__ import annotations
-import warnings
 
+import warnings
 
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
 import os
+import traceback
 import uuid
 from copy import deepcopy
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple, Union, Any, Iterable, Callable
+from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
 import dill
-import traceback
 import numpy as np
 import pandas as pd
 from multiprocess import Pool
 from tqdm.auto import tqdm
 
-from .feature import FeatureDescriptor, MultipleFeatureDescriptors
-from .logger import logger
-from .segmenter import StridedRollingFactory, StridedRolling
-from .utils import _determine_bounds, _check_start_end_array
 from ..features.function_wrapper import FuncWrapper
 from ..utils.attribute_parsing import AttributeParser
-from ..utils.data import to_list, to_tuple, to_series_list, flatten
-from ..utils.logging import delete_logging_handlers, add_logging_handler
+from ..utils.data import flatten, to_list, to_series_list
+from ..utils.logging import add_logging_handler, delete_logging_handlers
 from ..utils.time import parse_time_arg, timedelta_to_str
+from .feature import FeatureDescriptor, MultipleFeatureDescriptors
+from .logger import logger
+from .segmenter import StridedRolling, StridedRollingFactory
+from .utils import _check_start_end_array, _determine_bounds
 
 
 class FeatureCollection:
@@ -526,7 +526,9 @@ class FeatureCollection:
 
         # Convert to numpy array (if necessary)
         if segment_start_idxs is not None:
-            segment_start_idxs = FeatureCollection._process_segment_idxs(segment_start_idxs)
+            segment_start_idxs = FeatureCollection._process_segment_idxs(
+                segment_start_idxs
+            )
         if segment_end_idxs is not None:
             segment_end_idxs = FeatureCollection._process_segment_idxs(segment_end_idxs)
 
@@ -628,7 +630,7 @@ class FeatureCollection:
                 idxs = tqdm(idxs)
             try:
                 calculated_feature_list = [self._executor(idx) for idx in idxs]
-            except:
+            except Exception:
                 traceback.print_exc()
         else:
             with Pool(processes=n_jobs) as pool:
@@ -637,7 +639,7 @@ class FeatureCollection:
                     results = tqdm(results, total=nb_stroll_funcs)
                 try:
                     calculated_feature_list = [f for f in results]
-                except:
+                except Exception:
                     traceback.print_exc()
                     pool.terminate()
                 finally:
@@ -771,7 +773,7 @@ class FeatureCollection:
             output_str += f"{'|'.join(feature_key)}: ("
             keys = (x for x in self._feature_desc_dict.keys() if x[0] == feature_key)
             for _, win_size in keys:
-                output_str += f"\n\twin: "
+                output_str += "\n\twin: "
                 win_str = self._ws_to_str(win_size)
                 output_str += f"{win_str:<6}: ["
                 for feat_desc in self._feature_desc_dict[feature_key, win_size]:

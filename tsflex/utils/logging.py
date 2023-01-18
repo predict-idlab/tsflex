@@ -4,10 +4,10 @@ __author__ = "Jeroen Van Der Donckt"
 
 import logging
 import warnings
-import pandas as pd
-
 from pathlib import Path
 from typing import Union
+
+import pandas as pd
 
 
 def remove_inner_brackets(message: str) -> str:

@@ -2,7 +2,7 @@
 
 __author__ = "Jeroen Van Der Donckt, Jonas Van Der Donckt"
 
-from typing import Callable, Any, Optional, List, Union, Tuple
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
