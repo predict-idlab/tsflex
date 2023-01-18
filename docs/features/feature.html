@@ -50,15 +50,15 @@ features.
 &#34;&#34;&#34;
 
 import itertools
-from typing import Callable, List, Optional, Union, Tuple
+from typing import Callable, List, Optional, Tuple, Union
 
 import pandas as pd
 
-from .function_wrapper import FuncWrapper
 from ..utils.attribute_parsing import AttributeParser, DataType
 from ..utils.classes import FrozenClass
 from ..utils.data import to_list, to_tuple
 from ..utils.time import parse_time_arg
+from .function_wrapper import FuncWrapper
 
 
 class FeatureDescriptor(FrozenClass):

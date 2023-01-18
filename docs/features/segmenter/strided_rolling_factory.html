@@ -54,13 +54,13 @@ Factory class for creating the proper StridedRolling instances.
 
 __author__ = &#34;Jonas Van Der Donckt&#34;
 
-from .strided_rolling import (
-    StridedRolling,
-    TimeStridedRolling,
-    SequenceStridedRolling,
-    TimeIndexSampleStridedRolling,
-)
 from ...utils.attribute_parsing import AttributeParser, DataType
+from .strided_rolling import (
+    SequenceStridedRolling,
+    StridedRolling,
+    TimeIndexSampleStridedRolling,
+    TimeStridedRolling,
+)
 
 
 class StridedRollingFactory:

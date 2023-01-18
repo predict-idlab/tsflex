@@ -69,54 +69,54 @@ processing_pipe.process(data=data, return_df=True)
 <table>
 <thead>
 <tr>
-<th align="left">timestamp</th>
-<th align="right">ACC_x</th>
-<th align="right">ACC_y</th>
-<th align="right">ACC_z</th>
+<th style="text-align: left;">timestamp</th>
+<th style="text-align: right;">ACC_x</th>
+<th style="text-align: right;">ACC_y</th>
+<th style="text-align: right;">ACC_z</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td align="left">2017-06-13 14:22:13+02:00</td>
-<td align="right">-32.8736</td>
-<td align="right">5.0000</td>
-<td align="right">51.1051</td>
+<td style="text-align: left;">2017-06-13 14:22:13+02:00</td>
+<td style="text-align: right;">-32.8736</td>
+<td style="text-align: right;">5.0000</td>
+<td style="text-align: right;">51.1051</td>
 </tr>
 <tr>
-<td align="left">2017-06-13 14:22:13.031250+02:00</td>
-<td align="right">-32.8737</td>
-<td align="right">5.0000</td>
-<td align="right">51.1051</td>
+<td style="text-align: left;">2017-06-13 14:22:13.031250+02:00</td>
+<td style="text-align: right;">-32.8737</td>
+<td style="text-align: right;">5.0000</td>
+<td style="text-align: right;">51.1051</td>
 </tr>
 <tr>
-<td align="left">2017-06-13 14:22:13.062500+02:00</td>
-<td align="right">-32.8738</td>
-<td align="right">5.0000</td>
-<td align="right">51.105</td>
+<td style="text-align: left;">2017-06-13 14:22:13.062500+02:00</td>
+<td style="text-align: right;">-32.8738</td>
+<td style="text-align: right;">5.0000</td>
+<td style="text-align: right;">51.105</td>
 </tr>
 <tr>
-<td align="left">2017-06-13 14:22:13.093750+02:00</td>
-<td align="right">-32.8739</td>
-<td align="right">5.0000</td>
-<td align="right">51.105</td>
+<td style="text-align: left;">2017-06-13 14:22:13.093750+02:00</td>
+<td style="text-align: right;">-32.8739</td>
+<td style="text-align: right;">5.0000</td>
+<td style="text-align: right;">51.105</td>
 </tr>
 <tr>
-<td align="left">2017-06-13 14:22:13.125000+02:00</td>
-<td align="right">-32.8740</td>
-<td align="right">5.0000</td>
-<td align="right">51.1049</td>
+<td style="text-align: left;">2017-06-13 14:22:13.125000+02:00</td>
+<td style="text-align: right;">-32.8740</td>
+<td style="text-align: right;">5.0000</td>
+<td style="text-align: right;">51.1049</td>
 </tr>
 <tr>
-<td align="left">&hellip;</td>
-<td align="right">&hellip;</td>
-<td align="right">&hellip;</td>
-<td align="right">&hellip;</td>
+<td style="text-align: left;">&hellip;</td>
+<td style="text-align: right;">&hellip;</td>
+<td style="text-align: right;">&hellip;</td>
+<td style="text-align: right;">&hellip;</td>
 </tr>
 <tr>
-<td align="left"><br></td>
-<td align="right"></td>
-<td align="right"></td>
-<td align="right"></td>
+<td style="text-align: left;"><br></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
+<td style="text-align: right;"></td>
 </tr>
 </tbody>
 </table>
@@ -252,12 +252,12 @@ For these cases we provide the <a href="#tsflex.processing.dataframe_func">dataf
 
 __author__ = &#34;Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt&#34;
 
+from .. import __pdoc__
 from .logger import get_processor_logs
 from .series_pipeline import SeriesPipeline
 from .series_processor import SeriesProcessor, dataframe_func
-from .. import __pdoc__
 
-__pdoc__[&#39;SeriesProcessor.__call__&#39;] = True
+__pdoc__[&#34;SeriesProcessor.__call__&#34;] = True
 
 __all__ = [
     &#34;dataframe_func&#34;,
@@ -374,7 +374,7 @@ be sufficient; as you can perform column-based operations on multiple <code>pd.S
     pd.DataFrame
         A DataFrame containing each processor its series names, output names, and
         duration.
-    
+
     &#34;&#34;&#34;
     df = _parse_logging_execution_to_df(logging_file_path)
     df[&#34;duration&#34;] = pd.to_timedelta(df[&#34;duration&#34;], unit=&#34;s&#34;)
@@ -466,6 +466,7 @@ duration.</dd>
     Series (&amp; columns) with other (column) names will be added to the series dict.
 
     &#34;&#34;&#34;
+
     def __init__(
         self,
         function: Callable,
@@ -877,7 +878,7 @@ versatile input for its <code>process</code> method.</li>
             self.processing_steps.extend(processor.processing_steps)
         else:
             raise TypeError(
-                f&#34;Can only append SeriesProcessor or SeriesPipeline, &#34;
+                &#34;Can only append SeriesProcessor or SeriesPipeline, &#34;
                 + f&#34;not {type(processor)}&#34;
             )
 
@@ -906,7 +907,7 @@ versatile input for its <code>process</code> method.</li>
                 self.insert(idx + i, ps)
         else:
             raise TypeError(
-                f&#34;Can only insert a SeriesProcessor or SeriesPipeline, &#34;
+                &#34;Can only insert a SeriesProcessor or SeriesPipeline, &#34;
                 + f&#34;not {type(processor)}&#34;
             )
 
@@ -1135,7 +1136,7 @@ list.</strong></dd>
         self.processing_steps.extend(processor.processing_steps)
     else:
         raise TypeError(
-            f&#34;Can only append SeriesProcessor or SeriesPipeline, &#34;
+            &#34;Can only append SeriesProcessor or SeriesPipeline, &#34;
             + f&#34;not {type(processor)}&#34;
         )</code></pre>
 </details>
@@ -1180,7 +1181,7 @@ end of the pipeline.</dd>
             self.insert(idx + i, ps)
     else:
         raise TypeError(
-            f&#34;Can only insert a SeriesProcessor or SeriesPipeline, &#34;
+            &#34;Can only insert a SeriesProcessor or SeriesPipeline, &#34;
             + f&#34;not {type(processor)}&#34;
         )</code></pre>
 </details>

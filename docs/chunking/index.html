@@ -43,13 +43,11 @@ alt="" width="33" height="25"></button>
 &#34;&#34;&#34;Utilities for chunking time-series data before feeding it to the operators.
 &#34;&#34;&#34;
 
-__author__ = &#39;Jonas Van Der Donckt&#39;
+__author__ = &#34;Jonas Van Der Donckt&#34;
 
 from .chunking import chunk_data
 
-__all__ = [
-    &#34;chunk_data&#34;
-]</code></pre>
+__all__ = [&#34;chunk_data&#34;]</code></pre>
 </details>
 </section>
 <section>
@@ -118,7 +116,7 @@ __all__ = [
     &lt;br&gt;
 
     .. Note::
-        If `chunk_range_margin` / `min_chunk_dur` / `max_chunk_dur` / 
+        If `chunk_range_margin` / `min_chunk_dur` / `max_chunk_dur` /
         `sub_chunk_overlap` is a int/float, it will be interpreted as numerical
         sequence range  and a numerical-indexed `data` will be assumed.
         **These attributes must be all either time-based or numerical and match
@@ -129,7 +127,7 @@ __all__ = [
     data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]], Dict[str, pd.DataFrame]]
         The sequence data which will be chunked. Each item in `data` must have a
         monotonically increasing index. We assume that each `item` in data
-        has a _nearly-constant_ sample frequency (when there are no gaps) and all 
+        has a _nearly-constant_ sample frequency (when there are no gaps) and all
         indices have the same dtype.
     fs_dict: Dict[str, int], optional
         The sample frequency dict. If set, this dict must at least withhold all the keys
@@ -140,7 +138,7 @@ __all__ = [
             dataframe str-key** to describe the `fs` for all the DataFrame its columns
             with the `fs_dict` attribute. See also the example above
     chunk_range_margin: Union[float, str, pd.Timedelta], optional
-        The allowed margin for each `ts` chunk their start and end time to be seen as 
+        The allowed margin for each `ts` chunk their start and end time to be seen as
         same time-range chunks with other `ts`. If `None` the margin will be set as:
 
             2 / min(fs_dict.intersection(data.names).values())
