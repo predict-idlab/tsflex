@@ -4,7 +4,7 @@
 __author__ = "Jonas Van Der Donckt"
 
 from datetime import timedelta
-from typing import Dict, List, Union, Tuple, Optional
+from typing import Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 
@@ -249,7 +249,7 @@ def chunk_data(
     <br>
 
     .. Note::
-        If `chunk_range_margin` / `min_chunk_dur` / `max_chunk_dur` / 
+        If `chunk_range_margin` / `min_chunk_dur` / `max_chunk_dur` /
         `sub_chunk_overlap` is a int/float, it will be interpreted as numerical
         sequence range  and a numerical-indexed `data` will be assumed.
         **These attributes must be all either time-based or numerical and match
@@ -260,7 +260,7 @@ def chunk_data(
     data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]], Dict[str, pd.DataFrame]]
         The sequence data which will be chunked. Each item in `data` must have a
         monotonically increasing index. We assume that each `item` in data
-        has a _nearly-constant_ sample frequency (when there are no gaps) and all 
+        has a _nearly-constant_ sample frequency (when there are no gaps) and all
         indices have the same dtype.
     fs_dict: Dict[str, int], optional
         The sample frequency dict. If set, this dict must at least withhold all the keys
@@ -271,7 +271,7 @@ def chunk_data(
             dataframe str-key** to describe the `fs` for all the DataFrame its columns
             with the `fs_dict` attribute. See also the example above
     chunk_range_margin: Union[float, str, pd.Timedelta], optional
-        The allowed margin for each `ts` chunk their start and end time to be seen as 
+        The allowed margin for each `ts` chunk their start and end time to be seen as
         same time-range chunks with other `ts`. If `None` the margin will be set as:
 
             2 / min(fs_dict.intersection(data.names).values())

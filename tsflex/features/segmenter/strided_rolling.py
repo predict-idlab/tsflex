@@ -17,17 +17,17 @@ import time
 import warnings
 from abc import ABC, abstractmethod
 from collections import namedtuple
-from typing import Union, List, Tuple, Optional, TypeVar
+from typing import List, Optional, Tuple, TypeVar, Union
 
 import numpy as np
 import pandas as pd
 
+from ...utils.attribute_parsing import AttributeParser, DataType
+from ...utils.data import SUPPORTED_STROLL_TYPES, to_list, to_series_list, to_tuple
+from ...utils.time import timedelta_to_str
 from ..function_wrapper import FuncWrapper
 from ..logger import logger
-from ..utils import _determine_bounds, _check_start_end_array
-from ...utils.data import SUPPORTED_STROLL_TYPES, to_series_list, to_list, to_tuple
-from ...utils.attribute_parsing import DataType, AttributeParser
-from ...utils.time import timedelta_to_str
+from ..utils import _check_start_end_array, _determine_bounds
 
 # Declare a type variable
 T = TypeVar("T")
@@ -521,7 +521,7 @@ class StridedRolling(ABC):
     # ----------------------------- OVERRIDE THESE METHODS -----------------------------
     @abstractmethod
     def _update_start_end_indices_to_stroll_type(self, series_list: List[pd.Series]):
-        # NOTE: This method will only be implemented (with code != pass) in the 
+        # NOTE: This method will only be implemented (with code != pass) in the
         # TimeIndexSampleStridedRolling
         raise NotImplementedError
 
@@ -646,10 +646,10 @@ class TimeIndexSampleStridedRolling(SequenceStridedRolling):
             - must _roughly_ **share** the same **sample frequency**.
             - will be first time-aligned before transitioning to sample-segmentation by
               using the inner bounds
-        
+
         .. Note::
-            `TimeIndexSampleStridedRolling` **does not support** the 
-            ``segment_start_idxs`` and ``segment_end_idxs`` arguments. Setting these 
+            `TimeIndexSampleStridedRolling` **does not support** the
+            ``segment_start_idxs`` and ``segment_end_idxs`` arguments. Setting these
             will raise a NotImplementedError.
 
         """

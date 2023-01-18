@@ -18,8 +18,6 @@ multiprocess = "^0.70.12"
 dill = "^0.3.4"
 
 [tool.poetry.dev-dependencies]
-black = "^22.6.0"
-flake8 = "^3.9.0"
 pydocstyle = "^5.1.1"
 Sphinx = "^3.5.2"
 jupyterlab = "^3.2.9"
@@ -34,6 +32,8 @@ tsfel = "^0.1.4"
 fastparquet = "0.8.0"  # Lock to this version to resolve issue on macos with python 3.7
 pycatch22 = "^0.4.2"
 ruff = "^0.0.225"
+black = "^22.12.0"
+isort = "^5.11.4"
 
 # Linting
 [tool.ruff]
@@ -52,6 +52,20 @@ ignore = ["E501"] # Never enforce `E501` (line length violations).
 "tests/test_strided_rolling.py" = ["F401", "F811"]
 "tests/test_stroll_factory.py" = ["F401", "F811"]
 "tests/test_utils.py" = ["F401", "F811"]
+
+# Formatting
+[tool.black]
+color = true
+line-length = 88
+
+# Sort imports
+[tool.isort]
+line_length = 88
+known_first_party = ["plotly_resampler"]
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+combine_as_imports = true
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

@@ -3,17 +3,17 @@
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
 import time
-from typing import Callable, Dict, List, Union, Tuple
+from typing import Callable, Dict, List, Tuple, Union
 
 import numpy as np
 import pandas as pd
 
 from .. import __pdoc__
 from ..utils.classes import FrozenClass
+from ..utils.data import flatten, series_dict_to_df, to_list, to_tuple
 from .logger import logger
-from ..utils.data import series_dict_to_df, to_list, to_tuple, flatten
 
-__pdoc__['SeriesProcessor.__call__'] = True
+__pdoc__["SeriesProcessor.__call__"] = True
 
 
 def dataframe_func(func: Callable):
@@ -109,6 +109,7 @@ class SeriesProcessor(FrozenClass):
     Series (& columns) with other (column) names will be added to the series dict.
 
     """
+
     def __init__(
         self,
         function: Callable,
@@ -235,6 +236,7 @@ class SeriesProcessor(FrozenClass):
 
 # ---------------------- utility functions for a SeriesProcessor ----------------------
 
+
 def _np_array_to_series(np_array: np.ndarray, series: pd.Series) -> pd.Series:
     """Convert the `np_array` into a pandas Series.
 
@@ -350,7 +352,9 @@ def _handle_seriesprocessor_func_output(
         input_series = list(required_dict.values())[0]
         return {str(input_series.name): _np_array_to_series(func_output, input_series)}
 
-    elif isinstance(func_output, list) and all([isinstance(el, pd.Series) for el in func_output]):
+    elif isinstance(func_output, list) and all(
+        [isinstance(el, pd.Series) for el in func_output]
+    ):
         # Convert the list of series into a series dict, using the same data reference
         # => if for any series in the list, series.name is in the required_dict, than
         #    the the original series will be replaced by this new series.

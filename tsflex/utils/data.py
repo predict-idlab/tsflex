@@ -3,10 +3,10 @@
 __author__ = "Jeroen Van Der Donckt, Jonas Van Der Donckt"
 
 import itertools
-from typing import Any, Dict, Iterable, Iterator, List, Union, Tuple
-from pathlib import Path
-
 import os
+from pathlib import Path
+from typing import Any, Dict, Iterable, Iterator, List, Tuple, Union
+
 import numpy as np
 import pandas as pd
 

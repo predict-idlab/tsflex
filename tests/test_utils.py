@@ -3,13 +3,14 @@
 __author__ = "Jeroen Van Der Donckt, Emiel Deprost, Jonas Van Der Donckt"
 
 import os
-import pandas as pd
 
+import pandas as pd
 from pandas.testing import assert_index_equal, assert_series_equal
+
 from .utils import (
+    dataframe_to_series_dict,
     dummy_data,
     logging_file_path,
-    dataframe_to_series_dict,
     series_to_series_dict,
 )
 
@@ -28,12 +29,14 @@ def test_load_dummy_data(dummy_data):
 # 2 tests for the logging file path, as 1 should fail because the file created by the
 # other doesn't get cleaned up properly
 
+
 def test_get_logging_path1(logging_file_path):
     assert not os.path.exists(logging_file_path)
     # Create a file
     with open(logging_file_path, "w"):
         pass
     assert os.path.exists(logging_file_path)
+
 
 def test_get_logging_path2(logging_file_path):
     assert not os.path.exists(logging_file_path)

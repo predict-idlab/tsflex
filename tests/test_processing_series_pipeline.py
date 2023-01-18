@@ -3,19 +3,17 @@
 __author__ = "Jeroen Van Der Donckt, Emiel Deprost, Jonas Van Der Donckt"
 
 import os
-import pytest
-import pandas as pd
-import numpy as np
-import dill
+from pathlib import Path
 
-from tsflex.processing import dataframe_func
-from tsflex.processing import SeriesProcessor, SeriesPipeline
+import dill
+import numpy as np
+import pandas as pd
+import pytest
+
+from tsflex.processing import SeriesPipeline, SeriesProcessor, dataframe_func
 from tsflex.processing.series_pipeline import _ProcessingError
 
 from .utils import dummy_data
-
-from pathlib import Path
-
 
 ## SeriesPipeline
 
@@ -198,13 +196,13 @@ def test_pipeline_append_pipeline(dummy_data):
     pipe_b.process(dummy_data)
 
 
-
 def test_pipeline_insert(dummy_data):
     def mean(x):
         return x.rolling("5min").mean()
+
     def sum(x):
         return x.rolling("5min").sum()
-    
+
     sp_mean = SeriesProcessor(mean, series_names=["TMP"])
     sp_sum = SeriesProcessor(sum, series_names=["TMP"])
 
@@ -222,8 +220,9 @@ def test_pipeline_insert(dummy_data):
     p_steps = pipe_a.processing_steps
     assert p_steps[0].name == sps[0].name
     for i, ps in enumerate(p_steps[1:-1]):
-        assert ps.name == sps[i+2].name
+        assert ps.name == sps[i + 2].name
     assert p_steps[-1].name == sps[1].name
+
 
 def test_pipeline_steps_operations_series_pipeline(dummy_data):
     def drop_nans(series: pd.Series) -> pd.Series:

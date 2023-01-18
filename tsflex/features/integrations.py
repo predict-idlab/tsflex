@@ -3,10 +3,11 @@
 __author__ = "Jeroen Van Der Donckt, Jonas Van Der Donckt"
 
 import importlib
-import pandas as pd
-import numpy as np
+from typing import Callable, Dict, List, Optional, Union
 
-from typing import Callable, Optional, List, Dict, Union
+import numpy as np
+import pandas as pd
+
 from .feature import FuncWrapper
 from .utils import _get_name
 
@@ -14,10 +15,10 @@ from .utils import _get_name
 # ------------------------------------- SEGLEARN -------------------------------------
 def seglearn_wrapper(func: Callable, func_name: Optional[str] = None) -> FuncWrapper:
     """Wrapper enabling compatibility with seglearn functions.
-    
-    As [seglearn feature-functions](https://github.com/dmbee/seglearn/blob/master/seglearn/feature_functions.py) 
-    are vectorized along the first axis (axis=0), we need to expand our window-data.  
-    This wrapper converts `1D np.array` to a `2D np.array` with all the window-data in 
+
+    As [seglearn feature-functions](https://github.com/dmbee/seglearn/blob/master/seglearn/feature_functions.py)
+    are vectorized along the first axis (axis=0), we need to expand our window-data.
+    This wrapper converts `1D np.array` to a `2D np.array` with all the window-data in
     `axis=1`.
 
     Parameters
@@ -34,6 +35,7 @@ def seglearn_wrapper(func: Callable, func_name: Optional[str] = None) -> FuncWra
         The wrapped seglearn function that is compatible with tsflex.
 
     """
+
     def wrap_func(x: np.ndarray):
         out = func(x.reshape(1, len(x)))
         return out.flatten()
@@ -49,20 +51,20 @@ def seglearn_wrapper(func: Callable, func_name: Optional[str] = None) -> FuncWra
 def seglearn_feature_dict_wrapper(features_dict: Dict) -> List[Callable]:
     """Wrapper enabling compatibility with seglearn feature dictionaries.
 
-    seglearn represents a collection of features as a dictionary. 
+    seglearn represents a collection of features as a dictionary.
 
-    By using this wrapper, we can plug in the features (that are present in the 
-    dictionary) in a tsflex ``FeatureCollection``. 
+    By using this wrapper, we can plug in the features (that are present in the
+    dictionary) in a tsflex ``FeatureCollection``.
     This enables to easily extract (a collection of) seglearn features while leveraging
     the flexibility of tsflex.
 
     .. Note::
         This wrapper wraps the output of seglearn functions that return feature
-        dictionaries;  
-        - [base_features()](https://dmbee.github.io/seglearn/feature_functions.html#seglearn.feature_functions.base_features)  
-        - [emg_features()](https://dmbee.github.io/seglearn/feature_functions.html#seglearn.feature_functions.emg_features)  
-        - [hudgins_features()](https://dmbee.github.io/seglearn/feature_functions.html#seglearn.feature_functions.hudgins_features)  
-        - [all_features()](https://dmbee.github.io/seglearn/feature_functions.html#seglearn.feature_functions.all_features)  
+        dictionaries;
+        - [base_features()](https://dmbee.github.io/seglearn/feature_functions.html#seglearn.feature_functions.base_features)
+        - [emg_features()](https://dmbee.github.io/seglearn/feature_functions.html#seglearn.feature_functions.emg_features)
+        - [hudgins_features()](https://dmbee.github.io/seglearn/feature_functions.html#seglearn.feature_functions.hudgins_features)
+        - [all_features()](https://dmbee.github.io/seglearn/feature_functions.html#seglearn.feature_functions.all_features)
 
     Example
     -------
@@ -91,10 +93,10 @@ def seglearn_feature_dict_wrapper(features_dict: Dict) -> List[Callable]:
     List[Callable]
         List of the (wrapped) seglearn functions that are now directly compatible with
         with tsflex.
- 
+
     """
     return [seglearn_wrapper(func) for func in features_dict.values()]
-    
+
 
 # -------------------------------------- TSFEL --------------------------------------
 def tsfel_feature_dict_wrapper(features_dict: Dict) -> List[Callable]:
@@ -102,8 +104,8 @@ def tsfel_feature_dict_wrapper(features_dict: Dict) -> List[Callable]:
 
     tsfel represents a collection of features as a dictionary, see more [here](https://tsfel.readthedocs.io/en/latest/descriptions/get_started.html#set-up-the-feature-extraction-config-file).
 
-    By using this wrapper, we can plug in the features (that are present in the 
-    tsfel feature extraction configuration) in a tsflex ``FeatureCollection``. 
+    By using this wrapper, we can plug in the features (that are present in the
+    tsfel feature extraction configuration) in a tsflex ``FeatureCollection``.
     This enables to easily extract (a collection of) tsfel features while leveraging
     the flexibility of tsflex.
 
@@ -139,15 +141,20 @@ def tsfel_feature_dict_wrapper(features_dict: Dict) -> List[Callable]:
     List[Callable]
         List of the (wrapped) tsfel functions that are now directly compatible with
         with tsflex.
- 
+
     """
-    def get_output_names(config: dict):  
+
+    def get_output_names(config: dict):
         """Create the output_names based on the configuration."""
         nb_outputs = config["n_features"]
         func_name = config["function"].split(".")[-1]
-        if isinstance(nb_outputs, str) and isinstance(config["parameters"][nb_outputs], int):
+        if isinstance(nb_outputs, str) and isinstance(
+            config["parameters"][nb_outputs], int
+        ):
             nb_outputs = config["parameters"][nb_outputs]
-        if func_name == "lpcc":  # Because https://github.com/fraunhoferportugal/tsfel/issues/103
+        if (
+            func_name == "lpcc"
+        ):  # Because https://github.com/fraunhoferportugal/tsfel/issues/103
             nb_outputs += 1
         if isinstance(nb_outputs, int):
             if nb_outputs == 1:
@@ -174,11 +181,11 @@ def tsfresh_combiner_wrapper(func: Callable, param: List[Dict]) -> FuncWrapper:
 
     [tsfresh feature-funtions](https://github.com/blue-yonder/tsfresh/blob/main/tsfresh/feature_extraction/feature_calculators.py)
     are either of type `simple` or `combiner`.\n
-    * `simple`: feature calculators which calculate a single number  
+    * `simple`: feature calculators which calculate a single number
       **=> integrates natively with tsflex**
-    * `combiner`: feature calculates which calculate a bunch of features for a list of parameters. 
-       These features are returned as a list of (key, value) pairs for each input parameter.  
-       **=> requires wrapping the function to only extract the values of the returned tuples**  
+    * `combiner`: feature calculates which calculate a bunch of features for a list of parameters.
+       These features are returned as a list of (key, value) pairs for each input parameter.
+       **=> requires wrapping the function to only extract the values of the returned tuples**
 
     Parameters
     ----------
@@ -186,7 +193,7 @@ def tsfresh_combiner_wrapper(func: Callable, param: List[Dict]) -> FuncWrapper:
         The tsfresh combiner function.
     param: List[Dict]
         List containing dictionaries with the parameter(s) for the combiner function.
-        This is exactly the same ``param`` as you would pass to a tsfresh combiner 
+        This is exactly the same ``param`` as you would pass to a tsfresh combiner
         function.
 
     Returns
@@ -195,6 +202,7 @@ def tsfresh_combiner_wrapper(func: Callable, param: List[Dict]) -> FuncWrapper:
         The wrapped tsfresh combiner function that is compatible with tsflex.
 
     """
+
     def wrap_func(x: Union[np.ndarray, pd.Series]):
         out = func(x, param)
         return tuple(t[1] for t in out)
@@ -214,14 +222,14 @@ def tsfresh_settings_wrapper(settings: Dict) -> List[Union[Callable, FuncWrapper
     [tsfresh feature extraction settings](https://tsfresh.readthedocs.io/en/latest/text/feature_extraction_settings.html)
     is how tsfresh represents a collection of features (as a dict).<br>
 
-    By using this wrapper, we can plug in the features (that are present in the 
-    tsfresh feature extraction settings) in a tsflex ``FeatureCollection``. 
+    By using this wrapper, we can plug in the features (that are present in the
+    tsfresh feature extraction settings) in a tsflex ``FeatureCollection``.
     This enables to easily extract (a collection of) tsfresh features while leveraging
     the flexibility of tsflex.
 
     .. Note::
-        This wrapper wraps the output of tsfresh its `MinimalFCParameters()`, 
-        `EfficientFCParameters()`, `IndexBasedFCParameters()`, 
+        This wrapper wraps the output of tsfresh its `MinimalFCParameters()`,
+        `EfficientFCParameters()`, `IndexBasedFCParameters()`,
         `TimeBasedFCParameters()`, or `ComprehensiveFCParameters()`. <br>
         See more [here](https://github.com/blue-yonder/tsfresh/blob/main/tsfresh/feature_extraction/settings.py).
 
@@ -252,12 +260,14 @@ def tsfresh_settings_wrapper(settings: Dict) -> List[Union[Callable, FuncWrapper
     List[Union[Callable, FuncWrapper]]
         List of the (wrapped) tsfresh functions that are now directly compatible with
         with tsflex.
- 
+
     """
     functions = []
-    tsfresh_mod = importlib.import_module("tsfresh.feature_extraction.feature_calculators") 
+    tsfresh_mod = importlib.import_module(
+        "tsfresh.feature_extraction.feature_calculators"
+    )
     for func_name, param in settings.items():
-        func = getattr(tsfresh_mod, func_name) 
+        func = getattr(tsfresh_mod, func_name)
         if param is None:
             functions.append(func)
         elif getattr(func, "fctype") == "combiner":
@@ -276,7 +286,7 @@ def tsfresh_settings_wrapper(settings: Dict) -> List[Union[Callable, FuncWrapper
 def catch22_wrapper(catch22_all: Callable) -> FuncWrapper:
     """Wrapper enabling compatibility with catch22.
 
-    [catch22](https://github.com/chlubba/catch22) is a collection of 22 time series 
+    [catch22](https://github.com/chlubba/catch22) is a collection of 22 time series
     features that are a high-performing subset of the over 7000 features in hctsa.
     -> [Python bindings](https://github.com/DynamicsAndNeuralSystems/pycatch22)
 
@@ -316,7 +326,7 @@ def catch22_wrapper(catch22_all: Callable) -> FuncWrapper:
     FuncWrapper
         The wrapped `catch22_all` function that is compatible with tsflex.
         This FuncWrapper will output the 22 catch22 features.
- 
+
     """
     catch22_names = catch22_all([0])["names"]
 

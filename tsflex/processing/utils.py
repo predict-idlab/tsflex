@@ -5,7 +5,7 @@ __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt"
 
 import os
 import traceback
-from typing import List, Any, Optional, Union
+from typing import Any, List, Optional, Union
 
 import pandas as pd
 from multiprocess import Pool
@@ -15,11 +15,11 @@ from .series_pipeline import SeriesPipeline
 
 
 def process_chunks_multithreaded(
-        same_range_chunks_list: List[List[Union[pd.Series, pd.DataFrame]]],
-        series_pipeline: SeriesPipeline,
-        show_progress: Optional[bool] = True,
-        n_jobs: Optional[int] = None,
-        **processing_kwargs,
+    same_range_chunks_list: List[List[Union[pd.Series, pd.DataFrame]]],
+    series_pipeline: SeriesPipeline,
+    show_progress: Optional[bool] = True,
+    n_jobs: Optional[int] = None,
+    **processing_kwargs,
 ) -> List[Any]:
     """Process `same_range_chunks_list` in a multithreaded manner, order is preserved.
 

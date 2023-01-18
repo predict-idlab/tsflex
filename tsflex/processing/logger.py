@@ -9,8 +9,9 @@ SeriesPipeline : its `logging_file_path` of the `process` method.
 __author__ = "Jeroen Van Der Donckt, Jonas Van Der Donckt"
 
 import logging
-import pandas as pd
 import re
+
+import pandas as pd
 
 from ..utils.logging import logging_file_to_df, remove_inner_brackets
 
@@ -62,7 +63,7 @@ def _parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
         list(df["message"].apply(_parse_message)),
         index=df.index,
     )
-    df["duration %"] = (100 * (df['duration'] / df["duration"].sum())).round(2)
+    df["duration %"] = (100 * (df["duration"] / df["duration"].sum())).round(2)
     return df.drop(columns=["name", "log_level", "message"])
 
 
@@ -80,7 +81,7 @@ def get_processor_logs(logging_file_path: str) -> pd.DataFrame:
     pd.DataFrame
         A DataFrame containing each processor its series names, output names, and
         duration.
-    
+
     """
     df = _parse_logging_execution_to_df(logging_file_path)
     df["duration"] = pd.to_timedelta(df["duration"], unit="s")

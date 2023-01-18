@@ -2,18 +2,14 @@
 
 __author__ = "Jeroen Van Der Donckt, Emiel Deprost, Jonas Van Der Donckt"
 
-import pytest
-import pandas as pd
 import numpy as np
+import pandas as pd
+import pytest
 
-from .utils import dummy_data
-from tsflex.features import (
-    MultipleFeatureDescriptors,
-    FeatureCollection,
-    FuncWrapper
-)
+from tsflex.features import FeatureCollection, FuncWrapper, MultipleFeatureDescriptors
 from tsflex.features.utils import make_robust
 
+from .utils import dummy_data
 
 ## ROBUST FUNCTIONS
 
@@ -95,7 +91,9 @@ def test_robust_gap_features_multi_output(dummy_data):
         return np.mean(x), np.std(x)
 
     feats = MultipleFeatureDescriptors(
-        functions=make_robust(FuncWrapper(mean_std, output_names=["mean", "std"]), min_nb_samples=2),
+        functions=make_robust(
+            FuncWrapper(mean_std, output_names=["mean", "std"]), min_nb_samples=2
+        ),
         series_names="EDA",
         windows="10s",
         strides="5s",
@@ -118,7 +116,9 @@ def test_robust_gap_features_multi_output(dummy_data):
 def test_unrobust_pass_through_features(dummy_data):
     # here we set the passtrough-nans attribute to True
     feats = MultipleFeatureDescriptors(
-        functions=make_robust([np.mean, np.min], min_nb_samples=1, passthrough_nans=True),
+        functions=make_robust(
+            [np.mean, np.min], min_nb_samples=1, passthrough_nans=True
+        ),
         series_names="EDA",
         windows="10s",
         strides="5s",

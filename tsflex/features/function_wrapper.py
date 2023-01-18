@@ -2,13 +2,14 @@
 
 __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
 
+from typing import Any, Callable, List, Optional, Union
+
 import numpy as np
 import pandas as pd
 
-from typing import Callable, List, Union, Any, Optional
-from ..utils.data import SUPPORTED_STROLL_TYPES
-from ..utils.classes import FrozenClass
 from .. import __pdoc__
+from ..utils.classes import FrozenClass
+from ..utils.data import SUPPORTED_STROLL_TYPES
 
 __pdoc__["FuncWrapper.__call__"] = True
 

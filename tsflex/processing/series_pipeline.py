@@ -9,10 +9,10 @@ from typing import Dict, List, Optional, Union
 import dill
 import pandas as pd
 
+from ..utils.data import flatten, series_dict_to_df, to_series_list
+from ..utils.logging import add_logging_handler, delete_logging_handlers
 from .logger import logger
 from .series_processor import SeriesProcessor
-from ..utils.data import series_dict_to_df, to_series_list, flatten
-from ..utils.logging import delete_logging_handlers, add_logging_handler
 
 
 class _ProcessingError(Exception):
