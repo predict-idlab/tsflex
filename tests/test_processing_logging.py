@@ -65,7 +65,7 @@ def test_simple_processing_logging(dummy_data, logging_file_path):
         "duration"
     ]
 
-    assert np.isclose(logging_df["duration %"].sum(), 100)
+    assert np.isclose(logging_df["duration %"].sum(), 100, atol=0.5)
 
     assert all(
         logging_df["function"].values

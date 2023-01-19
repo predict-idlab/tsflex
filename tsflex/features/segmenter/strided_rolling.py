@@ -357,7 +357,7 @@ class StridedRolling(ABC):
         """
         feat_names = func.output_names
 
-        t_start = time.time()
+        t_start = time.perf_counter()
 
         # --- Future work ---
         # would be nice if we could optimize this double for loop with something
@@ -487,7 +487,7 @@ class StridedRolling(ABC):
                     :, col_idx
                 ]
 
-        elapsed = time.time() - t_start
+        elapsed = time.perf_counter() - t_start
         log_strides = (
             "manual" if self.strides is None else tuple(map(str, self.strides))
         )
