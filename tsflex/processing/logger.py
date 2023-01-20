@@ -50,7 +50,7 @@ def _parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
     -------
     pd.DataFrame
         A DataFrame with the processor its method, series names, output names, and
-        calculation duration.
+        (%) calculation duration.
 
     Note
     ----
@@ -80,7 +80,7 @@ def get_processor_logs(logging_file_path: str) -> pd.DataFrame:
     -------
     pd.DataFrame
         A DataFrame containing each processor its series names, output names, and
-        duration.
+        (%) duration.
 
     """
     df = _parse_logging_execution_to_df(logging_file_path)
