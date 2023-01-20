@@ -87,20 +87,20 @@ def test_simple_features_logging_time_index(dummy_data, logging_file_path):
     assert set(function_stats_df.index) == set(
         [(s, "5s", ("12s",)) for s in ["sum", "amin"]]
     )
-    assert all(function_stats_df["duration"]["mean"] >= 0)
+    assert all(function_stats_df["duration"]["mean"] > 0)
     assert function_stats_df["duration"]["count"].sum() == 4
     assert np.isclose(function_stats_df["duration %"]["sum"].sum(), 100, atol=0.5)
-    assert all(function_stats_df["duration %"]["mean"] >= 0)
+    assert all(function_stats_df["duration %"]["mean"] > 0)
 
     series_names_df = get_series_names_stats(logging_file_path)
     assert len(series_names_df) == 3
     assert set(series_names_df.index) == set(
         [(s, "5s", ("12s",)) for s in ["(EDA,)", "(TMP,)", "(ACC_x,)"]]
     )
-    assert all(series_names_df["duration"]["mean"] >= 0)
+    assert all(series_names_df["duration"]["mean"] > 0)
     assert series_names_df["duration"]["count"].sum() == 4
     assert np.isclose(series_names_df["duration %"]["sum"].sum(), 100, atol=0.5)
-    assert all(series_names_df["duration %"]["mean"] >= 0)
+    assert all(series_names_df["duration %"]["mean"] > 0)
 
 
 def test_simple_features_logging_sequence_index(dummy_data, logging_file_path):
@@ -169,20 +169,20 @@ def test_simple_features_logging_sequence_index(dummy_data, logging_file_path):
     assert set(function_stats_df.index) == set(
         [(s, 50, (120,)) for s in ["sum", "amin"]]
     )
-    assert all(function_stats_df["duration"]["mean"] >= 0)
+    assert all(function_stats_df["duration"]["mean"] > 0)
     assert function_stats_df["duration"]["count"].sum() == 4
     assert np.isclose(function_stats_df["duration %"]["sum"].sum(), 100, atol=0.5)
-    assert all(function_stats_df["duration %"]["mean"] >= 0)
+    assert all(function_stats_df["duration %"]["mean"] > 0)
 
     series_names_df = get_series_names_stats(logging_file_path)
     assert len(series_names_df) == 3
     assert set(series_names_df.index) == set(
         [(s, 50, (120,)) for s in ["(EDA,)", "(TMP,)", "(ACC_x,)"]]
     )
-    assert all(series_names_df["duration"]["mean"] >= 0)
+    assert all(series_names_df["duration"]["mean"] > 0)
     assert series_names_df["duration"]["count"].sum() == 4
     assert np.isclose(series_names_df["duration %"]["sum"].sum(), 100, atol=0.5)
-    assert all(series_names_df["duration %"]["mean"] >= 0)
+    assert all(series_names_df["duration %"]["mean"] > 0)
 
 
 def test_simple_features_logging_segment_start_idxs_no_stride(
@@ -259,20 +259,20 @@ def test_simple_features_logging_segment_start_idxs_no_stride(
     assert set(function_stats_df.index) == set(
         [(s, 50, "manual") for s in ["sum", "amin"]]
     )
-    assert all(function_stats_df["duration"]["mean"] >= 0)
+    assert all(function_stats_df["duration"]["mean"] > 0)
     assert function_stats_df["duration"]["count"].sum() == 4
     assert np.isclose(function_stats_df["duration %"]["sum"].sum(), 100, atol=0.5)
-    assert all(function_stats_df["duration %"]["mean"] >= 0)
+    assert all(function_stats_df["duration %"]["mean"] > 0)
 
     series_names_df = get_series_names_stats(logging_file_path)
     assert len(series_names_df) == 3
     assert set(series_names_df.index) == set(
         [(s, 50, "manual") for s in ["(EDA,)", "(TMP,)", "(ACC_x,)"]]
     )
-    assert all(series_names_df["duration"]["mean"] >= 0)
+    assert all(series_names_df["duration"]["mean"] > 0)
     assert series_names_df["duration"]["count"].sum() == 4
     assert np.isclose(series_names_df["duration %"]["sum"].sum(), 100, atol=0.5)
-    assert all(series_names_df["duration %"]["mean"] >= 0)
+    assert all(series_names_df["duration %"]["mean"] > 0)
 
 
 def test_simple_features_logging_segment_end_idxs_no_stride(
@@ -349,20 +349,20 @@ def test_simple_features_logging_segment_end_idxs_no_stride(
     assert set(function_stats_df.index) == set(
         [(s, 50, "manual") for s in ["sum", "amin"]]
     )
-    assert all(function_stats_df["duration"]["mean"] >= 0)
+    assert all(function_stats_df["duration"]["mean"] > 0)
     assert function_stats_df["duration"]["count"].sum() == 4
     assert np.isclose(function_stats_df["duration %"]["sum"].sum(), 100, atol=0.5)
-    assert all(function_stats_df["duration %"]["mean"] >= 0)
+    assert all(function_stats_df["duration %"]["mean"] > 0)
 
     series_names_df = get_series_names_stats(logging_file_path)
     assert len(series_names_df) == 3
     assert set(series_names_df.index) == set(
         [(s, 50, "manual") for s in ["(EDA,)", "(TMP,)", "(ACC_x,)"]]
     )
-    assert all(series_names_df["duration"]["mean"] >= 0)
+    assert all(series_names_df["duration"]["mean"] > 0)
     assert series_names_df["duration"]["count"].sum() == 4
     assert np.isclose(series_names_df["duration %"]["sum"].sum(), 100, atol=0.5)
-    assert all(series_names_df["duration %"]["mean"] >= 0)
+    assert all(series_names_df["duration %"]["mean"] > 0)
 
 
 def test_simple_features_logging_segment_start_idxs_overrule_stride(
@@ -442,20 +442,20 @@ def test_simple_features_logging_segment_start_idxs_overrule_stride(
     assert set(function_stats_df.index) == set(
         [(s, 50, "manual") for s in ["sum", "amin"]]
     )
-    assert all(function_stats_df["duration"]["mean"] >= 0)
+    assert all(function_stats_df["duration"]["mean"] > 0)
     assert function_stats_df["duration"]["count"].sum() == 4
     assert np.isclose(function_stats_df["duration %"]["sum"].sum(), 100, atol=0.5)
-    assert all(function_stats_df["duration %"]["mean"] >= 0)
+    assert all(function_stats_df["duration %"]["mean"] > 0)
 
     series_names_df = get_series_names_stats(logging_file_path)
     assert len(series_names_df) == 3
     assert set(series_names_df.index) == set(
         [(s, 50, "manual") for s in ["(EDA,)", "(TMP,)", "(ACC_x,)"]]
     )
-    assert all(series_names_df["duration"]["mean"] >= 0)
+    assert all(series_names_df["duration"]["mean"] > 0)
     assert series_names_df["duration"]["count"].sum() == 4
     assert np.isclose(series_names_df["duration %"]["sum"].sum(), 100, atol=0.5)
-    assert all(series_names_df["duration %"]["mean"] >= 0)
+    assert all(series_names_df["duration %"]["mean"] > 0)
 
 
 def test_simple_features_logging_segment_end_idxs_overrule_stride(
@@ -535,20 +535,20 @@ def test_simple_features_logging_segment_end_idxs_overrule_stride(
     assert set(function_stats_df.index) == set(
         [(s, 50, "manual") for s in ["sum", "amin"]]
     )
-    assert all(function_stats_df["duration"]["mean"] >= 0)
+    assert all(function_stats_df["duration"]["mean"] > 0)
     assert function_stats_df["duration"]["count"].sum() == 4
     assert np.isclose(function_stats_df["duration %"]["sum"].sum(), 100, atol=0.5)
-    assert all(function_stats_df["duration %"]["mean"] >= 0)
+    assert all(function_stats_df["duration %"]["mean"] > 0)
 
     series_names_df = get_series_names_stats(logging_file_path)
     assert len(series_names_df) == 3
     assert set(series_names_df.index) == set(
         [(s, 50, "manual") for s in ["(EDA,)", "(TMP,)", "(ACC_x,)"]]
     )
-    assert all(series_names_df["duration"]["mean"] >= 0)
+    assert all(series_names_df["duration"]["mean"] > 0)
     assert series_names_df["duration"]["count"].sum() == 4
     assert np.isclose(series_names_df["duration %"]["sum"].sum(), 100, atol=0.5)
-    assert all(series_names_df["duration %"]["mean"] >= 0)
+    assert all(series_names_df["duration %"]["mean"] > 0)
 
 
 def test_simple_features_logging_segment_start_and_end_idxs_overrule_stride_and_window(
@@ -635,20 +635,20 @@ def test_simple_features_logging_segment_start_and_end_idxs_overrule_stride_and_
     assert set(function_stats_df.index) == set(
         [(s, "manual", "manual") for s in ["sum", "amin"]]
     )
-    assert all(function_stats_df["duration"]["mean"] >= 0)
+    assert all(function_stats_df["duration"]["mean"] > 0)
     assert function_stats_df["duration"]["count"].sum() == 4
     assert np.isclose(function_stats_df["duration %"]["sum"].sum(), 100, atol=0.5)
-    assert all(function_stats_df["duration %"]["mean"] >= 0)
+    assert all(function_stats_df["duration %"]["mean"] > 0)
 
     series_names_df = get_series_names_stats(logging_file_path)
     assert len(series_names_df) == 3
     assert set(series_names_df.index) == set(
         [(s, "manual", "manual") for s in ["(EDA,)", "(TMP,)", "(ACC_x,)"]]
     )
-    assert all(series_names_df["duration"]["mean"] >= 0)
+    assert all(series_names_df["duration"]["mean"] > 0)
     assert series_names_df["duration"]["count"].sum() == 4
     assert np.isclose(series_names_df["duration %"]["sum"].sum(), 100, atol=0.5)
-    assert all(series_names_df["duration %"]["mean"] >= 0)
+    assert all(series_names_df["duration %"]["mean"] > 0)
 
 
 def test_file_warning_features_logging(dummy_data, logging_file_path):
