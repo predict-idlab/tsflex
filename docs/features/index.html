@@ -456,7 +456,7 @@ features.</p></div>
     -------
     pd.DataFrame
         A DataFrame with the features its function, input series names and
-        calculation duration.
+        (%) calculation duration.
 
     &#34;&#34;&#34;
     df = _parse_logging_execution_to_df(logging_file_path)
@@ -474,7 +474,7 @@ is passed to the <code><a title="tsflex.features.FeatureCollection" href="#tsfle
 <dl>
 <dt><code>pd.DataFrame</code></dt>
 <dd>A DataFrame with the features its function, input series names and
-calculation duration.</dd>
+(%) calculation duration.</dd>
 </dl></div>
 </dd>
 <dt id="tsflex.features.get_function_stats"><code class="name flex">
@@ -498,7 +498,8 @@ calculation duration.</dd>
     -------
     pd.DataFrame
         A DataFrame with for each function (i.e., `function-(window,stride)`)
-        combination the mean (time), std (time), sum (time), and number of executions.
+        combination the mean (time), std (time), sum (time), sum (% time),
+        mean (% time),and number of executions.
 
     &#34;&#34;&#34;
     df = _parse_logging_execution_to_df(logging_file_path)
@@ -517,7 +518,12 @@ calculation duration.</dd>
 
     return (
         df.groupby([&#34;function&#34;, &#34;window&#34;, &#34;stride&#34;])
-        .agg({&#34;duration&#34;: [&#34;mean&#34;, &#34;std&#34;, &#34;sum&#34;, &#34;count&#34;]})
+        .agg(
+            {
+                &#34;duration&#34;: [&#34;sum&#34;, &#34;mean&#34;, &#34;std&#34;, &#34;count&#34;],
+                &#34;duration %&#34;: [&#34;sum&#34;, &#34;mean&#34;],
+            }
+        )
         .sort_index(key=key_func, ascending=False)
     )</code></pre>
 </details>
@@ -532,7 +538,8 @@ is passed to the <code><a title="tsflex.features.FeatureCollection" href="#tsfle
 <dl>
 <dt><code>pd.DataFrame</code></dt>
 <dd>A DataFrame with for each function (i.e., <code>function-(window,stride)</code>)
-combination the mean (time), std (time), sum (time), and number of executions.</dd>
+combination the mean (time), std (time), sum (time), sum (% time),
+mean (% time),and number of executions.</dd>
 </dl></div>
 </dd>
 <dt id="tsflex.features.get_series_names_stats"><code class="name flex">
@@ -555,14 +562,19 @@ combination the mean (time), std (time), sum (time), and number of executions.</
     Returns
     -------
     pd.DataFrame
-        A DataFrame with for each function the mean (time), std (time), sum (time), and
-        number of executions.
+        A DataFrame with for each function the mean (time), std (time), sum (time),
+        sum (% time), mean (% time), and number of executions.
 
     &#34;&#34;&#34;
     df = _parse_logging_execution_to_df(logging_file_path)
     return (
         df.groupby([&#34;series_names&#34;, &#34;window&#34;, &#34;stride&#34;])
-        .agg({&#34;duration&#34;: [&#34;sum&#34;, &#34;mean&#34;, &#34;std&#34;, &#34;count&#34;]})
+        .agg(
+            {
+                &#34;duration&#34;: [&#34;sum&#34;, &#34;mean&#34;, &#34;std&#34;, &#34;count&#34;],
+                &#34;duration %&#34;: [&#34;sum&#34;, &#34;mean&#34;],
+            }
+        )
         .sort_values(by=(&#34;duration&#34;, &#34;sum&#34;), ascending=False)
     )</code></pre>
 </details>
@@ -576,8 +588,8 @@ is passed to the <code><a title="tsflex.features.FeatureCollection" href="#tsfle
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><code>pd.DataFrame</code></dt>
-<dd>A DataFrame with for each function the mean (time), std (time), sum (time), and
-number of executions.</dd>
+<dd>A DataFrame with for each function the mean (time), std (time), sum (time),
+sum (% time), mean (% time), and number of executions.</dd>
 </dl></div>
 </dd>
 </dl>

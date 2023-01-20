@@ -216,7 +216,7 @@ class SeriesProcessor(FrozenClass):
           versatile input for its `process` method.
 
         &#34;&#34;&#34;
-        t_start = time.time()
+        t_start = time.perf_counter()
 
         # Only selecting the series that are needed for this processing step
         # requested_dict = {}
@@ -256,7 +256,7 @@ class SeriesProcessor(FrozenClass):
             )
             processed_output.update(func_output)
 
-        elapsed = time.time() - t_start
+        elapsed = time.perf_counter() - t_start
         logger.info(
             f&#34;Finished function [{self.name}] on {self.series_names} with output &#34;
             f&#34;{list(processed_output.keys())} in [{elapsed} seconds]!&#34;
@@ -612,7 +612,7 @@ be sufficient; as you can perform column-based operations on multiple <code>pd.S
           versatile input for its `process` method.
 
         &#34;&#34;&#34;
-        t_start = time.time()
+        t_start = time.perf_counter()
 
         # Only selecting the series that are needed for this processing step
         # requested_dict = {}
@@ -652,7 +652,7 @@ be sufficient; as you can perform column-based operations on multiple <code>pd.S
             )
             processed_output.update(func_output)
 
-        elapsed = time.time() - t_start
+        elapsed = time.perf_counter() - t_start
         logger.info(
             f&#34;Finished function [{self.name}] on {self.series_names} with output &#34;
             f&#34;{list(processed_output.keys())} in [{elapsed} seconds]!&#34;
@@ -808,7 +808,7 @@ processing function.</p>
       versatile input for its `process` method.
 
     &#34;&#34;&#34;
-    t_start = time.time()
+    t_start = time.perf_counter()
 
     # Only selecting the series that are needed for this processing step
     # requested_dict = {}
@@ -848,7 +848,7 @@ processing function.</p>
         )
         processed_output.update(func_output)
 
-    elapsed = time.time() - t_start
+    elapsed = time.perf_counter() - t_start
     logger.info(
         f&#34;Finished function [{self.name}] on {self.series_names} with output &#34;
         f&#34;{list(processed_output.keys())} in [{elapsed} seconds]!&#34;

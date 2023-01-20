@@ -373,7 +373,7 @@ be sufficient; as you can perform column-based operations on multiple <code>pd.S
     -------
     pd.DataFrame
         A DataFrame containing each processor its series names, output names, and
-        duration.
+        (%) duration.
 
     &#34;&#34;&#34;
     df = _parse_logging_execution_to_df(logging_file_path)
@@ -391,7 +391,7 @@ is passed to the <code><a title="tsflex.processing.SeriesPipeline" href="#tsflex
 <dl>
 <dt><code>pd.DataFrame</code></dt>
 <dd>A DataFrame containing each processor its series names, output names, and
-duration.</dd>
+(%) duration.</dd>
 </dl></div>
 </dd>
 </dl>
@@ -532,7 +532,7 @@ duration.</dd>
           versatile input for its `process` method.
 
         &#34;&#34;&#34;
-        t_start = time.time()
+        t_start = time.perf_counter()
 
         # Only selecting the series that are needed for this processing step
         # requested_dict = {}
@@ -572,7 +572,7 @@ duration.</dd>
             )
             processed_output.update(func_output)
 
-        elapsed = time.time() - t_start
+        elapsed = time.perf_counter() - t_start
         logger.info(
             f&#34;Finished function [{self.name}] on {self.series_names} with output &#34;
             f&#34;{list(processed_output.keys())} in [{elapsed} seconds]!&#34;
@@ -728,7 +728,7 @@ processing function.</p>
       versatile input for its `process` method.
 
     &#34;&#34;&#34;
-    t_start = time.time()
+    t_start = time.perf_counter()
 
     # Only selecting the series that are needed for this processing step
     # requested_dict = {}
@@ -768,7 +768,7 @@ processing function.</p>
         )
         processed_output.update(func_output)
 
-    elapsed = time.time() - t_start
+    elapsed = time.perf_counter() - t_start
     logger.info(
         f&#34;Finished function [{self.name}] on {self.series_names} with output &#34;
         f&#34;{list(processed_output.keys())} in [{elapsed} seconds]!&#34;

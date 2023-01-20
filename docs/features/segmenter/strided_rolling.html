@@ -404,7 +404,7 @@ class StridedRolling(ABC):
         &#34;&#34;&#34;
         feat_names = func.output_names
 
-        t_start = time.time()
+        t_start = time.perf_counter()
 
         # --- Future work ---
         # would be nice if we could optimize this double for loop with something
@@ -534,15 +534,15 @@ class StridedRolling(ABC):
                     :, col_idx
                 ]
 
-        elapsed = time.time() - t_start
+        elapsed = time.perf_counter() - t_start
         log_strides = (
             &#34;manual&#34; if self.strides is None else tuple(map(str, self.strides))
         )
         log_window = &#34;manual&#34; if self.window is None else self.window
         logger.info(
             f&#34;Finished function [{func.func.__name__}] on &#34;
-            f&#34;{[self.series_key]} with window-stride &#34;
-            f&#34;[{log_window}, {log_strides}] in [{elapsed} seconds]!&#34;
+            f&#34;{[self.series_key]} with window-stride [{log_window}, {log_strides}] &#34;
+            f&#34;with output {list(feat_out.keys())} in [{elapsed} seconds]!&#34;
         )
 
         return pd.DataFrame(index=self.index, data=feat_out)
@@ -1132,7 +1132,7 @@ def _sliding_strided_window_1d(
         &#34;&#34;&#34;
         feat_names = func.output_names
 
-        t_start = time.time()
+        t_start = time.perf_counter()
 
         # --- Future work ---
         # would be nice if we could optimize this double for loop with something
@@ -1262,15 +1262,15 @@ def _sliding_strided_window_1d(
                     :, col_idx
                 ]
 
-        elapsed = time.time() - t_start
+        elapsed = time.perf_counter() - t_start
         log_strides = (
             &#34;manual&#34; if self.strides is None else tuple(map(str, self.strides))
         )
         log_window = &#34;manual&#34; if self.window is None else self.window
         logger.info(
             f&#34;Finished function [{func.func.__name__}] on &#34;
-            f&#34;{[self.series_key]} with window-stride &#34;
-            f&#34;[{log_window}, {log_strides}] in [{elapsed} seconds]!&#34;
+            f&#34;{[self.series_key]} with window-stride [{log_window}, {log_strides}] &#34;
+            f&#34;with output {list(feat_out.keys())} in [{elapsed} seconds]!&#34;
         )
 
         return pd.DataFrame(index=self.index, data=feat_out)
@@ -1484,7 +1484,7 @@ def construct_output_index(
     &#34;&#34;&#34;
     feat_names = func.output_names
 
-    t_start = time.time()
+    t_start = time.perf_counter()
 
     # --- Future work ---
     # would be nice if we could optimize this double for loop with something
@@ -1614,15 +1614,15 @@ def construct_output_index(
                 :, col_idx
             ]
 
-    elapsed = time.time() - t_start
+    elapsed = time.perf_counter() - t_start
     log_strides = (
         &#34;manual&#34; if self.strides is None else tuple(map(str, self.strides))
     )
     log_window = &#34;manual&#34; if self.window is None else self.window
     logger.info(
         f&#34;Finished function [{func.func.__name__}] on &#34;
-        f&#34;{[self.series_key]} with window-stride &#34;
-        f&#34;[{log_window}, {log_strides}] in [{elapsed} seconds]!&#34;
+        f&#34;{[self.series_key]} with window-stride [{log_window}, {log_strides}] &#34;
+        f&#34;with output {list(feat_out.keys())} in [{elapsed} seconds]!&#34;
     )
 
     return pd.DataFrame(index=self.index, data=feat_out)</code></pre>

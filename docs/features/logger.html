@@ -77,15 +77,16 @@ def _parse_message(message: str) -&gt; list:
     &#34;&#34;&#34;Parse the message of the logged info.&#34;&#34;&#34;
     regex = r&#34;\[(.*?)\]&#34;
     matches = re.findall(regex, remove_inner_brackets(message))
-    assert len(matches) == 4
+    assert len(matches) == 5
     func = matches[0]
     key = matches[1].replace(&#34;&#39;&#34;, &#34;&#34;)
     window = matches[2].split(&#34;,&#34;)[0].strip()
     stride = &#34;,&#34;.join(matches[2].split(&#34;,&#34;)[1:]).strip()
     if stride != &#34;manual&#34;:
         stride = eval(stride)  # parse the tuple
-    duration_s = float(matches[3].rstrip(&#34; seconds&#34;))
-    return [func, key, window, stride, duration_s]
+    output_names = matches[3].replace(&#34;&#39;&#34;, &#34;&#34;)
+    duration_s = float(matches[4].rstrip(&#34; seconds&#34;))
+    return [func, key, window, stride, output_names, duration_s]
 
 
 def _parse_logging_execution_to_df(logging_file_path: str) -&gt; pd.DataFrame:
@@ -97,20 +98,22 @@ def _parse_logging_execution_to_df(logging_file_path: str) -&gt; pd.DataFrame:
         The file path where the logged messages are stored. This is the file path that
         is passed to the `FeatureCollection` its `calculate` method.
 
-    Note
-    ----
-    This function only works when the `logging_file_path` used in a
-    `FeatureCollection` its `calculate` method is passed.
-
     Returns
     -------
     pd.DataFrame
-        A DataFrame with the features its function, input series names and
-        calculation duration.
+        A DataFrame with the features its function, input series names, output names,
+        and (%) calculation duration.
+
+    Note
+    ----
+    This function only works when the ``logging_file_path`` used in a
+    ``FeatureCollection`` its ``calculate`` method is passed.
 
     &#34;&#34;&#34;
     df = logging_file_to_df(logging_file_path)
-    df[[&#34;function&#34;, &#34;series_names&#34;, &#34;window&#34;, &#34;stride&#34;, &#34;duration&#34;]] = pd.DataFrame(
+    df[
+        [&#34;function&#34;, &#34;series_names&#34;, &#34;window&#34;, &#34;stride&#34;, &#34;output_names&#34;, &#34;duration&#34;]
+    ] = pd.DataFrame(
         list(df[&#34;message&#34;].apply(_parse_message)),
         index=df.index,
     )
@@ -140,6 +143,7 @@ def _parse_logging_execution_to_df(logging_file_path: str) -&gt; pd.DataFrame:
                 timedelta_to_str(pd.to_timedelta(s)) for s in stride_tuple
             )
         )
+    df[&#34;duration %&#34;] = (100 * (df[&#34;duration&#34;] / df[&#34;duration&#34;].sum())).round(2)
     return df.drop(columns=[&#34;name&#34;, &#34;log_level&#34;, &#34;message&#34;])
 
 
@@ -156,7 +160,7 @@ def get_feature_logs(logging_file_path: str) -&gt; pd.DataFrame:
     -------
     pd.DataFrame
         A DataFrame with the features its function, input series names and
-        calculation duration.
+        (%) calculation duration.
 
     &#34;&#34;&#34;
     df = _parse_logging_execution_to_df(logging_file_path)
@@ -177,7 +181,8 @@ def get_function_stats(logging_file_path: str) -&gt; pd.DataFrame:
     -------
     pd.DataFrame
         A DataFrame with for each function (i.e., `function-(window,stride)`)
-        combination the mean (time), std (time), sum (time), and number of executions.
+        combination the mean (time), std (time), sum (time), sum (% time),
+        mean (% time),and number of executions.
 
     &#34;&#34;&#34;
     df = _parse_logging_execution_to_df(logging_file_path)
@@ -196,7 +201,12 @@ def get_function_stats(logging_file_path: str) -&gt; pd.DataFrame:
 
     return (
         df.groupby([&#34;function&#34;, &#34;window&#34;, &#34;stride&#34;])
-        .agg({&#34;duration&#34;: [&#34;mean&#34;, &#34;std&#34;, &#34;sum&#34;, &#34;count&#34;]})
+        .agg(
+            {
+                &#34;duration&#34;: [&#34;sum&#34;, &#34;mean&#34;, &#34;std&#34;, &#34;count&#34;],
+                &#34;duration %&#34;: [&#34;sum&#34;, &#34;mean&#34;],
+            }
+        )
         .sort_index(key=key_func, ascending=False)
     )
 
@@ -213,14 +223,19 @@ def get_series_names_stats(logging_file_path: str) -&gt; pd.DataFrame:
     Returns
     -------
     pd.DataFrame
-        A DataFrame with for each function the mean (time), std (time), sum (time), and
-        number of executions.
+        A DataFrame with for each function the mean (time), std (time), sum (time),
+        sum (% time), mean (% time), and number of executions.
 
     &#34;&#34;&#34;
     df = _parse_logging_execution_to_df(logging_file_path)
     return (
         df.groupby([&#34;series_names&#34;, &#34;window&#34;, &#34;stride&#34;])
-        .agg({&#34;duration&#34;: [&#34;sum&#34;, &#34;mean&#34;, &#34;std&#34;, &#34;count&#34;]})
+        .agg(
+            {
+                &#34;duration&#34;: [&#34;sum&#34;, &#34;mean&#34;, &#34;std&#34;, &#34;count&#34;],
+                &#34;duration %&#34;: [&#34;sum&#34;, &#34;mean&#34;],
+            }
+        )
         .sort_values(by=(&#34;duration&#34;, &#34;sum&#34;), ascending=False)
     )</code></pre>
 </details>
@@ -253,7 +268,7 @@ def get_series_names_stats(logging_file_path: str) -&gt; pd.DataFrame:
     -------
     pd.DataFrame
         A DataFrame with the features its function, input series names and
-        calculation duration.
+        (%) calculation duration.
 
     &#34;&#34;&#34;
     df = _parse_logging_execution_to_df(logging_file_path)
@@ -271,7 +286,7 @@ is passed to the <code>FeatureCollection</code> its <code>calculate</code> metho
 <dl>
 <dt><code>pd.DataFrame</code></dt>
 <dd>A DataFrame with the features its function, input series names and
-calculation duration.</dd>
+(%) calculation duration.</dd>
 </dl></div>
 </dd>
 <dt id="tsflex.features.logger.get_function_stats"><code class="name flex">
@@ -295,7 +310,8 @@ calculation duration.</dd>
     -------
     pd.DataFrame
         A DataFrame with for each function (i.e., `function-(window,stride)`)
-        combination the mean (time), std (time), sum (time), and number of executions.
+        combination the mean (time), std (time), sum (time), sum (% time),
+        mean (% time),and number of executions.
 
     &#34;&#34;&#34;
     df = _parse_logging_execution_to_df(logging_file_path)
@@ -314,7 +330,12 @@ calculation duration.</dd>
 
     return (
         df.groupby([&#34;function&#34;, &#34;window&#34;, &#34;stride&#34;])
-        .agg({&#34;duration&#34;: [&#34;mean&#34;, &#34;std&#34;, &#34;sum&#34;, &#34;count&#34;]})
+        .agg(
+            {
+                &#34;duration&#34;: [&#34;sum&#34;, &#34;mean&#34;, &#34;std&#34;, &#34;count&#34;],
+                &#34;duration %&#34;: [&#34;sum&#34;, &#34;mean&#34;],
+            }
+        )
         .sort_index(key=key_func, ascending=False)
     )</code></pre>
 </details>
@@ -329,7 +350,8 @@ is passed to the <code>FeatureCollection</code> its <code>calculate</code> metho
 <dl>
 <dt><code>pd.DataFrame</code></dt>
 <dd>A DataFrame with for each function (i.e., <code>function-(window,stride)</code>)
-combination the mean (time), std (time), sum (time), and number of executions.</dd>
+combination the mean (time), std (time), sum (time), sum (% time),
+mean (% time),and number of executions.</dd>
 </dl></div>
 </dd>
 <dt id="tsflex.features.logger.get_series_names_stats"><code class="name flex">
@@ -352,14 +374,19 @@ combination the mean (time), std (time), sum (time), and number of executions.</
     Returns
     -------
     pd.DataFrame
-        A DataFrame with for each function the mean (time), std (time), sum (time), and
-        number of executions.
+        A DataFrame with for each function the mean (time), std (time), sum (time),
+        sum (% time), mean (% time), and number of executions.
 
     &#34;&#34;&#34;
     df = _parse_logging_execution_to_df(logging_file_path)
     return (
         df.groupby([&#34;series_names&#34;, &#34;window&#34;, &#34;stride&#34;])
-        .agg({&#34;duration&#34;: [&#34;sum&#34;, &#34;mean&#34;, &#34;std&#34;, &#34;count&#34;]})
+        .agg(
+            {
+                &#34;duration&#34;: [&#34;sum&#34;, &#34;mean&#34;, &#34;std&#34;, &#34;count&#34;],
+                &#34;duration %&#34;: [&#34;sum&#34;, &#34;mean&#34;],
+            }
+        )
         .sort_values(by=(&#34;duration&#34;, &#34;sum&#34;), ascending=False)
     )</code></pre>
 </details>
@@ -373,8 +400,8 @@ is passed to the <code>FeatureCollection</code> its <code>calculate</code> metho
 <h2 id="returns">Returns</h2>
 <dl>
 <dt><code>pd.DataFrame</code></dt>
-<dd>A DataFrame with for each function the mean (time), std (time), sum (time), and
-number of executions.</dd>
+<dd>A DataFrame with for each function the mean (time), std (time), sum (time),
+sum (% time), mean (% time), and number of executions.</dd>
 </dl></div>
 </dd>
 </dl>
