@@ -618,6 +618,12 @@ class FeatureCollection:
         if n_jobs is None:
             n_jobs = os.cpu_count()
         n_jobs = min(n_jobs, nb_stroll_funcs)
+        if n_jobs > 1 and os.name == "nt":
+            # 
+            # import dill
+            # dill.settings["recurse"] = True
+            from multiprocess import freeze_support
+            freeze_support()
 
         calculated_feature_list = None
         if n_jobs in [0, 1]:
