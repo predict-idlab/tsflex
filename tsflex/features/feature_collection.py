@@ -37,7 +37,7 @@ from .utils import _check_start_end_array, _determine_bounds
 
 if os.name == "nt":  # If running on Windows
     # This enables pickling of globals on Windows
-    dill.settings["trace"] = True
+    dill.settings["recurse"] = True
 
 
 class FeatureCollection:
