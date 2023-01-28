@@ -35,6 +35,10 @@ from .logger import logger
 from .segmenter import StridedRolling, StridedRollingFactory
 from .utils import _check_start_end_array, _determine_bounds
 
+if os.name == "nt":  # If running on Windows
+    # This enables pickling of globals on Windows
+    dill.settings["trace"] = True
+
 
 class FeatureCollection:
     """Create a FeatureCollection.
@@ -618,11 +622,6 @@ class FeatureCollection:
         if n_jobs is None:
             n_jobs = os.cpu_count()
         n_jobs = min(n_jobs, nb_stroll_funcs)
-        if n_jobs > 1 and os.name == "nt":
-            # Windows requires dill recursion to be enabled
-            import dill
-
-            dill.settings["recurse"] = True
 
         calculated_feature_list = None
         if n_jobs in [0, 1]:
