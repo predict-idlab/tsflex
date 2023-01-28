@@ -32,7 +32,9 @@ tsflex is a domain independent package for time series processing & feature extr
 
 With existing popular data-science packages tsflex integrates natively:
 * **Processing**: e.g., [scipy.signal](https://docs.scipy.org/doc/scipy/reference/tutorial/signal.html), [statsmodels.tsa](https://www.statsmodels.org/stable/tsa.html#time-series-filters).
-* **Feature extraction**: e.g., [numpy](https://numpy.org/doc/stable/reference/routines.html), [scipy.stats](https://docs.scipy.org/doc/scipy/reference/tutorial/stats.html).
+* **Feature extraction**: e.g., [numpy](https://numpy.org/doc/stable/reference/routines.html), [scipy.stats](https://docs.scipy.org/doc/scipy/reference/tutorial/stats.html), [antropy](https://raphaelvallat.com/antropy/build/html/api.html)<sup>*</sup>.
+
+> <sup>*</sup> *Note that some functions, should be decorated with the `FuncWrapper`. This is for example necessary when a function returns a tuple of values (e.g., `antropy.hjorth_params`) or when a function requires a keyword argument (e.g., `sf` for `antropy.spectral_entropy`).*
 
 
 ### Feature extraction
