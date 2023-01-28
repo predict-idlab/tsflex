@@ -38,7 +38,6 @@ from .utils import _check_start_end_array, _determine_bounds
 if os.name == "nt":  # If running on Windows
     # This enables pickling of globals on Windows
     dill.settings["recurse"] = True
-    dill.settings["byref"] = True
 
 
 class FeatureCollection:
@@ -266,7 +265,7 @@ class FeatureCollection:
 
     @staticmethod
     def _executor(idx: int):
-        # global get_stroll_func
+        global get_stroll_func
         stroll, function = get_stroll_func(idx)
         return stroll.apply_func(function)
 
