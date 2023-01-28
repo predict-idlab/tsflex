@@ -615,11 +615,7 @@ class FeatureCollection:
         )
         nb_stroll_funcs = self._get_stroll_feat_length()
 
-        if (
-            os.name == "nt"
-        ):  # On Windows no multiprocessing is supported, see https://github.com/predict-idlab/tsflex/issues/51
-            n_jobs = 1
-        elif n_jobs is None:
+        if n_jobs is None:
             n_jobs = os.cpu_count()
         n_jobs = min(n_jobs, nb_stroll_funcs)
 
