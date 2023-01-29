@@ -35,9 +35,11 @@ from .logger import logger
 from .segmenter import StridedRolling, StridedRollingFactory
 from .utils import _check_start_end_array, _determine_bounds
 
-if os.name == "nt":  # If running on Windows
-    # This enables pickling of globals on Windows
-    dill.settings["recurse"] = True
+# This is not needed for multiprocessing on Windows
+# if os.name == "nt":  # If running on Windows
+#     # This enables pickling of globals on Windows
+#     dill.settings["byref"] = True
+#     dill.settings["recurse"] = True
 
 
 class FeatureCollection:
@@ -264,8 +266,9 @@ class FeatureCollection:
         self._check_feature_descriptors(skip_none=True)
 
     @staticmethod
-    def _executor(idx: int):
-        global get_stroll_func
+    def _executor(zipped):
+        idx, get_stroll_func = zipped
+        # global get_stroll_func
         stroll, function = get_stroll_func(idx)
         return stroll.apply_func(function)
 
@@ -629,12 +632,17 @@ class FeatureCollection:
             if show_progress:
                 idxs = tqdm(idxs)
             try:
-                calculated_feature_list = [self._executor(idx) for idx in idxs]
+                calculated_feature_list = [
+                    self._executor((idx, get_stroll_func)) for idx in idxs
+                ]
             except Exception:
                 traceback.print_exc()
         else:
             with Pool(processes=n_jobs) as pool:
-                results = pool.imap_unordered(self._executor, range(nb_stroll_funcs))
+                results = pool.imap_unordered(
+                    self._executor,
+                    zip(range(nb_stroll_funcs), [get_stroll_func] * nb_stroll_funcs),
+                )
                 if show_progress:
                     results = tqdm(results, total=nb_stroll_funcs)
                 try:
