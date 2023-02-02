@@ -62,7 +62,7 @@ line-length = 88
 # Sort imports
 [tool.isort]
 line_length = 88
-known_first_party = ["plotly_resampler"]
+known_first_party = ["tsflex"]
 multi_line_output = 3
 include_trailing_comma = true
 force_grid_wrap = 0
