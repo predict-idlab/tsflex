@@ -322,3 +322,49 @@ def test_catch22_all_features(dummy_data):
 
     res_df = feature_collection.calculate(dummy_data.first("15min"), return_df=True)
     assert (res_df.shape[0] > 0) and (res_df.shape[1]) > 0
+
+
+## ANTROPY
+
+
+def test_antropy_all_features(dummy_data):
+    # Tests if we integrate with ALL antropy features
+    # -> this requires no additional wrapper!
+    import antropy as ant
+
+    funcwrapper_entropy_funcs = [
+        "spectral_entropy",
+        "hjorth_params",
+    ]  # funcs that require a FuncWrapper
+    entropy_funcs = [
+        getattr(ant.entropy, name)
+        for name in ant.entropy.all
+        if name not in funcwrapper_entropy_funcs
+    ]
+    entropy_funcs += [
+        FuncWrapper(ant.entropy.spectral_entropy, sf=100),
+        FuncWrapper(
+            ant.entropy.hjorth_params,
+            output_names=["hjorth_mobility", "hjorth_complexity"],
+        ),
+    ]
+    fractal_funcs = [getattr(ant.fractal, name) for name in ant.fractal.all]
+
+    all_antropy_feats = MultipleFeatureDescriptors(
+        functions=entropy_funcs + fractal_funcs,
+        series_names=["TMP", "EDA"],
+        windows="5min",
+        strides="10min",
+    )
+    feature_collection = FeatureCollection(all_antropy_feats)
+
+    res_df = feature_collection.calculate(
+        dummy_data.first("15min").astype("float32"), return_df=True
+    )
+    assert (res_df.shape[0] > 0) and (res_df.shape[1]) > 0
+
+    # float64 should work since https://github.com/raphaelvallat/antropy/pull/23
+    res_df = feature_collection.calculate(
+        dummy_data.first("15min").astype("float64"), return_df=True
+    )
+    assert (res_df.shape[0] > 0) and (res_df.shape[1]) > 0

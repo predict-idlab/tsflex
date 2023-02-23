@@ -31,6 +31,8 @@ tsfresh = "^0.20.0"
 tsfel = "^0.1.4"
 fastparquet = "0.8.0"  # Lock to this version to resolve issue on macos with python 3.7
 pycatch22 = "^0.4.2"
+# antropy = "^0.1.5"
+antropy = { git = "https://github.com/raphaelvallat/antropy.git", branch = "master" }  # replace with pip when > 0.1.5 release available
 ruff = "^0.0.225"
 black = "^22.12.0"
 isort = "^5.11.4"
@@ -61,7 +63,7 @@ line-length = 88
 # Sort imports
 [tool.isort]
 line_length = 88
-known_first_party = ["plotly_resampler"]
+known_first_party = ["tsflex"]
 multi_line_output = 3
 include_trailing_comma = true
 force_grid_wrap = 0
