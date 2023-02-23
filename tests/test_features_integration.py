@@ -358,5 +358,9 @@ def test_antropy_all_features(dummy_data):
     )
     feature_collection = FeatureCollection(all_antropy_feats)
 
-    res_df = feature_collection.calculate(dummy_data.first("15min"), return_df=True)
+    res_df = feature_collection.calculate(dummy_data.first("15min").astype("float32"), return_df=True)
+    assert (res_df.shape[0] > 0) and (res_df.shape[1]) > 0
+
+    # float64 should work since https://github.com/raphaelvallat/antropy/pull/23
+    res_df = feature_collection.calculate(dummy_data.first("15min").astype("float64"), return_df=True)
     assert (res_df.shape[0] > 0) and (res_df.shape[1]) > 0
