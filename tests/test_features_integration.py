@@ -368,3 +368,37 @@ def test_antropy_all_features(dummy_data):
         dummy_data.first("15min").astype("float64"), return_df=True
     )
     assert (res_df.shape[0] > 0) and (res_df.shape[1]) > 0
+
+
+## NOLDS
+
+
+def test_nolds_all_features(dummy_data):
+    # Tests if we integrate with ALL nolds features
+    # -> this requires no additional wrapper!
+    import nolds
+
+    func_wrapper_nolds_funcs = [
+        FuncWrapper(nolds.corr_dim, emb_dim=3),
+        FuncWrapper(
+            nolds.lyap_e, output_names=["lyap_e_1", "lyap_e_2", "lyap_e_3", "lyap_e_4"]
+        ),
+    ]  # funcs that require a FuncWrapper
+
+    nolds_funcs = [
+        nolds.sampen,
+        nolds.lyap_r,
+        nolds.hurst_rs,
+        nolds.dfa,
+    ]
+
+    nolds_feats = MultipleFeatureDescriptors(
+        functions=nolds_funcs + func_wrapper_nolds_funcs,
+        series_names=["TMP", "EDA"],
+        windows="5min",
+        strides="10min",
+    )
+    feature_collection = FeatureCollection(nolds_feats)
+
+    res_df = feature_collection.calculate(dummy_data.first("15min"), return_df=True)
+    assert (res_df.shape[0] > 0) and (res_df.shape[1]) > 0
