@@ -35,6 +35,7 @@ pycatch22 = "^0.4.2"
 # antropy = "^0.1.5"
 antropy = { git = "https://github.com/raphaelvallat/antropy.git", branch = "master" }  # replace with pip when > 0.1.5 release available
 nolds = "^0.5.2"
+pyentrp = "^0.7.1"
 # Linting
 ruff = "^0.0.225"
 black = "^22.12.0"
