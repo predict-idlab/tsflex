@@ -37,12 +37,16 @@ tsfresh = "^0.20.0"
 tsfel = "^0.1.4"
 fastparquet = "0.8.0"  # Lock to this version to resolve issue on macos with python 3.7
 pycatch22 = "^0.4.2"
-ruff = "^0.0.225"
+# antropy = "^0.1.5"
+antropy = { git = "https://github.com/raphaelvallat/antropy.git", branch = "master" }  # replace with pip when > 0.1.5 release available
+nolds = "^0.5.2"
+# Linting
+ruff = "^0.0.264"
 black = "^22.12.0"
-isort = "^5.11.4"
 
 # Linting
 [tool.ruff]
+select = ["E", "F", "I"]
 line-length = 88
 ignore = ["E501"] # Never enforce `E501` (line length violations).
 [tool.ruff.per-file-ignores]
@@ -63,15 +67,6 @@ ignore = ["E501"] # Never enforce `E501` (line length violations).
 [tool.black]
 color = true
 line-length = 88
-
-# Sort imports
-[tool.isort]
-line_length = 88
-known_first_party = ["plotly_resampler"]
-multi_line_output = 3
-include_trailing_comma = true
-force_grid_wrap = 0
-combine_as_imports = true
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

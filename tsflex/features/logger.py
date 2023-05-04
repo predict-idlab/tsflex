@@ -31,15 +31,16 @@ def _parse_message(message: str) -> list:
     """Parse the message of the logged info."""
     regex = r"\[(.*?)\]"
     matches = re.findall(regex, remove_inner_brackets(message))
-    assert len(matches) == 4
+    assert len(matches) == 5
     func = matches[0]
     key = matches[1].replace("'", "")
     window = matches[2].split(",")[0].strip()
     stride = ",".join(matches[2].split(",")[1:]).strip()
     if stride != "manual":
         stride = eval(stride)  # parse the tuple
-    duration_s = float(matches[3].rstrip(" seconds"))
-    return [func, key, window, stride, duration_s]
+    output_names = matches[3].replace("'", "")
+    duration_s = float(matches[4].rstrip(" seconds"))
+    return [func, key, window, stride, output_names, duration_s]
 
 
 def _parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
@@ -51,20 +52,22 @@ def _parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
         The file path where the logged messages are stored. This is the file path that
         is passed to the `FeatureCollection` its `calculate` method.
 
-    Note
-    ----
-    This function only works when the `logging_file_path` used in a
-    `FeatureCollection` its `calculate` method is passed.
-
     Returns
     -------
     pd.DataFrame
-        A DataFrame with the features its function, input series names and
-        calculation duration.
+        A DataFrame with the features its function, input series names, output names,
+        and (%) calculation duration.
+
+    Note
+    ----
+    This function only works when the ``logging_file_path`` used in a
+    ``FeatureCollection`` its ``calculate`` method is passed.
 
     """
     df = logging_file_to_df(logging_file_path)
-    df[["function", "series_names", "window", "stride", "duration"]] = pd.DataFrame(
+    df[
+        ["function", "series_names", "window", "stride", "output_names", "duration"]
+    ] = pd.DataFrame(
         list(df["message"].apply(_parse_message)),
         index=df.index,
     )
@@ -94,6 +97,7 @@ def _parse_logging_execution_to_df(logging_file_path: str) -> pd.DataFrame:
                 timedelta_to_str(pd.to_timedelta(s)) for s in stride_tuple
             )
         )
+    df["duration %"] = (100 * (df["duration"] / df["duration"].sum())).round(2)
     return df.drop(columns=["name", "log_level", "message"])
 
 
@@ -110,7 +114,7 @@ def get_feature_logs(logging_file_path: str) -> pd.DataFrame:
     -------
     pd.DataFrame
         A DataFrame with the features its function, input series names and
-        calculation duration.
+        (%) calculation duration.
 
     """
     df = _parse_logging_execution_to_df(logging_file_path)
@@ -131,7 +135,8 @@ def get_function_stats(logging_file_path: str) -> pd.DataFrame:
     -------
     pd.DataFrame
         A DataFrame with for each function (i.e., `function-(window,stride)`)
-        combination the mean (time), std (time), sum (time), and number of executions.
+        combination the mean (time), std (time), sum (time), sum (% time),
+        mean (% time),and number of executions.
 
     """
     df = _parse_logging_execution_to_df(logging_file_path)
@@ -150,7 +155,12 @@ def get_function_stats(logging_file_path: str) -> pd.DataFrame:
 
     return (
         df.groupby(["function", "window", "stride"])
-        .agg({"duration": ["mean", "std", "sum", "count"]})
+        .agg(
+            {
+                "duration": ["sum", "mean", "std", "count"],
+                "duration %": ["sum", "mean"],
+            }
+        )
         .sort_index(key=key_func, ascending=False)
     )
 
@@ -167,13 +177,18 @@ def get_series_names_stats(logging_file_path: str) -> pd.DataFrame:
     Returns
     -------
     pd.DataFrame
-        A DataFrame with for each function the mean (time), std (time), sum (time), and
-        number of executions.
+        A DataFrame with for each function the mean (time), std (time), sum (time),
+        sum (% time), mean (% time), and number of executions.
 
     """
     df = _parse_logging_execution_to_df(logging_file_path)
     return (
         df.groupby(["series_names", "window", "stride"])
-        .agg({"duration": ["sum", "mean", "std", "count"]})
+        .agg(
+            {
+                "duration": ["sum", "mean", "std", "count"],
+                "duration %": ["sum", "mean"],
+            }
+        )
         .sort_values(by=("duration", "sum"), ascending=False)
     )

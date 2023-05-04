@@ -175,7 +175,7 @@ class SeriesProcessor(FrozenClass):
           versatile input for its `process` method.
 
         """
-        t_start = time.time()
+        t_start = time.perf_counter()
 
         # Only selecting the series that are needed for this processing step
         # requested_dict = {}
@@ -215,7 +215,7 @@ class SeriesProcessor(FrozenClass):
             )
             processed_output.update(func_output)
 
-        elapsed = time.time() - t_start
+        elapsed = time.perf_counter() - t_start
         logger.info(
             f"Finished function [{self.name}] on {self.series_names} with output "
             f"{list(processed_output.keys())} in [{elapsed} seconds]!"

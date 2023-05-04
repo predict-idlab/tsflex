@@ -357,7 +357,7 @@ class StridedRolling(ABC):
         """
         feat_names = func.output_names
 
-        t_start = time.time()
+        t_start = time.perf_counter()
 
         # --- Future work ---
         # would be nice if we could optimize this double for loop with something
@@ -487,15 +487,15 @@ class StridedRolling(ABC):
                     :, col_idx
                 ]
 
-        elapsed = time.time() - t_start
+        elapsed = time.perf_counter() - t_start
         log_strides = (
             "manual" if self.strides is None else tuple(map(str, self.strides))
         )
         log_window = "manual" if self.window is None else self.window
         logger.info(
             f"Finished function [{func.func.__name__}] on "
-            f"{[self.series_key]} with window-stride "
-            f"[{log_window}, {log_strides}] in [{elapsed} seconds]!"
+            f"{[self.series_key]} with window-stride [{log_window}, {log_strides}] "
+            f"with output {list(feat_out.keys())} in [{elapsed} seconds]!"
         )
 
         return pd.DataFrame(index=self.index, data=feat_out)
