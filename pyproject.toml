@@ -32,6 +32,10 @@ scipy = [
     { version = "^1.7.3", python = "<3.11" },
     { version = ">=1.9", python = ">=3.11" }, # Change to >= 1.8 once this is fixed https://github.com/fraunhoferportugal/tsfel/issues/123
 ]
+numba = [
+    { version = "^0.56.4", python = "<3.11" },
+    { version = ">=0.57", python = ">=3.11" }
+]
 seglearn = "^1.2.3"
 tsfresh = "^0.20.0"
 tsfel = "^0.1.4"
