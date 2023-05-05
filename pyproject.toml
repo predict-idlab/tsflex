@@ -39,7 +39,8 @@ numba = [
 seglearn = "^1.2.3"
 tsfresh = "^0.20.0"
 tsfel = "^0.1.4"
-fastparquet = "0.8.0"  # Lock to this version to resolve issue on macos with python 3.7
+#fastparquet = "0.8.0"  # Lock to this version to resolve issue on macos with python 3.7
+pyarrow = "^12.0.0"
 pycatch22 = "^0.4.2"
 # antropy = "^0.1.5"
 antropy = { git = "https://github.com/raphaelvallat/antropy.git", branch = "master" }  # replace with pip when > 0.1.5 release available
@@ -48,7 +49,6 @@ nolds = "^0.5.2"
 ruff = "^0.0.264"
 black = "^22.12.0"
 
-# Linting
 [tool.ruff]
 select = ["E", "F", "I"]
 line-length = 88
