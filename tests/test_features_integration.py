@@ -149,7 +149,7 @@ def test_tsfresh_settings_wrapper(dummy_data):
 
 
 def test_tsfel_basic_features(dummy_data):
-    from tsfel.feature_extraction.features import (  # Some temporal features; Some statistical features; Some spectral features; -> Almost all are "advanced" features
+    from tsfel.feature_extraction.features import (  # median_abs_deviation, # TODO: wait for this to be resolved  https://github.com/fraunhoferportugal/tsfel/issues/123
         abs_energy,
         autocorr,
         calc_max,
@@ -160,7 +160,6 @@ def test_tsfel_basic_features(dummy_data):
         kurtosis,
         mean_abs_diff,
         mean_diff,
-        median_abs_deviation,
         neighbourhood_peaks,
         pk_pk_distance,
         rms,
@@ -188,9 +187,9 @@ def test_tsfel_basic_features(dummy_data):
         skewness,
         calc_max,
         calc_median,
-        median_abs_deviation,
+        # median_abs_deviation,  # TODO: wait for this to be resolved https://github.com/fraunhoferportugal/tsfel/issues/123
         rms,
-        # Spectral
+        # Spectral (-> almost all are "advanced" features)
         wavelet_entropy,
     ]
 
@@ -203,7 +202,8 @@ def test_tsfel_basic_features(dummy_data):
     feature_collection = FeatureCollection(basic_feats)
 
     res_df = feature_collection.calculate(dummy_data, return_df=True)
-    assert res_df.shape[1] == 18 * 2
+    # TODO: update this to 18*2 when median_abs_deviation is fixed
+    assert res_df.shape[1] == 17 * 2
     assert res_df.shape[0] > 0
     assert not res_df.isna().any().any()
 
@@ -293,8 +293,12 @@ def test_tsfel_feature_dict_wrapper(dummy_data):
     # Tests if we integrate with ALL tsfel features
     from tsfel.feature_extraction import get_features_by_domain
 
+    all_feats = get_features_by_domain()
+    # TODO: remove next line once the following is resolved https://github.com/fraunhoferportugal/tsfel/issues/123
+    del all_feats["statistical"]["Median absolute deviation"]
+
     all_tsfel_feats = MultipleFeatureDescriptors(
-        functions=tsfel_feature_dict_wrapper(get_features_by_domain()),
+        functions=tsfel_feature_dict_wrapper(all_feats),
         series_names=["TMP", "EDA"],
         windows="5min",
         strides="10min",
