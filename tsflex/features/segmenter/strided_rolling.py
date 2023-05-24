@@ -18,6 +18,7 @@ import warnings
 from abc import ABC, abstractmethod
 from collections import namedtuple
 from typing import List, Optional, Tuple, TypeVar, Union
+from multiprocess import Pool
 
 import numpy as np
 import pandas as pd
@@ -443,6 +444,24 @@ class StridedRolling(ABC):
             # When multiple outputs are returned (= tuple) they should be transposed
             # when combining into an array
             out = out.T if out_type is tuple else out
+
+        elif func.parallel:
+            # Parallel function execution
+            with Pool() as pool:
+                out = np.array(
+                    list(
+                        pool.imap(
+                            func,
+                            *[
+                                [
+                                    sc.values[sc.start_indexes[idx] : sc.end_indexes[idx]]
+                                    for idx in range(len(self.index))
+                                ]
+                                for sc in self.series_containers
+                            ],
+                        )
+                    )
+                )
 
         else:
             # Sequential function execution (default)

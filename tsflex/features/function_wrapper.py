@@ -66,6 +66,7 @@ class FuncWrapper(FrozenClass):
         output_names: Optional[Union[List[str], str]] = None,
         input_type: Optional[Union[np.array, pd.Series]] = np.array,
         vectorized: bool = False,
+        parallel: bool = False,
         **kwargs,
     ):
         """Create FuncWrapper instance."""
@@ -85,8 +86,10 @@ class FuncWrapper(FrozenClass):
         assert not (
             vectorized & (input_type is not np.array)
         ), "The input_type must be np.array if vectorized is True!"
+        assert not (vectorized & parallel), "vectorized and parallel cannot be both True!"
         self.input_type = input_type
         self.vectorized = vectorized
+        self.parallel = parallel
 
         self._freeze()
 
