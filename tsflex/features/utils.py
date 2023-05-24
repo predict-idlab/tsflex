@@ -121,6 +121,7 @@ def _get_funcwrapper_func_and_kwargs(func: FuncWrapper) -> Tuple[Callable, dict]
     func_wrapper_kwargs["output_names"] = func.output_names
     func_wrapper_kwargs["input_type"] = func.input_type
     func_wrapper_kwargs["vectorized"] = func.vectorized
+    func_wrapper_kwargs['parallel'] = func.parallel
     func_wrapper_kwargs.update(func.kwargs)
 
     return function, func_wrapper_kwargs

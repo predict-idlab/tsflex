@@ -459,6 +459,8 @@ class StridedRolling(ABC):
                                 ]
                                 for sc in self.series_containers
                             ],
+                            # TODO -> make this configurable
+                            chunksize=100,
                         )
                     )
                 )
