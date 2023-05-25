@@ -84,9 +84,11 @@ class FuncWrapper(FrozenClass):
 
         assert input_type in SUPPORTED_STROLL_TYPES, "Invalid input_type!"
         assert not (
-            vectorized & (input_type is not np.array)
+            vectorized and (input_type is not np.array)
         ), "The input_type must be np.array if vectorized is True!"
-        assert not (vectorized & parallel), "vectorized and parallel cannot be both True!"
+        assert not (
+            vectorized and parallel
+        ), "vectorized and parallel cannot be both True!"
         self.input_type = input_type
         self.vectorized = vectorized
         self.parallel = parallel

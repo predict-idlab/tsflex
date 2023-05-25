@@ -18,10 +18,10 @@ import warnings
 from abc import ABC, abstractmethod
 from collections import namedtuple
 from typing import List, Optional, Tuple, TypeVar, Union
-from multiprocess import Pool
 
 import numpy as np
 import pandas as pd
+from multiprocess import Pool
 
 from ...utils.attribute_parsing import AttributeParser, DataType
 from ...utils.data import SUPPORTED_STROLL_TYPES, to_list, to_series_list, to_tuple
@@ -454,7 +454,9 @@ class StridedRolling(ABC):
                             func,
                             *[
                                 [
-                                    sc.values[sc.start_indexes[idx] : sc.end_indexes[idx]]
+                                    sc.values[
+                                        sc.start_indexes[idx] : sc.end_indexes[idx]
+                                    ]
                                     for idx in range(len(self.index))
                                 ]
                                 for sc in self.series_containers
