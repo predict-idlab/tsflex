@@ -14,6 +14,7 @@ from __future__ import annotations
 __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt"
 
 import time
+import traceback
 import warnings
 from abc import ABC, abstractmethod
 from collections import namedtuple
@@ -326,7 +327,9 @@ class StridedRolling(ABC):
             )
         return series_containers
 
-    def apply_func(self, func: FuncWrapper) -> pd.DataFrame:
+    def apply_func(
+        self, func: FuncWrapper, n_jobs: Optional[int] = None
+    ) -> pd.DataFrame:
         """Apply a function to the segmented series.
 
         Parameters
@@ -445,27 +448,35 @@ class StridedRolling(ABC):
             # when combining into an array
             out = out.T if out_type is tuple else out
 
-        elif func.parallel:
+        elif func.parallel and n_jobs > 1:
             # Parallel function execution
-            with Pool() as pool:
-                out = np.array(
-                    list(
-                        pool.imap(
-                            func,
-                            *[
-                                [
-                                    sc.values[
-                                        sc.start_indexes[idx] : sc.end_indexes[idx]
+            with Pool(processes=n_jobs) as pool:
+                try:
+                    out = np.array(
+                        list(
+                            pool.imap(
+                                func,
+                                *[
+                                    [
+                                        sc.values[
+                                            sc.start_indexes[idx] : sc.end_indexes[idx]
+                                        ]
+                                        for idx in range(len(self.index))
                                     ]
-                                    for idx in range(len(self.index))
-                                ]
-                                for sc in self.series_containers
-                            ],
-                            # TODO -> make this configurable
-                            chunksize=100,
+                                    for sc in self.series_containers
+                                ],
+                                # TODO -> make this configurable
+                                chunksize=100,
+                            )
                         )
                     )
-                )
+                except Exception:
+                    traceback.print_exc()
+                    pool.terminate()
+                finally:
+                    # Close & join because: https://github.com/uqfoundation/pathos/issues/131
+                    pool.close()
+                    pool.join()
 
         else:
             # Sequential function execution (default)
