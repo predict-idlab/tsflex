@@ -1,15 +1,13 @@
 black = black tsflex tests
-isort = isort tsflex tests
 
 .PHONY: format
 format:
-	$(isort)
+	ruff --fix tsflex tests
 	$(black)
 
 .PHONY: lint
 lint:
 	poetry run ruff tsflex tests
-	poetry run $(isort) --check-only --df
 	poetry run $(black) --check --diff
 
 .PHONY: test
