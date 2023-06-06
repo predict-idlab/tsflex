@@ -406,3 +406,49 @@ def test_nolds_all_features(dummy_data):
 
     res_df = feature_collection.calculate(dummy_data.first("15min"), return_df=True)
     assert (res_df.shape[0] > 0) and (res_df.shape[1]) > 0
+
+
+## PYENTRP
+
+
+def test_pyentrp_all_features(dummy_data):
+    # Tests if we integrate with ALL pyentrp features
+    # -> this requires no additional wrapper!
+    import pyentrp.entropy as ent
+
+    func_wrapper_pyentrp_funcs = [
+        FuncWrapper(ent.sample_entropy, sample_length=2, output_names=["se_1", "se_2"]),
+        FuncWrapper(
+            ent.multiscale_entropy,
+            sample_length=100,
+            maxscale=2,
+            output_names=["mse_1", "mse_2"],
+        ),
+        FuncWrapper(
+            ent.multiscale_permutation_entropy,
+            m=2,
+            delay=1,
+            scale=2,
+            output_names=["mspe_1", "mspe_2"],
+        ),
+        # The following works since https://github.com/nikdon/pyEntropy/pull/21
+        # -> however, as long as we support Python 3.7, we cannot use the fixed version
+        # FuncWrapper(ent.composite_multiscale_entropy, sample_length=10, scale=2, output_names=["cmse_1", "cmse_2"]),
+    ]  # funcs that require a FuncWrapper
+
+    pyentrp_funcs = [
+        ent.shannon_entropy,
+        ent.permutation_entropy,
+        ent.weighted_permutation_entropy,
+    ]
+
+    pyentrp_feats = MultipleFeatureDescriptors(
+        functions=pyentrp_funcs + func_wrapper_pyentrp_funcs,
+        series_names=["TMP", "EDA"],
+        windows="5min",
+        strides="10min",
+    )
+    feature_collection = FeatureCollection(pyentrp_feats)
+
+    res_df = feature_collection.calculate(dummy_data.first("15min"), return_df=True)
+    assert (res_df.shape[0] > 0) and (res_df.shape[1]) > 0
