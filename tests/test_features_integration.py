@@ -427,7 +427,8 @@ def test_pyentrp_all_features(dummy_data):
             scale=2,
             output_names=["mspe_1", "mspe_2"],
         ),
-        # Enable the following once https://github.com/nikdon/pyEntropy/pull/21 is merged
+        # The following works since https://github.com/nikdon/pyEntropy/pull/21
+        # -> however, as long as we support Python 3.7, we cannot use the fixed version
         # FuncWrapper(ent.composite_multiscale_entropy, sample_length=10, scale=2, output_names=["cmse_1", "cmse_2"]),
     ]  # funcs that require a FuncWrapper
 
