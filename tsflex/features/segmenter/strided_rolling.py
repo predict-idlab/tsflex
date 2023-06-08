@@ -457,19 +457,19 @@ class StridedRolling(ABC):
                 try:
                     out = np.array(
                         list(
-                            pool.imap(
+                            pool.starmap(
                                 func,
-                                *[
+                                [
                                     [
                                         sc.values[
                                             sc.start_indexes[idx] : sc.end_indexes[idx]
                                         ]
-                                        for idx in range(len(self.index))
+                                        for sc in self.series_containers
                                     ]
-                                    for sc in self.series_containers
+                                    for idx in range(len(self.index))
                                 ],
                                 # TODO -> make this configurable
-                                chunksize=100,
+                                # chunksize=100,
                             )
                         )
                     )
