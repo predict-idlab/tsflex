@@ -336,6 +336,9 @@ class StridedRolling(ABC):
         ----------
         func : FuncWrapper
             The Callable wrapped function which will be applied.
+        n_jobs : Optional[int], optional
+            The number of processes to use for parallel FuncWrapper execution, by
+            default None.
 
         Returns
         -------
@@ -716,9 +719,11 @@ class TimeIndexSampleStridedRolling(SequenceStridedRolling):
         # we want to assure that the window-stride arguments are integers (samples)
         assert all(isinstance(p, int) for p in [self.window] + self.strides)
 
-    def apply_func(self, func: FuncWrapper) -> pd.DataFrame:
+    def apply_func(
+        self, func: FuncWrapper, n_jobs: Optional[int] = None
+    ) -> pd.DataFrame:
         # Apply the function and stitch back the time-index
-        df = super().apply_func(func)
+        df = super().apply_func(func, n_jobs)
         df.index = self._series_index[df.index]
         return df
 

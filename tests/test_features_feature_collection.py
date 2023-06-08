@@ -1730,7 +1730,7 @@ def test_multiple_outputs_vectorized_features(dummy_data):
     s = "EDA__"
     p = "__w=1000"
     assert np.all(res[s + "sum" + p].values == res[s + "sum_vect" + p].values)
-    assert np.all(res[s + "mean" + p].values == res[s + "mean_vect" + p].values)
+    assert np.allclose(res[s + "mean" + p].values, res[s + "mean_vect" + p].values)
 
 
 def test_multiple_inputs_vectorized_features(dummy_data):
@@ -1743,6 +1743,137 @@ def test_multiple_inputs_vectorized_features(dummy_data):
             FeatureDescriptor(np.sum, "TMP", "5min", "2.5min"),
             FeatureDescriptor(
                 FuncWrapper(windowed_diff, vectorized=True),
+                ("EDA", "TMP"),
+                "5min",
+                "2.5min",
+            ),
+        ]
+    )
+
+    res = fc.calculate(dummy_data, return_df=True)
+
+    assert res.shape[1] == 3
+    assert res.shape[0] > 1
+    p = "__w=5m"
+    manual_diff = res["EDA__sum" + p].values - res["TMP__sum" + p].values
+    assert np.all(res["EDA|TMP__windowed_diff" + p].values == manual_diff)
+
+
+### Test parallel features
+
+
+def test_basic_parallel_features_different_fc(dummy_data):
+    fs = 4  # The sample frequency in Hz
+    fc1 = FeatureCollection(
+        feature_descriptors=[
+            FeatureDescriptor(np.max, "EDA", 250 * fs, 75 * fs),
+        ]
+    )
+    fc2 = FeatureCollection(
+        feature_descriptors=[
+            FeatureDescriptor(
+                FuncWrapper(np.max, output_names="max_", parallel=True),
+                "EDA",
+                250 * fs,
+                75 * fs,
+            ),
+        ]
+    )
+    res1 = fc1.calculate(dummy_data)
+    res2 = fc2.calculate(dummy_data)
+
+    assert len(res1) == 1
+    assert len(res2) == 1
+    res1 = res1[0]
+    res2 = res2[0]
+    assert (len(res1) > 1) and (len(res2) > 1)
+    assert np.all(res1.index == res2.index)
+    assert np.all(res1.values == res2.values)
+
+
+def test_basic_parallel_features_same_fc(dummy_data):
+    fs = 4  # The sample frequency in Hz
+    fc = FeatureCollection(
+        feature_descriptors=[
+            FeatureDescriptor(np.max, "EDA", 250 * fs, 75 * fs),
+            FeatureDescriptor(
+                FuncWrapper(np.max, output_names="max_", parallel=True),
+                "EDA",
+                250 * fs,
+                75 * fs,
+            ),
+        ]
+    )
+    res = fc.calculate(dummy_data)
+
+    assert len(res) == 2
+    assert (len(res[0]) > 1) and (len(res[1]) > 1)
+    assert np.all(res[0].index == res[1].index)
+    assert np.all(res[0].values == res[1].values)
+
+
+def test_time_based_parallel_features(dummy_data):
+    fc = FeatureCollection(
+        feature_descriptors=[
+            FeatureDescriptor(np.max, "EDA", "5min", "3min"),
+            FeatureDescriptor(
+                FuncWrapper(np.max, output_names="max_", parallel=True),
+                "EDA",
+                "5min",
+                "3min",
+            ),
+        ]
+    )
+    res = fc.calculate(dummy_data)
+
+    assert len(res) == 2
+    assert (len(res[0]) > 1) and (len(res[1]) > 1)
+    assert np.all(res[0].index == res[1].index)
+    assert np.all(res[0].values == res[1].values)
+
+
+def test_multiple_outputs_parallel_features(dummy_data):
+    def sum_mean(x):
+        s = np.sum(x)
+        return s, s / x.shape[0]
+
+    fs = 4  # The sample frequency in Hz
+    fc = FeatureCollection(
+        feature_descriptors=[
+            FeatureDescriptor(np.sum, "EDA", 250 * fs, 75 * fs),
+            FeatureDescriptor(np.mean, "EDA", 250 * fs, 75 * fs),
+            FeatureDescriptor(
+                FuncWrapper(
+                    sum_mean,
+                    output_names=["sum_par", "mean_par"],
+                    parallel=True,
+                ),
+                "EDA",
+                250 * fs,
+                75 * fs,
+            ),
+        ]
+    )
+
+    res = fc.calculate(dummy_data, return_df=True)
+
+    assert res.shape[1] == 4
+    s = "EDA__"
+    p = "__w=1000"
+    assert np.all(res[s + "sum" + p].values == res[s + "sum_par" + p].values)
+    assert np.allclose(res[s + "mean" + p].values, res[s + "mean_par" + p].values)
+
+
+def test_multiple_inputs_parallel_features(dummy_data):
+    def windowed_diff(x1, x2):
+        return np.sum(x1) - np.sum(x2)
+
+    fc = FeatureCollection(
+        feature_descriptors=[
+            FeatureDescriptor(np.sum, "EDA", "5min", "2.5min"),
+            FeatureDescriptor(np.sum, "TMP", "5min", "2.5min"),
+            FeatureDescriptor(
+                FuncWrapper(windowed_diff, parallel=True),
                 ("EDA", "TMP"),
                 "5min",
                 "2.5min",

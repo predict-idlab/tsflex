@@ -675,7 +675,7 @@ class FeatureCollection:
 
         # 1. Calculate the features for the non-parallel functions
         # -> these functions are calculated (possibly in parallel) over the functions
-        if n_jobs in [0, 1]:
+        if n_jobs_non_parallel_func in [0, 1]:
             idxs = range(nb_stroll_non_parallel_func)
             if show_progress:
                 idxs = tqdm(idxs)
