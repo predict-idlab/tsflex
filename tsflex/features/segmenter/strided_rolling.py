@@ -14,6 +14,7 @@ from __future__ import annotations
 __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt"
 
 import time
+import traceback
 import warnings
 from abc import ABC, abstractmethod
 from collections import namedtuple
@@ -21,6 +22,7 @@ from typing import List, Optional, Tuple, TypeVar, Union
 
 import numpy as np
 import pandas as pd
+from multiprocess import Pool
 
 from ...utils.attribute_parsing import AttributeParser, DataType
 from ...utils.data import SUPPORTED_STROLL_TYPES, to_list, to_series_list, to_tuple
@@ -325,13 +327,18 @@ class StridedRolling(ABC):
             )
         return series_containers
 
-    def apply_func(self, func: FuncWrapper) -> pd.DataFrame:
+    def apply_func(
+        self, func: FuncWrapper, n_jobs: Optional[int] = None
+    ) -> pd.DataFrame:
         """Apply a function to the segmented series.
 
         Parameters
         ----------
         func : FuncWrapper
             The Callable wrapped function which will be applied.
+        n_jobs : Optional[int], optional
+            The number of processes to use for parallel FuncWrapper execution, by
+            default None.
 
         Returns
         -------
@@ -443,6 +450,36 @@ class StridedRolling(ABC):
             # When multiple outputs are returned (= tuple) they should be transposed
             # when combining into an array
             out = out.T if out_type is tuple else out
+
+        elif func.parallel and n_jobs > 1:
+            # Parallel function execution
+            with Pool(processes=n_jobs) as pool:
+                try:
+                    out = np.array(
+                        list(
+                            pool.starmap(
+                                func,
+                                [
+                                    [
+                                        sc.values[
+                                            sc.start_indexes[idx] : sc.end_indexes[idx]
+                                        ]
+                                        for sc in self.series_containers
+                                    ]
+                                    for idx in range(len(self.index))
+                                ],
+                                # TODO -> make this configurable
+                                # chunksize=100,
+                            )
+                        )
+                    )
+                except Exception:
+                    traceback.print_exc()
+                    pool.terminate()
+                finally:
+                    # Close & join because: https://github.com/uqfoundation/pathos/issues/131
+                    pool.close()
+                    pool.join()
 
         else:
             # Sequential function execution (default)
@@ -682,9 +719,11 @@ class TimeIndexSampleStridedRolling(SequenceStridedRolling):
         # we want to assure that the window-stride arguments are integers (samples)
         assert all(isinstance(p, int) for p in [self.window] + self.strides)
 
-    def apply_func(self, func: FuncWrapper) -> pd.DataFrame:
+    def apply_func(
+        self, func: FuncWrapper, n_jobs: Optional[int] = None
+    ) -> pd.DataFrame:
         # Apply the function and stitch back the time-index
-        df = super().apply_func(func)
+        df = super().apply_func(func, n_jobs)
         df.index = self._series_index[df.index]
         return df
 

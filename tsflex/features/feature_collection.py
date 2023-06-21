@@ -104,6 +104,31 @@ class FeatureCollection:
             set(flatten([fr_key[0] for fr_key in self._feature_desc_dict.keys()]))
         )
 
+    def _get_feature_desc_dict(
+        self, parallel: bool
+    ) -> Dict[
+        Tuple[Tuple[str, ...], Union[float, pd.Timedelta]], List[FeatureDescriptor]
+    ]:
+        """Return the feature descriptor dictionary.
+
+        Parameters
+        ----------
+        parallel : bool
+            Whether to return the feature descriptors for the parallel functions or not.
+
+        Returns
+        -------
+        Dict[Tuple[Tuple[str, ...], Union[float, pd.Timedelta]], List[FeatureDescriptor]]
+            The feature descriptor dictionary.
+
+        """
+        res = {}
+        for k, fd_list in self._feature_desc_dict.items():
+            fd_list = [fd for fd in fd_list if fd.function.parallel == parallel]
+            if fd_list:
+                res[k] = fd_list
+        return res
+
     def get_nb_output_features(self) -> int:
         """Return the number of output features in this feature collection.
 
@@ -260,10 +285,22 @@ class FeatureCollection:
         self._check_feature_descriptors(skip_none=True)
 
     @staticmethod
-    def _executor(idx: int):
-        # global get_stroll_func
-        stroll, function = get_stroll_func(idx)
+    def _non_parallel_func_executor(idx: int):
+        """Execute functions that are not parallelized (over the strided window).
+
+        This executor can be called in a multiprocessing context.
+        """
+        stroll, function = get_stroll_non_parallel_func(idx)
         return stroll.apply_func(function)
+
+    @staticmethod
+    def _parallel_func_executor(idx: int, n_jobs: int):
+        """Execute functions that are parallelized (over the strided window).
+
+        This executor canNOT be called in a multiprocessing context.
+        """
+        stroll, function = get_stroll_parallel_func(idx)
+        return stroll.apply_func(function, n_jobs)
 
     # def _get_stroll(self, kwargs):
     #     return StridedRollingFactory.get_segmenter(**kwargs)
@@ -279,20 +316,21 @@ class FeatureCollection:
         window_idx: str,
         include_final_window: bool,
         approve_sparsity: bool,
+        parallel: bool,
     ) -> Callable[[int], Tuple[StridedRolling, FuncWrapper]]:
         # --- Future work ---
         # We could also make the StridedRolling creation multithreaded
         # Very low priority because the STROLL __init__ is rather efficient!
-        keys_wins_strides = list(self._feature_desc_dict.keys())
-        lengths = np.cumsum(
-            [len(self._feature_desc_dict[k]) for k in keys_wins_strides]
-        )
+        feature_desc_dict = self._get_feature_desc_dict(parallel)
+
+        keys_wins_strides = list(feature_desc_dict)
+        lengths = np.cumsum([len(feature_desc_dict[k]) for k in keys_wins_strides])
 
         def get_stroll_function(idx) -> Tuple[StridedRolling, FuncWrapper]:
             key_idx = np.searchsorted(lengths, idx, "right")  # right bc idx starts at 0
             key, win = keys_wins_strides[key_idx]
 
-            feature = self._feature_desc_dict[keys_wins_strides[key_idx]][
+            feature = feature_desc_dict[keys_wins_strides[key_idx]][
                 idx - lengths[key_idx]
             ]
             stride = feature.stride if calc_stride is None else calc_stride
@@ -316,10 +354,9 @@ class FeatureCollection:
 
         return get_stroll_function
 
-    def _get_stroll_feat_length(self) -> int:
-        return sum(
-            len(self._feature_desc_dict[k]) for k in self._feature_desc_dict.keys()
-        )
+    def _get_stroll_feat_length(self, parallel: bool) -> int:
+        feat_desc_dict = self._get_feature_desc_dict(parallel)
+        return sum(len(feat_desc_dict[k]) for k in feat_desc_dict.keys())
 
     def _check_no_multiple_windows(self):
         assert (
@@ -599,11 +636,18 @@ class FeatureCollection:
             for n, s, in series_dict.items()
         }
 
+        if (
+            os.name == "nt"
+        ):  # On Windows no multiprocessing is supported, see https://github.com/predict-idlab/tsflex/issues/51
+            n_jobs = 1
+        elif n_jobs is None:
+            n_jobs = os.cpu_count()
+
         # Note: this variable has a global scope so this is shared in multiprocessing
         # TODO: try to make this more efficient (but is not really the bottleneck)
-        global get_stroll_func
-        get_stroll_func = self._stroll_feat_generator(
-            series_dict,
+        global get_stroll_non_parallel_func  # is not applied in parallel on the stroll
+        global get_stroll_parallel_func  # is applied in parallel on the stroll
+        kwargs = dict(
             calc_stride=stride,
             segment_start_idxs=segment_start_idxs,
             segment_end_idxs=segment_end_idxs,
@@ -613,30 +657,42 @@ class FeatureCollection:
             include_final_window=include_final_window,
             approve_sparsity=approve_sparsity,
         )
-        nb_stroll_funcs = self._get_stroll_feat_length()
-
-        if (
-            os.name == "nt"
-        ):  # On Windows no multiprocessing is supported, see https://github.com/predict-idlab/tsflex/issues/51
-            n_jobs = 1
-        elif n_jobs is None:
-            n_jobs = os.cpu_count()
-        n_jobs = min(n_jobs, nb_stroll_funcs)
+        get_stroll_non_parallel_func = self._stroll_feat_generator(
+            series_dict,
+            **kwargs,
+            parallel=False,
+        )
+        nb_stroll_non_parallel_func = self._get_stroll_feat_length(parallel=False)
+        n_jobs_non_parallel_func = min(n_jobs, nb_stroll_non_parallel_func)
+        get_stroll_parallel_func = self._stroll_feat_generator(
+            series_dict,
+            **kwargs,
+            parallel=True,
+        )
+        nb_stroll_parallel_func = self._get_stroll_feat_length(parallel=True)
 
         calculated_feature_list = None
-        if n_jobs in [0, 1]:
-            idxs = range(nb_stroll_funcs)
+
+        # 1. Calculate the features for the non-parallel functions
+        # -> these functions are calculated (possibly in parallel) over the functions
+        if n_jobs_non_parallel_func in [0, 1]:
+            idxs = range(nb_stroll_non_parallel_func)
             if show_progress:
                 idxs = tqdm(idxs)
             try:
-                calculated_feature_list = [self._executor(idx) for idx in idxs]
+                # 1. Calculate the features for the non-parallel functions
+                calculated_feature_list = [
+                    self._non_parallel_func_executor(i) for i in idxs
+                ]
             except Exception:
                 traceback.print_exc()
         else:
-            with Pool(processes=n_jobs) as pool:
-                results = pool.imap_unordered(self._executor, range(nb_stroll_funcs))
+            with Pool(processes=n_jobs_non_parallel_func) as pool:
+                results = pool.imap_unordered(
+                    self._non_parallel_func_executor, range(nb_stroll_non_parallel_func)
+                )
                 if show_progress:
-                    results = tqdm(results, total=nb_stroll_funcs)
+                    results = tqdm(results, total=nb_stroll_non_parallel_func)
                 try:
                     calculated_feature_list = [f for f in results]
                 except Exception:
@@ -646,6 +702,21 @@ class FeatureCollection:
                     # Close & join because: https://github.com/uqfoundation/pathos/issues/131
                     pool.close()
                     pool.join()
+
+        # 2. Calculate the features for the parallel functions
+        # -> these functions are calculated (possibly in parallel) within the functions
+        idxs = range(nb_stroll_parallel_func)
+        if show_progress:
+            idxs = tqdm(idxs)
+        try:
+            # We collect one by one the results of the parallel functions
+            # (because the parallelization is done within the function , i.e. over the
+            # strided windows)
+            calculated_feature_list += [
+                self._parallel_func_executor(i, n_jobs) for i in idxs
+            ]
+        except Exception:
+            traceback.print_exc()
 
         # Close the file handler (this avoids PermissionError: [WinError 32])
         if logging_file_path:
