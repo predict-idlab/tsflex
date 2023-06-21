@@ -2,6 +2,7 @@
 
 __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
 
+import functools
 from typing import Any, Callable, List, Optional, Union
 
 import numpy as np
@@ -12,6 +13,26 @@ from ..utils.classes import FrozenClass
 from ..utils.data import SUPPORTED_STROLL_TYPES
 
 __pdoc__["FuncWrapper.__call__"] = True
+
+
+def _get_func_name(func: Callable) -> str:
+    """Get the name of the passed function.
+
+    Parameters
+    ----------
+    func: Callable
+        The function for which we want to get the name
+
+    Returns
+    -------
+    str
+        The name of the function. When func is an functools.partial, than the name of
+        the decorated function is returned.
+
+    """
+    if isinstance(func, functools.partial):
+        return func.func.__name__
+    return func.__name__
 
 
 class FuncWrapper(FrozenClass):
@@ -77,7 +98,7 @@ class FuncWrapper(FrozenClass):
         elif isinstance(output_names, str):
             self.output_names = [output_names]
         elif not output_names:
-            self.output_names = [self.func.__name__]
+            self.output_names = [_get_func_name(func)]
         else:
             raise TypeError(f"`output_names` is unexpected type {type(output_names)}")
 
@@ -92,8 +113,9 @@ class FuncWrapper(FrozenClass):
 
     def __repr__(self) -> str:
         """Return repr string."""
+        func_name = _get_func_name(self.func)
         return (
-            f"{self.__class__.__name__}({self.func.__name__}, {self.output_names},"
+            f"{self.__class__.__name__}({func_name}, {self.output_names},"
             f" {self.kwargs})"
         )
 
