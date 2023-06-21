@@ -15,24 +15,30 @@ from ..utils.data import SUPPORTED_STROLL_TYPES
 __pdoc__["FuncWrapper.__call__"] = True
 
 
-def _get_func_name(func: Callable) -> str:
-    """Get the name of the passed function.
+def _get_name(func: Callable) -> str:
+    """Get the name of the function.
 
     Parameters
     ----------
     func: Callable
-        The function for which we want to get the name
+        The function whose name has to be returned, should be either a function or an
+        object that is callable.
 
     Returns
     -------
     str
-        The name of the function. When func is an functools.partial, than the name of
-        the decorated function is returned.
+        The name of ``func`` in case of a function, or
+        - the name of the wrapped function in case of functools.partial.
+        - the name of the class in case of a callable object.
 
     """
-    if isinstance(func, functools.partial):
-        return func.func.__name__
-    return func.__name__
+    assert callable(func), f"The given argument {func} is not callable!"
+    try:
+        return func.__name__
+    except AttributeError:
+        if isinstance(func, functools.partial):
+            return func.func.__name__
+        return type(func).__name__
 
 
 class FuncWrapper(FrozenClass):
@@ -98,7 +104,7 @@ class FuncWrapper(FrozenClass):
         elif isinstance(output_names, str):
             self.output_names = [output_names]
         elif not output_names:
-            self.output_names = [_get_func_name(func)]
+            self.output_names = [_get_name(func)]
         else:
             raise TypeError(f"`output_names` is unexpected type {type(output_names)}")
 
@@ -113,9 +119,8 @@ class FuncWrapper(FrozenClass):
 
     def __repr__(self) -> str:
         """Return repr string."""
-        func_name = _get_func_name(self.func)
         return (
-            f"{self.__class__.__name__}({func_name}, {self.output_names},"
+            f"{self.__class__.__name__}({_get_name(self.func)}, {self.output_names},"
             f" {self.kwargs})"
         )
 
