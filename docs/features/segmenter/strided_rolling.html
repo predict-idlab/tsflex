@@ -72,7 +72,7 @@ import pandas as pd
 from ...utils.attribute_parsing import AttributeParser, DataType
 from ...utils.data import SUPPORTED_STROLL_TYPES, to_list, to_series_list, to_tuple
 from ...utils.time import timedelta_to_str
-from ..function_wrapper import FuncWrapper
+from ..function_wrapper import FuncWrapper, _get_name
 from ..logger import logger
 from ..utils import _check_start_end_array, _determine_bounds
 
@@ -540,7 +540,7 @@ class StridedRolling(ABC):
         )
         log_window = &#34;manual&#34; if self.window is None else self.window
         logger.info(
-            f&#34;Finished function [{func.func.__name__}] on &#34;
+            f&#34;Finished function [{_get_name(func.func)}] on &#34;
             f&#34;{[self.series_key]} with window-stride [{log_window}, {log_strides}] &#34;
             f&#34;with output {list(feat_out.keys())} in [{elapsed} seconds]!&#34;
         )
@@ -1268,7 +1268,7 @@ def _sliding_strided_window_1d(
         )
         log_window = &#34;manual&#34; if self.window is None else self.window
         logger.info(
-            f&#34;Finished function [{func.func.__name__}] on &#34;
+            f&#34;Finished function [{_get_name(func.func)}] on &#34;
             f&#34;{[self.series_key]} with window-stride [{log_window}, {log_strides}] &#34;
             f&#34;with output {list(feat_out.keys())} in [{elapsed} seconds]!&#34;
         )
@@ -1620,7 +1620,7 @@ def construct_output_index(
     )
     log_window = &#34;manual&#34; if self.window is None else self.window
     logger.info(
-        f&#34;Finished function [{func.func.__name__}] on &#34;
+        f&#34;Finished function [{_get_name(func.func)}] on &#34;
         f&#34;{[self.series_key]} with window-stride [{log_window}, {log_strides}] &#34;
         f&#34;with output {list(feat_out.keys())} in [{elapsed} seconds]!&#34;
     )

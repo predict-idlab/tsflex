@@ -542,7 +542,7 @@ __all__ = [
         )
         log_window = &#34;manual&#34; if self.window is None else self.window
         logger.info(
-            f&#34;Finished function [{func.func.__name__}] on &#34;
+            f&#34;Finished function [{_get_name(func.func)}] on &#34;
             f&#34;{[self.series_key]} with window-stride [{log_window}, {log_strides}] &#34;
             f&#34;with output {list(feat_out.keys())} in [{elapsed} seconds]!&#34;
         )
@@ -894,7 +894,7 @@ def construct_output_index(
     )
     log_window = &#34;manual&#34; if self.window is None else self.window
     logger.info(
-        f&#34;Finished function [{func.func.__name__}] on &#34;
+        f&#34;Finished function [{_get_name(func.func)}] on &#34;
         f&#34;{[self.series_key]} with window-stride [{log_window}, {log_strides}] &#34;
         f&#34;with output {list(feat_out.keys())} in [{elapsed} seconds]!&#34;
     )

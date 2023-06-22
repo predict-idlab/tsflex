@@ -2774,7 +2774,7 @@ list and we thus not alter these FeatureDescriptor objects themselves.</p></div>
         elif isinstance(output_names, str):
             self.output_names = [output_names]
         elif not output_names:
-            self.output_names = [self.func.__name__]
+            self.output_names = [_get_name(func)]
         else:
             raise TypeError(f&#34;`output_names` is unexpected type {type(output_names)}&#34;)
 
@@ -2790,7 +2790,7 @@ list and we thus not alter these FeatureDescriptor objects themselves.</p></div>
     def __repr__(self) -&gt; str:
         &#34;&#34;&#34;Return repr string.&#34;&#34;&#34;
         return (
-            f&#34;{self.__class__.__name__}({self.func.__name__}, {self.output_names},&#34;
+            f&#34;{self.__class__.__name__}({_get_name(self.func)}, {self.output_names},&#34;
             f&#34; {self.kwargs})&#34;
         )
 
