@@ -1548,6 +1548,25 @@ def test_time_based_features():
     assert out.columns[0] == "time__std_hour__w=6h"
 
 
+def test_functools_partial(dummy_data):
+    import functools
+
+    q_07 = functools.partial(np.quantile, q=0.7)
+
+    fc = FeatureCollection(
+        MultipleFeatureDescriptors(
+            functions=[q_07, FuncWrapper(np.quantile, q=0.7, output_names="q_07")],
+            series_names="EDA",
+            windows="30s",
+            strides="5s",
+        )
+    )
+
+    res_df = fc.calculate(dummy_data, return_df=True)
+    assert res_df.shape[1] == 2
+    assert np.all(res_df.iloc[:, 0] == res_df.iloc[:, 1])
+
+
 def test_pass_by_value(dummy_data):
     def try_change_view(series_view: np.ndarray):
         series_view[:5] = 0  # update the view -> error!
