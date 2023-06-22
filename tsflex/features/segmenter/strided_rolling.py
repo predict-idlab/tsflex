@@ -25,7 +25,7 @@ import pandas as pd
 from ...utils.attribute_parsing import AttributeParser, DataType
 from ...utils.data import SUPPORTED_STROLL_TYPES, to_list, to_series_list, to_tuple
 from ...utils.time import timedelta_to_str
-from ..function_wrapper import FuncWrapper
+from ..function_wrapper import FuncWrapper, _get_name
 from ..logger import logger
 from ..utils import _check_start_end_array, _determine_bounds
 
@@ -493,7 +493,7 @@ class StridedRolling(ABC):
         )
         log_window = "manual" if self.window is None else self.window
         logger.info(
-            f"Finished function [{func.func.__name__}] on "
+            f"Finished function [{_get_name(func.func)}] on "
             f"{[self.series_key]} with window-stride [{log_window}, {log_strides}] "
             f"with output {list(feat_out.keys())} in [{elapsed} seconds]!"
         )

@@ -8,8 +8,7 @@ from typing import Callable, Dict, List, Optional, Union
 import numpy as np
 import pandas as pd
 
-from .feature import FuncWrapper
-from .utils import _get_name
+from .function_wrapper import FuncWrapper, _get_name
 
 
 # ------------------------------------- SEGLEARN -------------------------------------
@@ -48,7 +47,7 @@ def seglearn_wrapper(func: Callable, func_name: Optional[str] = None) -> FuncWra
     return FuncWrapper(wrap_func, output_names=output_names)
 
 
-def seglearn_feature_dict_wrapper(features_dict: Dict) -> List[Callable]:
+def seglearn_feature_dict_wrapper(features_dict: Dict) -> List[FuncWrapper]:
     """Wrapper enabling compatibility with seglearn feature dictionaries.
 
     seglearn represents a collection of features as a dictionary.

@@ -2,6 +2,7 @@
 
 __author__ = "Jeroen Van Der Donckt, Emiel Deprost, Jonas Van Der Donckt"
 
+import functools
 from typing import Tuple
 
 import numpy as np
@@ -95,6 +96,15 @@ def test_vectorized_func_wrapper(dummy_data):
     assert func_rows.output_names == ["amax"]
     assert np.allclose(func_cols(dummy_data.values), dummy_data.max().values)
     assert np.allclose(func_rows(dummy_data.values), dummy_data.max(axis=1).values)
+
+
+def test_functools_support(dummy_data):
+    func1 = FuncWrapper(np.quantile, q=0.7)
+    func2 = FuncWrapper(functools.partial(np.quantile, q=0.7))
+
+    assert func1.output_names == ["quantile"]
+    assert func2.output_names == ["quantile"]
+    assert np.allclose(func1(dummy_data.values), func2(dummy_data.values))
 
 
 def test_error_func_wrapper_wrong_outputnames_type():

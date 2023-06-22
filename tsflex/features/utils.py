@@ -7,7 +7,7 @@ from typing import Any, Callable, List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 
-from .feature import FuncWrapper
+from .function_wrapper import FuncWrapper, _get_name
 
 
 # ---------------------------------- PRIVATE METHODS ----------------------------------
@@ -71,29 +71,6 @@ def _check_start_end_array(start_idxs: np.ndarray, end_idxs: np.ndarray):
     assert np.all(
         start_idxs <= end_idxs
     ), "for all corresponding values: segment_start_idxs <= segment_end_idxs"
-
-
-def _get_name(func: Callable) -> str:
-    """Get the name of the function.
-
-    Parameters
-    ----------
-    func: Callable
-        The function whose name has to be returned, should be either a function or an
-        object that is callable.
-
-    Returns
-    -------
-    str
-        The name of ``func`` in case of a function or the name of the class in case
-        of a callable object.
-
-    """
-    assert callable(func), f"The given argument {func} is not callable!"
-    try:
-        return func.__name__
-    except AttributeError:
-        return type(func).__name__
 
 
 def _get_funcwrapper_func_and_kwargs(func: FuncWrapper) -> Tuple[Callable, dict]:

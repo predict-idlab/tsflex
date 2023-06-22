@@ -2,6 +2,7 @@
 
 __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt, Emiel Deprost"
 
+import functools
 from typing import Any, Callable, List, Optional, Union
 
 import numpy as np
@@ -12,6 +13,32 @@ from ..utils.classes import FrozenClass
 from ..utils.data import SUPPORTED_STROLL_TYPES
 
 __pdoc__["FuncWrapper.__call__"] = True
+
+
+def _get_name(func: Callable) -> str:
+    """Get the name of the function.
+
+    Parameters
+    ----------
+    func: Callable
+        The function whose name has to be returned, should be either a function or an
+        object that is callable.
+
+    Returns
+    -------
+    str
+        The name of ``func`` in case of a function, or
+        - the name of the wrapped function in case of functools.partial.
+        - the name of the class in case of a callable object.
+
+    """
+    assert callable(func), f"The given argument {func} is not callable!"
+    try:
+        return func.__name__
+    except AttributeError:
+        if isinstance(func, functools.partial):
+            return func.func.__name__
+        return type(func).__name__
 
 
 class FuncWrapper(FrozenClass):
@@ -77,7 +104,7 @@ class FuncWrapper(FrozenClass):
         elif isinstance(output_names, str):
             self.output_names = [output_names]
         elif not output_names:
-            self.output_names = [self.func.__name__]
+            self.output_names = [_get_name(func)]
         else:
             raise TypeError(f"`output_names` is unexpected type {type(output_names)}")
 
@@ -93,7 +120,7 @@ class FuncWrapper(FrozenClass):
     def __repr__(self) -> str:
         """Return repr string."""
         return (
-            f"{self.__class__.__name__}({self.func.__name__}, {self.output_names},"
+            f"{self.__class__.__name__}({_get_name(self.func)}, {self.output_names},"
             f" {self.kwargs})"
         )
 
