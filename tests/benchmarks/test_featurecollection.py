@@ -22,8 +22,8 @@ SERIES_NAMES = ["EDA", "TMP"]
 @pytest.mark.parametrize("window", WINDOWS)
 @pytest.mark.parametrize("stride", STRIDES)
 def test_single_series_feature_collection(
-    benchmark, func, n_cores, window, stride, dummy_data
-):  # noqa: F811
+    benchmark, func, n_cores, window, stride, dummy_data  # noqa: F811
+):
     fd = FeatureDescriptor(
         function=func, series_name="EDA", window=window, stride=stride
     )
@@ -36,8 +36,8 @@ def test_single_series_feature_collection(
 @pytest.mark.benchmark(group="multiple descriptors")
 @pytest.mark.parametrize("n_cores", NB_CORES)
 def test_single_series_feature_collection_multiple_descriptors(
-    benchmark, n_cores, dummy_data
-):  # noqa: F811
+    benchmark, n_cores, dummy_data  # noqa: F811
+):
     mfd = MultipleFeatureDescriptors(
         functions=FUNCS,
         series_names=SERIES_NAMES,
