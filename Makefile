@@ -14,6 +14,10 @@ lint:
 test:
 	poetry run pytest --cov-report term-missing --cov=tsflex tests
 
+.PHONY: bench
+bench:
+	poetry run pytest --benchmark-only
+
 .PHONY: clean
 clean:
 	rm -rf `find . -name __pycache__`
