@@ -290,7 +290,6 @@ class StridedRolling(ABC):
     def _construct_series_containers(
         self, series_list, np_start_times, np_end_times
     ) -> List[StridedRolling._NumpySeriesContainer]:
-
         series_containers: List[StridedRolling._NumpySeriesContainer] = []
         for series in series_list:
             if not self.reset_series_index_b4_segmenting:
