@@ -1,4 +1,3 @@
-
 import os
 
 import numpy as np
@@ -22,26 +21,30 @@ SERIES_NAMES = ["EDA", "TMP"]
 @pytest.mark.parametrize("n_cores", NB_CORES)
 @pytest.mark.parametrize("window", WINDOWS)
 @pytest.mark.parametrize("stride", STRIDES)
-def test_single_series_feature_collection(benchmark, func, n_cores, window, stride, dummy_data):
+def test_single_series_feature_collection(
+    benchmark, func, n_cores, window, stride, dummy_data
+):  # noqa: F811
     fd = FeatureDescriptor(
-            function=func,
-            series_name="EDA",
-            window=window,
-            stride=stride
+        function=func, series_name="EDA", window=window, stride=stride
     )
 
     fc = FeatureCollection(feature_descriptors=fd)
 
     benchmark(fc.calculate, dummy_data, n_jobs=n_cores)
 
+
 @pytest.mark.benchmark(group="multiple descriptors")
 @pytest.mark.parametrize("n_cores", NB_CORES)
-def test_single_series_feature_collection_multiple_descriptors(benchmark, n_cores, dummy_data):
+def test_single_series_feature_collection_multiple_descriptors(
+    benchmark, n_cores, dummy_data
+):  # noqa: F811
     mfd = MultipleFeatureDescriptors(
         functions=FUNCS,
         series_names=SERIES_NAMES,
-        windows=[w for w in WINDOWS], # gives error when just passing WINDOWS for some reason, same with STRIDES
-        strides=[s for s in STRIDES]
+        windows=[
+            w for w in WINDOWS
+        ],  # gives error when just passing WINDOWS for some reason, same with STRIDES
+        strides=[s for s in STRIDES],
     )
 
     fc = FeatureCollection(mfd)
