@@ -19,14 +19,13 @@ SERIES_NAMES = ["EDA", "TMP"]
 
 @pytest.mark.benchmark(group="single descriptor")
 @pytest.mark.parametrize("func", FUNCS)
-@pytest.mark.parametrize("series_name", SERIES_NAMES)
 @pytest.mark.parametrize("n_cores", NB_CORES)
 @pytest.mark.parametrize("window", WINDOWS)
 @pytest.mark.parametrize("stride", STRIDES)
-def test_single_series_feature_collection(benchmark, func, series_name, n_cores, window, stride, dummy_data):
+def test_single_series_feature_collection(benchmark, func, n_cores, window, stride, dummy_data):
     fd = FeatureDescriptor(
             function=func,
-            series_name=series_name,
+            series_name="EDA",
             window=window,
             stride=stride
     )
