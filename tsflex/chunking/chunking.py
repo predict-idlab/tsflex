@@ -127,7 +127,7 @@ def _chunk_time_data(
             print("-" * 10, " detected gaps", "-" * 10)
             print(*gaps, sep="\n")
 
-        for (t_begin_c, t_end_c) in zip(gaps, gaps[1:]):
+        for t_begin_c, t_end_c in zip(gaps, gaps[1:]):
             # The t_end is the t_start of the new time range -> hence [:-1]
             # => cut on [t_start_c(hunk), t_end_c(hunk)[
             sig_chunk = series[t_begin_c:t_end_c]

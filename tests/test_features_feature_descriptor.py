@@ -203,7 +203,6 @@ def test_error_different_args_simple_feature_descriptor():
 
 
 def test_error_optional_window_but_pass_stride_feature_descriptor():
-
     with pytest.raises(AssertionError):
         _ = FeatureDescriptor(
             function=np.sum,
