@@ -6,8 +6,16 @@ name: Unit tests
 on:
   push:
     branches: [ main ]
+    paths:
+      - "tests/**"
+      - "tsflex/**"
+      - "poetry.lock"
   pull_request:
     branches: [ main ]
+    paths:
+      - "tests/**"
+      - "tsflex/**"
+      - "poetry.lock"
 
 jobs:
   build:
