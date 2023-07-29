@@ -3,7 +3,10 @@
 __author__ = "Jeroen Van Der Donckt, Emiel Deprost, Jonas Van Der Donckt"
 
 
+import sys
+
 import numpy as np
+import pytest
 import seglearn
 
 from tsflex.features import FeatureCollection, FuncWrapper, MultipleFeatureDescriptors
@@ -327,7 +330,11 @@ def test_catch22_all_features(dummy_data):
 
 ## ANTROPY
 
-
+# With the current version that is used for Python 3.7, a small bug is present in the
+# source code of Antropy, which makes this test fail.
+# A fix for this bug is incuded in v0.1.6 of Antropy, but this version is not supported
+# for Python 3.7.
+@pytest.mark.skipif(sys.version_info == (3, 7), reason="test disabled for Python 3.7.")
 def test_antropy_all_features(dummy_data):
     # Tests if we integrate with ALL antropy features
     # -> this requires no additional wrapper!

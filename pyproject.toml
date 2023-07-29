@@ -52,7 +52,6 @@ antropy = [
     { version = "^0.1.5", python = "<3.8" },
     { version = ">=0.1.6", python = ">=3.8" }
 ]
-# antropy = { git = "https://github.com/raphaelvallat/antropy.git", branch = "master" }  # replace with pip when > 0.1.5 release available
 nolds = "^0.5.2"
 pyentrp = [
     { version = "^0.7.1", python = "<3.8" },
