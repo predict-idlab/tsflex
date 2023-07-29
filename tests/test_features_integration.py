@@ -334,7 +334,7 @@ def test_catch22_all_features(dummy_data):
 # source code of Antropy, which makes this test fail.
 # A fix for this bug is incuded in v0.1.6 of Antropy, but this version is not supported
 # for Python 3.7.
-@pytest.mark.skipif(sys.version_info == (3, 7), reason="test disabled for Python 3.7.")
+@pytest.mark.skipif(sys.version_info < (3, 8), reason="test disabled for Python 3.7.")
 def test_antropy_all_features(dummy_data):
     # Tests if we integrate with ALL antropy features
     # -> this requires no additional wrapper!
