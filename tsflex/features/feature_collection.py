@@ -330,6 +330,29 @@ class FeatureCollection:
             + " can only have 1 window (or None)"
         )
 
+    def _data_to_series_dict(
+        self,
+        data: Union[pd.DataFrame, pd.Series, List[Union[pd.Series, pd.DataFrame]]],
+        required_series: List[str],
+    ) -> Dict[str, pd.Series]:
+        series_dict: Dict[str, pd.Series] = {}
+        for s in to_series_list(data):
+            if not s.index.is_monotonic_increasing:
+                warnings.warn(
+                    f"The index of series '{s.name}' is not monotonic increasing. "
+                    + "The series will be sorted by the index.",
+                    RuntimeWarning,
+                )
+                s = s.sort_index(ascending=True, inplace=False, ignore_index=False)
+
+            # Assert the assumptions we make!
+            assert s.index.is_monotonic_increasing
+
+            if s.name in required_series:
+                series_dict[str(s.name)] = s
+
+        return series_dict
+
     @staticmethod
     def _process_segment_idxs(
         segment_idxs: Union[list, np.ndarray, pd.Series, pd.Index]
@@ -352,6 +375,7 @@ class FeatureCollection:
         return_df: Optional[bool] = False,
         window_idx: Optional[str] = "end",
         include_final_window: Optional[bool] = False,
+        group_by: Optional[str] = None,
         bound_method: Optional[str] = "inner",
         approve_sparsity: Optional[bool] = False,
         show_progress: Optional[bool] = False,
@@ -458,6 +482,8 @@ class FeatureCollection:
                 window (which is a full) window will not be included!
                 - *(len * sampling_rate - window_size) % stride = 0*. Remark that the
                   above case is a base case of this.
+        group_by: str, optional
+            TODO
         bound_method: str, optional
             The start-end bound methodology which is used to generate the slice ranges
             when ``data`` consists of multiple series / columns.
@@ -518,6 +544,66 @@ class FeatureCollection:
 
 
         """
+
+        if group_by:
+            series_list = to_series_list(data)
+            series_names = [s.name for s in series_list]
+            # Check if the group_by column is a valid column
+            assert (
+                group_by in series_names
+            ), f"Data contains no column named '{group_by}' to group by."
+            # now extract all corresponding rows into separate series
+            
+            # get all unique values from group_by column
+            group_by_unique_values = list(
+                    filter(
+                        lambda n: group_by == n.name, 
+                        series_list
+                    )
+            )[0].unique()
+
+            # for convenience purposes, turn series_list into a DF
+            df = pd.concat(series_list, axis=1)
+            # now for every unique value, we can extract the corresponding rows
+            extracted_dfs = []
+            for unique_value in group_by_unique_values:
+                unique_value_df = df.loc[df[group_by] == unique_value]
+                extracted_dfs.append(unique_value_df)
+
+            # now for each different sub dataframe, recursively call calculate
+            result_dfs = []
+            for extracted_df in extracted_dfs:
+                try:
+                    # Todo: find a way to distribute available n_jobs
+                    calc_result = self.calculate(
+                        data=extracted_df,
+                        segment_start_idxs=[extracted_df.first_valid_index()],
+                        segment_end_idxs=[extracted_df.last_valid_index()],
+                        bound_method=bound_method,
+                        approve_sparsity=approve_sparsity,
+                        show_progress=show_progress,
+                        logging_file_path=logging_file_path, # TODO: find a way to fix logging for each subcalculation
+                        n_jobs=n_jobs
+                    )
+
+                    # TODO: update indices to reflect values of group_by
+
+                    if isinstance(calc_result, list):
+                        result_dfs.extend(calc_result)
+                    else:
+                        result_dfs.append(calc_result)
+                except Exception as ex:
+                    warnings.warn(f"An exception was raised during feature extraction:\n{ex}", category=RuntimeWarning)
+                    
+
+            if return_df:
+                # concatenate & sort the columns
+                df = pd.concat(result_dfs, axis=1, join="outer", copy=False)
+                return df.reindex(sorted(df.columns), axis=1)
+            else:
+                return result_dfs
+            
+
         # Delete other logging handlers
         delete_logging_handlers(logger)
         # Add logging handler (if path provided)
@@ -573,21 +659,7 @@ class FeatureCollection:
             self._check_feature_descriptors(skip_none=False, calc_stride=stride)
 
         # Convert the data to a series_dict
-        series_dict: Dict[str, pd.Series] = {}
-        for s in to_series_list(data):
-            if not s.index.is_monotonic_increasing:
-                warnings.warn(
-                    f"The index of series '{s.name}' is not monotonic increasing. "
-                    + "The series will be sorted by the index.",
-                    RuntimeWarning,
-                )
-                s = s.sort_index(ascending=True, inplace=False, ignore_index=False)
-
-            # Assert the assumptions we make!
-            assert s.index.is_monotonic_increasing
-
-            if s.name in self.get_required_series():
-                series_dict[str(s.name)] = s
+        series_dict = self._data_to_series_dict(data, self.get_required_series())
 
         # Determine the bounds of the series dict items and slice on them
         # TODO: is dit wel nodig `hier? want we doen dat ook in de strided rolling
