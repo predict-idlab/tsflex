@@ -369,55 +369,54 @@ class FeatureCollection:
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         group_by: str,
         return_df: Optional[bool] = False,
-        **calculate_kwargs
+        **calculate_kwargs,
     ):
-            series_list = to_series_list(data)
-            series_names = [s.name for s in series_list]
-            # Check if the group_by column is a valid column
-            assert (
-                group_by in series_names
-            ), f"Data contains no column named '{group_by}' to group by."
-            # now extract all corresponding rows into separate series
-            
-            # get all unique values from group_by column
-            group_by_unique_values = list(
-                    filter(
-                        lambda n: group_by == n.name, 
-                        series_list
-                    )
-            )[0].unique()
+        series_list = to_series_list(data)
+        series_names = [s.name for s in series_list]
+        # Check if the group_by column is a valid column
+        assert (
+            group_by in series_names
+        ), f"Data contains no column named '{group_by}' to group by."
+        # now extract all corresponding rows into separate series
 
-            # for convenience purposes, turn series_list into a DF
-            df = pd.concat(series_list, axis=1)
-            # now for every unique value, we can extract the corresponding rows
-            extracted_dfs = []
-            for unique_value in group_by_unique_values:
-                unique_value_df = df.loc[df[group_by] == unique_value]
-                extracted_dfs.append((unique_value, unique_value_df))
+        # get all unique values from group_by column
+        group_by_unique_values = list(
+            filter(lambda n: group_by == n.name, series_list)
+        )[0].unique()
 
-            # now for each different sub dataframe, recursively call calculate
-            result_dfs = []
-            for uv, extracted_df in extracted_dfs:
-                try:
-                    # Todo: find a way to distribute available n_jobs
-                    calc_result = self.calculate(
-                        data=extracted_df,
-                        segment_start_idxs=[extracted_df.first_valid_index()],
-                        segment_end_idxs=[extracted_df.last_valid_index() + 1],
-                        **calculate_kwargs
-                    )[0]
+        # for convenience purposes, turn series_list into a DF
+        df = pd.concat(series_list, axis=1)
+        # now for every unique value, we can extract the corresponding rows
+        extracted_dfs = []
+        for unique_value in group_by_unique_values:
+            unique_value_df = df.loc[df[group_by] == unique_value]
+            extracted_dfs.append((unique_value, unique_value_df))
 
-                    result_dfs.append(calc_result.set_axis([uv], axis=0))
-                except Exception as ex:
-                    warnings.warn(f"An exception was raised during feature extraction:\n{ex}", category=RuntimeWarning)
-                    
+        # now for each different sub dataframe, recursively call calculate
+        result_dfs = []
+        for uv, extracted_df in extracted_dfs:
+            try:
+                # Todo: find a way to distribute available n_jobs
+                calc_result = self.calculate(
+                    data=extracted_df,
+                    segment_start_idxs=[extracted_df.first_valid_index()],
+                    segment_end_idxs=[extracted_df.last_valid_index() + 1],
+                    **calculate_kwargs,
+                )[0]
 
-            if return_df:
-                # concatenate & sort the columns
-                df = pd.concat(result_dfs, join="outer", copy=False)
-                return df.reindex(sorted(df.columns), axis=1)
-            else:
-                return result_dfs
+                result_dfs.append(calc_result.set_axis([uv], axis=0))
+            except Exception as ex:
+                warnings.warn(
+                    f"An exception was raised during feature extraction:\n{ex}",
+                    category=RuntimeWarning,
+                )
+
+        if return_df:
+            # concatenate & sort the columns
+            df = pd.concat(result_dfs, join="outer", copy=False)
+            return df.reindex(sorted(df.columns), axis=1)
+        else:
+            return result_dfs
 
     def calculate(
         self,
@@ -609,9 +608,8 @@ class FeatureCollection:
                 approve_sparsity=approve_sparsity,
                 show_progress=show_progress,
                 logging_file_path=logging_file_path,
-                n_jobs=n_jobs
+                n_jobs=n_jobs,
             )
-            
 
         # Delete other logging handlers
         delete_logging_handlers(logger)
