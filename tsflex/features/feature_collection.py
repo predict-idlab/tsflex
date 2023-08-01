@@ -586,9 +586,7 @@ class FeatureCollection:
                         n_jobs=n_jobs
                     )[0]
 
-                    # TODO: update indices to reflect values of group_by
-
-                    calc_result.set_axis([uv])
+                    calc_result.set_axis([uv], axis=0, inplace=True)
                     result_dfs.append(calc_result)
                 except Exception as ex:
                     warnings.warn(f"An exception was raised during feature extraction:\n{ex}", category=RuntimeWarning)
