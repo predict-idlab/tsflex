@@ -587,14 +587,13 @@ class FeatureCollection:
                     )[0]
 
                     result_dfs.append(calc_result.set_axis([uv], axis=0))
-                    
                 except Exception as ex:
                     warnings.warn(f"An exception was raised during feature extraction:\n{ex}", category=RuntimeWarning)
                     
 
             if return_df:
                 # concatenate & sort the columns
-                df = pd.concat(result_dfs, axis=1, join="outer", copy=False)
+                df = pd.concat(result_dfs, join="outer", copy=False)
                 return df.reindex(sorted(df.columns), axis=1)
             else:
                 return result_dfs
