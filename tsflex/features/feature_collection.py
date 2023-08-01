@@ -586,8 +586,8 @@ class FeatureCollection:
                         n_jobs=n_jobs
                     )[0]
 
-                    calc_result.set_axis([uv], axis=0, inplace=True)
-                    result_dfs.append(calc_result)
+                    result_dfs.append(calc_result.set_axis([uv], axis=0))
+                    
                 except Exception as ex:
                     warnings.warn(f"An exception was raised during feature extraction:\n{ex}", category=RuntimeWarning)
                     
