@@ -413,9 +413,9 @@ class FeatureCollection:
                 )
 
         if return_df:
-            # concatenate & sort the columns
+            # concatenate rows
             df = pd.concat(result_dfs, join="outer", copy=False)
-            return df.reindex(sorted(df.columns), axis=1)
+            return df
         else:
             return result_dfs
 
