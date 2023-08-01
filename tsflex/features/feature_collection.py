@@ -568,11 +568,11 @@ class FeatureCollection:
             extracted_dfs = []
             for unique_value in group_by_unique_values:
                 unique_value_df = df.loc[df[group_by] == unique_value]
-                extracted_dfs.append(unique_value_df)
+                extracted_dfs.append((unique_value, unique_value_df))
 
             # now for each different sub dataframe, recursively call calculate
             result_dfs = []
-            for extracted_df in extracted_dfs:
+            for uv, extracted_df in extracted_dfs:
                 try:
                     # Todo: find a way to distribute available n_jobs
                     calc_result = self.calculate(
@@ -584,14 +584,12 @@ class FeatureCollection:
                         show_progress=show_progress,
                         logging_file_path=logging_file_path, # TODO: find a way to fix logging for each subcalculation
                         n_jobs=n_jobs
-                    )
+                    )[0]
 
                     # TODO: update indices to reflect values of group_by
 
-                    if isinstance(calc_result, list):
-                        result_dfs.extend(calc_result)
-                    else:
-                        result_dfs.append(calc_result)
+                    calc_result.set_axis([uv])
+                    result_dfs.append(calc_result)
                 except Exception as ex:
                     warnings.warn(f"An exception was raised during feature extraction:\n{ex}", category=RuntimeWarning)
                     
