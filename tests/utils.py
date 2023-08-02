@@ -23,9 +23,10 @@ def dummy_data() -> pd.DataFrame:
     df.set_index("timestamp", inplace=True)
     return df
 
+
 @pytest.fixture
 def dummy_group_data() -> pd.DataFrame:
-    df = pd.read_csv(proj_dir + '/examples/data/group_data.csv', index_col=0, header=0)
+    df = pd.read_csv(proj_dir + "/examples/data/group_data.csv", index_col=0, header=0)
     return df
 
 

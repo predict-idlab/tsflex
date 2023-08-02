@@ -397,7 +397,9 @@ class FeatureCollection:
         for uv, extracted_df in extracted_dfs:
             try:
                 # Todo: find a way to distribute available n_jobs
-                warnings.filterwarnings("ignore", category=RuntimeWarning, message='^.*segment indexes.*$')
+                warnings.filterwarnings(
+                    "ignore", category=RuntimeWarning, message="^.*segment indexes.*$"
+                )
                 calc_result = self.calculate(
                     data=extracted_df,
                     segment_start_idxs=[extracted_df.first_valid_index()],
