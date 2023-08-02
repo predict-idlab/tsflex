@@ -24,10 +24,48 @@ from tsflex.features import (
 )
 from tsflex.utils.data import flatten
 
-from .utils import dummy_data
+from .utils import dummy_data, dummy_group_data  # noqa: F401
 
 ## FeatureCollection
 
+def test_single_series_group_feature_collection(dummy_group_data):
+    fd = FeatureDescriptor(
+        function=np.sum,
+        series_name='count',
+    )
+
+    fc = FeatureCollection(feature_descriptors=fd)
+
+    assert fc.get_required_series() == ["count"]
+    assert fc.get_nb_output_features()  == 1
+    res_list = fc.calculate(dummy_group_data, group_by='country', return_df=False)
+    res_df = fc.calculate(dummy_group_data, group_by='country', return_df=True)
+
+    assert isinstance(res_list, list)
+    assert isinstance(res_df, pd.DataFrame)
+    assert np.all(dummy_group_data['country'].unique() == res_df.index.unique())
+
+    for idx, frame in enumerate(res_list):
+        assert_frame_equal(frame, res_df.iloc[(idx):(idx+1)])
+
+    data_counts = dummy_group_data.groupby('country')['count'].sum()
+
+    
+    for idx in data_counts.index:
+        assert res_df.loc[idx, 'count__sum__w=manual'] == data_counts.loc[idx]
+
+def test_single_series_group_feature_non_existent_group_by(dummy_group_data):
+    fd = FeatureDescriptor(
+        function=np.sum,
+        series_name='count',
+    )
+
+    fc = FeatureCollection(feature_descriptors=fd)
+
+    assert fc.get_required_series() == ["count"]
+    assert fc.get_nb_output_features()  == 1
+    with pytest.raises(Exception):
+        fc.calculate(dummy_group_data, group_by='nonexistent', return_df=False)
 
 def test_single_series_feature_collection(dummy_data):
     fd = FeatureDescriptor(
