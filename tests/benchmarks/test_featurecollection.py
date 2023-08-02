@@ -51,17 +51,15 @@ def test_single_series_feature_collection_multiple_descriptors(
 
     benchmark(fc.calculate, dummy_data, n_jobs=n_cores)
 
-@pytest.mark.benchmark(group='group_by collection')
+
+@pytest.mark.benchmark(group="group_by collection")
 @pytest.mark.parametrize("n_cores", NB_CORES)
 @pytest.mark.parametrize("func", FUNCS)
 def test_single_series_feature_collection_group_by(
-        benchmark, n_cores, func, dummy_group_data
+    benchmark, n_cores, func, dummy_group_data  # noqa: F811
 ):
-    fd = FeatureDescriptor(
-        function=func,
-        series_name='count'
-    )
+    fd = FeatureDescriptor(function=func, series_name="count")
 
     fc = FeatureCollection(feature_descriptors=fd)
 
-    benchmark(fc.calculate, dummy_group_data, group_by='country', n_jobs=n_cores)
+    benchmark(fc.calculate, dummy_group_data, group_by="country", n_jobs=n_cores)
