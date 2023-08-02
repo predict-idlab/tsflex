@@ -6,7 +6,7 @@ import pytest
 from tsflex.features.feature import FeatureDescriptor, MultipleFeatureDescriptors
 from tsflex.features.feature_collection import FeatureCollection
 
-from ..utils import dummy_data  # noqa: F401
+from ..utils import dummy_data, dummy_group_data  # noqa: F401
 
 FUNCS = [np.sum, np.min, np.max, np.mean, np.median, np.std, np.var]
 MAX_CPUS = os.cpu_count() or 2
@@ -50,3 +50,18 @@ def test_single_series_feature_collection_multiple_descriptors(
     fc = FeatureCollection(mfd)
 
     benchmark(fc.calculate, dummy_data, n_jobs=n_cores)
+
+@pytest.mark.benchmark(group='group_by collection')
+@pytest.mark.parametrize("n_cores", NB_CORES)
+@pytest.mark.parametrize("func", FUNCS)
+def test_single_series_feature_collection_group_by(
+        benchmark, n_cores, func, dummy_group_data
+):
+    fd = FeatureDescriptor(
+        function=func,
+        series_name='count'
+    )
+
+    fc = FeatureCollection(feature_descriptors=fd)
+
+    benchmark(fc.calculate, dummy_group_data, group_by='country', n_jobs=n_cores)
