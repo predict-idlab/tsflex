@@ -397,9 +397,7 @@ class FeatureCollection:
         for uv, extracted_df in extracted_dfs:
             try:
                 # Todo: find a way to distribute available n_jobs
-                warnings.filterwarnings(
-                    "ignore", category=RuntimeWarning, message="^.*segment indexes.*$"
-                )
+                warnings.filterwarnings("ignore", category=RuntimeWarning, message='^.*segment indexes.*$')
                 calc_result = self.calculate(
                     data=extracted_df,
                     segment_start_idxs=[extracted_df.first_valid_index()],
@@ -540,7 +538,7 @@ class FeatureCollection:
                 - *(len * sampling_rate - window_size) % stride = 0*. Remark that the
                   above case is a base case of this.
         group_by: str, optional
-            TODO
+            The title of the column by which to perform grouping.
         bound_method: str, optional
             The start-end bound methodology which is used to generate the slice ranges
             when ``data`` consists of multiple series / columns.
