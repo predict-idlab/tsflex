@@ -539,6 +539,8 @@ class FeatureCollection:
                   above case is a base case of this.
         group_by: str, optional
             The title of the column by which to perform grouping.
+            If this parameter is used, the parameters `stride`, `segment_start_idxs`, 
+            `segment_end_idxs`, `window_idx` and `include_final_window` will be ignored.
         bound_method: str, optional
             The start-end bound methodology which is used to generate the slice ranges
             when ``data`` consists of multiple series / columns.
@@ -601,6 +603,20 @@ class FeatureCollection:
         """
 
         if group_by:
+
+            # if any of the following params are not None, warn that they won't be of use
+            # in the grouped calculation
+            ignored_params = [
+                    ('stride', None), ('segment_start_idxs', None), 
+                    ('segment_end_idxs', None), ('window_idx', "end"), 
+                    ('include_final_window', False)
+                    ]
+            local_params = locals()
+
+            for ip, default_value in ignored_params:
+                if local_params[ip] is not default_value:
+                    warnings.warn(f'Parameter `{ip}` will be ignored when `group_by` parameter is used.')
+
             return self._calculate_group_by(
                 data,
                 group_by,
