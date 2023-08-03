@@ -379,7 +379,7 @@ class FeatureCollection:
         ), f"Data contains no column named '{group_by}' to group by."
         # now extract all corresponding rows into separate series
 
-        # get all unique values from group_by column
+        # get all unique values from the group_by column
         group_by_unique_values = list(
             filter(lambda n: group_by == n.name, series_list)
         )[0].unique()
