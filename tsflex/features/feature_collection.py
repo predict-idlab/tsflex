@@ -389,7 +389,13 @@ class FeatureCollection:
         # now for every unique value, we can extract the corresponding rows
         extracted_dfs = []
         for unique_value in group_by_unique_values:
-            unique_value_df = df.loc[df[group_by] == unique_value]
+            # if working with np.nan or pd.NA values, there is a slightly different
+            # way to index
+            if pd.isna(unique_value):
+                indices = df[group_by].isna()
+            else:
+                indices = (df[group_by] == unique_value)
+            unique_value_df = df.loc[indices]
             extracted_dfs.append((unique_value, unique_value_df))
 
         # now for each different sub dataframe, recursively call calculate
