@@ -114,6 +114,30 @@ def test_single_series_multiple_features_group_by(dummy_group_data):
     assert_results(data_normaldist_mean, "normaldist__mean__w=manual")
     assert_results(data_normaldist_std, "normaldist__std__w=manual")
 
+def test_group_by_with_nan_values(dummy_group_data):
+    fd = FeatureDescriptor(
+        function=np.sum,
+        series_name="count",
+    )
+
+    for random_idx in np.random.randint(0, 500, size=10):
+        dummy_group_data.loc[random_idx, 'country'] = np.nan
+
+    fc = FeatureCollection(feature_descriptors=fd)
+
+    assert fc.get_required_series() == ["count"]
+    assert fc.get_nb_output_features() == 1
+    res_list = fc.calculate(dummy_group_data, group_by="country", return_df=False)
+    res_df = fc.calculate(dummy_group_data, group_by="country", return_df=True)
+
+    assert isinstance(res_list, list)
+    assert isinstance(res_df, pd.DataFrame)
+
+    concatted_df = pd.concat(res_list)
+
+    assert_frame_equal(concatted_df, res_df)
+
+    assert np.any(pd.isna(res_df.index.values))
 
 def test_single_series_feature_collection(dummy_data):
     fd = FeatureDescriptor(
