@@ -46,8 +46,9 @@ def test_single_series_group_feature_collection(dummy_group_data):
     assert isinstance(res_df, pd.DataFrame)
     assert np.all(dummy_group_data["country"].unique() == res_df.index.unique())
 
-    for idx, frame in enumerate(res_list):
-        assert_frame_equal(frame, res_df.iloc[(idx) : (idx + 1)])
+    concatted_df = pd.concat(res_list)
+
+    assert_frame_equal(concatted_df, res_df)
 
     data_counts = dummy_group_data.groupby("country")["count"].sum()
 
