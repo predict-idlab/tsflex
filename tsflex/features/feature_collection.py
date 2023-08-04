@@ -400,14 +400,18 @@ class FeatureCollection:
                 warnings.filterwarnings(
                     "ignore", category=RuntimeWarning, message="^.*segment indexes.*$"
                 )
-                calc_result = self.calculate(
+                calc_results = self.calculate(
                     data=extracted_df,
                     segment_start_idxs=[extracted_df.first_valid_index()],
                     segment_end_idxs=[extracted_df.last_valid_index() + 1],
                     **calculate_kwargs,
-                )[0]
+                )
 
-                result_dfs.append(calc_result.set_axis([uv], axis=0))
+                # concatenate cols
+                calc_result = pd.concat(calc_results, join="outer", copy=False, axis=1)
+
+                renamed_calc_result = calc_result.set_axis([uv], axis=0)
+                result_dfs.append(renamed_calc_result)
             except Exception as ex:
                 warnings.warn(
                     f"An exception was raised during feature extraction:\n{ex}",
