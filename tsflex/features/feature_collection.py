@@ -379,7 +379,7 @@ class FeatureCollection:
         ), f"Data contains no column named '{group_by}' to group by."
         # now extract all corresponding rows into separate series
 
-        # get all unique values from group_by column
+        # get all unique values from the group_by column
         group_by_unique_values = list(
             filter(lambda n: group_by == n.name, series_list)
         )[0].unique()
@@ -544,7 +544,7 @@ class FeatureCollection:
                 - *(len * sampling_rate - window_size) % stride = 0*. Remark that the
                   above case is a base case of this.
         group_by: str, optional
-            The title of the column by which to perform grouping.
+            The name of the column by which to perform grouping.
             If this parameter is used, the parameters `stride`, `segment_start_idxs`,
             `segment_end_idxs`, `window_idx` and `include_final_window` will be ignored.
         bound_method: str, optional
