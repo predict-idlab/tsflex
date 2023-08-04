@@ -70,6 +70,51 @@ def test_single_series_group_feature_non_existent_group_by(dummy_group_data):
         fc.calculate(dummy_group_data, group_by="nonexistent", return_df=False)
 
 
+def test_single_series_multiple_features_group_by(dummy_group_data):
+    fd1 = FeatureDescriptor(function=np.sum, series_name="count")
+    fd2 = FeatureDescriptor(function=np.min, series_name="count")
+    fd3 = FeatureDescriptor(function=np.max, series_name="count")
+    fd4 = FeatureDescriptor(function=np.mean, series_name="normaldist")
+    fd5 = FeatureDescriptor(
+        function=FuncWrapper(np.std, ddof=1), series_name="normaldist"
+    )
+
+    fc = FeatureCollection(feature_descriptors=[fd1, fd2, fd3, fd4, fd5])
+
+    assert set(fc.get_required_series()) == set(["count", "normaldist"])
+    assert fc.get_nb_output_features() == 5
+
+    res_list = fc.calculate(
+        dummy_group_data, group_by="country", return_df=False, n_jobs=1
+    )
+    res_df = fc.calculate(
+        dummy_group_data, group_by="country", return_df=True, n_jobs=1
+    )
+
+    assert isinstance(res_list, list)
+    assert isinstance(res_df, pd.DataFrame)
+
+    concatted_df = pd.concat(res_list)
+
+    assert_frame_equal(concatted_df, res_df)
+
+    data_count_sum = dummy_group_data.groupby("country")["count"].sum()
+    data_count_min = dummy_group_data.groupby("country")["count"].min()
+    data_count_max = dummy_group_data.groupby("country")["count"].max()
+    data_normaldist_mean = dummy_group_data.groupby("country")["normaldist"].mean()
+    data_normaldist_std = dummy_group_data.groupby("country")["normaldist"].std()
+
+    def assert_results(data, column_name):
+        for idx in data.index:
+            assert np.isclose(res_df.loc[idx, column_name], data.loc[idx])
+
+    assert_results(data_count_sum, "count__sum__w=manual")
+    assert_results(data_count_min, "count__amin__w=manual")
+    assert_results(data_count_max, "count__amax__w=manual")
+    assert_results(data_normaldist_mean, "normaldist__mean__w=manual")
+    assert_results(data_normaldist_std, "normaldist__std__w=manual")
+
+
 def test_single_series_feature_collection(dummy_data):
     fd = FeatureDescriptor(
         function=np.sum,
