@@ -448,65 +448,46 @@ class FeatureCollection:
             where `func` is the FeatureDescriptor function and `x` is the series_name
             on which the FeatureDescriptor operates.
         """
-        series_list = to_series_list(data)
-        series_names = [s.name for s in series_list]
-        # Check if the group_by column is a valid column
-        assert (
-            group_by in series_names
-        ), f"Data contains no column named '{group_by}' to group by."
-        # now extract all corresponding rows into separate series
 
-        # get all unique values from the group_by column
-        group_by_unique_values = list(
-            filter(lambda n: group_by == n.name, series_list)
-        )[0].unique()
+        # transform to dataframe
+        series_dict = self._data_to_series_dict(data, self.get_required_series() + [group_by])
+        df = pd.DataFrame(series_dict)
+        consecutive_grouped_by_df = self._calculate_group_by_consecutive(df, col_name=group_by)
+        labels = consecutive_grouped_by_df[group_by].copy()
+        start_segment_idxs = consecutive_grouped_by_df['start']
+        end_segment_idxs = consecutive_grouped_by_df['next_start']
+        # because segment end idxs are exclusive, we need to add a timedelta
+        # to the last end idx so that all data gets used
+        end_segment_idxs.values[-1] += pd.Timedelta(days=1)
+        try:
+            warnings.filterwarnings(
+                "ignore", category=RuntimeWarning, message="^.*segment indexes.*$"
+            )
+            calc_results = self.calculate(
+                data=df,
+                segment_start_idxs=start_segment_idxs,
+                segment_end_idxs=end_segment_idxs,
+                **calculate_kwargs,
+            )
 
-        # for convenience purposes, turn series_list into a DF
-        df = pd.concat(series_list, axis=1)
-        # now for every unique value, we can extract the corresponding rows
-        extracted_dfs = []
-        for unique_value in group_by_unique_values:
-            # if working with np.nan or pd.NA values, there is a slightly different
-            # way to index
-            if pd.isna(unique_value):
-                indices = df[group_by].isna()
+            calc_result = pd.concat(calc_results, join="outer", copy=False, axis=1)
+            calc_result.reset_index(inplace=True, drop=True)
+            calc_result[group_by] = labels
+            calc_result["start"] = consecutive_grouped_by_df["start"]
+            calc_result["end"] = consecutive_grouped_by_df["end"]
+            
+            if return_df:
+                # concatenate rows
+                return calc_result
             else:
-                indices = (df[group_by] == unique_value)
-            unique_value_df = df.loc[indices]
-            extracted_dfs.append((unique_value, unique_value_df))
+                return [calc_result[col] for col in calc_result.columns]
 
-        # now for each different sub dataframe, recursively call calculate
-        result_dfs = []
-        for uv, extracted_df in extracted_dfs:
-            try:
-                # Todo: find a way to distribute available n_jobs
-                warnings.filterwarnings(
-                    "ignore", category=RuntimeWarning, message="^.*segment indexes.*$"
-                )
-                calc_results = self.calculate(
-                    data=extracted_df,
-                    segment_start_idxs=[extracted_df.first_valid_index()],
-                    segment_end_idxs=[extracted_df.last_valid_index() + 1],
-                    **calculate_kwargs,
-                )
+        except Exception as e:
+            warnings.warn(
+                f"An exception was raised during feature extraction:\n{e}",
+                category=RuntimeWarning,
+            )
 
-                # concatenate cols
-                calc_result = pd.concat(calc_results, join="outer", copy=False, axis=1)
-
-                renamed_calc_result = calc_result.set_axis([uv], axis=0)
-                result_dfs.append(renamed_calc_result)
-            except Exception as ex:
-                warnings.warn(
-                    f"An exception was raised during feature extraction:\n{ex}",
-                    category=RuntimeWarning,
-                )
-
-        if return_df:
-            # concatenate rows
-            df = pd.concat(result_dfs, join="outer", copy=False)
-            return df
-        else:
-            return result_dfs
 
     def calculate(
         self,
