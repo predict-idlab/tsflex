@@ -371,6 +371,29 @@ class FeatureCollection:
         return_df: Optional[bool] = False,
         **calculate_kwargs,
     ):
+        """Groups data by `group_by` unique values.
+        
+        Parameters
+        ----------
+        data : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
+            Must be time-indexed!
+        group_by: str
+            Name of column by which to group values.
+        return_df: bool, optional
+            Whether the output needs to be a DataFrame or a list thereof, by default
+            False. If `True` the output dataframes will be merged to a DataFrame with an
+            outer merge.
+
+        .. Note::
+            Is comparable to following pseudo-SQL code:
+            ```sql
+            SELECT func(x)
+            FROM `data`
+            GROUP BY `group_by`
+            ```
+            where `func` is the FeatureDescriptor function and `x` is the series_name
+            on which the FeatureDescriptor operates.
+        """
         series_list = to_series_list(data)
         series_names = [s.name for s in series_list]
         # Check if the group_by column is a valid column
