@@ -366,7 +366,7 @@ class FeatureCollection:
 
     @staticmethod
     def _calculate_group_by_consecutive(
-            df: Union[pd.Series, pd.DataFrame], col_name: str = None
+        df: Union[pd.Series, pd.DataFrame], col_name: str = None
     ) -> pd.DataFrame:
         """Merges consecutive `column_name` values in a single dataframe.
 
@@ -408,12 +408,14 @@ class FeatureCollection:
         df_cum[col_name] = df[col_name]
 
         df_cum_grouped = df_cum.groupby("value_grp")
-        df_grouped = pd.DataFrame({
-            "start": df_cum_grouped["sequence_idx"].first(),
-            "end": df_cum_grouped["sequence_idx"].last(),
-            "n_consecutive": df_cum_grouped.size(),
-            col_name: df_cum_grouped[col_name].first()
-        }).reset_index(drop=True)
+        df_grouped = pd.DataFrame(
+            {
+                "start": df_cum_grouped["sequence_idx"].first(),
+                "end": df_cum_grouped["sequence_idx"].last(),
+                "n_consecutive": df_cum_grouped.size(),
+                col_name: df_cum_grouped[col_name].first(),
+            }
+        ).reset_index(drop=True)
 
         df_grouped["next_start"] = df_grouped.start.shift(-1).fillna(df_grouped["end"])
         return df_grouped
@@ -426,7 +428,7 @@ class FeatureCollection:
         **calculate_kwargs,
     ):
         """Groups data by `group_by` unique values.
-        
+
         Parameters
         ----------
         data : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
@@ -450,12 +452,16 @@ class FeatureCollection:
         """
 
         # transform to dataframe
-        series_dict = self._data_to_series_dict(data, self.get_required_series() + [group_by])
+        series_dict = self._data_to_series_dict(
+            data, self.get_required_series() + [group_by]
+        )
         df = pd.DataFrame(series_dict)
-        consecutive_grouped_by_df = self._calculate_group_by_consecutive(df, col_name=group_by)
+        consecutive_grouped_by_df = self._calculate_group_by_consecutive(
+            df, col_name=group_by
+        )
         labels = consecutive_grouped_by_df[group_by].copy()
-        start_segment_idxs = consecutive_grouped_by_df['start']
-        end_segment_idxs = consecutive_grouped_by_df['next_start']
+        start_segment_idxs = consecutive_grouped_by_df["start"]
+        end_segment_idxs = consecutive_grouped_by_df["next_start"]
         # because segment end idxs are exclusive, we need to add a timedelta
         # to the last end idx so that all data gets used
         end_segment_idxs.values[-1] += pd.Timedelta(days=1)
@@ -475,7 +481,7 @@ class FeatureCollection:
             calc_result[group_by] = labels
             calc_result["start"] = consecutive_grouped_by_df["start"]
             calc_result["end"] = consecutive_grouped_by_df["end"]
-            
+
             if return_df:
                 # concatenate rows
                 return calc_result
@@ -487,7 +493,6 @@ class FeatureCollection:
                 f"An exception was raised during feature extraction:\n{e}",
                 category=RuntimeWarning,
             )
-
 
     def calculate(
         self,
