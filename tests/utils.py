@@ -26,9 +26,8 @@ def dummy_data() -> pd.DataFrame:
 
 @pytest.fixture
 def dummy_group_data() -> pd.DataFrame:
-    df = pd.read_csv(
-        proj_dir + "/examples/data/time_series_data.csv", index_col=0, header=0
-    )
+    df = pd.read_parquet(proj_dir + "/examples/data/grouped_data.parquet")
+    df.set_index("Date", inplace=True)
     df = df.sort_index()
     df.set_index(
         pd.date_range("2019-01-01", periods=len(df.index), freq="D"), inplace=True
