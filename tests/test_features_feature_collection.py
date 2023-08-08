@@ -122,7 +122,6 @@ def test_group_by_with_nan_values(dummy_group_data):
     for random_idx in np.random.randint(0, len(dummy_group_data.index), size=1000):
         nan_dummy_group_data['store'].iloc[random_idx] = np.nan
 
-    print(nan_dummy_group_data.loc[nan_dummy_group_data['store'].isna()])
     fc = FeatureCollection(feature_descriptors=fd)
 
     assert fc.get_required_series() == ["number_sold"]

@@ -58,8 +58,8 @@ def test_single_series_feature_collection_multiple_descriptors(
 def test_single_series_feature_collection_group_by(
     benchmark, n_cores, func, dummy_group_data  # noqa: F811
 ):
-    fd = FeatureDescriptor(function=func, series_name="count")
+    fd = FeatureDescriptor(function=func, series_name="number_sold")
 
     fc = FeatureCollection(feature_descriptors=fd)
 
-    benchmark(fc.calculate, dummy_group_data, group_by="country", n_jobs=n_cores)
+    benchmark(fc.calculate, dummy_group_data, group_by="store", n_jobs=n_cores)
