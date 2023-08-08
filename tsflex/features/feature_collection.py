@@ -479,8 +479,8 @@ class FeatureCollection:
             calc_result = pd.concat(calc_results, join="outer", copy=False, axis=1)
             calc_result.reset_index(inplace=True, drop=True)
             calc_result[group_by] = labels
-            calc_result["start"] = consecutive_grouped_by_df["start"]
-            calc_result["end"] = consecutive_grouped_by_df["end"]
+            calc_result["__start"] = consecutive_grouped_by_df["start"]
+            calc_result["__end"] = consecutive_grouped_by_df["end"]
 
             if return_df:
                 # concatenate rows
@@ -616,6 +616,24 @@ class FeatureCollection:
             The name of the column by which to perform grouping.
             If this parameter is used, the parameters `stride`, `segment_start_idxs`,
             `segment_end_idxs`, `window_idx` and `include_final_window` will be ignored.
+            `DataFrame` that is returned contains fields [`__start`, "__end"] which contain
+            start and end time range for each result row. Also contains all corresponding
+            fields of used `FeatureDescriptor`s.
+            If nan values are present in the grouping column, these values will be ignored.
+            Grouping column values will be grouped on exact matches. Groups can appear multiple
+            times if they are appear in different time-gaps.
+
+            Example output:
+            .. example::
+                ```sh
+                    number_sold__sum__w=manual  store    __start      __end
+                0          845                  0     2019-01-01 2019-01-01
+                1          357                  3     2019-01-02 2019-01-02
+                2          904                  6     2019-01-03 2019-01-03
+                3          599                  3     2019-01-04 2019-01-05
+                4          871                  0     2019-01-06 2019-01-06
+                ...                           ...    ...        ...        ...
+                ```
         bound_method: str, optional
             The start-end bound methodology which is used to generate the slice ranges
             when ``data`` consists of multiple series / columns.
