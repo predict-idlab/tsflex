@@ -83,9 +83,7 @@ def test_single_series_multiple_features_group_by(dummy_group_data):
     res_list = fc.calculate(
         dummy_group_data, group_by="store", return_df=False, n_jobs=1
     )
-    res_df = fc.calculate(
-        dummy_group_data, group_by="store", return_df=True, n_jobs=1
-    )
+    res_df = fc.calculate(dummy_group_data, group_by="store", return_df=True, n_jobs=1)
 
     assert isinstance(res_list, list)
     assert isinstance(res_df, pd.DataFrame)
@@ -98,11 +96,9 @@ def test_single_series_multiple_features_group_by(dummy_group_data):
     data_count_min = dummy_group_data.groupby("store")["number_sold"].min()
     data_count_max = dummy_group_data.groupby("store")["number_sold"].max()
 
-
     grouped_res_df_sum = res_df.groupby("store")["number_sold__sum__w=manual"].sum()
     grouped_res_df_min = res_df.groupby("store")["number_sold__amin__w=manual"].min()
     grouped_res_df_max = res_df.groupby("store")["number_sold__amax__w=manual"].max()
-
 
     def assert_results(data, res_data):
         for index in data.index:
@@ -112,6 +108,7 @@ def test_single_series_multiple_features_group_by(dummy_group_data):
     assert_results(data_count_min, grouped_res_df_min)
     assert_results(data_count_max, grouped_res_df_max)
 
+
 def test_group_by_with_nan_values(dummy_group_data):
     fd = FeatureDescriptor(
         function=np.sum,
@@ -120,7 +117,7 @@ def test_group_by_with_nan_values(dummy_group_data):
 
     nan_dummy_group_data = dummy_group_data.copy(deep=True)
     for random_idx in np.random.randint(0, len(dummy_group_data.index), size=1000):
-        nan_dummy_group_data['store'].iloc[random_idx] = np.nan
+        nan_dummy_group_data["store"].iloc[random_idx] = np.nan
 
     fc = FeatureCollection(feature_descriptors=fd)
 
@@ -136,7 +133,10 @@ def test_group_by_with_nan_values(dummy_group_data):
 
     assert_frame_equal(concatted_df, res_df)
 
-    assert dummy_group_data["number_sold"].sum() > res_df["number_sold__sum__w=manual"].sum()
+    assert (
+        dummy_group_data["number_sold"].sum()
+        > res_df["number_sold__sum__w=manual"].sum()
+    )
 
 
 def test_group_with_unequal_lengths():
@@ -149,49 +149,84 @@ def test_group_with_unequal_lengths():
 
     # create the dummy data
     s_group = pd.Series(
-        index=pd.date_range('2018-01-01', freq='10m', periods=30), name='user_id',
-        data=['a'] * 10 + ['b'] * 2 + ['c'] + ['d'] * 2 + [None] * 3+ ['e'] * 10 + ['b'] * 2
+        index=pd.date_range("2018-01-01", freq="10m", periods=30),
+        name="user_id",
+        data=["a"] * 10
+        + ["b"] * 2
+        + ["c"]
+        + ["d"] * 2
+        + [None] * 3
+        + ["e"] * 10
+        + ["b"] * 2,
     )
     s_group2 = pd.Series(
-        index=pd.date_range('2018-01-01', freq='10m', periods=100), name='user_id',
+        index=pd.date_range("2018-01-01", freq="10m", periods=100),
+        name="user_id",
         data=(
-            ['a'] * 10 + ['b'] * 2 + ['c'] + ['d'] * 2 + [None] * 3 + ['e'] * 10 + ['b'] * 2
-            + ['f'] * 14 + ['b'] * 9 + [None] * 7 + ['a'] * 23 + ['e'] * 17
-        )
+            ["a"] * 10
+            + ["b"] * 2
+            + ["c"]
+            + ["d"] * 2
+            + [None] * 3
+            + ["e"] * 10
+            + ["b"] * 2
+            + ["f"] * 14
+            + ["b"] * 9
+            + [None] * 7
+            + ["a"] * 23
+            + ["e"] * 17
+        ),
     )
-    s_val = pd.Series(index=pd.date_range('2018-01-01', freq='10m', periods=100), data=np.arange(100), name='count')
-    s_val2 = pd.Series(index=pd.date_range('2018-01-01', freq='10m', periods=30), data=np.arange(30), name='count')
+    s_val = pd.Series(
+        index=pd.date_range("2018-01-01", freq="10m", periods=100),
+        data=np.arange(100),
+        name="count",
+    )
+    s_val2 = pd.Series(
+        index=pd.date_range("2018-01-01", freq="10m", periods=30),
+        data=np.arange(30),
+        name="count",
+    )
     res_list = fc.calculate([s_group, s_val], group_by="user_id", return_df=True)
-    res_list2 = fc.calculate([s_group2, s_val2], group_by='user_id', return_df=True)
-    res_list2['count__sum__w=manual'] = res_list2['count__sum__w=manual'].astype('int64')
-    correct_res_list = fc.calculate([s_group, s_val2], group_by='user_id', return_df=True)
+    res_list2 = fc.calculate([s_group2, s_val2], group_by="user_id", return_df=True)
+    res_list2["count__sum__w=manual"] = res_list2["count__sum__w=manual"].astype(
+        "int64"
+    )
+    correct_res_list = fc.calculate(
+        [s_group, s_val2], group_by="user_id", return_df=True
+    )
 
     assert_frame_equal(res_list, res_list2)
     assert_frame_equal(res_list, correct_res_list)
 
 
 def test_group_non_aligned_indices():
-    fd = FeatureDescriptor(
-        function=np.sum,
-        series_name="count"
-    )
+    fd = FeatureDescriptor(function=np.sum, series_name="count")
     fc = FeatureCollection(feature_descriptors=fd)
 
     # create the dummy data
     s_group = pd.Series(
-        index=pd.date_range('2018-01-01', freq='10m', periods=30), name='user_id',
-        data=['a'] * 10 + ['b'] * 2 + ['c'] + ['d'] * 2 + [None] * 3+ ['e'] * 12 
+        index=pd.date_range("2018-01-01", freq="10m", periods=30),
+        name="user_id",
+        data=["a"] * 10 + ["b"] * 2 + ["c"] + ["d"] * 2 + [None] * 3 + ["e"] * 12,
     )
-    s_val = pd.Series(index=pd.date_range('2018-01-01', freq='3m', periods=100), data=np.arange(100), name='count')
+    s_val = pd.Series(
+        index=pd.date_range("2018-01-01", freq="3m", periods=100),
+        data=np.arange(100),
+        name="count",
+    )
     df = pd.DataFrame({"groups": s_group, "values": s_val})
-    non_nan_df = df.loc[df['groups'].notna() & df['values'].notna()]
+    non_nan_df = df.loc[df["groups"].notna() & df["values"].notna()]
     res_list = fc.calculate([s_group, s_val], group_by="user_id", return_df=True)
-    grouped_non_nan_df_sums = non_nan_df.groupby('groups').sum()
+    grouped_non_nan_df_sums = non_nan_df.groupby("groups").sum()
 
-    new_res_list = pd.DataFrame({'groups': res_list['user_id'], 'values': res_list['count__sum__w=manual']})
+    new_res_list = pd.DataFrame(
+        {"groups": res_list["user_id"], "values": res_list["count__sum__w=manual"]}
+    )
     new_res_list = new_res_list.set_index("groups")
 
     assert_frame_equal(new_res_list, grouped_non_nan_df_sums)
+
 
 def test_single_series_feature_collection(dummy_data):
     fd = FeatureDescriptor(
