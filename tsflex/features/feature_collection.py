@@ -395,6 +395,7 @@ class FeatureCollection:
 
         assert col_name in df.columns
 
+        df.dropna(inplace=True)
         df_cum = (
             (df[col_name] != df[col_name].shift(1))
             .astype("int")
@@ -405,7 +406,6 @@ class FeatureCollection:
 
         df_cum["sequence_idx"] = df.index
         df_cum[col_name] = df[col_name]
-        df_cum.dropna(inplace=True)
 
         df_cum_grouped = df_cum.groupby("value_grp")
         df_grouped = pd.DataFrame({
