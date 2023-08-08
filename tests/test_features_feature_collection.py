@@ -190,7 +190,7 @@ def test_group_with_unequal_lengths():
     res_list = fc.calculate([s_group, s_val], group_by="user_id", return_df=True)
     res_list2 = fc.calculate([s_group2, s_val2], group_by="user_id", return_df=True)
     res_list2["count__sum__w=manual"] = res_list2["count__sum__w=manual"].astype(
-        "int64"
+        res_list.dtypes["count__sum__w=manual"]
     )
     correct_res_list = fc.calculate(
         [s_group, s_val2], group_by="user_id", return_df=True
