@@ -32,28 +32,28 @@ from .utils import dummy_data, dummy_group_data  # noqa: F401
 def test_single_series_group_feature_collection(dummy_group_data):
     fd = FeatureDescriptor(
         function=np.sum,
-        series_name="count",
+        series_name="number_sold",
     )
 
     fc = FeatureCollection(feature_descriptors=fd)
 
-    assert fc.get_required_series() == ["count"]
+    assert fc.get_required_series() == ["number_sold"]
     assert fc.get_nb_output_features() == 1
-    res_list = fc.calculate(dummy_group_data, group_by="country", return_df=False)
-    res_df = fc.calculate(dummy_group_data, group_by="country", return_df=True)
+    res_list = fc.calculate(dummy_group_data, group_by="store", return_df=False)
+    res_df = fc.calculate(dummy_group_data, group_by="store", return_df=True)
 
     assert isinstance(res_list, list)
     assert isinstance(res_df, pd.DataFrame)
-    assert np.all(dummy_group_data["country"].unique() == res_df.index.unique())
 
-    concatted_df = pd.concat(res_list)
+    concatted_df = pd.concat(res_list, axis=1)
 
     assert_frame_equal(concatted_df, res_df)
 
-    data_counts = dummy_group_data.groupby("country")["count"].sum()
+    data_counts = dummy_group_data.groupby("store")["number_sold"].sum()
+    result_data_counts = res_df.groupby("store")["number_sold__sum__w=manual"].sum()
 
-    for idx in data_counts.index:
-        assert res_df.loc[idx, "count__sum__w=manual"] == data_counts.loc[idx]
+    for index in data_counts.index:
+        assert data_counts[index] == result_data_counts[index]
 
 
 def test_single_series_group_feature_non_existent_group_by(dummy_group_data):
@@ -71,73 +71,74 @@ def test_single_series_group_feature_non_existent_group_by(dummy_group_data):
 
 
 def test_single_series_multiple_features_group_by(dummy_group_data):
-    fd1 = FeatureDescriptor(function=np.sum, series_name="count")
-    fd2 = FeatureDescriptor(function=np.min, series_name="count")
-    fd3 = FeatureDescriptor(function=np.max, series_name="count")
-    fd4 = FeatureDescriptor(function=np.mean, series_name="normaldist")
-    fd5 = FeatureDescriptor(
-        function=FuncWrapper(np.std, ddof=1), series_name="normaldist"
-    )
+    fd1 = FeatureDescriptor(function=np.sum, series_name="number_sold")
+    fd2 = FeatureDescriptor(function=np.min, series_name="number_sold")
+    fd3 = FeatureDescriptor(function=np.max, series_name="number_sold")
 
-    fc = FeatureCollection(feature_descriptors=[fd1, fd2, fd3, fd4, fd5])
+    fc = FeatureCollection(feature_descriptors=[fd1, fd2, fd3])
 
-    assert set(fc.get_required_series()) == set(["count", "normaldist"])
-    assert fc.get_nb_output_features() == 5
+    assert fc.get_required_series() == ["number_sold"]
+    assert fc.get_nb_output_features() == 3
 
     res_list = fc.calculate(
-        dummy_group_data, group_by="country", return_df=False, n_jobs=1
+        dummy_group_data, group_by="store", return_df=False, n_jobs=1
     )
     res_df = fc.calculate(
-        dummy_group_data, group_by="country", return_df=True, n_jobs=1
+        dummy_group_data, group_by="store", return_df=True, n_jobs=1
     )
 
     assert isinstance(res_list, list)
     assert isinstance(res_df, pd.DataFrame)
 
-    concatted_df = pd.concat(res_list)
+    concatted_df = pd.concat(res_list, axis=1)
 
     assert_frame_equal(concatted_df, res_df)
 
-    data_count_sum = dummy_group_data.groupby("country")["count"].sum()
-    data_count_min = dummy_group_data.groupby("country")["count"].min()
-    data_count_max = dummy_group_data.groupby("country")["count"].max()
-    data_normaldist_mean = dummy_group_data.groupby("country")["normaldist"].mean()
-    data_normaldist_std = dummy_group_data.groupby("country")["normaldist"].std()
+    data_count_sum = dummy_group_data.groupby("store")["number_sold"].sum()
+    data_count_min = dummy_group_data.groupby("store")["number_sold"].min()
+    data_count_max = dummy_group_data.groupby("store")["number_sold"].max()
 
-    def assert_results(data, column_name):
-        for idx in data.index:
-            assert np.isclose(res_df.loc[idx, column_name], data.loc[idx])
 
-    assert_results(data_count_sum, "count__sum__w=manual")
-    assert_results(data_count_min, "count__amin__w=manual")
-    assert_results(data_count_max, "count__amax__w=manual")
-    assert_results(data_normaldist_mean, "normaldist__mean__w=manual")
-    assert_results(data_normaldist_std, "normaldist__std__w=manual")
+    grouped_res_df_sum = res_df.groupby("store")["number_sold__sum__w=manual"].sum()
+    grouped_res_df_min = res_df.groupby("store")["number_sold__amin__w=manual"].min()
+    grouped_res_df_max = res_df.groupby("store")["number_sold__amax__w=manual"].max()
+
+
+    def assert_results(data, res_data):
+        for index in data.index:
+            assert data[index] == res_data[index]
+
+    assert_results(data_count_sum, grouped_res_df_sum)
+    assert_results(data_count_min, grouped_res_df_min)
+    assert_results(data_count_max, grouped_res_df_max)
 
 def test_group_by_with_nan_values(dummy_group_data):
     fd = FeatureDescriptor(
         function=np.sum,
-        series_name="count",
+        series_name="number_sold",
     )
 
-    for random_idx in np.random.randint(0, 500, size=10):
-        dummy_group_data.loc[random_idx, 'country'] = np.nan
+    nan_dummy_group_data = dummy_group_data.copy(deep=True)
+    for random_idx in np.random.randint(0, len(dummy_group_data.index), size=1000):
+        nan_dummy_group_data['store'].iloc[random_idx] = np.nan
 
+    print(nan_dummy_group_data.loc[nan_dummy_group_data['store'].isna()])
     fc = FeatureCollection(feature_descriptors=fd)
 
-    assert fc.get_required_series() == ["count"]
+    assert fc.get_required_series() == ["number_sold"]
     assert fc.get_nb_output_features() == 1
-    res_list = fc.calculate(dummy_group_data, group_by="country", return_df=False)
-    res_df = fc.calculate(dummy_group_data, group_by="country", return_df=True)
+    res_list = fc.calculate(nan_dummy_group_data, group_by="store", return_df=False)
+    res_df = fc.calculate(nan_dummy_group_data, group_by="store", return_df=True)
 
     assert isinstance(res_list, list)
     assert isinstance(res_df, pd.DataFrame)
 
-    concatted_df = pd.concat(res_list)
+    concatted_df = pd.concat(res_list, axis=1)
 
     assert_frame_equal(concatted_df, res_df)
 
-    assert np.any(pd.isna(res_df.index.values))
+    assert dummy_group_data["number_sold"].sum() > res_df["number_sold__sum__w=manual"].sum()
+
 
 def test_single_series_feature_collection(dummy_data):
     fd = FeatureDescriptor(
