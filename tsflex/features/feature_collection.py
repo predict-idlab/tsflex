@@ -23,6 +23,7 @@ import dill
 import numpy as np
 import pandas as pd
 from multiprocess import Pool
+from pandas.api.types import is_datetime64_any_dtype
 from tqdm.auto import tqdm
 
 from ..features.function_wrapper import FuncWrapper
@@ -464,7 +465,11 @@ class FeatureCollection:
         end_segment_idxs = consecutive_grouped_by_df["next_start"]
         # because segment end idxs are exclusive, we need to add a timedelta
         # to the last end idx so that all data gets used
-        end_segment_idxs.values[-1] += pd.Timedelta(days=1)
+        segment_vals = end_segment_idxs.values
+        if is_datetime64_any_dtype(segment_vals):
+            segment_vals[-1] += pd.Timedelta(days=1)
+        else:
+            segment_vals[-1] += 1
         try:
             warnings.filterwarnings(
                 "ignore", category=RuntimeWarning, message="^.*segment indexes.*$"
