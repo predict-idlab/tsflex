@@ -448,7 +448,7 @@ class FeatureCollection:
             FROM `data`
             GROUP BY `group_by`
             ```
-            where `func` is the FeatureDescriptor function and `x` is the series_name
+            where `func` is the FeatureDescriptor function and `x` is the name
             on which the FeatureDescriptor operates.
         """
 
@@ -474,12 +474,17 @@ class FeatureCollection:
             warnings.filterwarnings(
                 "ignore", category=RuntimeWarning, message="^.*segment indexes.*$"
             )
+            warnings.filterwarnings(
+                "ignore", category=RuntimeWarning, message="^.*gaps.*$"
+            )
             calc_results = self.calculate(
                 data=df,
                 segment_start_idxs=start_segment_idxs,
                 segment_end_idxs=end_segment_idxs,
                 **calculate_kwargs,
             )
+
+            warnings.resetwarnings()
 
             calc_result = pd.concat(calc_results, join="outer", copy=False, axis=1)
             calc_result.reset_index(inplace=True, drop=True)
