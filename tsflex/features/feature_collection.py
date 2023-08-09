@@ -625,7 +625,7 @@ class FeatureCollection:
 
             Example output:
             .. example::
-                ```sh
+        ```python
                     number_sold__sum__w=manual  store    __start      __end
                 0          845                  0     2019-01-01 2019-01-01
                 1          357                  3     2019-01-02 2019-01-02
@@ -633,7 +633,7 @@ class FeatureCollection:
                 3          599                  3     2019-01-04 2019-01-05
                 4          871                  0     2019-01-06 2019-01-06
                 ...                           ...    ...        ...        ...
-                ```
+        ```
         bound_method: str, optional
             The start-end bound methodology which is used to generate the slice ranges
             when ``data`` consists of multiple series / columns.
