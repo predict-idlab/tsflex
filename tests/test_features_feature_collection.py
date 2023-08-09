@@ -228,6 +228,40 @@ def test_group_non_aligned_indices():
     assert_frame_equal(new_res_list, grouped_non_nan_df_sums)
 
 
+def test_group_with_numeric_index():
+    fd = FeatureDescriptor(function=np.sum, series_name="count")
+    fc = FeatureCollection(feature_descriptors=fd)
+
+    s_group = pd.Series(
+        index=np.arange(30),
+        name="user_id",
+        data=["a"] * 10 + ["b"] * 2 + ["c"] + ["d"] * 2 + [None] * 3 + ["e"] * 12,
+    )
+
+    s_val = pd.Series(
+        index=np.arange(30),
+        data=np.arange(30),
+        name="count",
+    )
+
+    res_df = fc.calculate([s_group, s_val], group_by="user_id", return_df=True)
+    res_list = fc.calculate([s_group, s_val], group_by="user_id", return_df=False)
+    assert isinstance(res_list, list)
+    assert isinstance(res_df, pd.DataFrame)
+
+    concatted_df = pd.concat(res_list, axis=1)
+
+    assert_frame_equal(concatted_df, res_df)
+
+    s_df = pd.DataFrame({"groups": s_group, "values": s_val})
+
+    data_counts = s_df.groupby("groups")["values"].sum()
+    result_data_counts = res_df.groupby("user_id")["count__sum__w=manual"].sum()
+
+    for index in data_counts.index:
+        assert data_counts[index] == result_data_counts[index]
+
+
 def test_single_series_feature_collection(dummy_data):
     fd = FeatureDescriptor(
         function=np.sum,
