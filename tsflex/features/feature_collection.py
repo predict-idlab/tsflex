@@ -26,7 +26,7 @@ from multiprocess import Pool
 from tqdm.auto import tqdm
 
 from ..features.function_wrapper import FuncWrapper
-from ..utils.attribute_parsing import AttributeParser
+from ..utils.attribute_parsing import AttributeParser, DataType
 from ..utils.data import flatten, to_list, to_series_list
 from ..utils.logging import add_logging_handler, delete_logging_handlers
 from ..utils.time import parse_time_arg, timedelta_to_str
@@ -341,6 +341,142 @@ class FeatureCollection:
             segment_idxs = segment_idxs.squeeze()  # remove singleton dimensions
         return segment_idxs
 
+    @staticmethod
+    def _process_non_exact_start_idx(
+        start_idx: Union[pd.Timestamp, float, int],
+        exact_time: Union[bool, str, pd.Timedelta, int, float],
+        stride: Optional[Union[float, str, pd.Timedelta, List, None]] = None,
+        window: Optional[Union[float, str, pd.Timedelta]] = None,
+    ) -> Union[pd.Timestamp, float, int]:
+        """Round start idx according to value of `exact_time` parameter.
+
+        Parameters
+        ----------
+        start_idx : pd.Timestamp
+        exact_time : Union[bool, str, pd.Timedelta, int, float]
+            How to perform the start index rounding. This argument supports multiple types:\n
+                * If the type is a `bool`, rounding resolution will be calculated using
+                least common multiple of stride and window.
+                * If the type is a `str`, the string must represent a frequency string indicating
+                the rounding resolution. Hence, the **passed data must have a time-index**.
+                * If the type is an `float` or an `int`, its value represents the series:\n
+                    - the stride in **number of samples**, when a **time-indexed** series
+                    is passed (must then be and `int`)
+                * If the exact_time's type is a `pd.Timedelta`, the exact_time size represents
+                the exact_time-time delta. The passed data **must have a time-index**.
+                start_idx is rounded to multiple of exact_time, using ceiling rounding.
+        stride: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta], None], optional
+            The stride size. By default None. This argument supports multiple types: \n
+            * If None, the stride of the `FeatureDescriptor` objects will be used.
+            * If the type is an `float` or an `int`, its value represents the series:\n
+                - the stride in **number of samples**, when a **time-indexed** series
+                is passed (must then be and `int`)
+            * If the stride's type is a `pd.Timedelta`, the stride size represents
+            the stride-time delta where the . The passed data **must have a time-index**.
+            * If a `str`, it must represent a stride-time-delta-string. Hence, the
+            **passed data must have a time-index**. \n
+        window : Union[float, str, pd.Timedelta], optional
+
+        Returns
+        -------
+        start index rounded to `exact_time`.
+        return value is of same datatype as `start_idx`
+        """
+
+        def numeric_ceil(index, round_to):
+            int_div = index // round_to
+            ceil_offset = int((index % round_to) != 0) * round_to
+            return int_div + ceil_offset
+
+        def is_float(x) -> bool:
+            xt = type(x)
+            return isinstance(x, float) or np.issubdtype(xt, np.floating)
+
+        def is_int(x) -> bool:
+            xt = type(x)
+            return isinstance(x, int) or np.issubdtype(xt, np.integer)
+
+        def is_numeric(x) -> bool:
+            return is_float(x) or is_int(x)
+
+        exact_time_type = type(exact_time)
+        start_time_type = type(start_idx)
+        if isinstance(exact_time_type, bool):
+            # default case, exact_time is True by default
+            if exact_time:
+                return start_idx
+            # calculate LCM of window & stride
+            assert (
+                window is not None
+            ), "if exact_time is a `bool`, then window is required"
+            if stride is None:
+                strides = []
+            elif isinstance(stride, list) or isinstance(stride, np.ndarray):
+                strides = [s for s in stride]
+            else:
+                strides = [stride]
+
+            # as we need the LCM of the whole list, we can just append the window
+            lcm_values = strides + [window]
+
+            arg_dtype = AttributeParser.determine_type(lcm_values)
+            idx_dtype = AttributeParser.determine_type(start_idx)
+
+            # should not happen, but extra check to cover the possibilities
+            assert arg_dtype != DataType.UNDEFINED and idx_dtype != DataType.UNDEFINED
+
+            if arg_dtype == DataType.SEQUENCE:
+                assert idx_dtype == DataType.SEQUENCE
+                # numeric LCM
+                if is_int(lcm_values[0]):
+                    lcm = np.lcm.reduce(lcm_values)
+                else:
+                    # slightly ugly way to perform LCM on floats
+                    PRECISION = 5
+                    for idx, val in enumerate(lcm_values):
+                        rounded_val = np.round(val, decimals=PRECISION)
+                        lcm_values[idx] = rounded_val * 10**PRECISION
+                    lcm_val = np.lcm.reduce(lcm_values)
+                    lcm = lcm_val / 10**PRECISION
+
+                # round start_idx to nearest value of lcm
+                return numeric_ceil(start_idx, lcm)
+
+            else:
+                assert idx_dtype == DataType.TIME
+                # transform to timedeltas and use numeric LCM on asm8 nanoseconds
+                for idx, val in enumerate(lcm_values):
+                    parsed_time = parse_time_arg(val)
+                    lcm_values[idx] = parsed_time.asm8.astype(np.int64)
+
+                lcm_ns = np.lcm.reduce(lcm_values)
+                np_starttime_ns = start_idx.asm8.astype(np.int64)
+                ceiltime = numeric_ceil(np_starttime_ns, lcm_ns)
+                ceiltime_timestamp = pd.Timestamp(ceiltime, unit="ns")
+                return ceiltime_timestamp
+
+        elif is_float(exact_time):
+            assert is_numeric(start_idx)
+            return numeric_ceil(float(start_idx), exact_time)
+        elif is_int(exact_time):
+            assert is_numeric(start_idx)
+            return start_time_type(numeric_ceil(start_idx, exact_time))
+        elif isinstance(exact_time_type, str):
+            assert isinstance(start_idx, pd.Timestamp)
+            # should be normal time offset string
+            return start_idx.ceil(exact_time)
+        elif isinstance(exact_time_type, pd.Timedelta):
+            assert isinstance(start_idx, pd.Timestamp)
+            np_timedelta_ns = exact_time.asm8.astype(np.int64)
+            np_starttime_ns = start_idx.asm8.astype(np.int64)
+            ceiltime = numeric_ceil(np_starttime_ns, np_timedelta_ns)
+            ceiltime_timestamp = pd.Timestamp(ceiltime, unit="ns")
+            return ceiltime_timestamp
+        else:
+            raise TypeError(
+                f"type: {exact_time_type} is not supported as `exact_time` argument - {exact_time}"
+            )
+
     def calculate(
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
@@ -349,6 +485,7 @@ class FeatureCollection:
             Union[list, np.ndarray, pd.Series, pd.Index]
         ] = None,
         segment_end_idxs: Optional[Union[list, np.ndarray, pd.Series, pd.Index]] = None,
+        exact_time: Optional[bool] = True,
         return_df: Optional[bool] = False,
         window_idx: Optional[str] = "end",
         include_final_window: Optional[bool] = False,
@@ -592,6 +729,9 @@ class FeatureCollection:
         # Determine the bounds of the series dict items and slice on them
         # TODO: is dit wel nodig `hier? want we doen dat ook in de strided rolling
         start, end = _determine_bounds(bound_method, list(series_dict.values()))
+
+        # start = self._process_non_exact_start_idx(start, exact_time, stride, window)
+
         series_dict = {
             n: s.loc[
                 s.index.dtype.type(start) : s.index.dtype.type(end)
