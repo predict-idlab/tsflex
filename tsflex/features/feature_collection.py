@@ -377,7 +377,7 @@ class FeatureCollection:
         Parameters
         ----------
         df : Union[pd.Series, pd.DataFrame]
-            Must be time-indexed!
+            input data.
         col_name : str, optional
             If a dataFrame is passed, you will need to specify the `col_name` on which
             the consecutive-grouping will need to take place.
@@ -463,7 +463,7 @@ class FeatureCollection:
         labels = consecutive_grouped_by_df[group_by].copy()
         start_segment_idxs = consecutive_grouped_by_df["start"]
         end_segment_idxs = consecutive_grouped_by_df["next_start"]
-        # because segment end idxs are exclusive, we need to add a timedelta
+        # because segment end idxs are exclusive, we need to add an offset
         # to the last end idx so that all data gets used
         segment_vals = end_segment_idxs.values
         if is_datetime64_any_dtype(segment_vals):
@@ -629,7 +629,9 @@ class FeatureCollection:
             `DataFrame` that is returned contains fields [`__start`, "__end"] which contain
             start and end time range for each result row. Also contains all corresponding
             fields of used `FeatureDescriptor`s.
-            If nan values are present in the grouping column, these values will be ignored.
+            If nan values are present in the grouping column, these values will not be used to create
+            groups, but they will impact the splitting of surrounding groups. Two groups with grouping
+            value of `a` will result in 2 different output rows when they are split by a `nan` group value.
             Grouping column values will be grouped on exact matches. Groups can appear multiple
             times if they are appear in different time-gaps.
 
