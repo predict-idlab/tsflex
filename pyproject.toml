@@ -79,9 +79,14 @@ ignore = ["E501"] # Never enforce `E501` (line length violations).
 "tests/test_stroll_factory.py" = ["F401", "F811"]
 "tests/test_utils.py" = ["F401", "F811"]
 
+# Testing
+[tool.pytest.ini_options]
+addopts = "--cov=tsflex --cov-report=term-missing --benchmark-disable"
+testpaths = "tests/"
+
 # Formatting
 [tool.black]
-color = true
+color = false
 line-length = 88
 
 [build-system]
