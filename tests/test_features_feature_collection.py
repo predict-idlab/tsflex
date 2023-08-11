@@ -56,6 +56,52 @@ def test_single_series_group_feature_collection(dummy_group_data):
         assert data_counts[index] == result_data_counts[index]
 
 
+def test_group_feature_collection_with_warnings(dummy_group_data):
+    fd = FeatureDescriptor(
+        function=np.sum,
+        series_name="number_sold",
+    )
+
+    fc = FeatureCollection(feature_descriptors=fd)
+
+    assert fc.get_required_series() == ["number_sold"]
+    assert fc.get_nb_output_features() == 1
+
+    with warnings.catch_warnings(record=True) as w:
+        # Trigger the warning
+        # Note -> for some (yet unkknown) reason, the warning's aren't caught anymore
+        # when using multiprocess (they are thrown nevertheless!), so we changed
+        # n_jobs=1
+        res_df = fc.calculate(
+            dummy_group_data,
+            n_jobs=1,
+            stride=5,
+            segment_start_idxs=[0],
+            segment_end_idxs=[0],
+            window_idx="start",
+            include_final_window=True,
+            group_by="store",
+            return_df=True,
+        )
+        # Verify the warning
+        assert len(w) == 5
+        assert all([issubclass(warn.category, UserWarning) for warn in w])
+        assert all(
+            [
+                "will be ignored when `group_by` parameter is used." in str(warn)
+                for warn in w
+            ]
+        )
+        # Check the output
+        assert isinstance(res_df, pd.DataFrame)
+
+        data_counts = dummy_group_data.groupby("store")["number_sold"].sum()
+        result_data_counts = res_df.groupby("store")["number_sold__sum__w=manual"].sum()
+
+        for index in data_counts.index:
+            assert data_counts[index] == result_data_counts[index]
+
+
 def test_single_series_group_feature_non_existent_group_by(dummy_group_data):
     fd = FeatureDescriptor(
         function=np.sum,
