@@ -233,9 +233,17 @@ def test_group_with_numeric_index():
     fc = FeatureCollection(feature_descriptors=fd)
 
     s_group = pd.Series(
-        index=np.arange(30),
+        index=np.arange(40),
         name="user_id",
-        data=["a"] * 10 + ["b"] * 2 + ["c"] + ["d"] * 2 + [None] * 3 + ["e"] * 12,
+        data=["a"] * 10
+        + ["b"] * 2
+        + ["c"]
+        + ["d"] * 2
+        + [None] * 3
+        + ["e"] * 12
+        + ["a"] * 5
+        + [None] * 2
+        + ["a"] * 3,
     )
 
     s_val = pd.Series(
@@ -260,6 +268,36 @@ def test_group_with_numeric_index():
 
     for index in data_counts.index:
         assert data_counts[index] == result_data_counts[index]
+
+
+def test_group_by_consecutive_with_series():
+    s_val = pd.Series(
+        index=np.arange(40),
+        name="user_id",
+        data=["a"] * 10
+        + ["b"] * 2
+        + ["c"]
+        + ["d"] * 2
+        + [None] * 3
+        + ["e"] * 12
+        + ["a"] * 5
+        + [None] * 2
+        + ["a"] * 3,
+    )
+
+    expected_df = pd.DataFrame(
+        {
+            "start": [0, 10, 12, 13, 18, 30, 37],
+            "end": [9, 11, 12, 14, 29, 34, 39],
+            "n_consecutive": [10, 2, 1, 2, 12, 5, 3],
+            "user_id": ["a", "b", "c", "d", "e", "a", "a"],
+            "next_start": [10.0, 12.0, 13.0, 18.0, 30.0, 37.0, 39.0],
+        }
+    )
+
+    res = FeatureCollection._calculate_group_by_consecutive(s_val)
+    assert res["n_consecutive"].sum() == 35
+    assert_frame_equal(res, expected_df)
 
 
 def test_single_series_feature_collection(dummy_data):
