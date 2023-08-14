@@ -81,7 +81,7 @@ ignore = ["E501"] # Never enforce `E501` (line length violations).
 
 # Testing
 [tool.pytest.ini_options]
-addopts = "--cov=tsflex --cov-report=term-missing --benchmark-disable"
+addopts = "--cov=tsflex --cov-report=term-missing"
 testpaths = "tests/"
 
 # Formatting
