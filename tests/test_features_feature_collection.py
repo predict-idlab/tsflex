@@ -333,11 +333,11 @@ def test_group_by_consecutive_with_series():
 
     expected_df = pd.DataFrame(
         {
-            "start": [0, 10, 12, 13, 18, 30, 37],
-            "end": [9, 11, 12, 14, 29, 34, 39],
-            "n_consecutive": [10, 2, 1, 2, 12, 5, 3],
-            "user_id": ["a", "b", "c", "d", "e", "a", "a"],
-            "next_start": [10.0, 12.0, 13.0, 18.0, 30.0, 37.0, 39.0],
+            "start": [0, 10, 12, 13, 18, 30],
+            "end": [9, 11, 12, 14, 29, 39],
+            "n_consecutive": [10, 2, 1, 2, 12, 8],
+            "user_id": ["a", "b", "c", "d", "e", "a"],
+            "next_start": [10.0, 12.0, 13.0, 18.0, 30.0, 39.0],
         }
     )
 
