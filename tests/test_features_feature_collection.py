@@ -346,6 +346,19 @@ def test_group_by_consecutive_with_series():
     assert_frame_equal(res, expected_df)
 
 
+def test_failing_group_by_subcall(dummy_group_data):
+    fd = FeatureDescriptor(
+        function=np.unique,
+        series_name="number_sold",
+    )
+
+    fc = FeatureCollection(feature_descriptors=fd)
+
+    assert fc.get_required_series() == ["number_sold"]
+    assert fc.get_nb_output_features() == 1
+    with pytest.raises(RuntimeError):
+        fc.calculate(dummy_group_data, group_by="store", return_df=True)
+
 def test_single_series_feature_collection(dummy_data):
     fd = FeatureDescriptor(
         function=np.sum,
