@@ -395,8 +395,10 @@ class FeatureCollection:
             delta_py_time = delta.to_pytimedelta()
             dt_min = datetime.min
             dt_min = dt_min.replace(tzinfo=dt.tzinfo)
-            dt_ceil = dt_min + math.ceil(
-                (start_time_py - dt_min) / delta_py_time) * delta_py_time
+            dt_ceil = (
+                dt_min
+                + math.ceil((start_time_py - dt_min) / delta_py_time) * delta_py_time
+            )
             return pd.Timestamp(dt_ceil)
 
         def is_float(x) -> bool:
@@ -461,7 +463,7 @@ class FeatureCollection:
 
                 lcm_ns = np.lcm.reduce(lcm_values)
                 lcm_timedelta = pd.Timedelta(lcm_ns)
-                
+
                 ceiltime_timestamp = dt_ceil(start_idx, lcm_timedelta)
                 return ceiltime_timestamp
 
