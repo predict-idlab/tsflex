@@ -628,9 +628,9 @@ class FeatureCollection:
             `DataFrame` that is returned contains fields [`__start`, "__end"] which contain
             start and end time range for each result row. Also contains all corresponding
             fields of used `FeatureDescriptor`s.
-            If nan values are present in the grouping column, these values will not be used to create
-            groups, but they will impact the splitting of surrounding groups. Two groups with grouping
-            value of `a` will result in 2 different output rows when they are split by a `nan` group value.
+            Rows with NaN values will be dropped from input data before grouping. Meaning that no
+            NaN values will be present for calculation of any of the FeatureDescriptors or for
+            dividing in groups.
             Grouping column values will be grouped on exact matches. Groups can appear multiple
             times if they are appear in different time-gaps.
 
