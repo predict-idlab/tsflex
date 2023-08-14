@@ -347,8 +347,11 @@ def test_group_by_consecutive_with_series():
 
 
 def test_failing_group_by_subcall(dummy_group_data):
+    def failing_func(_):
+        raise RuntimeError()
+
     fd = FeatureDescriptor(
-        function=np.unique,
+        function=failing_func,
         series_name="number_sold",
     )
 
