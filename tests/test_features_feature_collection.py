@@ -2352,7 +2352,7 @@ def test_process_non_exact_start_idx_int(test_setup):
 
     assert result == expected_result
 
-    assert isinstance(result, (int, float, np.int64))
+    assert isinstance(result, (int, float, np.int32, np.int64))
 
 
 @pytest.mark.parametrize(
