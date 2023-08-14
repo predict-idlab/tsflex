@@ -499,10 +499,7 @@ class FeatureCollection:
                 return [calc_result[col] for col in calc_result.columns]
 
         except Exception as e:
-            warnings.warn(
-                f"An exception was raised during feature extraction:\n{e}",
-                category=RuntimeWarning,
-            )
+            raise RuntimeError(f"An exception was raised during feature extraction:\n{e}")
 
     def calculate(
         self,
