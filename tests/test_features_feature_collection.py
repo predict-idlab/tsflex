@@ -359,6 +359,7 @@ def test_failing_group_by_subcall(dummy_group_data):
     with pytest.raises(RuntimeError):
         fc.calculate(dummy_group_data, group_by="store", return_df=True)
 
+
 def test_single_series_feature_collection(dummy_data):
     fd = FeatureDescriptor(
         function=np.sum,
