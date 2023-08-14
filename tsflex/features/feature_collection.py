@@ -12,10 +12,12 @@ import warnings
 
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
+import math
 import os
 import traceback
 import uuid
 from copy import deepcopy
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
 
@@ -386,7 +388,16 @@ class FeatureCollection:
         def numeric_ceil(index, round_to):
             int_div = index // round_to
             ceil_offset = int((index % round_to) != 0) * round_to
-            return int_div + ceil_offset
+            return (int_div * round_to) + ceil_offset
+
+        def dt_ceil(dt, delta):
+            start_time_py = start_idx.to_pydatetime()
+            delta_py_time = delta.to_pytimedelta()
+            dt_min = datetime.min
+            dt_min = dt_min.replace(tzinfo=dt.tzinfo)
+            dt_ceil = dt_min + math.ceil(
+                (start_time_py - dt_min) / delta_py_time) * delta_py_time
+            return pd.Timestamp(dt_ceil)
 
         def is_float(x) -> bool:
             xt = type(x)
@@ -400,8 +411,7 @@ class FeatureCollection:
             return is_float(x) or is_int(x)
 
         exact_time_type = type(exact_time)
-        start_time_type = type(start_idx)
-        if isinstance(exact_time_type, bool):
+        if isinstance(exact_time, bool):
             # default case, exact_time is True by default
             if exact_time:
                 return start_idx
@@ -420,12 +430,12 @@ class FeatureCollection:
             lcm_values = strides + [window]
 
             arg_dtype = AttributeParser.determine_type(lcm_values)
-            idx_dtype = AttributeParser.determine_type(start_idx)
 
             # should not happen, but extra check to cover the possibilities
-            assert arg_dtype != DataType.UNDEFINED and idx_dtype != DataType.UNDEFINED
+            assert arg_dtype != DataType.UNDEFINED
 
             if arg_dtype == DataType.SEQUENCE:
+                idx_dtype = AttributeParser.determine_type(start_idx)
                 assert idx_dtype == DataType.SEQUENCE
                 # numeric LCM
                 if is_int(lcm_values[0]):
@@ -435,7 +445,7 @@ class FeatureCollection:
                     PRECISION = 5
                     for idx, val in enumerate(lcm_values):
                         rounded_val = np.round(val, decimals=PRECISION)
-                        lcm_values[idx] = rounded_val * 10**PRECISION
+                        lcm_values[idx] = int(rounded_val * 10**PRECISION)
                     lcm_val = np.lcm.reduce(lcm_values)
                     lcm = lcm_val / 10**PRECISION
 
@@ -443,16 +453,16 @@ class FeatureCollection:
                 return numeric_ceil(start_idx, lcm)
 
             else:
-                assert idx_dtype == DataType.TIME
+                assert isinstance(start_idx, pd.Timestamp)
                 # transform to timedeltas and use numeric LCM on asm8 nanoseconds
                 for idx, val in enumerate(lcm_values):
                     parsed_time = parse_time_arg(val)
                     lcm_values[idx] = parsed_time.asm8.astype(np.int64)
 
                 lcm_ns = np.lcm.reduce(lcm_values)
-                np_starttime_ns = start_idx.asm8.astype(np.int64)
-                ceiltime = numeric_ceil(np_starttime_ns, lcm_ns)
-                ceiltime_timestamp = pd.Timestamp(ceiltime, unit="ns")
+                lcm_timedelta = pd.Timedelta(lcm_ns)
+                
+                ceiltime_timestamp = dt_ceil(start_idx, lcm_timedelta)
                 return ceiltime_timestamp
 
         elif is_float(exact_time):
@@ -460,18 +470,15 @@ class FeatureCollection:
             return numeric_ceil(float(start_idx), exact_time)
         elif is_int(exact_time):
             assert is_numeric(start_idx)
-            return start_time_type(numeric_ceil(start_idx, exact_time))
-        elif isinstance(exact_time_type, str):
+            return numeric_ceil(start_idx, exact_time)
+        elif isinstance(exact_time, str):
             assert isinstance(start_idx, pd.Timestamp)
             # should be normal time offset string
             return start_idx.ceil(exact_time)
-        elif isinstance(exact_time_type, pd.Timedelta):
+        elif isinstance(exact_time, pd.Timedelta):
             assert isinstance(start_idx, pd.Timestamp)
-            np_timedelta_ns = exact_time.asm8.astype(np.int64)
-            np_starttime_ns = start_idx.asm8.astype(np.int64)
-            ceiltime = numeric_ceil(np_starttime_ns, np_timedelta_ns)
-            ceiltime_timestamp = pd.Timestamp(ceiltime, unit="ns")
-            return ceiltime_timestamp
+            rounded_timestamp = dt_ceil(start_idx, exact_time)
+            return rounded_timestamp
         else:
             raise TypeError(
                 f"type: {exact_time_type} is not supported as `exact_time` argument - {exact_time}"
