@@ -277,6 +277,7 @@ class FeatureCollection:
         segment_start_idxs: Union[np.ndarray, None],
         segment_end_idxs: Union[np.ndarray, None],
         start_idx: Any,
+        exact_time,
         end_idx: Any,
         window_idx: str,
         include_final_window: bool,
@@ -299,6 +300,9 @@ class FeatureCollection:
             ]
             stride = feature.stride if calc_stride is None else calc_stride
             function: FuncWrapper = feature.function
+            
+            cleaned_start_idx = self._process_non_exact_start_idx(start_idx, exact_time, calc_stride, win)
+
             # The factory method will instantiate the right StridedRolling object
             stroll_arg_dict = dict(
                 data=[series_dict[k] for k in key],
@@ -306,7 +310,7 @@ class FeatureCollection:
                 strides=stride,
                 segment_start_idxs=segment_start_idxs,
                 segment_end_idxs=segment_end_idxs,
-                start_idx=start_idx,
+                start_idx=cleaned_start_idx,
                 end_idx=end_idx,
                 window_idx=window_idx,
                 include_final_window=include_final_window,
@@ -494,7 +498,7 @@ class FeatureCollection:
             Union[list, np.ndarray, pd.Series, pd.Index]
         ] = None,
         segment_end_idxs: Optional[Union[list, np.ndarray, pd.Series, pd.Index]] = None,
-        exact_time: Optional[bool] = True,
+        exact_time: Optional[Union[bool, str, pd.Timedelta, int, float]] = True,
         return_df: Optional[bool] = False,
         window_idx: Optional[str] = "end",
         include_final_window: Optional[bool] = False,
@@ -739,8 +743,6 @@ class FeatureCollection:
         # TODO: is dit wel nodig `hier? want we doen dat ook in de strided rolling
         start, end = _determine_bounds(bound_method, list(series_dict.values()))
 
-        # start = self._process_non_exact_start_idx(start, exact_time, stride, window)
-
         series_dict = {
             n: s.loc[
                 s.index.dtype.type(start) : s.index.dtype.type(end)
@@ -757,6 +759,7 @@ class FeatureCollection:
             segment_start_idxs=segment_start_idxs,
             segment_end_idxs=segment_end_idxs,
             start_idx=start,
+            exact_time=exact_time,
             end_idx=end,
             window_idx=window_idx,
             include_final_window=include_final_window,
