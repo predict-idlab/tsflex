@@ -2547,3 +2547,8 @@ def test_process_non_exact_start_idx_incorrect_types(test_setup):
         FeatureCollection._process_non_exact_start_idx(
             start_idx, exact_time, stride, window
         )
+
+
+def test_process_non_exact_start_idx_unsupported_type():
+    with pytest.raises(TypeError, match=r".*not supported as `exact_time` argument.*"):
+        FeatureCollection._process_non_exact_start_idx(2, dict(), None, None)
