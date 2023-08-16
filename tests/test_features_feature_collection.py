@@ -2359,21 +2359,6 @@ def test_process_non_exact_start_idx_int(test_setup):
     "test_setup",
     [
         # (start_idx, exact_time, stride, window, expected_result)
-    ],
-)
-def test_process_non_exact_start_idx_int_fail(test_setup):
-    start_idx, exact_time, stride, window, expected_result, dtype_check = test_setup
-    assert expected_result == FeatureCollection._process_non_exact_start_idx(
-        start_idx, exact_time, stride, window
-    )
-
-    assert dtype_check(expected_result)
-
-
-@pytest.mark.parametrize(
-    "test_setup",
-    [
-        # (start_idx, exact_time, stride, window, expected_result)
         (32.5, 12.4, None, None, 37.2),
         (7.5, 2.5, None, None, 7.5),
         (7.5, 5, None, None, 10.0),
@@ -2394,21 +2379,6 @@ def test_process_non_exact_start_idx_float(test_setup):
     assert result == expected_result
 
     assert isinstance(result, float)
-
-
-@pytest.mark.parametrize(
-    "test_setup",
-    [
-        # (start_idx, exact_time, stride, window, expected_result)
-    ],
-)
-def test_process_non_exact_start_idx_float_fail(test_setup):
-    start_idx, exact_time, stride, window, expected_result, dtype_check = test_setup
-    assert expected_result == FeatureCollection._process_non_exact_start_idx(
-        start_idx, exact_time, stride, window
-    )
-
-    assert dtype_check(expected_result)
 
 
 @pytest.mark.parametrize(
@@ -2519,13 +2489,61 @@ def test_process_non_exact_start_idx_timestamp(test_setup):
 @pytest.mark.parametrize(
     "test_setup",
     [
-        # (start_idx, exact_time, stride, window, expected_result)
+        # (start_idx, stride)
+        (100, None),
+        (100, [7, 9, 11]),
+        (21.395, None),
+        (21.395, [2.5, 5.0]),
+        (pd.Timestamp("2019-01-01T10:08:55+0100"), None),
+        (
+            pd.Timestamp("2019-01-01T10:08:55+0100"),
+            [
+                pd.Timedelta(20, "minutes"),
+                pd.Timedelta(30, "minutes"),
+                pd.Timedelta(60, "minutes"),
+            ],
+        ),
     ],
 )
-def test_process_non_exact_start_idx_timestamp_fail(test_setup):
-    start_idx, exact_time, stride, window, expected_result, dtype_check = test_setup
-    assert expected_result == FeatureCollection._process_non_exact_start_idx(
-        start_idx, exact_time, stride, window
-    )
+def test_process_non_exact_start_idx_window_none(test_setup):
+    start_idx, stride = test_setup
+    with pytest.raises(AssertionError, match=r".*window argument is required.*"):
+        FeatureCollection._process_non_exact_start_idx(start_idx, False, stride, None)
 
-    assert dtype_check(expected_result)
+
+@pytest.mark.parametrize(
+    "test_setup",
+    [
+        # (start_idx, exact_time, stride, window)
+        (5, False, None, pd.Timedelta(10, "minutes")),
+        (5, False, 7, pd.Timedelta(10, "minutes")),
+        (5, False, 7.95, pd.Timedelta(10, "minutes")),
+        (5, False, pd.Timedelta(20, "minutes"), pd.Timedelta(10, "minutes")),
+        (5.25, False, None, pd.Timedelta(10, "minutes")),
+        (5.25, False, 7, pd.Timedelta(10, "minutes")),
+        (5.25, False, 7.95, pd.Timedelta(10, "minutes")),
+        (5.25, False, pd.Timedelta(20, "minutes"), pd.Timedelta(10, "minutes")),
+        (pd.Timestamp("2019-01-01T10:08:55+0100"), False, None, 5),
+        (pd.Timestamp("2019-01-01T10:08:55+0100"), False, None, 5.75),
+        (pd.Timestamp("2019-01-01T10:08:55+0100"), False, 7, 5),
+        (pd.Timestamp("2019-01-01T10:08:55+0100"), False, 7.95, 5.75),
+        (
+            pd.Timestamp("2019-01-01T10:08:55+0100"),
+            False,
+            pd.Timedelta(10, "minutes"),
+            5,
+        ),
+        (
+            pd.Timestamp("2019-01-01T10:08:55+0100"),
+            False,
+            7.95,
+            pd.Timedelta(10, "minutes"),
+        ),
+    ],
+)
+def test_process_non_exact_start_idx_incorrect_types(test_setup):
+    start_idx, exact_time, stride, window = test_setup
+    with pytest.raises((AssertionError, ValueError)):
+        FeatureCollection._process_non_exact_start_idx(
+            start_idx, exact_time, stride, window
+        )

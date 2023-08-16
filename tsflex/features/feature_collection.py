@@ -420,7 +420,7 @@ class FeatureCollection:
             # calculate LCM of window & stride
             assert (
                 window is not None
-            ), "if exact_time is a `bool`, then window is required"
+            ), "if exact_time is `False`, then the window argument is required"
             if stride is None:
                 strides = []
             elif isinstance(stride, list) or isinstance(stride, np.ndarray):
