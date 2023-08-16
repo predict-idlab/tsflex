@@ -300,8 +300,10 @@ class FeatureCollection:
             ]
             stride = feature.stride if calc_stride is None else calc_stride
             function: FuncWrapper = feature.function
-            
-            cleaned_start_idx = self._process_non_exact_start_idx(start_idx, exact_time, calc_stride, win)
+
+            cleaned_start_idx = self._process_non_exact_start_idx(
+                start_idx, exact_time, calc_stride, win
+            )
 
             # The factory method will instantiate the right StridedRolling object
             stroll_arg_dict = dict(
@@ -356,52 +358,52 @@ class FeatureCollection:
     ) -> Union[pd.Timestamp, float, int]:
         """Round start idx according to value of `exact_time` parameter.
 
-        Parameters
-        ----------
-        start_idx : pd.Timestamp
-        exact_time : Union[bool, str, pd.Timedelta, int, float]
-            How to perform the start index rounding. This argument supports multiple types:\n
-                * If the type is a `bool`, rounding resolution will be calculated using
-                least common multiple of stride and window.
-                * If the type is a `str`, the string must represent a frequency string indicating
-                the rounding resolution. Hence, the **passed data must have a time-index**.
+            Parameters
+            ----------
+            start_idx : pd.Timestamp
+            exact_time : Union[bool, str, pd.Timedelta, int, float]
+                How to perform the start index rounding. This argument supports multiple types:\n
+                    * If the type is a `bool`, rounding resolution will be calculated using
+                    least common multiple of stride and window.
+                    * If the type is a `str`, the string must represent a frequency string indicating
+                    the rounding resolution. Hence, the **passed data must have a time-index**.
+                    * If the type is an `float` or an `int`, its value represents the series:\n
+                        - its stride **range** when a **non time-indexed** series is passed.
+                    * If the exact_time's type is a `pd.Timedelta`, the exact_time size represents
+                    the exact_time-time delta. The passed data **must have a time-index**.
+                    start_idx is rounded to multiple of exact_time, using ceiling rounding.
+            stride: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta], None], optional
+                The stride size. By default None. This argument supports multiple types: \n
+                * If None, the stride of the `FeatureDescriptor` objects will be used.
                 * If the type is an `float` or an `int`, its value represents the series:\n
                     - its stride **range** when a **non time-indexed** series is passed.
-                * If the exact_time's type is a `pd.Timedelta`, the exact_time size represents
-                the exact_time-time delta. The passed data **must have a time-index**.
-                start_idx is rounded to multiple of exact_time, using ceiling rounding.
-        stride: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta], None], optional
-            The stride size. By default None. This argument supports multiple types: \n
-            * If None, the stride of the `FeatureDescriptor` objects will be used.
-            * If the type is an `float` or an `int`, its value represents the series:\n
-                - its stride **range** when a **non time-indexed** series is passed.
-                - the stride in **number of samples**, when a **time-indexed** series
-                is passed (must then be and `int`)
-            * If the stride's type is a `pd.Timedelta`, the stride size represents
-            the stride-time delta. The passed data **must have a time-index**.
-            * If a `str`, it must represent a stride-time-delta-string. Hence, the
-            **passed data must have a time-index**. \n
-        window : Union[float, str, pd.Timedelta], optional
+                    - the stride in **number of samples**, when a **time-indexed** series
+                    is passed (must then be and `int`)
+                * If the stride's type is a `pd.Timedelta`, the stride size represents
+                the stride-time delta. The passed data **must have a time-index**.
+                * If a `str`, it must represent a stride-time-delta-string. Hence, the
+                **passed data must have a time-index**. \n
+            window : Union[float, str, pd.Timedelta], optional
 
-        Returns
-        -------
-        start index rounded to `exact_time`.
-        return value type depends on start_idx type
+            Returns
+            -------
+            start index rounded to `exact_time`.
+            return value type depends on start_idx type
 
-        .. note::
-    ```md
-    | index datatype | rounding datatype | return datatype | extra info                                                        |
-    | :------------- | :---------------- | --------------: | :---------------------------------------------------------------- |
-    | int            | int               |             int | round `index` to nearest multiple of `rounding`                   |
-    |                | float             |           float | round `index` to nearest multiple of `rounding`                   |
-    |                | bool              |           float | round `index` to LCM of `window` and/or `stride`                  |
-    | float          | int               |           float | round `index` to nearest multiple of `rounding`                   |
-    |                | float             |           float | round `index` to nearest multiple of `rounding`                   |
-    |                | bool              |           float | round `index` to LCM of `window` and/or `stride`                  |
-    | pd.Timestamp   | str               |    pd.Timestamp | round `index` to resolution of `rounding` (e.g. '10s', '2m', 'H') |
-    |                | bool              |    pd.Timestamp | round `index` to LCM of `window` and/or `stride`                  |
-    |                | pd.Timedelta      |    pd.Timestamp | round `index` to nearest multiple of `rounding`.                  |
-    ```
+            .. note::
+        ```md
+        | index datatype | rounding datatype | return datatype | extra info                                                        |
+        | :------------- | :---------------- | --------------: | :---------------------------------------------------------------- |
+        | int            | int               |             int | round `index` to nearest multiple of `rounding`                   |
+        |                | float             |           float | round `index` to nearest multiple of `rounding`                   |
+        |                | bool              |           float | round `index` to LCM of `window` and/or `stride`                  |
+        | float          | int               |           float | round `index` to nearest multiple of `rounding`                   |
+        |                | float             |           float | round `index` to nearest multiple of `rounding`                   |
+        |                | bool              |           float | round `index` to LCM of `window` and/or `stride`                  |
+        | pd.Timestamp   | str               |    pd.Timestamp | round `index` to resolution of `rounding` (e.g. '10s', '2m', 'H') |
+        |                | bool              |    pd.Timestamp | round `index` to LCM of `window` and/or `stride`                  |
+        |                | pd.Timedelta      |    pd.Timestamp | round `index` to nearest multiple of `rounding`.                  |
+        ```
         """
 
         def numeric_ceil(index, round_to):
