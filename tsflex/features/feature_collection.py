@@ -366,8 +366,7 @@ class FeatureCollection:
                 * If the type is a `str`, the string must represent a frequency string indicating
                 the rounding resolution. Hence, the **passed data must have a time-index**.
                 * If the type is an `float` or an `int`, its value represents the series:\n
-                    - the stride in **number of samples**, when a **time-indexed** series
-                    is passed (must then be and `int`)
+                    - its stride **range** when a **non time-indexed** series is passed.
                 * If the exact_time's type is a `pd.Timedelta`, the exact_time size represents
                 the exact_time-time delta. The passed data **must have a time-index**.
                 start_idx is rounded to multiple of exact_time, using ceiling rounding.
@@ -375,10 +374,11 @@ class FeatureCollection:
             The stride size. By default None. This argument supports multiple types: \n
             * If None, the stride of the `FeatureDescriptor` objects will be used.
             * If the type is an `float` or an `int`, its value represents the series:\n
+                - its stride **range** when a **non time-indexed** series is passed.
                 - the stride in **number of samples**, when a **time-indexed** series
                 is passed (must then be and `int`)
             * If the stride's type is a `pd.Timedelta`, the stride size represents
-            the stride-time delta where the . The passed data **must have a time-index**.
+            the stride-time delta. The passed data **must have a time-index**.
             * If a `str`, it must represent a stride-time-delta-string. Hence, the
             **passed data must have a time-index**. \n
         window : Union[float, str, pd.Timedelta], optional
@@ -386,7 +386,22 @@ class FeatureCollection:
         Returns
         -------
         start index rounded to `exact_time`.
-        return value is of same datatype as `start_idx`
+        return value type depends on start_idx type
+
+        .. note::
+    ```md
+    | index datatype | rounding datatype | return datatype | extra info                                                        |
+    | :------------- | :---------------- | --------------: | :---------------------------------------------------------------- |
+    | int            | int               |             int | round `index` to nearest multiple of `rounding`                   |
+    |                | float             |           float | round `index` to nearest multiple of `rounding`                   |
+    |                | bool              |           float | round `index` to LCM of `window` and/or `stride`                  |
+    | float          | int               |           float | round `index` to nearest multiple of `rounding`                   |
+    |                | float             |           float | round `index` to nearest multiple of `rounding`                   |
+    |                | bool              |           float | round `index` to LCM of `window` and/or `stride`                  |
+    | pd.Timestamp   | str               |    pd.Timestamp | round `index` to resolution of `rounding` (e.g. '10s', '2m', 'H') |
+    |                | bool              |    pd.Timestamp | round `index` to LCM of `window` and/or `stride`                  |
+    |                | pd.Timedelta      |    pd.Timestamp | round `index` to nearest multiple of `rounding`.                  |
+    ```
         """
 
         def numeric_ceil(index, round_to):
@@ -569,6 +584,31 @@ class FeatureCollection:
                 As such, the user can create variable-length segmented windows. However,
                 in such cases, the user should be weary that the feature functions are
                 invariant to these (potentially variable-length) windows.
+        exact_time: Optional[Union[bool, str, pd.Timedelta, int, float]], optional
+            Perform the start index rounding. This argument supports multiple types:\n
+            * If the type is a `bool`, rounding resolution will be calculated using
+            least common multiple of stride and window.
+            * If the type is a `str`, the string must represent a frequency string indicating
+            the rounding resolution. Hence, the **passed data must have a time-index**.
+            * If the type is an `float` or an `int`, its value represents the series:\n
+                - its stride **range** when a **non time-indexed** series is passed.
+            * If the exact_time's type is a `pd.Timedelta`, the exact_time size represents
+            the exact_time-time delta. The passed data **must have a time-index**.
+            start_idx is rounded to multiple of exact_time, using ceiling rounding.
+
+            The functioning of this parameter can be described by the following table:
+
+            | index datatype | rounding datatype | return datatype | extra info                                                        |
+            | :------------- | :---------------- | --------------: | ----------------------------------------------------------------: |
+            | int            | int               |             int | round `index` to nearest multiple of `rounding`                   |
+            |                | float             |           float | round `index` to nearest multiple of `rounding`                   |
+            |                | bool              |           float | round `index` to LCM of `window` and/or `stride`                  |
+            | float          | int               |           float | round `index` to nearest multiple of `rounding`                   |
+            |                | float             |           float | round `index` to nearest multiple of `rounding`                   |
+            |                | bool              |           float | round `index` to LCM of `window` and/or `stride`                  |
+            | pd.Timestamp   | str               |    pd.Timestamp | round `index` to resolution of `rounding` (e.g. '10s', '2m', 'H') |
+            |                | bool              |    pd.Timestamp | round `index` to LCM of `window` and/or `stride`                  |
+            |                | pd.Timedelta      |    pd.Timestamp | round `index` to nearest multiple of `rounding`.                  |
         return_df : bool, optional
             Whether the output needs to be a DataFrame or a list thereof, by default
             False. If `True` the output dataframes will be merged to a DataFrame with an
