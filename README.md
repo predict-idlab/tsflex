@@ -5,7 +5,7 @@
 [![support-version](https://img.shields.io/pypi/pyversions/tsflex)](https://img.shields.io/pypi/pyversions/tsflex)
 [![codecov](https://img.shields.io/codecov/c/github/predict-idlab/tsflex?logo=codecov)](https://codecov.io/gh/predict-idlab/tsflex)
 [![CodeQL](https://github.com/predict-idlab/tsflex/actions/workflows/codeql.yml/badge.svg)](https://github.com/predict-idlab/tsflex/actions/workflows/codeql.yml)
-[![Downloads](https://pepy.tech/badge/tsflex)](https://pepy.tech/project/tsflex)
+[![Downloads](https://static.pepy.tech/badge/tsflex)](https://pepy.tech/project/tsflex)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?)](http://makeapullrequest.com)
 [![Documentation](https://github.com/predict-idlab/tsflex/actions/workflows/deploy-docs.yml/badge.svg)](https://github.com/predict-idlab/tsflex/actions/workflows/deploy-docs.yml)
 [![Testing](https://github.com/predict-idlab/tsflex/actions/workflows/test.yml/badge.svg)](https://github.com/predict-idlab/tsflex/actions/workflows/test.yml)
