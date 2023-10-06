@@ -336,7 +336,6 @@ def test_group_by_consecutive_with_series():
             "start": [0, 10, 12, 13, 18, 30],
             "end": [9, 11, 12, 14, 29, 39],
             "user_id": ["a", "b", "c", "d", "e", "a"],
-            "next_start": [10.0, 12.0, 13.0, 18.0, 30.0, 39.0],
         }
     )
 
