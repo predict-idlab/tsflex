@@ -335,14 +335,12 @@ def test_group_by_consecutive_with_series():
         {
             "start": [0, 10, 12, 13, 18, 30],
             "end": [9, 11, 12, 14, 29, 39],
-            "n_consecutive": [10, 2, 1, 2, 12, 8],
             "user_id": ["a", "b", "c", "d", "e", "a"],
             "next_start": [10.0, 12.0, 13.0, 18.0, 30.0, 39.0],
         }
     )
 
     res = FeatureCollection._calculate_group_by_consecutive(s_val)
-    assert res["n_consecutive"].sum() == 35
     assert_frame_equal(res, expected_df)
 
 

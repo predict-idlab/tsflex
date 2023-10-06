@@ -386,9 +386,9 @@ class FeatureCollection:
         -------
         pd.DataFrame
             A new `DataFrame` view, with columns:
-            [`start`, `end`, `n_consecutive`, `col_name`], representing the
-            start- and endtime of the consecutive range, the number of consecutive samples,
-            and the col_name's consecutive values.
+            [`start`, `end`, `col_name`], representing the
+            start- and endtime of the consecutive range, and the col_name's consecutive
+            values.
         """
         if type(df) == pd.Series:
             col_name = df.name
@@ -413,12 +413,10 @@ class FeatureCollection:
             {
                 "start": df_cum_grouped["sequence_idx"].first(),
                 "end": df_cum_grouped["sequence_idx"].last(),
-                "n_consecutive": df_cum_grouped.size(),
                 col_name: df_cum_grouped[col_name].first(),
             }
         ).reset_index(drop=True)
 
-        df_grouped["next_start"] = df_grouped.start.shift(-1).fillna(df_grouped["end"])
         return df_grouped
 
     def _calculate_group_by(
@@ -452,24 +450,28 @@ class FeatureCollection:
             on which the FeatureDescriptor operates.
         """
 
-        # transform to dataframe
+        # 0. Transform to dataframe
         series_dict = self._data_to_series_dict(
             data, self.get_required_series() + [group_by]
         )
         df = pd.DataFrame(series_dict)
+        # 1. Group by `group_by` column
         consecutive_grouped_by_df = self._calculate_group_by_consecutive(
             df, col_name=group_by
         )
-        labels = consecutive_grouped_by_df[group_by].copy()
+        # 2. Get start and end idxs of consecutive groups
         start_segment_idxs = consecutive_grouped_by_df["start"]
-        end_segment_idxs = consecutive_grouped_by_df["next_start"]
-        # because segment end idxs are exclusive, we need to add an offset
-        # to the last end idx so that all data gets used
+        end_segment_idxs = start_segment_idxs.shift(-1).fillna(
+            consecutive_grouped_by_df["end"]
+        )
+        # because segment end idxs are exclusive, we need to add an offset to the last
+        # end idx so that all data gets used
         segment_vals = end_segment_idxs.values
         if is_datetime64_any_dtype(segment_vals):
             segment_vals[-1] += pd.Timedelta(days=1)
         else:
             segment_vals[-1] += 1
+        # 3. Calculate features
         try:
             warnings.filterwarnings(
                 "ignore", category=RuntimeWarning, message="^.*segment indexes.*$"
@@ -477,6 +479,7 @@ class FeatureCollection:
             warnings.filterwarnings(
                 "ignore", category=RuntimeWarning, message="^.*gaps.*$"
             )
+            # 3.1. Calculate features using the groupby segment idxs
             calc_results = self.calculate(
                 data=df,
                 segment_start_idxs=start_segment_idxs,
@@ -486,9 +489,11 @@ class FeatureCollection:
 
             warnings.resetwarnings()
 
+            # 3.2 Concatenate results and add the group_by column as well as the
+            # start and end idxs of the segments
             calc_result = pd.concat(calc_results, join="outer", copy=False, axis=1)
             calc_result.reset_index(inplace=True, drop=True)
-            calc_result[group_by] = labels
+            calc_result[group_by] = consecutive_grouped_by_df[group_by]
             calc_result["__start"] = consecutive_grouped_by_df["start"]
             calc_result["__end"] = consecutive_grouped_by_df["end"]
 
