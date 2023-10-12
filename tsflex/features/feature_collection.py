@@ -978,6 +978,12 @@ class FeatureCollection:
             + " already a grouped DataFrame!"
         )
 
+        # Delete other logging handlers
+        delete_logging_handlers(logger)
+        # Add logging handler (if path provided)
+        if logging_file_path:
+            f_handler = add_logging_handler(logger, logging_file_path)
+
         if (
             group_by_all
             or group_by_consecutive
@@ -1001,6 +1007,7 @@ class FeatureCollection:
                     )
 
             if group_by_consecutive:
+                # Strided rollling feature extraction will take place
                 return self._calculate_group_by_consecutive(
                     data,
                     group_by_consecutive,
@@ -1012,6 +1019,7 @@ class FeatureCollection:
                     n_jobs=n_jobs,
                 )
             else:
+                # Grouped feature extraction will take place
                 if not isinstance(data, pd.core.groupby.generic.DataFrameGroupBy):
                     # group_by_all should not be None (checked by asserts above)
                     assert (
@@ -1028,15 +1036,8 @@ class FeatureCollection:
                     data,
                     return_df,
                     show_progress=show_progress,
-                    # logging_file_path=logging_file_path, # TODO
                     n_jobs=n_jobs,
                 )
-
-        # Delete other logging handlers
-        delete_logging_handlers(logger)
-        # Add logging handler (if path provided)
-        if logging_file_path:
-            f_handler = add_logging_handler(logger, logging_file_path)
 
         # Convert to numpy array (if necessary)
         if segment_start_idxs is not None:
