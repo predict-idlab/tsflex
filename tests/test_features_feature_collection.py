@@ -29,7 +29,7 @@ from .utils import dummy_data, dummy_group_data  # noqa: F401
 ## FeatureCollection
 
 
-def test_single_series_group_feature_collection(dummy_group_data):
+def test_single_series_group_consecutive_feature_collection(dummy_group_data):
     fd = FeatureDescriptor(
         function=np.sum,
         series_name="number_sold",
@@ -39,8 +39,12 @@ def test_single_series_group_feature_collection(dummy_group_data):
 
     assert fc.get_required_series() == ["number_sold"]
     assert fc.get_nb_output_features() == 1
-    res_list = fc.calculate(dummy_group_data, group_by="store", return_df=False)
-    res_df = fc.calculate(dummy_group_data, group_by="store", return_df=True)
+    res_list = fc.calculate(
+        dummy_group_data, group_by_consecutive="store", return_df=False
+    )
+    res_df = fc.calculate(
+        dummy_group_data, group_by_consecutive="store", return_df=True
+    )
 
     assert isinstance(res_list, list)
     assert isinstance(res_df, pd.DataFrame)
@@ -56,7 +60,7 @@ def test_single_series_group_feature_collection(dummy_group_data):
         assert data_counts[index] == result_data_counts[index]
 
 
-def test_group_feature_collection_with_warnings(dummy_group_data):
+def test_group_consecutive_feature_collection_with_warnings(dummy_group_data):
     fd = FeatureDescriptor(
         function=np.sum,
         series_name="number_sold",
@@ -80,7 +84,7 @@ def test_group_feature_collection_with_warnings(dummy_group_data):
             segment_end_idxs=[0],
             window_idx="start",
             include_final_window=True,
-            group_by="store",
+            group_by_consecutive="store",
             return_df=True,
         )
         # Verify the warning
@@ -88,7 +92,7 @@ def test_group_feature_collection_with_warnings(dummy_group_data):
         assert all([issubclass(warn.category, UserWarning) for warn in w])
         assert all(
             [
-                "will be ignored when `group_by` parameter is used." in str(warn)
+                "will be ignored in case of GroupBy feature calculation." in str(warn)
                 for warn in w
             ]
         )
@@ -102,7 +106,9 @@ def test_group_feature_collection_with_warnings(dummy_group_data):
             assert data_counts[index] == result_data_counts[index]
 
 
-def test_single_series_group_feature_non_existent_group_by(dummy_group_data):
+def test_single_series_group_feature_non_existent_group_by_consecutive(
+    dummy_group_data,
+):
     fd = FeatureDescriptor(
         function=np.sum,
         series_name="count",
@@ -113,10 +119,12 @@ def test_single_series_group_feature_non_existent_group_by(dummy_group_data):
     assert fc.get_required_series() == ["count"]
     assert fc.get_nb_output_features() == 1
     with pytest.raises(Exception):
-        fc.calculate(dummy_group_data, group_by="nonexistent", return_df=False)
+        fc.calculate(
+            dummy_group_data, group_by_consecutive="nonexistent", return_df=False
+        )
 
 
-def test_single_series_multiple_features_group_by(dummy_group_data):
+def test_single_series_multiple_features_group_by_consecutive(dummy_group_data):
     fd1 = FeatureDescriptor(function=np.sum, series_name="number_sold")
     fd2 = FeatureDescriptor(function=np.min, series_name="number_sold")
     fd3 = FeatureDescriptor(function=np.max, series_name="number_sold")
@@ -127,9 +135,11 @@ def test_single_series_multiple_features_group_by(dummy_group_data):
     assert fc.get_nb_output_features() == 3
 
     res_list = fc.calculate(
-        dummy_group_data, group_by="store", return_df=False, n_jobs=1
+        dummy_group_data, group_by_consecutive="store", return_df=False, n_jobs=1
     )
-    res_df = fc.calculate(dummy_group_data, group_by="store", return_df=True, n_jobs=1)
+    res_df = fc.calculate(
+        dummy_group_data, group_by_consecutive="store", return_df=True, n_jobs=1
+    )
 
     assert isinstance(res_list, list)
     assert isinstance(res_df, pd.DataFrame)
@@ -155,7 +165,7 @@ def test_single_series_multiple_features_group_by(dummy_group_data):
     assert_results(data_count_max, grouped_res_df_max)
 
 
-def test_group_by_with_nan_values(dummy_group_data):
+def test_group_by_consecutive_with_nan_values(dummy_group_data):
     fd = FeatureDescriptor(
         function=np.sum,
         series_name="number_sold",
@@ -169,8 +179,12 @@ def test_group_by_with_nan_values(dummy_group_data):
 
     assert fc.get_required_series() == ["number_sold"]
     assert fc.get_nb_output_features() == 1
-    res_list = fc.calculate(nan_dummy_group_data, group_by="store", return_df=False)
-    res_df = fc.calculate(nan_dummy_group_data, group_by="store", return_df=True)
+    res_list = fc.calculate(
+        nan_dummy_group_data, group_by_consecutive="store", return_df=False
+    )
+    res_df = fc.calculate(
+        nan_dummy_group_data, group_by_consecutive="store", return_df=True
+    )
 
     assert isinstance(res_list, list)
     assert isinstance(res_df, pd.DataFrame)
@@ -185,7 +199,7 @@ def test_group_by_with_nan_values(dummy_group_data):
     )
 
 
-def test_group_with_unequal_lengths():
+def test_group_consecutive_with_unequal_lengths():
     fd = FeatureDescriptor(
         function=np.sum,
         series_name="count",
@@ -233,20 +247,24 @@ def test_group_with_unequal_lengths():
         data=np.arange(30),
         name="count",
     )
-    res_list = fc.calculate([s_group, s_val], group_by="user_id", return_df=True)
-    res_list2 = fc.calculate([s_group2, s_val2], group_by="user_id", return_df=True)
+    res_list = fc.calculate(
+        [s_group, s_val], group_by_consecutive="user_id", return_df=True
+    )
+    res_list2 = fc.calculate(
+        [s_group2, s_val2], group_by_consecutive="user_id", return_df=True
+    )
     res_list2["count__sum__w=manual"] = res_list2["count__sum__w=manual"].astype(
         res_list.dtypes["count__sum__w=manual"]
     )
     correct_res_list = fc.calculate(
-        [s_group, s_val2], group_by="user_id", return_df=True
+        [s_group, s_val2], group_by_consecutive="user_id", return_df=True
     )
 
     assert_frame_equal(res_list, res_list2)
     assert_frame_equal(res_list, correct_res_list)
 
 
-def test_group_non_aligned_indices():
+def test_group_consecutive_non_aligned_indices():
     fd = FeatureDescriptor(function=np.sum, series_name="count")
     fc = FeatureCollection(feature_descriptors=fd)
 
@@ -263,7 +281,9 @@ def test_group_non_aligned_indices():
     )
     df = pd.DataFrame({"groups": s_group, "values": s_val})
     non_nan_df = df.loc[df["groups"].notna() & df["values"].notna()]
-    res_list = fc.calculate([s_group, s_val], group_by="user_id", return_df=True)
+    res_list = fc.calculate(
+        [s_group, s_val], group_by_consecutive="user_id", return_df=True
+    )
     grouped_non_nan_df_sums = non_nan_df.groupby("groups").sum()
 
     new_res_list = pd.DataFrame(
@@ -274,7 +294,7 @@ def test_group_non_aligned_indices():
     assert_frame_equal(new_res_list, grouped_non_nan_df_sums)
 
 
-def test_group_with_numeric_index():
+def test_group_consecutive_with_numeric_index():
     fd = FeatureDescriptor(function=np.sum, series_name="count")
     fc = FeatureCollection(feature_descriptors=fd)
 
@@ -298,8 +318,12 @@ def test_group_with_numeric_index():
         name="count",
     )
 
-    res_df = fc.calculate([s_group, s_val], group_by="user_id", return_df=True)
-    res_list = fc.calculate([s_group, s_val], group_by="user_id", return_df=False)
+    res_df = fc.calculate(
+        [s_group, s_val], group_by_consecutive="user_id", return_df=True
+    )
+    res_list = fc.calculate(
+        [s_group, s_val], group_by_consecutive="user_id", return_df=False
+    )
     assert isinstance(res_list, list)
     assert isinstance(res_df, pd.DataFrame)
 
@@ -339,11 +363,11 @@ def test_group_by_consecutive_with_series():
         }
     )
 
-    res = FeatureCollection._calculate_group_by_consecutive(s_val)
+    res = FeatureCollection._group_by_consecutive(s_val)
     assert_frame_equal(res, expected_df)
 
 
-def test_failing_group_by_subcall(dummy_group_data):
+def test_failing_group_by_consecutive_subcall(dummy_group_data):
     def failing_func(_):
         raise RuntimeError()
 
@@ -357,7 +381,7 @@ def test_failing_group_by_subcall(dummy_group_data):
     assert fc.get_required_series() == ["number_sold"]
     assert fc.get_nb_output_features() == 1
     with pytest.raises(RuntimeError):
-        fc.calculate(dummy_group_data, group_by="store", return_df=True)
+        fc.calculate(dummy_group_data, group_by_consecutive="store", return_df=True)
 
 
 def test_single_series_feature_collection(dummy_data):
