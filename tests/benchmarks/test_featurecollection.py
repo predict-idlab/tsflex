@@ -52,29 +52,15 @@ def test_single_series_feature_collection_multiple_descriptors(
     benchmark(fc.calculate, dummy_data, n_jobs=n_cores)
 
 
-@pytest.mark.benchmark(group="group_by_consecutive collection")
+@pytest.mark.benchmark(group="group_by collection")
 @pytest.mark.parametrize("n_cores", NB_CORES)
 @pytest.mark.parametrize("func", FUNCS)
+@pytest.mark.parametrize("group_by", ["group_by_all", "group_by_consecutive"])
 def test_single_series_feature_collection_group_by_consecutive(
-    benchmark, n_cores, func, dummy_group_data  # noqa: F811
+    benchmark, n_cores, func, group_by, dummy_group_data  # noqa: F811
 ):
     fd = FeatureDescriptor(function=func, series_name="number_sold")
 
     fc = FeatureCollection(feature_descriptors=fd)
 
-    benchmark(
-        fc.calculate, dummy_group_data, group_by_consecutive="store", n_jobs=n_cores
-    )
-
-
-@pytest.mark.benchmark(group="group_by_all collection")
-@pytest.mark.parametrize("n_cores", NB_CORES)
-@pytest.mark.parametrize("func", FUNCS)
-def test_single_series_feature_collection_group_by_all(
-    benchmark, n_cores, func, dummy_group_data  # noqa: F811
-):
-    fd = FeatureDescriptor(function=func, series_name="number_sold")
-
-    fc = FeatureCollection(feature_descriptors=fd)
-
-    benchmark(fc.calculate, dummy_group_data, group_by_all="store", n_jobs=n_cores)
+    benchmark(fc.calculate, dummy_group_data, n_jobs=n_cores, **{group_by: "store"})

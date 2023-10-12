@@ -294,9 +294,9 @@ class FeatureCollection:
         executor function (since we calculate the segment indices for the consecutive
         groups).
         """
-        # Uses the global get_group_func, group_indices, and group_idx_name
+        # Uses the global get_group_func, group_indices, and group_id_name
         data, function = get_group_func(idx)
-        index = group_indices.keys()
+        group_ids = group_indices.keys()  # group_ids are the keys of the group_indices
         cols = data.columns.values
 
         t_start = time.perf_counter()
@@ -321,17 +321,17 @@ class FeatureCollection:
                     return function(*[x[c] for c in cols])
 
         # Function execution over the grouped data (accessed by using the group_indices)
-        out = np.array(list(map(f, [data.iloc[idx] for idx in index])))
+        out = np.array(list(map(f, [data.iloc[idx] for idx in group_indices.values()])))
 
         # Aggregate function output in a dictionary
         output_names = ["|".join(cols) + "__" + o for o in function.output_names]
-        feat_out = _process_func_output(out, index, output_names, str(function))
+        feat_out = _process_func_output(out, group_ids, output_names, str(function))
         # Log the function execution time
         _log_func_execution(
             t_start, function, tuple(cols), "groupby_all", "groupby_all", output_names
         )
 
-        return pd.DataFrame(feat_out, index=index).rename_axis(index=group_idx_name)
+        return pd.DataFrame(feat_out, index=group_ids).rename_axis(index=group_id_name)
 
     # def _get_stroll(self, kwargs):
     #     return StridedRollingFactory.get_segmenter(**kwargs)
@@ -510,9 +510,9 @@ class FeatureCollection:
             where `func` is the FeatureDescriptor function and `x` is the name
             on which the FeatureDescriptor operates.
         """
-        global group_indices, group_idx_name, get_group_func
-        group_indices = grouped_data.indices
-        group_idx_name = grouped_data.grouper.names
+        global group_indices, group_id_name, get_group_func
+        group_indices = grouped_data.indices  # dict - group_id as key; indices as value
+        group_id_name = grouped_data.grouper.names  # name of the group col(s)
         get_group_func = self._group_feat_generator(grouped_data)
 
         return self._calculate_feature_list(
@@ -739,7 +739,12 @@ class FeatureCollection:
 
     def calculate(
         self,
-        data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
+        data: Union[
+            pd.Series,
+            pd.DataFrame,
+            List[Union[pd.Series, pd.DataFrame]],
+            pd.core.groupby.DataFrameGroupby,
+        ],
         stride: Optional[Union[float, str, pd.Timedelta, List, None]] = None,
         segment_start_idxs: Optional[
             Union[list, np.ndarray, pd.Series, pd.Index]
@@ -760,7 +765,7 @@ class FeatureCollection:
 
         Parameters
         ----------
-        data : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
+        data : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]], pd.core.groupby.DataFrameGroupby]
             Dataframe or Series or list thereof, with all the required data for the
             feature calculation. \n
             **Assumptions**: \n
@@ -769,6 +774,8 @@ class FeatureCollection:
             numeric or a ``pd.DatetimeIndex``.
             * each Series / DataFrame index must be comparable with all others
             * we assume that each series-name / dataframe-column-name is unique.
+            Can also be a `DataFrameGroupBy` object, in which case the expected
+            behaviour is similar to grouping by all values in `group_by_all`.
         stride: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta], None], optional
             The stride size. By default None. This argument supports multiple types: \n
             * If None, the stride of the `FeatureDescriptor` objects will be used.
@@ -864,6 +871,9 @@ class FeatureCollection:
             will be calculated. The output that is returned contains this `group_by`
             column as index to allow identifying the groups, and also contains all
             corresponding fields of used `FeatureDescriptor`s.
+            Rows with NaN values for this column will not be considered. This means that
+            no NaN values will be present for calculation of any of the
+            `FeatureDescriptor`s or for dividing in groups.
             .. note::
                 This is similar as passing a `DataFrameGroupBy` object as `data`
                 argument to the `calculate` method.
@@ -877,8 +887,8 @@ class FeatureCollection:
             identifying the groups, and also contains fields [`__start`, "__end"] which
             contain start and end time range for each result row. Also contains all
             corresponding fields of used `FeatureDescriptor`s.
-            Rows with NaN values will be dropped from input data before grouping. This
-            means that no NaN values will be present for calculation of any of the
+            Rows with NaN values for this column will not be considered. This means that
+            no NaN values will be present for calculation of any of the
             `FeatureDescriptor`s or for dividing in groups.
             Grouping column values will be grouped on exact matches. Groups can appear
             multiple times if they are appear in different time-gaps.
