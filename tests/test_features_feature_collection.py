@@ -2326,3 +2326,229 @@ def test_feature_collection_various_timezones_segment_start_idxs():
         s_usa, segment_start_idxs=s_none.index[:3].values, n_jobs=0, return_df=True
     )
     assert np.all(res.values == [])
+
+
+@pytest.mark.parametrize(
+    "test_setup",
+    [
+        # (start_idx, exact_time, stride, window, expected_result)
+        (12, 5, None, None, 15),
+        (10, 5, None, None, 10),
+        (10, 2.5, None, None, 10),
+        (3, 2.5, None, None, 5.0),
+        (7, True, None, None, 7),
+        (10, False, None, 2, 10),
+        (10, False, None, 3, 12),
+        (100, False, 7, 3, 105),
+        (100, False, [7, 9, 11], 3, 693),
+        (100, False, [3.5, 7.0, 9.4], 3, 987),
+    ],
+)
+def test_process_non_exact_start_idx_int(test_setup):
+    start_idx, exact_time, stride, window, expected_result = test_setup
+    result = FeatureCollection._process_non_exact_start_idx(
+        start_idx, exact_time, stride, window
+    )
+
+    assert result == expected_result
+
+    assert isinstance(result, (int, float, np.int32, np.int64))
+
+
+@pytest.mark.parametrize(
+    "test_setup",
+    [
+        # (start_idx, exact_time, stride, window, expected_result)
+        (32.5, 12.4, None, None, 37.2),
+        (7.5, 2.5, None, None, 7.5),
+        (7.5, 5, None, None, 10.0),
+        (31.0, 21.29485, None, None, 42.5897),
+        (21.395, True, None, None, 21.395),
+        (21.395, False, 5, 7, 35.0),
+        (21.395, False, None, 20, 40.0),
+        (21.395, False, None, 17.475, 34.95),
+        (21.395, False, [2.5, 3.4, 5.0], 17, 85.0),
+    ],
+)
+def test_process_non_exact_start_idx_float(test_setup):
+    start_idx, exact_time, stride, window, expected_result = test_setup
+    result = FeatureCollection._process_non_exact_start_idx(
+        start_idx, exact_time, stride, window
+    )
+
+    assert result == expected_result
+
+    assert isinstance(result, float)
+
+
+@pytest.mark.parametrize(
+    "test_setup",
+    [
+        # (start_idx, exact_time, stride, window, expected_result)
+        (
+            pd.Timestamp("2019-01-01T09:00:00+0100"),
+            "1D",
+            None,
+            None,
+            pd.Timestamp("2019-01-02T00:00:00+0100"),
+        ),
+        (
+            pd.Timestamp("2019-01-01T09:00:00+0100"),
+            "1h",
+            None,
+            None,
+            pd.Timestamp("2019-01-01T09:00:00+0100"),
+        ),
+        (
+            pd.Timestamp("2019-01-01T10:08:55+0100"),
+            "2h",
+            None,
+            None,
+            pd.Timestamp("2019-01-01T12:00:00+0100"),
+        ),
+        (
+            pd.Timestamp("2019-01-01T09:08:16+0100"),
+            "15min",
+            None,
+            None,
+            pd.Timestamp("2019-01-01T09:15:00+0100"),
+        ),
+        (
+            pd.Timestamp("2019-01-01T09:00:00+0100"),
+            pd.Timedelta(1, "day"),
+            None,
+            None,
+            pd.Timestamp("2019-01-02T00:00:00+0100"),
+        ),
+        (
+            pd.Timestamp("2019-01-01T09:00:00+0100"),
+            pd.Timedelta(1, "hour"),
+            None,
+            None,
+            pd.Timestamp("2019-01-01T09:00:00+0100"),
+        ),
+        (
+            pd.Timestamp("2019-01-01T10:08:55+0100"),
+            pd.Timedelta(2, "hours"),
+            None,
+            None,
+            pd.Timestamp("2019-01-01T12:00:00+0100"),
+        ),
+        (
+            pd.Timestamp("2019-01-01T09:08:16+0100"),
+            pd.Timedelta(15, "minutes"),
+            None,
+            None,
+            pd.Timestamp("2019-01-01T09:15:00+0100"),
+        ),
+        (
+            pd.Timestamp("2019-01-01T10:08:55+0100"),
+            True,
+            None,
+            None,
+            pd.Timestamp("2019-01-01T10:08:55+0100"),
+        ),
+        (
+            pd.Timestamp("2019-01-01T09:00:00+0100"),
+            False,
+            None,
+            pd.Timedelta(1, "hour"),
+            pd.Timestamp("2019-01-01T09:00:00+0100"),
+        ),
+        (
+            pd.Timestamp("2019-01-01T09:00:00+0100"),
+            False,
+            pd.Timedelta(2, "hours"),
+            pd.Timedelta(45, "minutes"),
+            pd.Timestamp("2019-01-01T12:00:00+0100"),
+        ),
+        (
+            pd.Timestamp("2019-01-01T10:08:55+0100"),
+            False,
+            [
+                pd.Timedelta(20, "minutes"),
+                pd.Timedelta(30, "minutes"),
+                pd.Timedelta(60, "minutes"),
+            ],
+            pd.Timedelta(10, "minutes"),
+            pd.Timestamp("2019-01-01T11:00:00+0100"),
+        ),
+    ],
+)
+def test_process_non_exact_start_idx_timestamp(test_setup):
+    start_idx, exact_time, stride, window, expected_result = test_setup
+    result = FeatureCollection._process_non_exact_start_idx(
+        start_idx, exact_time, stride, window
+    )
+
+    assert result == expected_result
+
+    assert isinstance(result, pd.Timestamp)
+
+
+@pytest.mark.parametrize(
+    "test_setup",
+    [
+        # (start_idx, stride)
+        (100, None),
+        (100, [7, 9, 11]),
+        (21.395, None),
+        (21.395, [2.5, 5.0]),
+        (pd.Timestamp("2019-01-01T10:08:55+0100"), None),
+        (
+            pd.Timestamp("2019-01-01T10:08:55+0100"),
+            [
+                pd.Timedelta(20, "minutes"),
+                pd.Timedelta(30, "minutes"),
+                pd.Timedelta(60, "minutes"),
+            ],
+        ),
+    ],
+)
+def test_process_non_exact_start_idx_window_none(test_setup):
+    start_idx, stride = test_setup
+    with pytest.raises(AssertionError, match=r".*window argument is required.*"):
+        FeatureCollection._process_non_exact_start_idx(start_idx, False, stride, None)
+
+
+@pytest.mark.parametrize(
+    "test_setup",
+    [
+        # (start_idx, exact_time, stride, window)
+        (5, False, None, pd.Timedelta(10, "minutes")),
+        (5, False, 7, pd.Timedelta(10, "minutes")),
+        (5, False, 7.95, pd.Timedelta(10, "minutes")),
+        (5, False, pd.Timedelta(20, "minutes"), pd.Timedelta(10, "minutes")),
+        (5.25, False, None, pd.Timedelta(10, "minutes")),
+        (5.25, False, 7, pd.Timedelta(10, "minutes")),
+        (5.25, False, 7.95, pd.Timedelta(10, "minutes")),
+        (5.25, False, pd.Timedelta(20, "minutes"), pd.Timedelta(10, "minutes")),
+        (pd.Timestamp("2019-01-01T10:08:55+0100"), False, None, 5),
+        (pd.Timestamp("2019-01-01T10:08:55+0100"), False, None, 5.75),
+        (pd.Timestamp("2019-01-01T10:08:55+0100"), False, 7, 5),
+        (pd.Timestamp("2019-01-01T10:08:55+0100"), False, 7.95, 5.75),
+        (
+            pd.Timestamp("2019-01-01T10:08:55+0100"),
+            False,
+            pd.Timedelta(10, "minutes"),
+            5,
+        ),
+        (
+            pd.Timestamp("2019-01-01T10:08:55+0100"),
+            False,
+            7.95,
+            pd.Timedelta(10, "minutes"),
+        ),
+    ],
+)
+def test_process_non_exact_start_idx_incorrect_types(test_setup):
+    start_idx, exact_time, stride, window = test_setup
+    with pytest.raises((AssertionError, ValueError)):
+        FeatureCollection._process_non_exact_start_idx(
+            start_idx, exact_time, stride, window
+        )
+
+
+def test_process_non_exact_start_idx_unsupported_type():
+    with pytest.raises(TypeError, match=r".*not supported as `exact_time` argument.*"):
+        FeatureCollection._process_non_exact_start_idx(2, dict(), None, None)
