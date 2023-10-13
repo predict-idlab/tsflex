@@ -29,9 +29,10 @@ from .utils import dummy_data, dummy_group_data  # noqa: F401
 ## FeatureCollection
 
 
-def test_single_series_group_consecutive_feature_collection(dummy_group_data):
+@pytest.mark.parametrize("group_by", ["group_by_all", "group_by_consecutive"])
+def test_single_series_group_by_feature_collection(dummy_group_data, group_by):
     fd = FeatureDescriptor(
-        function=np.sum,
+        function=sum,
         series_name="number_sold",
     )
 
@@ -39,12 +40,8 @@ def test_single_series_group_consecutive_feature_collection(dummy_group_data):
 
     assert fc.get_required_series() == ["number_sold"]
     assert fc.get_nb_output_features() == 1
-    res_list = fc.calculate(
-        dummy_group_data, group_by_consecutive="store", return_df=False
-    )
-    res_df = fc.calculate(
-        dummy_group_data, group_by_consecutive="store", return_df=True
-    )
+    res_list = fc.calculate(dummy_group_data, return_df=False, **{group_by: "store"})
+    res_df = fc.calculate(dummy_group_data, return_df=True, **{group_by: "store"})
 
     assert isinstance(res_list, list)
     assert isinstance(res_df, pd.DataFrame)
@@ -54,15 +51,19 @@ def test_single_series_group_consecutive_feature_collection(dummy_group_data):
     assert_frame_equal(concatted_df, res_df)
 
     data_counts = dummy_group_data.groupby("store")["number_sold"].sum()
-    result_data_counts = res_df.groupby("store")["number_sold__sum__w=manual"].sum()
+    if "consecutive" in group_by:  # group_by_consecutive
+        result_data_counts = res_df.groupby("store")["number_sold__sum__w=manual"].sum()
+    else:  # group_by_all
+        result_data_counts = res_df["number_sold__sum"]
 
     for index in data_counts.index:
         assert data_counts[index] == result_data_counts[index]
 
 
-def test_group_consecutive_feature_collection_with_warnings(dummy_group_data):
+@pytest.mark.parametrize("group_by", ["group_by_all", "group_by_consecutive"])
+def test_group_by_feature_collection_with_warnings(dummy_group_data, group_by):
     fd = FeatureDescriptor(
-        function=np.sum,
+        function=sum,
         series_name="number_sold",
     )
 
@@ -84,8 +85,8 @@ def test_group_consecutive_feature_collection_with_warnings(dummy_group_data):
             segment_end_idxs=[0],
             window_idx="start",
             include_final_window=True,
-            group_by_consecutive="store",
             return_df=True,
+            **{group_by: "store"},
         )
         # Verify the warning
         assert len(w) == 5
@@ -99,18 +100,23 @@ def test_group_consecutive_feature_collection_with_warnings(dummy_group_data):
         # Check the output
         assert isinstance(res_df, pd.DataFrame)
 
-        data_counts = dummy_group_data.groupby("store")["number_sold"].sum()
+    data_counts = dummy_group_data.groupby("store")["number_sold"].sum()
+    if "consecutive" in group_by:  # group_by_consecutive
         result_data_counts = res_df.groupby("store")["number_sold__sum__w=manual"].sum()
+    else:  # group_by_all
+        result_data_counts = res_df["number_sold__sum"]
 
-        for index in data_counts.index:
-            assert data_counts[index] == result_data_counts[index]
+    for index in data_counts.index:
+        assert data_counts[index] == result_data_counts[index]
 
 
-def test_single_series_group_feature_non_existent_group_by_consecutive(
+@pytest.mark.parametrize("group_by", ["group_by_all", "group_by_consecutive"])
+def test_single_series_group_feature_non_existent_group_by(
     dummy_group_data,
+    group_by,
 ):
     fd = FeatureDescriptor(
-        function=np.sum,
+        function=sum,
         series_name="count",
     )
 
@@ -119,12 +125,11 @@ def test_single_series_group_feature_non_existent_group_by_consecutive(
     assert fc.get_required_series() == ["count"]
     assert fc.get_nb_output_features() == 1
     with pytest.raises(Exception):
-        fc.calculate(
-            dummy_group_data, group_by_consecutive="nonexistent", return_df=False
-        )
+        fc.calculate(dummy_group_data, return_df=False, **{group_by: "non_existent"})
 
 
-def test_single_series_multiple_features_group_by_consecutive(dummy_group_data):
+@pytest.mark.parametrize("group_by", ["group_by_all", "group_by_consecutive"])
+def test_single_series_multiple_features_group_by(dummy_group_data, group_by):
     fd1 = FeatureDescriptor(function=np.sum, series_name="number_sold")
     fd2 = FeatureDescriptor(function=np.min, series_name="number_sold")
     fd3 = FeatureDescriptor(function=np.max, series_name="number_sold")
@@ -135,16 +140,18 @@ def test_single_series_multiple_features_group_by_consecutive(dummy_group_data):
     assert fc.get_nb_output_features() == 3
 
     res_list = fc.calculate(
-        dummy_group_data, group_by_consecutive="store", return_df=False, n_jobs=1
+        dummy_group_data, return_df=False, n_jobs=1, **{group_by: "store"}
     )
     res_df = fc.calculate(
-        dummy_group_data, group_by_consecutive="store", return_df=True, n_jobs=1
+        dummy_group_data, return_df=True, n_jobs=1, **{group_by: "store"}
     )
 
     assert isinstance(res_list, list)
     assert isinstance(res_df, pd.DataFrame)
 
     concatted_df = pd.concat(res_list, axis=1)
+    assert len(concatted_df.columns) == len(res_df.columns)
+    concatted_df = concatted_df[res_df.columns]  # assure column order is the same
 
     assert_frame_equal(concatted_df, res_df)
 
@@ -152,9 +159,16 @@ def test_single_series_multiple_features_group_by_consecutive(dummy_group_data):
     data_count_min = dummy_group_data.groupby("store")["number_sold"].min()
     data_count_max = dummy_group_data.groupby("store")["number_sold"].max()
 
-    grouped_res_df_sum = res_df.groupby("store")["number_sold__sum__w=manual"].sum()
-    grouped_res_df_min = res_df.groupby("store")["number_sold__amin__w=manual"].min()
-    grouped_res_df_max = res_df.groupby("store")["number_sold__amax__w=manual"].max()
+    postfix = "__w=manual" if "consecutive" in group_by else ""
+    grouped_res_df_sum = (
+        res_df.reset_index().groupby("store")["number_sold__sum" + postfix].sum()
+    )
+    grouped_res_df_min = (
+        res_df.reset_index().groupby("store")["number_sold__amin" + postfix].min()
+    )
+    grouped_res_df_max = (
+        res_df.reset_index().groupby("store")["number_sold__amax" + postfix].max()
+    )
 
     def assert_results(data, res_data):
         for index in data.index:
@@ -165,7 +179,8 @@ def test_single_series_multiple_features_group_by_consecutive(dummy_group_data):
     assert_results(data_count_max, grouped_res_df_max)
 
 
-def test_group_by_consecutive_with_nan_values(dummy_group_data):
+@pytest.mark.parametrize("group_by", ["group_by_all", "group_by_consecutive"])
+def test_group_by_with_nan_values(dummy_group_data, group_by):
     fd = FeatureDescriptor(
         function=np.sum,
         series_name="number_sold",
@@ -180,26 +195,28 @@ def test_group_by_consecutive_with_nan_values(dummy_group_data):
     assert fc.get_required_series() == ["number_sold"]
     assert fc.get_nb_output_features() == 1
     res_list = fc.calculate(
-        nan_dummy_group_data, group_by_consecutive="store", return_df=False
+        nan_dummy_group_data, return_df=False, **{group_by: "store"}
     )
-    res_df = fc.calculate(
-        nan_dummy_group_data, group_by_consecutive="store", return_df=True
-    )
+    res_df = fc.calculate(nan_dummy_group_data, return_df=True, **{group_by: "store"})
 
     assert isinstance(res_list, list)
     assert isinstance(res_df, pd.DataFrame)
 
     concatted_df = pd.concat(res_list, axis=1)
+    assert len(concatted_df.columns) == len(res_df.columns)
+    concatted_df = concatted_df[res_df.columns]  # assure column order is the same
 
     assert_frame_equal(concatted_df, res_df)
 
+    postfix = "__w=manual" if "consecutive" in group_by else ""
     assert (
         dummy_group_data["number_sold"].sum()
-        > res_df["number_sold__sum__w=manual"].sum()
+        > res_df["number_sold__sum" + postfix].sum()
     )
 
 
-def test_group_consecutive_with_unequal_lengths():
+@pytest.mark.parametrize("group_by", ["group_by_all", "group_by_consecutive"])
+def test_group_by_with_unequal_lengths(group_by):
     fd = FeatureDescriptor(
         function=np.sum,
         series_name="count",
@@ -247,24 +264,23 @@ def test_group_consecutive_with_unequal_lengths():
         data=np.arange(30),
         name="count",
     )
-    res_list = fc.calculate(
-        [s_group, s_val], group_by_consecutive="user_id", return_df=True
-    )
+    res_list = fc.calculate([s_group, s_val], return_df=True, **{group_by: "user_id"})
     res_list2 = fc.calculate(
-        [s_group2, s_val2], group_by_consecutive="user_id", return_df=True
+        [s_group2, s_val2], return_df=True, **{group_by: "user_id"}
     )
-    res_list2["count__sum__w=manual"] = res_list2["count__sum__w=manual"].astype(
-        res_list.dtypes["count__sum__w=manual"]
-    )
+    col = "count__sum"
+    col += "__w=manual" if "consecutive" in group_by else ""
+    res_list2[col] = res_list2[col].astype(res_list.dtypes[col])
     correct_res_list = fc.calculate(
-        [s_group, s_val2], group_by_consecutive="user_id", return_df=True
+        [s_group, s_val2], return_df=True, **{group_by: "user_id"}
     )
 
     assert_frame_equal(res_list, res_list2)
     assert_frame_equal(res_list, correct_res_list)
 
 
-def test_group_consecutive_non_aligned_indices():
+@pytest.mark.parametrize("group_by", ["group_by_all", "group_by_consecutive"])
+def test_group_by_non_aligned_indices(group_by):
     fd = FeatureDescriptor(function=np.sum, series_name="count")
     fc = FeatureCollection(feature_descriptors=fd)
 
@@ -282,19 +298,22 @@ def test_group_consecutive_non_aligned_indices():
     df = pd.DataFrame({"groups": s_group, "values": s_val})
     non_nan_df = df.loc[df["groups"].notna() & df["values"].notna()]
     res_list = fc.calculate(
-        [s_group, s_val], group_by_consecutive="user_id", return_df=True
-    )
+        [s_group, s_val], return_df=True, **{group_by: "user_id"}
+    ).reset_index()
     grouped_non_nan_df_sums = non_nan_df.groupby("groups").sum()
 
+    col = "count__sum"
+    col += "__w=manual" if "consecutive" in group_by else ""
     new_res_list = pd.DataFrame(
-        {"groups": res_list["user_id"], "values": res_list["count__sum__w=manual"]}
+        {"groups": res_list["user_id"], "values": res_list[col]}
     )
     new_res_list = new_res_list.set_index("groups")
 
     assert_frame_equal(new_res_list, grouped_non_nan_df_sums)
 
 
-def test_group_consecutive_with_numeric_index():
+@pytest.mark.parametrize("group_by", ["group_by_all", "group_by_consecutive"])
+def test_group_by_with_numeric_index(group_by):
     fd = FeatureDescriptor(function=np.sum, series_name="count")
     fc = FeatureCollection(feature_descriptors=fd)
 
@@ -318,12 +337,8 @@ def test_group_consecutive_with_numeric_index():
         name="count",
     )
 
-    res_df = fc.calculate(
-        [s_group, s_val], group_by_consecutive="user_id", return_df=True
-    )
-    res_list = fc.calculate(
-        [s_group, s_val], group_by_consecutive="user_id", return_df=False
-    )
+    res_df = fc.calculate([s_group, s_val], return_df=True, **{group_by: "user_id"})
+    res_list = fc.calculate([s_group, s_val], return_df=False, **{group_by: "user_id"})
     assert isinstance(res_list, list)
     assert isinstance(res_df, pd.DataFrame)
 
@@ -334,13 +349,60 @@ def test_group_consecutive_with_numeric_index():
     s_df = pd.DataFrame({"groups": s_group, "values": s_val})
 
     data_counts = s_df.groupby("groups")["values"].sum()
-    result_data_counts = res_df.groupby("user_id")["count__sum__w=manual"].sum()
+    col = "count__sum"
+    col += "__w=manual" if "consecutive" in group_by else ""
+    result_data_counts = res_df.groupby("user_id")[col].sum()
 
     for index in data_counts.index:
         assert data_counts[index] == result_data_counts[index]
 
 
-def test_group_by_consecutive_with_series():
+@pytest.mark.parametrize("group_by", ["group_by_all", "group_by_consecutive"])
+def test_failing_function_group_by(dummy_group_data, group_by):
+    def failing_func(_):
+        raise RuntimeError()
+
+    fd = FeatureDescriptor(
+        function=failing_func,
+        series_name="number_sold",
+    )
+
+    fc = FeatureCollection(feature_descriptors=fd)
+
+    assert fc.get_required_series() == ["number_sold"]
+    assert fc.get_nb_output_features() == 1
+    with pytest.raises(RuntimeError):
+        fc.calculate(dummy_group_data, return_df=True, **{group_by: "store"})
+
+
+def test_group_by_all_subcall():
+    s_val = pd.Series(
+        index=np.arange(40),
+        name="user_id",
+        data=["a"] * 10
+        + ["b"] * 2
+        + ["c"]
+        + ["d"] * 2
+        + [None] * 3
+        + ["e"] * 12
+        + ["a"] * 5
+        + [None] * 2
+        + ["a"] * 3,
+    )
+
+    expected = s_val.to_frame().groupby("user_id")
+
+    res = FeatureCollection._group_by_all({"user_id": s_val}, "user_id")
+    assert isinstance(res, pd.core.groupby.DataFrameGroupBy)
+
+    # check for equal indices and keys
+    assert len(res.indices.keys()) == len(expected.indices.keys())
+    for key in res.indices.keys():
+        assert key in expected.indices.keys()
+        assert len(res.indices[key]) == len(expected.indices[key])
+
+
+def test_group_by_consecutive_subcall():
     s_val = pd.Series(
         index=np.arange(40),
         name="user_id",
@@ -365,23 +427,6 @@ def test_group_by_consecutive_with_series():
 
     res = FeatureCollection._group_by_consecutive(s_val)
     assert_frame_equal(res, expected_df)
-
-
-def test_failing_group_by_consecutive_subcall(dummy_group_data):
-    def failing_func(_):
-        raise RuntimeError()
-
-    fd = FeatureDescriptor(
-        function=failing_func,
-        series_name="number_sold",
-    )
-
-    fc = FeatureCollection(feature_descriptors=fd)
-
-    assert fc.get_required_series() == ["number_sold"]
-    assert fc.get_nb_output_features() == 1
-    with pytest.raises(RuntimeError):
-        fc.calculate(dummy_group_data, group_by_consecutive="store", return_df=True)
 
 
 def test_single_series_feature_collection(dummy_data):
