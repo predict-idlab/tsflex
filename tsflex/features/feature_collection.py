@@ -478,9 +478,7 @@ class FeatureCollection:
         df = pd.DataFrame(series_dict)
         assert col_name in df.columns
 
-        # Drop all rows with NaN values
-        df.dropna(inplace=True)
-
+        # GroupBy ignores all rows with NaN values for the column on which we group
         return df.groupby(col_name)
 
     def _calculate_group_by_all(
@@ -553,8 +551,8 @@ class FeatureCollection:
 
         assert col_name in df.columns
 
-        # Drop all rows with NaN values
-        df.dropna(inplace=True)
+        # Drop all rows with NaN values for the column on which we group
+        df.dropna(subset=[col_name], inplace=True)
 
         df_cum = (
             (df[col_name] != df[col_name].shift(1))
