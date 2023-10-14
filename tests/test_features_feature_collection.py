@@ -129,7 +129,8 @@ def test_single_series_group_feature_non_existent_group_by(
 
 
 @pytest.mark.parametrize("group_by", ["group_by_all", "group_by_consecutive"])
-def test_single_series_multiple_features_group_by(dummy_group_data, group_by):
+@pytest.mark.parametrize("n_jobs", [1, 3])
+def test_single_series_multiple_features_group_by(dummy_group_data, group_by, n_jobs):
     fd1 = FeatureDescriptor(function=np.sum, series_name="number_sold")
     fd2 = FeatureDescriptor(function=np.min, series_name="number_sold")
     fd3 = FeatureDescriptor(function=np.max, series_name="number_sold")
@@ -140,10 +141,10 @@ def test_single_series_multiple_features_group_by(dummy_group_data, group_by):
     assert fc.get_nb_output_features() == 3
 
     res_list = fc.calculate(
-        dummy_group_data, return_df=False, n_jobs=1, **{group_by: "store"}
+        dummy_group_data, return_df=False, n_jobs=n_jobs, **{group_by: "store"}
     )
     res_df = fc.calculate(
-        dummy_group_data, return_df=True, n_jobs=1, **{group_by: "store"}
+        dummy_group_data, return_df=True, n_jobs=n_jobs, **{group_by: "store"}
     )
 
     assert isinstance(res_list, list)
