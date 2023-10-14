@@ -594,6 +594,8 @@ class FeatureCollection:
             Whether the output needs to be a DataFrame or a list thereof, by default
             False. If `True` the output dataframes will be merged to a DataFrame with an
             outer merge.
+        **calculate_kwargs:
+            Keyword arguments that will be passed to the `calculate` method.
 
         .. Note::
             Is comparable to following pseudo-SQL code:
@@ -663,9 +665,25 @@ class FeatureCollection:
 
     @staticmethod
     def _process_njobs(n_jobs: Union[int, None], nb_funcs: int) -> int:
-        if (
-            os.name == "nt"
-        ):  # On Windows no multiprocessing is supported, see https://github.com/predict-idlab/tsflex/issues/51
+        """Process the number of jobs to run in parallel.
+
+        On Windows no multiprocessing is supported, see
+        https://github.com/predict-idlab/tsflex/issues/51
+
+        Parameters
+        ----------
+        n_jobs : Union[int, None]
+            The number of jobs to run in parallel.
+        nb_funcs : int
+            The number of feature functions.
+
+        Returns
+        -------
+        int
+            The number of jobs to run in parallel.
+
+        """
+        if os.name == "nt":  # On Windows no multiprocessing is supported
             n_jobs = 1
         elif n_jobs is None:
             n_jobs = os.cpu_count()
