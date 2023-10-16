@@ -12,6 +12,7 @@ import warnings
 
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
+import logging
 import os
 import time
 import traceback
@@ -487,6 +488,7 @@ class FeatureCollection:
         return_df: Optional[bool],
         show_progress: Optional[bool],
         n_jobs: Optional[int],
+        f_handler: Optional[logging.FileHandler],
     ):
         """Calculate features on the data by grouping `group_by` values.
 
@@ -500,6 +502,8 @@ class FeatureCollection:
             Whether to show a progress bar.
         n_jobs: int, optional
             The number of jobs to run in parallel.
+        f_handler: logging.FileHandler, optional
+            The file handler that is used to log the function execution times.
 
         .. Note::
             Is comparable to following pseudo-SQL code:
@@ -517,7 +521,7 @@ class FeatureCollection:
         get_group_func = self._group_feat_generator(grouped_data)
 
         return self._calculate_feature_list(
-            self._executor_grouped, n_jobs, show_progress, return_df
+            self._executor_grouped, n_jobs, show_progress, return_df, f_handler
         )
 
     @staticmethod
@@ -695,6 +699,7 @@ class FeatureCollection:
         n_jobs: Optional[int],
         show_progress: Optional[bool],
         return_df: Optional[bool],
+        f_handler: Optional[logging.FileHandler],
     ) -> Union[List[pd.DataFrame], pd.DataFrame]:
         """Calculate the features for the given executor.
 
@@ -708,6 +713,8 @@ class FeatureCollection:
             Whether to show a progress bar.
         return_df : Optional[bool], optional
             Whether to return a DataFrame or a list of DataFrames.
+        f_handler : Optional[logging.FileHandler], optional
+            The file handler that is used to log the function execution times.
 
         Returns
         -------
@@ -743,6 +750,11 @@ class FeatureCollection:
                     pool.close()
                     pool.terminate()
                     pool.join()
+
+        # Close the file handler (this avoids PermissionError: [WinError 32])
+        if f_handler is not None:
+            f_handler.close()
+            logger.removeHandler(f_handler)
 
         if calculated_feature_list is None:
             raise RuntimeError(
@@ -1011,6 +1023,7 @@ class FeatureCollection:
         # Delete other logging handlers
         delete_logging_handlers(logger)
         # Add logging handler (if path provided)
+        f_handler = None
         if logging_file_path:
             f_handler = add_logging_handler(logger, logging_file_path)
 
@@ -1067,6 +1080,7 @@ class FeatureCollection:
                     return_df,
                     show_progress=show_progress,
                     n_jobs=n_jobs,
+                    f_handler=f_handler,
                 )
 
         # Convert to numpy array (if necessary)
@@ -1146,7 +1160,7 @@ class FeatureCollection:
         )
 
         return self._calculate_feature_list(
-            self._executor_stroll, n_jobs, show_progress, return_df
+            self._executor_stroll, n_jobs, show_progress, return_df, f_handler
         )
 
     def serialize(self, file_path: Union[str, Path]):
