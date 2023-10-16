@@ -329,7 +329,7 @@ class FeatureCollection:
         feat_out = _process_func_output(out, group_ids, output_names, str(function))
         # Log the function execution time
         _log_func_execution(
-            t_start, function, tuple(cols), "groupby_all", "groupby_all", output_names
+            t_start, function, tuple(cols), "manual", "manual", output_names
         )
 
         return pd.DataFrame(feat_out, index=group_ids).rename_axis(index=group_id_name)
