@@ -147,6 +147,11 @@ class FeatureCollection:
             )
         )
 
+    def _get_nb_feat_funcs(self) -> int:
+        return sum(
+            len(self._feature_desc_dict[k]) for k in self._feature_desc_dict.keys()
+        )
+
     @staticmethod
     def _get_collection_key(
         feature: FeatureDescriptor,
@@ -277,6 +282,11 @@ class FeatureCollection:
         - segment indices are passed to the `calculate` method
         - a `group_by_consecutive` argument is passed to the `calculate` method (since
           we calculate the segment indices for the consecutive groups)
+
+        This method uses the global `get_stroll_func` function, which returns the
+        StridedRolling object and the function that needs to be applied to the
+        StridedRolling object. Using a global function is necessary to facilitate
+        multiprocessing.
         """
         # Uses the global get_stroll_func
         stroll, function = get_stroll_func(idx)
@@ -294,6 +304,13 @@ class FeatureCollection:
         will not use this executor function, but will use the `_executor_stroll` as
         executor function (since we calculate the segment indices for the consecutive
         groups).
+
+        This method uses the global `get_group_func` function, which returns a
+        pd.DataFrame (containing only the necessary data for the function) and the
+        function that needs to be applied to the pd.DataFrame. In addition, the global
+        `group_indices` and `group_id_name` are used to access the grouped data and the
+        group id name respectively. Using a global function is necessary to facilitate
+        multiprocessing.
         """
         # Uses the global get_group_func, group_indices, and group_id_name
         data, function = get_group_func(idx)
@@ -302,24 +319,20 @@ class FeatureCollection:
 
         t_start = time.perf_counter()
 
-        # Wrap the function to handle multiple inputs and / or convert to numpy array
-        # if necessary
+        # Wrap the function to handle multiple inputs and convert the inputs to numpy
+        # array if necessary
         f = function
-        if len(cols) == 1 and function.input_type is np.array:
+        if function.input_type is np.array:
 
             def f(x: pd.DataFrame):
-                return function(x.values)
+                # pass the inputs as positional arguments of numpy array type
+                return function(*[x[c].values for c in cols])
 
-        elif len(cols) > 1:
-            if function.input_type is np.array:
+        else:  # function.input_type is pd.Series
 
-                def f(x: pd.DataFrame):
-                    return function(*[x[c].values for c in cols])
-
-            else:  # function.input_type is pd.Series
-
-                def f(x: pd.DataFrame):
-                    return function(*[x[c] for c in cols])
+            def f(x: pd.DataFrame):
+                # pass the inputs as positional arguments of pd.Series type
+                return function(*[x[c] for c in cols])
 
         # Function execution over the grouped data (accessed by using the group_indices)
         out = np.array(list(map(f, [data.iloc[idx] for idx in group_indices.values()])))
@@ -333,9 +346,6 @@ class FeatureCollection:
         )
 
         return pd.DataFrame(feat_out, index=group_ids).rename_axis(index=group_id_name)
-
-    # def _get_stroll(self, kwargs):
-    #     return StridedRollingFactory.get_segmenter(**kwargs)
 
     def _group_feat_generator(
         self,
@@ -408,11 +418,6 @@ class FeatureCollection:
 
         return get_stroll_function
 
-    def _get_nb_feat_funcs(self) -> int:
-        return sum(
-            len(self._feature_desc_dict[k]) for k in self._feature_desc_dict.keys()
-        )
-
     def _check_no_multiple_windows(self):
         assert (
             self._get_nb_output_features_without_window()
@@ -460,7 +465,7 @@ class FeatureCollection:
     def _group_by_all(
         series_dict: Dict[str, pd.Series], col_name: str = None
     ) -> pd.api.typing.DataFrameGroupBy:
-        """Group all `column_name` values and return the corresponding indices.
+        """Group all `column_name` values and return the grouped data.
 
         Parameters
         ----------
@@ -490,7 +495,7 @@ class FeatureCollection:
         n_jobs: Optional[int],
         f_handler: Optional[logging.FileHandler],
     ):
-        """Calculate features on the data by grouping `group_by` values.
+        """Calculate features on each group of the grouped data.
 
         Parameters
         ----------
@@ -510,10 +515,11 @@ class FeatureCollection:
             ```sql
             SELECT func(x)
             FROM `data`
-            GROUP BY `group_by`
+            GROUP BY ...
             ```
             where `func` is the FeatureDescriptor function and `x` is the name
-            on which the FeatureDescriptor operates.
+            on which the FeatureDescriptor operates. The group by is already done by
+            passing a `DataFrameGroupBy` object to this method.
         """
         global group_indices, group_id_name, get_group_func
         group_indices = grouped_data.indices  # dict - group_id as key; indices as value
@@ -528,7 +534,7 @@ class FeatureCollection:
     def _group_by_consecutive(
         df: Union[pd.Series, pd.DataFrame], col_name: str = None
     ) -> pd.DataFrame:
-        """Group consecutive `column_name` values in a single dataframe.
+        """Group consecutive `col_name` values in a single DataFrame.
 
         This is especially useful if you want to represent sparse data in a more
         compact format.
@@ -586,7 +592,7 @@ class FeatureCollection:
         return_df: Optional[bool] = False,
         **calculate_kwargs,
     ):
-        """Calculate features on the data by grouping `group_by` consecutive values.
+        """Calculate features on each consecutive group of the data.
 
         Parameters
         ----------
@@ -609,7 +615,9 @@ class FeatureCollection:
             GROUP BY `group_by`
             ```
             where `func` is the FeatureDescriptor function and `x` is the name
-            on which the FeatureDescriptor operates.
+            on which the FeatureDescriptor operates. Note however that the grouping is
+            done on consecutive values of `group_by` (i.e. `group_by` values that are
+            the same and are next to each other are grouped together).
         """
         # 0. Transform to dataframe
         series_dict = self._data_to_series_dict(
@@ -723,11 +731,12 @@ class FeatureCollection:
 
         """
         nb_feat_funcs = self._get_nb_feat_funcs()
-        n_jobs = self._process_njobs(n_jobs, nb_feat_funcs)
+        n_jobs = FeatureCollection._process_njobs(n_jobs, nb_feat_funcs)
 
         calculated_feature_list: List[pd.DataFrame] = None
 
         if n_jobs in [0, 1]:
+            # No multiprocessing
             idxs = range(nb_feat_funcs)
             if show_progress:
                 idxs = tqdm(idxs)
@@ -736,6 +745,7 @@ class FeatureCollection:
             except Exception:
                 traceback.print_exc()
         else:
+            # Multiprocessing
             with Pool(processes=n_jobs) as pool:
                 results = pool.imap_unordered(executor, range(nb_feat_funcs))
                 if show_progress:
@@ -763,7 +773,7 @@ class FeatureCollection:
             )
 
         if return_df:
-            # concatenate & sort the columns
+            # Concatenate & sort the columns
             df = pd.concat(calculated_feature_list, axis=1, join="outer", copy=False)
             return df.reindex(sorted(df.columns), axis=1)
         else:
@@ -807,7 +817,8 @@ class FeatureCollection:
             * each Series / DataFrame index must be comparable with all others
             * we assume that each series-name / dataframe-column-name is unique.
             Can also be a `DataFrameGroupBy` object, in which case the expected
-            behaviour is similar to grouping by all values in `group_by_all`.
+            behaviour is similar to grouping by all values in `group_by_all` (i.e.,
+            for each group, the features are calculated on the group's data).
         stride: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta], None], optional
             The stride size. By default None. This argument supports multiple types: \n
             * If None, the stride of the `FeatureDescriptor` objects will be used.
@@ -896,34 +907,30 @@ class FeatureCollection:
                 - *(len * sampling_rate - window_size) % stride = 0*. Remark that the
                   above case is a base case of this.
         group_by_all : str, optional
-            The name of the column by which to perform grouping. If this parameter is
-            used, the parameters `stride`, `segment_start_idxs`, `segment_end_idxs`,
-            `window_idx` and `include_final_window` will be ignored.
-            The `data` will be grouped on this column - for each group, the features
-            will be calculated. The output that is returned contains this `group_by`
-            column as index to allow identifying the groups, and also contains all
-            corresponding fields of used `FeatureDescriptor`s.
-            Rows with NaN values for this column will not be considered. This means that
-            no NaN values will be present for calculation of any of the
-            `FeatureDescriptor`s or for dividing in groups.
-            .. note::
-                This is similar as passing a `DataFrameGroupBy` object as `data`
-                argument to the `calculate` method.
-                `data.groupby(group_by_all)` is equivalent to passing `group_by_all` as
-                `group_by_all` argument to this method.
-        group_by_consecutive: str, optional
-            The name of the column by which to perform consecutive grouping.
+            The name of the column by which to perform grouping. For each group, the
+            features will be calculated. The output that is returned contains this
+            `group_by` column as index to allow identifying the groups.
             If this parameter is used, the parameters `stride`, `segment_start_idxs`,
             `segment_end_idxs`, `window_idx` and `include_final_window` will be ignored.
+            Rows with NaN values for this column will not be considered (as pandas
+            ignores these rows when grouping).
+            .. note::
+                This is similar as passing a `DataFrameGroupBy` object as `data`
+                argument to the `calculate` method, where the `DataFrameGroupBy` object
+                is created by calling `data.groupby(group_by_all)`.
+        group_by_consecutive: str, optional
+            The name of the column by which to perform consecutive grouping. A
+            consecutive group is a group of values that are the same and are next to
+            each other. For each consecutive group, the features will be calculated.
             The output that is returned contains this `group_by` column to allow
             identifying the groups, and also contains fields [`__start`, "__end"] which
-            contain start and end time range for each result row. Also contains all
-            corresponding fields of used `FeatureDescriptor`s.
-            Rows with NaN values for this column will not be considered. This means that
-            no NaN values will be present for calculation of any of the
-            `FeatureDescriptor`s or for dividing in groups.
-            Grouping column values will be grouped on exact matches. Groups can appear
-            multiple times if they are appear in different time-gaps.
+            contain start and end time range for each result row.
+            If this parameter is used, the parameters `stride`, `segment_start_idxs`,
+            `segment_end_idxs`, `window_idx` and `include_final_window` will be ignored.
+            Rows with NaN values for this column will not be considered (as we deem NaN
+            not as a groupable value).
+            Note that for consecutive grouping, groups can appear multiple times if they
+            appear in different time-gaps.
 
             Example output:
             .. example::
@@ -1032,6 +1039,21 @@ class FeatureCollection:
             or group_by_consecutive
             or isinstance(data, pd.core.groupby.DataFrameGroupBy)
         ):
+            # The grouping column must be part of the required series
+            if group_by_all:
+                # group_by_consecutive should be None (checked by asserts above)
+                # data should not be a grouped DataFrame (checked by asserts above)
+                assert (
+                    group_by_all not in self.get_required_series()
+                ), "The `group_by_all` column cannot be part of the required series!"
+            elif group_by_consecutive:
+                # group_by_all should be None (checked by asserts above)
+                # data should not be a grouped DataFrame (checked by asserts above)
+                assert group_by_consecutive not in self.get_required_series(), (
+                    "The `group_by_consecutive` column cannot be part of the required "
+                    + "series!"
+                )
+
             # if any of the following params are not None, warn that they won't be of use
             # in the grouped calculation
             ignored_params = [
@@ -1046,7 +1068,8 @@ class FeatureCollection:
             for ip, default_value in ignored_params:
                 if local_params[ip] is not default_value:
                     warnings.warn(
-                        f"Parameter `{ip}` will be ignored in case of GroupBy feature calculation."
+                        f"Parameter `{ip}` will be ignored in case of GroupBy feature"
+                        + " calculation."
                     )
 
             if group_by_consecutive:
@@ -1065,9 +1088,6 @@ class FeatureCollection:
                 # Grouped feature extraction will take place
                 if not isinstance(data, pd.core.groupby.generic.DataFrameGroupBy):
                     # group_by_all should not be None (checked by asserts above)
-                    assert (
-                        group_by_all not in self.get_required_series()
-                    ), "The `group_by_all` column cannot be part of the required series!"
                     # 0. Transform to dataframe
                     series_dict = self._data_to_series_dict(
                         data, self.get_required_series() + [group_by_all]
@@ -1076,7 +1096,7 @@ class FeatureCollection:
                     data = self._group_by_all(series_dict, col_name=group_by_all)
 
                 return self._calculate_group_by_all(
-                    data,
+                    data,  # should be a DataFrameGroupBy
                     return_df,
                     show_progress=show_progress,
                     n_jobs=n_jobs,
