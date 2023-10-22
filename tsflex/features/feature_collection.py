@@ -418,13 +418,22 @@ class FeatureCollection:
 
         return get_stroll_function
 
-    def _check_no_multiple_windows(self):
+    def _check_no_multiple_windows(self, error_case: str):
+        """Check whether there are no multiple windows in the feature collection.
+
+        Parameters
+        ----------
+        error_case : str
+            The case in which no multiple windows are allowed.
+
+        """
         assert (
             self._get_nb_output_features_without_window()
             == self.get_nb_output_features()
         ), (
-            "When using `segment_XXX_idxs`; each output name - series_input combination"
-            + " can only have 1 window (or None)"
+            error_case
+            + "; each output name - series_input combination can only have 1 window"
+            + " (or None)"
         )
 
     def _data_to_series_dict(
@@ -1039,6 +1048,10 @@ class FeatureCollection:
             or group_by_consecutive
             or isinstance(data, pd.core.groupby.DataFrameGroupBy)
         ):
+            self._check_no_multiple_windows(
+                error_case="When using the groupby behavior"
+            )
+
             # The grouping column must be part of the required series
             if group_by_all:
                 # group_by_consecutive should be None (checked by asserts above)
@@ -1117,7 +1130,9 @@ class FeatureCollection:
             _check_start_end_array(segment_start_idxs, segment_end_idxs)
             # Check if there is either 1 or No(ne) window value for every output name -
             # input_series combination
-            self._check_no_multiple_windows()
+            self._check_no_multiple_windows(
+                error_case="When using both `segment_start_idxs` and `segment_end_idxs`"
+            )
 
         if segment_start_idxs is None or segment_end_idxs is None:
             assert all(
@@ -1236,7 +1251,9 @@ class FeatureCollection:
             assert all(c.endswith("w=manual") for c in feat_cols_to_keep)
             # As the windows are created manual, the FeatureCollection cannot contain
             # multiple windows for the same output name - input_series combination
-            self._check_no_multiple_windows()
+            self._check_no_multiple_windows(
+                error_case="When reducing a FeatureCollection with manual windows"
+            )
             manual_window = True
         feat_col_fd_mapping: Dict[str, Tuple[str, FeatureDescriptor]] = {}
         for (s_names, window), fd_list in self._feature_desc_dict.items():

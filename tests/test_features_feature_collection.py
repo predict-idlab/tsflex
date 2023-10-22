@@ -475,6 +475,20 @@ def test_group_by_consecutive_subcall():
     assert_frame_equal(res, expected_df)
 
 
+@pytest.mark.parametrize("group_by", ["group_by_all", "group_by_consecutive"])
+def test_groupby_multiple_window_sizes_error(dummy_group_data, group_by):
+    fc = FeatureCollection(
+        MultipleFeatureDescriptors(
+            functions=[np.sum, np.min],
+            series_names=["number_sold"],
+            windows=["5D", "10D"],
+        )
+    )
+
+    with pytest.raises(Exception):
+        fc.calculate(dummy_group_data, return_df=True, **{group_by: "store"})
+
+
 def test_single_series_feature_collection(dummy_data):
     fd = FeatureDescriptor(
         function=np.sum,
@@ -959,6 +973,41 @@ def test_time_segment_start_and_end_idxs_empty_array():
     assert all(res.index == segment_start_idxs)
     assert np.all(res["dummy__amin__w=manual"] == [])
     assert np.all(res["dummy__len__w=manual"] == [])
+
+
+def test_sequence_segment_start_and_end_idxs_no_multiple_windows():
+    s = pd.Series(np.arange(20), name="dummy")
+    segment_start_idxs = [0, 5, 3, 3]
+    segment_end_idxs = [5, 10, 8, 5]
+
+    fc = FeatureCollection(MultipleFeatureDescriptors([np.min], "dummy", [3, 5]))
+    _ = fc.calculate(s, stride=5)
+    _ = fc.calculate(s, segment_start_idxs=segment_start_idxs)
+    _ = fc.calculate(s, segment_end_idxs=segment_end_idxs)
+
+    with pytest.raises(Exception):
+        # Should only fail when both are provided
+        _ = fc.calculate(
+            s, segment_start_idxs=segment_start_idxs, segment_end_idxs=segment_end_idxs
+        )
+
+
+def test_time_segment_start_and_end_idxs_no_multiple_windows():
+    s = pd.Series(np.arange(20), name="dummy")
+    s.index = pd.date_range("2021-08-09", freq="1h", periods=20)
+    segment_start_idxs = s.index[[0, 5, 3, 3]]
+    segment_end_idxs = s.index[[5, 10, 8, 5]]
+
+    fc = FeatureCollection(MultipleFeatureDescriptors([np.min], "dummy", ["3h", "5h"]))
+    _ = fc.calculate(s, stride="5h")
+    _ = fc.calculate(s, segment_start_idxs=segment_start_idxs)
+    _ = fc.calculate(s, segment_end_idxs=segment_end_idxs)
+
+    with pytest.raises(Exception):
+        # Should only fail when both are provided
+        _ = fc.calculate(
+            s, segment_start_idxs=segment_start_idxs, segment_end_idxs=segment_end_idxs
+        )
 
 
 def test_sequence_segment_start_or_end_idxs_of_wrong_dtype():
