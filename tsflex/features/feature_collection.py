@@ -338,7 +338,9 @@ class FeatureCollection:
         out = np.array(list(map(f, [data.iloc[idx] for idx in group_indices.values()])))
 
         # Aggregate function output in a dictionary
-        output_names = ["|".join(cols) + "__" + o for o in function.output_names]
+        output_names = [
+            "|".join(cols) + "__" + o + "__w=manual" for o in function.output_names
+        ]
         feat_out = _process_func_output(out, group_ids, output_names, str(function))
         # Log the function execution time
         _log_func_execution(

@@ -6,6 +6,7 @@ import os
 import warnings
 
 import numpy as np
+import pytest
 
 from tsflex.features import (
     FeatureCollection,
@@ -17,7 +18,7 @@ from tsflex.features import (
 )
 from tsflex.utils.data import flatten
 
-from .utils import dummy_data, logging_file_path
+from .utils import dummy_data, dummy_group_data, logging_file_path
 
 test_path = os.path.abspath(os.path.dirname(__file__))
 
@@ -647,6 +648,97 @@ def test_simple_features_logging_segment_start_and_end_idxs_overrule_stride_and_
     )
     assert all(series_names_df["duration"]["mean"] > 0)
     assert series_names_df["duration"]["count"].sum() == 4
+    assert np.isclose(series_names_df["duration %"]["sum"].sum(), 100, atol=0.5)
+    assert all(series_names_df["duration %"]["mean"] > 0)
+
+
+@pytest.mark.parametrize("group_by", ["group_by_all", "group_by_consecutive"])
+def test_simple_features_logging_groupby(dummy_group_data, logging_file_path, group_by):
+    # Add no stride
+    dummy_data = dummy_group_data.reset_index(drop=True)
+    fd = FeatureDescriptor(
+        function=np.sum,
+        series_name="number_sold",
+        window=50,
+        stride=120,
+    )
+    fc = FeatureCollection(feature_descriptors=fd)
+    fc.add(
+        MultipleFeatureDescriptors(
+            np.min, series_names=["product", "number_sold"], windows=50, strides=20
+        )
+    )
+    for fd in flatten(fc._feature_desc_dict.values()):
+        assert fd.stride is not None
+
+    assert set(fc.get_required_series()) == set(["number_sold", "product"])
+    assert len(fc.get_required_series()) == 2
+
+    assert not os.path.exists(logging_file_path)
+
+    # Sequential (n_jobs <= 1), otherwise file_path gets cleared
+    _ = fc.calculate(
+        dummy_data, logging_file_path=logging_file_path, n_jobs=1, **{group_by: "store"}
+    )
+
+    assert os.path.exists(logging_file_path)
+    logging_df = get_feature_logs(logging_file_path)
+
+    assert all(
+        logging_df.columns.values
+        == [
+            "log_time",
+            "function",
+            "series_names",
+            "window",
+            "stride",
+            "output_names",
+            "duration",
+            "duration %",
+        ]
+    )
+
+    assert len(logging_df) == 3
+    assert logging_df.select_dtypes(include=[np.datetime64]).columns.values == [
+        "log_time"
+    ]
+    assert logging_df.select_dtypes(include=[np.timedelta64]).columns.values == [
+        "duration"
+    ]
+
+    assert np.isclose(logging_df["duration %"].sum(), 100, atol=0.5)
+
+    assert set(logging_df["function"].values) == set(["amin", "sum"])
+    assert set(logging_df["series_names"].values) == set(
+        ["(number_sold,)", "(product,)"]
+    )
+    assert set(logging_df["output_names"].values) == set(
+        [
+            "number_sold__sum__w=manual",
+            "number_sold__amin__w=manual",
+            "product__amin__w=manual",
+        ]
+    )
+    assert all(logging_df["window"] == "manual")
+    assert all(logging_df["stride"] == "manual")
+
+    function_stats_df = get_function_stats(logging_file_path)
+    assert len(function_stats_df) == 2
+    assert set(function_stats_df.index) == set(
+        [(s, "manual", "manual") for s in ["sum", "amin"]]
+    )
+    assert all(function_stats_df["duration"]["mean"] > 0)
+    assert function_stats_df["duration"]["count"].sum() == 3
+    assert np.isclose(function_stats_df["duration %"]["sum"].sum(), 100, atol=0.5)
+    assert all(function_stats_df["duration %"]["mean"] > 0)
+
+    series_names_df = get_series_names_stats(logging_file_path)
+    assert len(series_names_df) == 2
+    assert set(series_names_df.index) == set(
+        [(s, "manual", "manual") for s in ["(number_sold,)", "(product,)"]]
+    )
+    assert all(series_names_df["duration"]["mean"] > 0)
+    assert series_names_df["duration"]["count"].sum() == 3
     assert np.isclose(series_names_df["duration %"]["sum"].sum(), 100, atol=0.5)
     assert all(series_names_df["duration %"]["mean"] > 0)
 
