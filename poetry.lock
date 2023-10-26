@@ -2555,13 +2555,13 @@ pyasn1 = ">=0.4.6,<0.6.0"
 
 [[package]]
 name = "pycatch22"
-version = "0.4.4"
+version = "0.4.2"
 description = "22 CAnonical Time-series Features"
 optional = false
 python-versions = "*"
 files = [
-    {file = "pycatch22-0.4.4-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:c359acc021960c5b1015367b5ecc5ae54d721f36bb4a53209060bde69f9ce99a"},
-    {file = "pycatch22-0.4.4.tar.gz", hash = "sha256:17ab01ab48f3b65c9d82373c05667d39d5c20da6ebc591252af80696a65462b2"},
+    {file = "pycatch22-0.4.2-cp39-cp39-macosx_12_0_x86_64.whl", hash = "sha256:8086ed7c223c08ea408f8bc9dd70d16691e6c5da0368d49f85a148557ad5a9c1"},
+    {file = "pycatch22-0.4.2.tar.gz", hash = "sha256:162bd9774a326993c564120221e779fb6e578139e9fb73ed6066a3137e61c3ad"},
 ]
 
 [[package]]
@@ -4097,4 +4097,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.7.1,<3.12"
-content-hash = "36f39b17f6f2a907534fd0d7d3fcef41c0b91683af1ad3abbcdd42a9cf70395a"
+content-hash = "6958197e6f6defb1de0475b9229b0f52cce04b05f8a5e2ed9313e8aa848d07e9"
