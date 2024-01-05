@@ -971,7 +971,10 @@ def test_sequence_segment_start_and_end_idxs_no_multiple_windows():
     segment_start_idxs = [0, 5, 3, 3]
     segment_end_idxs = [5, 10, 8, 5]
 
-    fc = FeatureCollection(MultipleFeatureDescriptors([np.min], "dummy", [3, 5]))
+    fc = FeatureCollection(
+        MultipleFeatureDescriptors([np.min], "dummy", windows=[3, 5])
+    )
+    # this should all pass
     _ = fc.calculate(s, stride=5)
     _ = fc.calculate(s, segment_start_idxs=segment_start_idxs)
     _ = fc.calculate(s, segment_end_idxs=segment_end_idxs)
