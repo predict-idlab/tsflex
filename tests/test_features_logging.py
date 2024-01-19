@@ -654,7 +654,6 @@ def test_simple_features_logging_segment_start_and_end_idxs_overrule_stride_and_
 
 @pytest.mark.parametrize("group_by", ["group_by_all", "group_by_consecutive"])
 def test_simple_features_logging_groupby(dummy_group_data, logging_file_path, group_by):
-    # Add no stride
     dummy_data = dummy_group_data.reset_index(drop=True)
     fd = FeatureDescriptor(
         function=np.sum,

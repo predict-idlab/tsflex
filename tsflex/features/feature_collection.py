@@ -317,7 +317,7 @@ class FeatureCollection:
         # Uses the global get_group_func, group_indices, and group_id_name
         data, function = get_group_func(idx)
         group_ids = group_indices.keys()  # group_ids are the keys of the group_indices
-        cols = data.columns.values
+        cols_tuple = tuple(data.columns.values)
 
         t_start = time.perf_counter()
 
@@ -328,27 +328,29 @@ class FeatureCollection:
 
             def f(x: pd.DataFrame):
                 # pass the inputs as positional arguments of numpy array type
-                return function(*[x[c].values for c in cols])
+                return function(*[x[c].values for c in cols_tuple])
 
         else:  # function.input_type is pd.Series
 
             def f(x: pd.DataFrame):
                 # pass the inputs as positional arguments of pd.Series type
-                return function(*[x[c] for c in cols])
+                return function(*[x[c] for c in cols_tuple])
 
         # Function execution over the grouped data (accessed by using the group_indices)
         out = np.array(list(map(f, [data.iloc[idx] for idx in group_indices.values()])))
 
         # Aggregate function output in a dictionary
         output_names = [
-            StridedRolling.construct_output_index(cols, feat_name, win_str="manual")
+            StridedRolling.construct_output_index(
+                cols_tuple, feat_name, win_str="manual"
+            )
             for feat_name in function.output_names
         ]
         feat_out = _process_func_output(out, group_ids, output_names, str(function))
 
         # Log the function execution time
         _log_func_execution(
-            t_start, function, tuple(cols), "manual", "manual", output_names
+            t_start, function, cols_tuple, "manual", "manual", output_names
         )
 
         return pd.DataFrame(feat_out, index=group_ids).rename_axis(index=group_id_name)
@@ -357,6 +359,13 @@ class FeatureCollection:
         self,
         grouped_df: pd.api.typing.DataFrameGroupBy,
     ) -> Callable[[int], Tuple[pd.api.typing.DataFrameGroupBy, FuncWrapper,],]:
+        """Return a function that returns the necessary columns of the grouped data and
+        the function that needs to be applied to the grouped data.
+
+        Note that the function does not return groups, but rather the necessary columns
+        of the grouped data (i.e. the data on which the function needs to be applied).
+        To access the groups, the global `group_indices` and `group_id_name` are used.
+        """
         keys_wins = list(self._feature_desc_dict.keys())
         lengths = np.cumsum([len(self._feature_desc_dict[k]) for k in keys_wins])
 
@@ -480,6 +489,8 @@ class FeatureCollection:
     ) -> pd.api.typing.DataFrameGroupBy:
         """Group all `column_name` values and return the grouped data.
 
+        GroupBy ignores all rows with NaN values for the column on which we group.
+
         Parameters
         ----------
         series_dict : Dict[str, pd.Series]
@@ -573,6 +584,10 @@ class FeatureCollection:
             df = df.to_frame()
 
         assert col_name in df.columns
+        assert col_name not in [
+            "start",
+            "end",
+        ], "Grouping column cannot be 'start' or 'end'"
 
         # Drop all rows with NaN values for the column on which we group
         df.dropna(subset=[col_name], inplace=True)
@@ -1070,6 +1085,9 @@ class FeatureCollection:
                     "The `group_by_consecutive` column cannot be part of the required "
                     + "series!"
                 )
+                # __start and __end should not be part of the output names
+                assert "__start" not in self.get_required_series()
+                assert "__end" not in self.get_required_series()
 
             # if any of the following params are not None, warn that they won't be of use
             # in the grouped calculation
