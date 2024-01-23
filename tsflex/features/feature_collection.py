@@ -148,9 +148,7 @@ class FeatureCollection:
         )
 
     def _get_nb_feat_funcs(self) -> int:
-        return sum(
-            len(self._feature_desc_dict[k]) for k in self._feature_desc_dict.keys()
-        )
+        return sum(map(len, self._feature_desc_dict.values()))
 
     @staticmethod
     def _get_collection_key(
@@ -355,34 +353,6 @@ class FeatureCollection:
 
         return pd.DataFrame(feat_out, index=group_ids).rename_axis(index=group_id_name)
 
-    def _group_feat_generator(
-        self,
-        grouped_df: pd.api.typing.DataFrameGroupBy,
-    ) -> Callable[[int], Tuple[pd.api.typing.DataFrameGroupBy, FuncWrapper,],]:
-        """Return a function that returns the necessary columns of the grouped data and
-        the function that needs to be applied to the grouped data.
-
-        Note that the function does not return groups, but rather the necessary columns
-        of the grouped data (i.e. the data on which the function needs to be applied).
-        To access the groups, the global `group_indices` and `group_id_name` are used.
-        """
-        keys_wins = list(self._feature_desc_dict.keys())
-        lengths = np.cumsum([len(self._feature_desc_dict[k]) for k in keys_wins])
-
-        def get_group_function(
-            idx,
-        ) -> Tuple[pd.api.typing.DataFrameGroupBy, FuncWrapper,]:
-            key_idx = np.searchsorted(lengths, idx, "right")  # right bc idx starts at 0
-            key, win = keys_wins[key_idx]
-
-            feature = self._feature_desc_dict[keys_wins[key_idx]][
-                idx - lengths[key_idx]
-            ]
-            function: FuncWrapper = feature.function
-            return grouped_df.obj[list(key)], function
-
-        return get_group_function
-
     def _stroll_feat_generator(
         self,
         series_dict: Dict[str, pd.Series],
@@ -431,6 +401,34 @@ class FeatureCollection:
 
         return get_stroll_function
 
+    def _group_feat_generator(
+        self,
+        grouped_df: pd.api.typing.DataFrameGroupBy,
+    ) -> Callable[[int], Tuple[pd.api.typing.DataFrameGroupBy, FuncWrapper,],]:
+        """Return a function that returns the necessary columns of the grouped data and
+        the function that needs to be applied to the grouped data.
+
+        Note that the function does not return groups, but rather the necessary columns
+        of the grouped data (i.e. the data on which the function needs to be applied).
+        To access the groups, the global `group_indices` and `group_id_name` are used.
+        """
+        keys_wins = list(self._feature_desc_dict.keys())
+        lengths = np.cumsum([len(self._feature_desc_dict[k]) for k in keys_wins])
+
+        def get_group_function(
+            idx,
+        ) -> Tuple[pd.api.typing.DataFrameGroupBy, FuncWrapper,]:
+            key_idx = np.searchsorted(lengths, idx, "right")  # right bc idx starts at 0
+            key, win = keys_wins[key_idx]
+
+            feature = self._feature_desc_dict[keys_wins[key_idx]][
+                idx - lengths[key_idx]
+            ]
+            function: FuncWrapper = feature.function
+            return grouped_df.obj[list(key)], function
+
+        return get_group_function
+
     def _check_no_multiple_windows(self, error_case: str):
         """Check whether there are no multiple windows in the feature collection.
 
@@ -449,8 +447,8 @@ class FeatureCollection:
             + " (or None)"
         )
 
+    @staticmethod
     def _data_to_series_dict(
-        self,
         data: Union[pd.DataFrame, pd.Series, List[Union[pd.Series, pd.DataFrame]]],
         required_series: List[str],
     ) -> Dict[str, pd.Series]:
@@ -508,6 +506,15 @@ class FeatureCollection:
         df = pd.DataFrame(series_dict)
         assert col_name in df.columns
 
+        # Check if there are nan values in the column on which we group
+        if df[col_name].isna().any():
+            warnings.warn(
+                f"NaN values were found in the column '{col_name}' (when expanding the "
+                + f"data to a pd.DataFrame which contains {df.columns}. "
+                + "Rows with NaN values for the grouping column will be ignored.",
+                RuntimeWarning,
+            )
+
         # GroupBy ignores all rows with NaN values for the column on which we group
         return df.groupby(col_name)
 
@@ -518,7 +525,7 @@ class FeatureCollection:
         show_progress: Optional[bool],
         n_jobs: Optional[int],
         f_handler: Optional[logging.FileHandler],
-    ):
+    ) -> Union[List[pd.DataFrame], pd.DataFrame]:
         """Calculate features on each group of the grouped data.
 
         Parameters
@@ -589,6 +596,15 @@ class FeatureCollection:
             "end",
         ], "Grouping column cannot be 'start' or 'end'"
 
+        # Check if there are nan values in the column on which we group
+        if df[col_name].isna().any():
+            warnings.warn(
+                f"NaN values were found in the column '{col_name}' (when expanding the "
+                + f"data to a pd.DataFrame which contains {df.columns}. "
+                + "Rows with NaN values for the grouping column will be ignored.",
+                RuntimeWarning,
+            )
+
         # Drop all rows with NaN values for the column on which we group
         df.dropna(subset=[col_name], inplace=True)
 
@@ -619,7 +635,7 @@ class FeatureCollection:
         group_by: str,
         return_df: Optional[bool] = False,
         **calculate_kwargs,
-    ):
+    ) -> Union[List[pd.DataFrame], pd.DataFrame]:
         """Calculate features on each consecutive group of the data.
 
         Parameters
@@ -648,7 +664,7 @@ class FeatureCollection:
             the same and are next to each other are grouped together).
         """
         # 0. Transform to dataframe
-        series_dict = self._data_to_series_dict(
+        series_dict = FeatureCollection._data_to_series_dict(
             data, self.get_required_series() + [group_by]
         )
         df = pd.DataFrame(series_dict)
@@ -656,9 +672,9 @@ class FeatureCollection:
         consecutive_grouped_by_df = self._group_by_consecutive(df, col_name=group_by)
         # 2. Get start and end idxs of consecutive groups
         start_segment_idxs = consecutive_grouped_by_df["start"]
-        end_segment_idxs = start_segment_idxs.shift(-1).fillna(
-            consecutive_grouped_by_df["end"]
-        )
+        end_segment_idxs = start_segment_idxs.shift(-1)
+        # fill the nan value with the last end idx
+        end_segment_idxs.iloc[-1] = consecutive_grouped_by_df["end"].iloc[-1]
         # because segment end idxs are exclusive, we need to add an offset to the last
         # end idx so that all data gets used
         segment_vals = end_segment_idxs.values
@@ -668,21 +684,22 @@ class FeatureCollection:
             segment_vals[-1] += 1
         # 3. Calculate features
         try:
-            warnings.filterwarnings(
-                "ignore", category=RuntimeWarning, message="^.*segment indexes.*$"
-            )
-            warnings.filterwarnings(
-                "ignore", category=RuntimeWarning, message="^.*gaps.*$"
-            )
-            # 3.1. Calculate features using the groupby segment idxs
-            calc_results = self.calculate(
-                data=df,
-                segment_start_idxs=start_segment_idxs,
-                segment_end_idxs=end_segment_idxs,
-                **calculate_kwargs,
-            )
-
-            warnings.resetwarnings()
+            # Filter out the warnings that are raised when segment indices are passed
+            # (since users expect irregular window sizes when grouping)
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore", category=RuntimeWarning, message="^.*segment indexes.*$"
+                )
+                warnings.filterwarnings(
+                    "ignore", category=RuntimeWarning, message="^.*gaps.*$"
+                )
+                # 3.1. Calculate features using the groupby segment idxs
+                calc_results = self.calculate(
+                    data=df,
+                    segment_start_idxs=start_segment_idxs,
+                    segment_end_idxs=end_segment_idxs,
+                    **calculate_kwargs,
+                )
 
             # 3.2 Concatenate results and add the group_by column as well as the
             # start and end idxs of the segments
@@ -1124,7 +1141,7 @@ class FeatureCollection:
                 if not isinstance(data, pd.core.groupby.generic.DataFrameGroupBy):
                     # group_by_all should not be None (checked by asserts above)
                     # 0. Transform to dataframe
-                    series_dict = self._data_to_series_dict(
+                    series_dict = FeatureCollection._data_to_series_dict(
                         data, self.get_required_series() + [group_by_all]
                     )
                     # 1. Group by `group_by_all` column
@@ -1189,7 +1206,9 @@ class FeatureCollection:
             self._check_feature_descriptors(skip_none=False, calc_stride=stride)
 
         # Convert the data to a series_dict
-        series_dict = self._data_to_series_dict(data, self.get_required_series())
+        series_dict = FeatureCollection._data_to_series_dict(
+            data, self.get_required_series()
+        )
 
         # Determine the bounds of the series dict items and slice on them
         # TODO: is dit wel nodig `hier? want we doen dat ook in de strided rolling
