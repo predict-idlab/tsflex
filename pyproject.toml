@@ -10,7 +10,7 @@ documentation = "https://predict-idlab.github.io/tsflex"
 keywords = ["time-series", "processing", "feature-extraction", "data-science", "machine learning"]
 
 [tool.poetry.dependencies]
-python = ">=3.7.1,<3.12"  # When deploying set this to 3.7
+python = ">=3.7.1,<3.13"  # When deploying set this to 3.7
 pandas = ">=1"
 numpy = [
     { version = "^1.21.5", python = "<3.8" },
