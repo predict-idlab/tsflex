@@ -2,6 +2,11 @@
 
 This folder contains several examples, indicating (1.) the cross-domain applicability of tsflex and (2.) how tsflex integrates seamless with other data science packages.
 
+To install the additional packages required for the examples, run:
+```bash
+pip install -r requirements.txt
+```
+
 ## 0. general examples
 
 **Paper example**: [tsflex_paper.ipynb](https://github.com/predict-idlab/tsflex/blob/main/examples/tsflex_paper.ipynb)  
