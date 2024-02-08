@@ -5,8 +5,7 @@ This folder contains several examples, indicating (1.) the cross-domain applicab
 ## 0. general examples
 
 **Paper example**: [tsflex_paper.ipynb](https://github.com/predict-idlab/tsflex/blob/main/examples/tsflex_paper.ipynb)  
-Example used in the tsflex paper. The example elaborates shows how tsflex can be applied for processing & feature extraction on multivariate (and even irregularly sampled) time series data.
-<!-- TODO: add link to the paper -->
+Example used in the [tsflex paper](https://www.sciencedirect.com/science/article/pii/S2352711021001904). The example shows how tsflex can be applied for processing & feature extraction on multivariate (and even irregularly sampled) time series data.
 
 **Verbose example**: [verbose_example.ipynb](https://github.com/predict-idlab/tsflex/blob/main/examples/verbose_example.ipynb)  
 Example that elaborates in great detail (very verbose) the various functionalities of tsflex. In addition to processing & feature extraction, this example shows how to use the logging functionality, serialization, and chunking.

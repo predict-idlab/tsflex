@@ -12,7 +12,9 @@ import warnings
 
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
+import logging
 import os
+import time
 import traceback
 import uuid
 from copy import deepcopy
@@ -23,6 +25,7 @@ import dill
 import numpy as np
 import pandas as pd
 from multiprocess import Pool
+from pandas.api.types import is_datetime64_any_dtype
 from tqdm.auto import tqdm
 
 from ..features.function_wrapper import FuncWrapper
@@ -33,7 +36,12 @@ from ..utils.time import parse_time_arg, timedelta_to_str
 from .feature import FeatureDescriptor, MultipleFeatureDescriptors
 from .logger import logger
 from .segmenter import StridedRolling, StridedRollingFactory
-from .utils import _check_start_end_array, _determine_bounds
+from .utils import (
+    _check_start_end_array,
+    _determine_bounds,
+    _log_func_execution,
+    _process_func_output,
+)
 
 
 class FeatureCollection:
@@ -138,6 +146,9 @@ class FeatureCollection:
                 for o in fd.function.output_names
             )
         )
+
+    def _get_nb_feat_funcs(self) -> int:
+        return sum(map(len, self._feature_desc_dict.values()))
 
     @staticmethod
     def _get_collection_key(
@@ -260,13 +271,87 @@ class FeatureCollection:
         self._check_feature_descriptors(skip_none=True)
 
     @staticmethod
-    def _executor(idx: int):
-        # global get_stroll_func
-        stroll, function = get_stroll_func(idx)
-        return stroll.apply_func(function)
+    def _executor_stroll(idx: int) -> pd.DataFrame:
+        """Executor function for the StridedRolling.apply_func method.
 
-    # def _get_stroll(self, kwargs):
-    #     return StridedRollingFactory.get_segmenter(**kwargs)
+        Strided rolling feature calculation occurs when either;
+        - a `window` and `stride` argument are stored in the `FeatureDescriptor` object
+        - the `window` is stored in the `FeatureDescriptor` object and the `stride`
+          argument is passed to the `calculate` method, potentially overriding the
+          `stride`
+        - segment indices are passed to the `calculate` method
+        - a `group_by_consecutive` argument is passed to the `calculate` method (since
+          we calculate the segment indices for the consecutive groups)
+
+        This method uses the global `get_stroll_func` function, which returns the
+        StridedRolling object and the function that needs to be applied to the
+        StridedRolling object. Using a global function is necessary to facilitate
+        multiprocessing.
+        """
+        # Uses the global get_stroll_func
+        stroll, function = get_stroll_func(idx)
+        return stroll.apply_func(function)  # execution time is logged in apply_func
+
+    @staticmethod
+    def _executor_grouped(idx: int) -> pd.DataFrame:
+        """Executor function for grouped feature calculation.
+
+        Grouped feature calculation occurs when either;
+        - a `group_by_all` argument is passed to the `calculate` method
+        - a `DataFrameGroupBy` is passed as `data` argument to the `calculate` method
+
+        Note that passing a `group_by_consecutive` argument to the `calculate` method
+        will not use this executor function, but will use the `_executor_stroll` as
+        executor function (since we calculate the segment indices for the consecutive
+        groups).
+
+        This method uses the global `get_group_func` function, which returns a
+        pd.DataFrame (containing only the necessary data for the function) and the
+        function that needs to be applied to the pd.DataFrame. In addition, the global
+        `group_indices` and `group_id_name` are used to access the grouped data and the
+        group id name respectively. Using a global function is necessary to facilitate
+        multiprocessing.
+        """
+        # Uses the global get_group_func, group_indices, and group_id_name
+        data, function = get_group_func(idx)
+        group_ids = group_indices.keys()  # group_ids are the keys of the group_indices
+        cols_tuple = tuple(data.columns.values)
+
+        t_start = time.perf_counter()
+
+        # Wrap the function to handle multiple inputs and convert the inputs to numpy
+        # array if necessary
+        f = function
+        if function.input_type is np.array:
+
+            def f(x: pd.DataFrame):
+                # pass the inputs as positional arguments of numpy array type
+                return function(*[x[c].values for c in cols_tuple])
+
+        else:  # function.input_type is pd.Series
+
+            def f(x: pd.DataFrame):
+                # pass the inputs as positional arguments of pd.Series type
+                return function(*[x[c] for c in cols_tuple])
+
+        # Function execution over the grouped data (accessed by using the group_indices)
+        out = np.array(list(map(f, [data.iloc[idx] for idx in group_indices.values()])))
+
+        # Aggregate function output in a dictionary
+        output_names = [
+            StridedRolling.construct_output_index(
+                cols_tuple, feat_name, win_str="manual"
+            )
+            for feat_name in function.output_names
+        ]
+        feat_out = _process_func_output(out, group_ids, output_names, str(function))
+
+        # Log the function execution time
+        _log_func_execution(
+            t_start, function, cols_tuple, "manual", "manual", output_names
+        )
+
+        return pd.DataFrame(feat_out, index=group_ids).rename_axis(index=group_id_name)
 
     def _stroll_feat_generator(
         self,
@@ -316,19 +401,74 @@ class FeatureCollection:
 
         return get_stroll_function
 
-    def _get_stroll_feat_length(self) -> int:
-        return sum(
-            len(self._feature_desc_dict[k]) for k in self._feature_desc_dict.keys()
-        )
+    def _group_feat_generator(
+        self,
+        grouped_df: pd.api.typing.DataFrameGroupBy,
+    ) -> Callable[[int], Tuple[pd.api.typing.DataFrameGroupBy, FuncWrapper,],]:
+        """Return a function that returns the necessary columns of the grouped data and
+        the function that needs to be applied to the grouped data.
 
-    def _check_no_multiple_windows(self):
+        Note that the function does not return groups, but rather the necessary columns
+        of the grouped data (i.e. the data on which the function needs to be applied).
+        To access the groups, the global `group_indices` and `group_id_name` are used.
+        """
+        keys_wins = list(self._feature_desc_dict.keys())
+        lengths = np.cumsum([len(self._feature_desc_dict[k]) for k in keys_wins])
+
+        def get_group_function(
+            idx,
+        ) -> Tuple[pd.api.typing.DataFrameGroupBy, FuncWrapper,]:
+            key_idx = np.searchsorted(lengths, idx, "right")  # right bc idx starts at 0
+            key, win = keys_wins[key_idx]
+
+            feature = self._feature_desc_dict[keys_wins[key_idx]][
+                idx - lengths[key_idx]
+            ]
+            function: FuncWrapper = feature.function
+            return grouped_df.obj[list(key)], function
+
+        return get_group_function
+
+    def _check_no_multiple_windows(self, error_case: str):
+        """Check whether there are no multiple windows in the feature collection.
+
+        Parameters
+        ----------
+        error_case : str
+            The case in which no multiple windows are allowed.
+
+        """
         assert (
             self._get_nb_output_features_without_window()
             == self.get_nb_output_features()
         ), (
-            "When using `segment_XXX_idxs`; each output name - series_input combination"
-            + " can only have 1 window (or None)"
+            error_case
+            + "; each output name - series_input combination can only have 1 window"
+            + " (or None)"
         )
+
+    @staticmethod
+    def _data_to_series_dict(
+        data: Union[pd.DataFrame, pd.Series, List[Union[pd.Series, pd.DataFrame]]],
+        required_series: List[str],
+    ) -> Dict[str, pd.Series]:
+        series_dict: Dict[str, pd.Series] = {}
+        for s in to_series_list(data):
+            if not s.index.is_monotonic_increasing:
+                warnings.warn(
+                    f"The index of series '{s.name}' is not monotonic increasing. "
+                    + "The series will be sorted by the index.",
+                    RuntimeWarning,
+                )
+                s = s.sort_index(ascending=True, inplace=False, ignore_index=False)
+
+            # Assert the assumptions we make!
+            assert s.index.is_monotonic_increasing
+
+            if s.name in required_series:
+                series_dict[str(s.name)] = s
+
+        return series_dict
 
     @staticmethod
     def _process_segment_idxs(
@@ -341,9 +481,357 @@ class FeatureCollection:
             segment_idxs = segment_idxs.squeeze()  # remove singleton dimensions
         return segment_idxs
 
-    def calculate(
+    @staticmethod
+    def _group_by_all(
+        series_dict: Dict[str, pd.Series], col_name: str = None
+    ) -> pd.api.typing.DataFrameGroupBy:
+        """Group all `column_name` values and return the grouped data.
+
+        GroupBy ignores all rows with NaN values for the column on which we group.
+
+        Parameters
+        ----------
+        series_dict : Dict[str, pd.Series]
+            Input data.
+        col_name : str
+            The column name on which the grouping will need to take place.
+
+        Returns
+        -------
+        pd.api.typing.DataFrameGroupBy
+            A `DataFrameGroupBy` object, with the group names as keys and the indices
+            as values.
+
+        """
+        df = pd.DataFrame(series_dict)
+        assert col_name in df.columns
+
+        # Check if there are nan values in the column on which we group
+        if df[col_name].isna().any():
+            warnings.warn(
+                f"NaN values were found in the column '{col_name}' (when expanding the "
+                + f"data to a pd.DataFrame which contains {df.columns}. "
+                + "Rows with NaN values for the grouping column will be ignored.",
+                RuntimeWarning,
+            )
+
+        # GroupBy ignores all rows with NaN values for the column on which we group
+        return df.groupby(col_name)
+
+    def _calculate_group_by_all(
+        self,
+        grouped_data: pd.api.typing.DataFrameGroupBy,
+        return_df: Optional[bool],
+        show_progress: Optional[bool],
+        n_jobs: Optional[int],
+        f_handler: Optional[logging.FileHandler],
+    ) -> Union[List[pd.DataFrame], pd.DataFrame]:
+        """Calculate features on each group of the grouped data.
+
+        Parameters
+        ----------
+        grouped_data : pd.api.typing.DataFrameGroupBy
+            The grouped data.
+        return_df: bool, optional
+            Whether the output needs to be a DataFrame or a list thereof.
+        show_progress: bool, optional
+            Whether to show a progress bar.
+        n_jobs: int, optional
+            The number of jobs to run in parallel.
+        f_handler: logging.FileHandler, optional
+            The file handler that is used to log the function execution times.
+
+        .. Note::
+            Is comparable to following pseudo-SQL code:
+            ```sql
+            SELECT func(x)
+            FROM `data`
+            GROUP BY ...
+            ```
+            where `func` is the FeatureDescriptor function and `x` is the name
+            on which the FeatureDescriptor operates. The group by is already done by
+            passing a `DataFrameGroupBy` object to this method.
+        """
+        global group_indices, group_id_name, get_group_func
+        group_indices = grouped_data.indices  # dict - group_id as key; indices as value
+        group_id_name = grouped_data.grouper.names  # name of the group col(s)
+        get_group_func = self._group_feat_generator(grouped_data)
+
+        return self._calculate_feature_list(
+            self._executor_grouped, n_jobs, show_progress, return_df, f_handler
+        )
+
+    @staticmethod
+    def _group_by_consecutive(
+        df: Union[pd.Series, pd.DataFrame], col_name: str = None
+    ) -> pd.DataFrame:
+        """Group consecutive `col_name` values in a single DataFrame.
+
+        This is especially useful if you want to represent sparse data in a more
+        compact format.
+
+        Parameters
+        ----------
+        df : Union[pd.Series, pd.DataFrame]
+            Input data.
+        col_name : str, optional
+            If a dataFrame is passed, you will need to specify the `col_name` on which
+            the consecutive-grouping will need to take place.
+
+        Returns
+        -------
+        pd.DataFrame
+            A new `DataFrame` view, with columns:
+            [`start`, `end`, `col_name`], representing the
+            start- and endtime of the consecutive range, and the col_name's consecutive
+            values.
+        """
+        if type(df) == pd.Series:
+            col_name = df.name
+            df = df.to_frame()
+
+        assert col_name in df.columns
+        assert col_name not in [
+            "start",
+            "end",
+        ], "Grouping column cannot be 'start' or 'end'"
+
+        # Check if there are nan values in the column on which we group
+        if df[col_name].isna().any():
+            warnings.warn(
+                f"NaN values were found in the column '{col_name}' (when expanding the "
+                + f"data to a pd.DataFrame which contains {df.columns}. "
+                + "Rows with NaN values for the grouping column will be ignored.",
+                RuntimeWarning,
+            )
+
+        # Drop all rows with NaN values for the column on which we group
+        df.dropna(subset=[col_name], inplace=True)
+
+        df_cum = (
+            (df[col_name] != df[col_name].shift(1))
+            .astype("int")
+            .cumsum()
+            .rename("value_grp")
+            .to_frame()
+        )
+        df_cum["sequence_idx"] = df.index
+        df_cum[col_name] = df[col_name]
+
+        df_cum_grouped = df_cum.groupby("value_grp")
+        df_grouped = pd.DataFrame(
+            {
+                "start": df_cum_grouped["sequence_idx"].first(),
+                "end": df_cum_grouped["sequence_idx"].last(),
+                col_name: df_cum_grouped[col_name].first(),
+            }
+        ).reset_index(drop=True)
+
+        return df_grouped
+
+    def _calculate_group_by_consecutive(
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
+        group_by: str,
+        return_df: Optional[bool] = False,
+        **calculate_kwargs,
+    ) -> Union[List[pd.DataFrame], pd.DataFrame]:
+        """Calculate features on each consecutive group of the data.
+
+        Parameters
+        ----------
+        data : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
+            Must be time-indexed!
+        group_by: str
+            Name of column by which to group values.
+        return_df: bool, optional
+            Whether the output needs to be a DataFrame or a list thereof, by default
+            False. If `True` the output dataframes will be merged to a DataFrame with an
+            outer merge.
+        **calculate_kwargs:
+            Keyword arguments that will be passed to the `calculate` method.
+
+        .. Note::
+            Is comparable to following pseudo-SQL code:
+            ```sql
+            SELECT func(x)
+            FROM `data`
+            GROUP BY `group_by`
+            ```
+            where `func` is the FeatureDescriptor function and `x` is the name
+            on which the FeatureDescriptor operates. Note however that the grouping is
+            done on consecutive values of `group_by` (i.e. `group_by` values that are
+            the same and are next to each other are grouped together).
+        """
+        # 0. Transform to dataframe
+        series_dict = FeatureCollection._data_to_series_dict(
+            data, self.get_required_series() + [group_by]
+        )
+        df = pd.DataFrame(series_dict)
+        # 1. Group by `group_by` column
+        consecutive_grouped_by_df = self._group_by_consecutive(df, col_name=group_by)
+        # 2. Get start and end idxs of consecutive groups
+        start_segment_idxs = consecutive_grouped_by_df["start"]
+        end_segment_idxs = start_segment_idxs.shift(-1)
+        # fill the nan value with the last end idx
+        end_segment_idxs.iloc[-1] = consecutive_grouped_by_df["end"].iloc[-1]
+        # because segment end idxs are exclusive, we need to add an offset to the last
+        # end idx so that all data gets used
+        segment_vals = end_segment_idxs.values
+        if is_datetime64_any_dtype(segment_vals):
+            segment_vals[-1] += pd.Timedelta(days=1)
+        else:
+            segment_vals[-1] += 1
+        # 3. Calculate features
+        try:
+            # Filter out the warnings that are raised when segment indices are passed
+            # (since users expect irregular window sizes when grouping)
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore", category=RuntimeWarning, message="^.*segment indexes.*$"
+                )
+                warnings.filterwarnings(
+                    "ignore", category=RuntimeWarning, message="^.*gaps.*$"
+                )
+                # 3.1. Calculate features using the groupby segment idxs
+                calc_results = self.calculate(
+                    data=df,
+                    segment_start_idxs=start_segment_idxs,
+                    segment_end_idxs=end_segment_idxs,
+                    **calculate_kwargs,
+                )
+
+            # 3.2 Concatenate results and add the group_by column as well as the
+            # start and end idxs of the segments
+            calc_result = pd.concat(calc_results, join="outer", copy=False, axis=1)
+            calc_result.reset_index(inplace=True, drop=True)
+            calc_result[group_by] = consecutive_grouped_by_df[group_by]
+            calc_result["__start"] = consecutive_grouped_by_df["start"]
+            calc_result["__end"] = consecutive_grouped_by_df["end"]
+
+            if return_df:
+                # concatenate rows
+                return calc_result
+            else:
+                return [calc_result[col] for col in calc_result.columns]
+
+        except Exception as e:
+            raise RuntimeError(
+                f"An exception was raised during feature extraction:\n{e}"
+            )
+
+    @staticmethod
+    def _process_njobs(n_jobs: Union[int, None], nb_funcs: int) -> int:
+        """Process the number of jobs to run in parallel.
+
+        On Windows no multiprocessing is supported, see
+        https://github.com/predict-idlab/tsflex/issues/51
+
+        Parameters
+        ----------
+        n_jobs : Union[int, None]
+            The number of jobs to run in parallel.
+        nb_funcs : int
+            The number of feature functions.
+
+        Returns
+        -------
+        int
+            The number of jobs to run in parallel.
+
+        """
+        if os.name == "nt":  # On Windows no multiprocessing is supported
+            n_jobs = 1
+        elif n_jobs is None:
+            n_jobs = os.cpu_count()
+        return min(n_jobs, nb_funcs)
+
+    def _calculate_feature_list(
+        self,
+        executor: Callable[[int], pd.DataFrame],
+        n_jobs: Optional[int],
+        show_progress: Optional[bool],
+        return_df: Optional[bool],
+        f_handler: Optional[logging.FileHandler],
+    ) -> Union[List[pd.DataFrame], pd.DataFrame]:
+        """Calculate the features for the given executor.
+
+        Parameters
+        ----------
+        executor : Callable[[int], pd.DataFrame]
+            The executor function that will be used to calculate the features.
+        n_jobs : Optional[int], optional
+            The number of jobs to run in parallel.
+        show_progress : Optional[bool], optional
+            Whether to show a progress bar.
+        return_df : Optional[bool], optional
+            Whether to return a DataFrame or a list of DataFrames.
+        f_handler : Optional[logging.FileHandler], optional
+            The file handler that is used to log the function execution times.
+
+        Returns
+        -------
+        Union[List[pd.DataFrame], pd.DataFrame]
+            The calculated features.
+
+        """
+        nb_feat_funcs = self._get_nb_feat_funcs()
+        n_jobs = FeatureCollection._process_njobs(n_jobs, nb_feat_funcs)
+
+        calculated_feature_list: List[pd.DataFrame] = None
+
+        if n_jobs in [0, 1]:
+            # No multiprocessing
+            idxs = range(nb_feat_funcs)
+            if show_progress:
+                idxs = tqdm(idxs)
+            try:
+                calculated_feature_list = [executor(idx) for idx in idxs]
+            except Exception:
+                traceback.print_exc()
+        else:
+            # Multiprocessing
+            with Pool(processes=n_jobs) as pool:
+                results = pool.imap_unordered(executor, range(nb_feat_funcs))
+                if show_progress:
+                    results = tqdm(results, total=nb_feat_funcs)
+                try:
+                    calculated_feature_list = [f for f in results]
+                except Exception:
+                    traceback.print_exc()
+                    pool.terminate()
+                finally:
+                    # Close & join because: https://github.com/uqfoundation/pathos/issues/131
+                    pool.close()
+                    pool.terminate()
+                    pool.join()
+
+        # Close the file handler (this avoids PermissionError: [WinError 32])
+        if f_handler is not None:
+            f_handler.close()
+            logger.removeHandler(f_handler)
+
+        if calculated_feature_list is None:
+            raise RuntimeError(
+                "Feature Extraction halted due to error while extracting one "
+                + "(or multiple) feature(s)! See stack trace above."
+            )
+
+        if return_df:
+            # Concatenate & sort the columns
+            df = pd.concat(calculated_feature_list, axis=1, join="outer", copy=False)
+            return df.reindex(sorted(df.columns), axis=1)
+        else:
+            return calculated_feature_list
+
+    def calculate(
+        self,
+        data: Union[
+            pd.Series,
+            pd.DataFrame,
+            List[Union[pd.Series, pd.DataFrame]],
+            pd.core.groupby.DataFrameGroupby,
+        ],
         stride: Optional[Union[float, str, pd.Timedelta, List, None]] = None,
         segment_start_idxs: Optional[
             Union[list, np.ndarray, pd.Series, pd.Index]
@@ -352,6 +840,8 @@ class FeatureCollection:
         return_df: Optional[bool] = False,
         window_idx: Optional[str] = "end",
         include_final_window: Optional[bool] = False,
+        group_by_all: Optional[str] = None,  # TODO: support multiple columns
+        group_by_consecutive: Optional[str] = None,  # TODO: support multiple columns
         bound_method: Optional[str] = "inner",
         approve_sparsity: Optional[bool] = False,
         show_progress: Optional[bool] = False,
@@ -362,7 +852,7 @@ class FeatureCollection:
 
         Parameters
         ----------
-        data : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
+        data : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]], pd.core.groupby.DataFrameGroupby]
             Dataframe or Series or list thereof, with all the required data for the
             feature calculation. \n
             **Assumptions**: \n
@@ -371,6 +861,9 @@ class FeatureCollection:
             numeric or a ``pd.DatetimeIndex``.
             * each Series / DataFrame index must be comparable with all others
             * we assume that each series-name / dataframe-column-name is unique.
+            Can also be a `DataFrameGroupBy` object, in which case the expected
+            behaviour is similar to grouping by all values in `group_by_all` (i.e.,
+            for each group, the features are calculated on the group's data).
         stride: Union[float, str, pd.Timedelta, List[Union[float, str, pd.Timedelta], None], optional
             The stride size. By default None. This argument supports multiple types: \n
             * If None, the stride of the `FeatureDescriptor` objects will be used.
@@ -458,6 +951,43 @@ class FeatureCollection:
                 window (which is a full) window will not be included!
                 - *(len * sampling_rate - window_size) % stride = 0*. Remark that the
                   above case is a base case of this.
+        group_by_all : str, optional
+            The name of the column by which to perform grouping. For each group, the
+            features will be calculated. The output that is returned contains this
+            `group_by` column as index to allow identifying the groups.
+            If this parameter is used, the parameters `stride`, `segment_start_idxs`,
+            `segment_end_idxs`, `window_idx` and `include_final_window` will be ignored.
+            Rows with NaN values for this column will not be considered (as pandas
+            ignores these rows when grouping).
+            .. note::
+                This is similar as passing a `DataFrameGroupBy` object as `data`
+                argument to the `calculate` method, where the `DataFrameGroupBy` object
+                is created by calling `data.groupby(group_by_all)`.
+        group_by_consecutive: str, optional
+            The name of the column by which to perform consecutive grouping. A
+            consecutive group is a group of values that are the same and are next to
+            each other. For each consecutive group, the features will be calculated.
+            The output that is returned contains this `group_by` column to allow
+            identifying the groups, and also contains fields [`__start`, "__end"] which
+            contain start and end time range for each result row.
+            If this parameter is used, the parameters `stride`, `segment_start_idxs`,
+            `segment_end_idxs`, `window_idx` and `include_final_window` will be ignored.
+            Rows with NaN values for this column will not be considered (as we deem NaN
+            not as a groupable value).
+            Note that for consecutive grouping, groups can appear multiple times if they
+            appear in different time-gaps.
+
+            Example output:
+            .. example::
+        ```python
+                    number_sold__sum__w=manual  store    __start      __end
+                0          845                  0     2019-01-01 2019-01-01
+                1          357                  3     2019-01-02 2019-01-02
+                2          904                  6     2019-01-03 2019-01-03
+                3          599                  3     2019-01-04 2019-01-05
+                4          871                  0     2019-01-06 2019-01-06
+                ...                           ...    ...        ...        ...
+        ```
         bound_method: str, optional
             The start-end bound methodology which is used to generate the slice ranges
             when ``data`` consists of multiple series / columns.
@@ -518,11 +1048,112 @@ class FeatureCollection:
 
 
         """
+
+        # Check valid data
+        if isinstance(data, list):
+            assert all(
+                isinstance(d, (pd.Series, pd.DataFrame)) for d in data
+            ), "All elements of the data list must be either a Series or a DataFrame!"
+        else:
+            assert isinstance(
+                data, (pd.Series, pd.DataFrame, pd.core.groupby.DataFrameGroupBy)
+            ), "The data must be either a Series, a DataFrame or a DataFrameGroupBy!"
+
+        # check valid group_by
+        assert group_by_all is None or group_by_consecutive is None, (
+            "Only max one of the following parameters can be set: "
+            + "`group_by_all` or `group_by_consecutive`"
+        )
+        assert not (
+            (group_by_all is not None or group_by_consecutive is not None)
+            and isinstance(data, pd.core.groupby.DataFrameGroupBy)
+        ), (
+            "Cannot use `group_by_all` or `group_by_consecutive` when `data` is"
+            + " already a grouped DataFrame!"
+        )
+
         # Delete other logging handlers
         delete_logging_handlers(logger)
         # Add logging handler (if path provided)
+        f_handler = None
         if logging_file_path:
             f_handler = add_logging_handler(logger, logging_file_path)
+
+        if (
+            group_by_all
+            or group_by_consecutive
+            or isinstance(data, pd.core.groupby.DataFrameGroupBy)
+        ):
+            self._check_no_multiple_windows(
+                error_case="When using the groupby behavior"
+            )
+
+            # The grouping column must be part of the required series
+            if group_by_all:
+                # group_by_consecutive should be None (checked by asserts above)
+                # data should not be a grouped DataFrame (checked by asserts above)
+                assert (
+                    group_by_all not in self.get_required_series()
+                ), "The `group_by_all` column cannot be part of the required series!"
+            elif group_by_consecutive:
+                # group_by_all should be None (checked by asserts above)
+                # data should not be a grouped DataFrame (checked by asserts above)
+                assert group_by_consecutive not in self.get_required_series(), (
+                    "The `group_by_consecutive` column cannot be part of the required "
+                    + "series!"
+                )
+                # __start and __end should not be part of the output names
+                assert "__start" not in self.get_required_series()
+                assert "__end" not in self.get_required_series()
+
+            # if any of the following params are not None, warn that they won't be of use
+            # in the grouped calculation
+            ignored_params = [
+                ("stride", None),
+                ("segment_start_idxs", None),
+                ("segment_end_idxs", None),
+                ("window_idx", "end"),
+                ("include_final_window", False),
+            ]
+            local_params = locals()
+
+            for ip, default_value in ignored_params:
+                if local_params[ip] is not default_value:
+                    warnings.warn(
+                        f"Parameter `{ip}` will be ignored in case of GroupBy feature"
+                        + " calculation."
+                    )
+
+            if group_by_consecutive:
+                # Strided rollling feature extraction will take place
+                return self._calculate_group_by_consecutive(
+                    data,
+                    group_by_consecutive,
+                    return_df,
+                    bound_method=bound_method,
+                    approve_sparsity=approve_sparsity,
+                    show_progress=show_progress,
+                    logging_file_path=logging_file_path,
+                    n_jobs=n_jobs,
+                )
+            else:
+                # Grouped feature extraction will take place
+                if not isinstance(data, pd.core.groupby.generic.DataFrameGroupBy):
+                    # group_by_all should not be None (checked by asserts above)
+                    # 0. Transform to dataframe
+                    series_dict = FeatureCollection._data_to_series_dict(
+                        data, self.get_required_series() + [group_by_all]
+                    )
+                    # 1. Group by `group_by_all` column
+                    data = self._group_by_all(series_dict, col_name=group_by_all)
+
+                return self._calculate_group_by_all(
+                    data,  # should be a DataFrameGroupBy
+                    return_df,
+                    show_progress=show_progress,
+                    n_jobs=n_jobs,
+                    f_handler=f_handler,
+                )
 
         # Convert to numpy array (if necessary)
         if segment_start_idxs is not None:
@@ -538,7 +1169,9 @@ class FeatureCollection:
             _check_start_end_array(segment_start_idxs, segment_end_idxs)
             # Check if there is either 1 or No(ne) window value for every output name -
             # input_series combination
-            self._check_no_multiple_windows()
+            self._check_no_multiple_windows(
+                error_case="When using both `segment_start_idxs` and `segment_end_idxs`"
+            )
 
         if segment_start_idxs is None or segment_end_idxs is None:
             assert all(
@@ -573,21 +1206,9 @@ class FeatureCollection:
             self._check_feature_descriptors(skip_none=False, calc_stride=stride)
 
         # Convert the data to a series_dict
-        series_dict: Dict[str, pd.Series] = {}
-        for s in to_series_list(data):
-            if not s.index.is_monotonic_increasing:
-                warnings.warn(
-                    f"The index of series '{s.name}' is not monotonic increasing. "
-                    + "The series will be sorted by the index.",
-                    RuntimeWarning,
-                )
-                s = s.sort_index(ascending=True, inplace=False, ignore_index=False)
-
-            # Assert the assumptions we make!
-            assert s.index.is_monotonic_increasing
-
-            if s.name in self.get_required_series():
-                series_dict[str(s.name)] = s
+        series_dict = FeatureCollection._data_to_series_dict(
+            data, self.get_required_series()
+        )
 
         # Determine the bounds of the series dict items and slice on them
         # TODO: is dit wel nodig `hier? want we doen dat ook in de strided rolling
@@ -613,57 +1234,10 @@ class FeatureCollection:
             include_final_window=include_final_window,
             approve_sparsity=approve_sparsity,
         )
-        nb_stroll_funcs = self._get_stroll_feat_length()
 
-        if (
-            os.name == "nt"
-        ):  # On Windows no multiprocessing is supported, see https://github.com/predict-idlab/tsflex/issues/51
-            n_jobs = 1
-        elif n_jobs is None:
-            n_jobs = os.cpu_count()
-        n_jobs = min(n_jobs, nb_stroll_funcs)
-
-        calculated_feature_list = None
-        if n_jobs in [0, 1]:
-            idxs = range(nb_stroll_funcs)
-            if show_progress:
-                idxs = tqdm(idxs)
-            try:
-                calculated_feature_list = [self._executor(idx) for idx in idxs]
-            except Exception:
-                traceback.print_exc()
-        else:
-            with Pool(processes=n_jobs) as pool:
-                results = pool.imap_unordered(self._executor, range(nb_stroll_funcs))
-                if show_progress:
-                    results = tqdm(results, total=nb_stroll_funcs)
-                try:
-                    calculated_feature_list = [f for f in results]
-                except Exception:
-                    traceback.print_exc()
-                    pool.terminate()
-                finally:
-                    # Close & join because: https://github.com/uqfoundation/pathos/issues/131
-                    pool.close()
-                    pool.join()
-
-        # Close the file handler (this avoids PermissionError: [WinError 32])
-        if logging_file_path:
-            f_handler.close()
-            logger.removeHandler(f_handler)
-
-        if calculated_feature_list is None:
-            raise RuntimeError(
-                "Feature Extraction halted due to error while extracting one "
-                + "(or multiple) feature(s)! See stack trace above."
-            )
-
-        if return_df:
-            # concatenate & sort the columns
-            df = pd.concat(calculated_feature_list, axis=1, join="outer", copy=False)
-            return df.reindex(sorted(df.columns), axis=1)
-        else:
-            return calculated_feature_list
+        return self._calculate_feature_list(
+            self._executor_stroll, n_jobs, show_progress, return_df, f_handler
+        )
 
     def serialize(self, file_path: Union[str, Path]):
         """Serialize this FeatureCollection instance.
@@ -718,7 +1292,9 @@ class FeatureCollection:
             assert all(c.endswith("w=manual") for c in feat_cols_to_keep)
             # As the windows are created manual, the FeatureCollection cannot contain
             # multiple windows for the same output name - input_series combination
-            self._check_no_multiple_windows()
+            self._check_no_multiple_windows(
+                error_case="When reducing a FeatureCollection with manual windows"
+            )
             manual_window = True
         feat_col_fd_mapping: Dict[str, Tuple[str, FeatureDescriptor]] = {}
         for (s_names, window), fd_list in self._feature_desc_dict.items():

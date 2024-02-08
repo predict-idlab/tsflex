@@ -25,9 +25,13 @@ import pandas as pd
 from ...utils.attribute_parsing import AttributeParser, DataType
 from ...utils.data import SUPPORTED_STROLL_TYPES, to_list, to_series_list, to_tuple
 from ...utils.time import timedelta_to_str
-from ..function_wrapper import FuncWrapper, _get_name
-from ..logger import logger
-from ..utils import _check_start_end_array, _determine_bounds
+from ..function_wrapper import FuncWrapper
+from ..utils import (
+    _check_start_end_array,
+    _determine_bounds,
+    _log_func_execution,
+    _process_func_output,
+)
 
 # Declare a type variable
 T = TypeVar("T")
@@ -299,11 +303,12 @@ class StridedRolling(ABC):
                 # note: using pd.RangeIndex instead of arange gives the same performance
 
             series_name = series.name
-            if self.data_type is np.array:
+            if self.data_type is np.array:  # FuncWrapper.input_type is np.array
                 # create a non-writeable view of the series
-                series = series.values
+                series = series.values  # np.array will be stored in the SeriesContainer
                 series.flags.writeable = False
-            elif self.data_type is pd.Series:
+            elif self.data_type is pd.Series:  # FuncWrapper.input_type is pd.Series
+                # pd.Series will be stored in the SeriesContainer
                 series.values.flags.writeable = False
                 series.index.values.flags.writeable = False
             else:
@@ -444,7 +449,7 @@ class StridedRolling(ABC):
             out = out.T if out_type is tuple else out
 
         else:
-            # Sequential function execution (default)
+            # Function execution over slices (default)
             out = np.array(
                 list(
                     map(
@@ -466,38 +471,18 @@ class StridedRolling(ABC):
         assert out.ndim > 0, "Vectorized function returned only 1 (non-array) value!"
 
         # Aggregate function output in a dictionary
-        feat_out = {}
-        if out.ndim == 1 and not len(out):
-            # When there are no features calculated (due to no feature windows)
-            assert not len(self.index)
-            for f_name in feat_names:
-                # Will be discarded (bc no index)
-                feat_out[self._create_feat_col_name(f_name)] = None
-        elif out.ndim == 1 or (out.ndim == 2 and out.shape[1] == 1):
-            assert len(feat_names) == 1, f"Func {func} returned more than 1 output!"
-            feat_out[self._create_feat_col_name(feat_names[0])] = out.flatten()
-        else:
-            assert out.ndim == 2 and out.shape[1] > 1
-            assert (
-                len(feat_names) == out.shape[1]
-            ), f"Func {func} returned incorrect number of outputs ({out.shape[1]})!"
-            for col_idx in range(out.shape[1]):
-                feat_out[self._create_feat_col_name(feat_names[col_idx])] = out[
-                    :, col_idx
-                ]
-
-        elapsed = time.perf_counter() - t_start
+        output_names = list(map(self._create_feat_col_name, feat_names))
+        feat_out = _process_func_output(out, self.index, output_names, str(func))
+        # Log the function execution time
         log_strides = (
             "manual" if self.strides is None else tuple(map(str, self.strides))
         )
         log_window = "manual" if self.window is None else self.window
-        logger.info(
-            f"Finished function [{_get_name(func.func)}] on "
-            f"{[self.series_key]} with window-stride [{log_window}, {log_strides}] "
-            f"with output {list(feat_out.keys())} in [{elapsed} seconds]!"
+        _log_func_execution(
+            t_start, func, self.series_key, log_window, log_strides, output_names
         )
 
-        return pd.DataFrame(index=self.index, data=feat_out)
+        return pd.DataFrame(feat_out, index=self.index)
 
     # --------------------------------- STATIC METHODS ---------------------------------
     @staticmethod

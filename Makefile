@@ -23,6 +23,7 @@ clean:
 	rm -rf `find . -name __pycache__`
 	rm -rf .cache
 	rm -rf .pytest_cache
+	rm -rf .benchmarks
 	rm -rf *.egg-info
 	rm -rf .ruff_cache
 	rm -f .coverage

@@ -2,15 +2,62 @@
 
 __author__ = "Jeroen Van Der Donckt, Jonas Van Der Donckt"
 
-from typing import Any, Callable, List, Optional, Tuple, Union
+import time
+from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union
 
 import numpy as np
 import pandas as pd
 
 from .function_wrapper import FuncWrapper, _get_name
+from .logger import logger
 
+# Declare a type variable
+T = TypeVar("T")
 
 # ---------------------------------- PRIVATE METHODS ----------------------------------
+def _process_func_output(
+    out: np.ndarray, index: np.ndarray, output_names: List[str], func_str: str
+) -> Dict[str, np.ndarray]:
+    """Process the output of a feature function into a dictionary."""
+    feat_out = {}
+    if out.ndim == 1 and not len(out):
+        # When there are no features calculated (due to no feature windows)
+        assert not len(index)
+        for o_name in output_names:
+            # Will be discarded (bc no index)
+            feat_out[o_name] = None
+    elif out.ndim == 1 or (out.ndim == 2 and out.shape[1] == 1):
+        assert len(output_names) == 1, f"Func {func_str} returned more than 1 output!"
+        feat_out[output_names[0]] = out.flatten()
+    else:
+        assert out.ndim == 2 and out.shape[1] > 1
+        assert (
+            len(output_names) == out.shape[1]
+        ), f"Func {func_str} returned incorrect number of outputs ({out.shape[1]})!"
+        for col_idx in range(out.shape[1]):
+            feat_out[output_names[col_idx]] = out[:, col_idx]
+
+    return feat_out
+
+
+def _log_func_execution(
+    t_start: float,
+    func: FuncWrapper,
+    series_key: Tuple[str],
+    log_window: Optional[T],
+    log_strides: Optional[Union[str, Tuple[str]]],
+    output_names: List[str],
+):
+    """Log the execution time of a feature function."""
+    elapsed = time.perf_counter() - t_start
+
+    logger.info(
+        f"Finished function [{_get_name(func.func)}] on "
+        f"{[series_key]} with window-stride [{log_window}, {log_strides}] "
+        f"with output {output_names} in [{elapsed} seconds]!"
+    )
+
+
 def _determine_bounds(bound_method, series_list: List[pd.Series]) -> Tuple[Any, Any]:
     """Determine the bounds of the passed series.
 
