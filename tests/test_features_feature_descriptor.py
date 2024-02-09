@@ -220,7 +220,7 @@ def test_multiple_feature_descriptors():
         return sum(sig)
 
     mfd = MultipleFeatureDescriptors(
-        functions=[sum_func, FuncWrapper(np.max), np.min],
+        functions=[sum_func, FuncWrapper(np.max, "amax"), np.mean],
         series_names=["EDA", "TMP"],
         windows=["5s", "7.5s"],
         strides="2.5s",
@@ -246,10 +246,10 @@ def test_multiple_feature_descriptors():
     output_names = [f.output_names for f in functions]
     assert all([len(outputs) == 1 for outputs in output_names])
     output_names = [outputs[0] for outputs in output_names]
-    assert set(output_names) == set(["sum_func", "amax", "amin"])
+    assert set(output_names) == set(["sum_func", "amax", "mean"])
     assert sum([el == "sum_func" for el in output_names]) == 2 * 2
     assert sum([el == "amax" for el in output_names]) == 2 * 2
-    assert sum([el == "amin" for el in output_names]) == 2 * 2
+    assert sum([el == "mean" for el in output_names]) == 2 * 2
 
 
 def test_multiple_feature_descriptors_optional_stride():
@@ -257,7 +257,7 @@ def test_multiple_feature_descriptors_optional_stride():
         return sum(sig)
 
     mfd = MultipleFeatureDescriptors(
-        functions=[sum_func, FuncWrapper(np.max), np.min],
+        functions=[sum_func, FuncWrapper(np.max, "amax"), np.mean],
         series_names=["EDA", "TMP"],
         windows=["5s", "7.5s"],
         # passes no stride
@@ -283,10 +283,10 @@ def test_multiple_feature_descriptors_optional_stride():
     output_names = [f.output_names for f in functions]
     assert all([len(outputs) == 1 for outputs in output_names])
     output_names = [outputs[0] for outputs in output_names]
-    assert set(output_names) == set(["sum_func", "amax", "amin"])
+    assert set(output_names) == set(["sum_func", "amax", "mean"])
     assert sum([el == "sum_func" for el in output_names]) == 2 * 2
     assert sum([el == "amax" for el in output_names]) == 2 * 2
-    assert sum([el == "amin" for el in output_names]) == 2 * 2
+    assert sum([el == "mean" for el in output_names]) == 2 * 2
 
 
 def test_multiple_feature_descriptors_optional_stride_and_window():
@@ -294,7 +294,7 @@ def test_multiple_feature_descriptors_optional_stride_and_window():
         return sum(sig)
 
     mfd = MultipleFeatureDescriptors(
-        functions=[sum_func, FuncWrapper(np.max), np.min],
+        functions=[sum_func, FuncWrapper(np.max, "amax"), np.mean],
         series_names=["EDA", "TMP"],
         # passes no window,
         # passes no stride
@@ -318,7 +318,7 @@ def test_multiple_feature_descriptors_optional_stride_and_window():
     output_names = [f.output_names for f in functions]
     assert all([len(outputs) == 1 for outputs in output_names])
     output_names = [outputs[0] for outputs in output_names]
-    assert set(output_names) == set(["sum_func", "amax", "amin"])
+    assert set(output_names) == set(["sum_func", "amax", "mean"])
     assert sum([el == "sum_func" for el in output_names]) == 2
     assert sum([el == "amax" for el in output_names]) == 2
-    assert sum([el == "amin" for el in output_names]) == 2
+    assert sum([el == "mean" for el in output_names]) == 2

@@ -132,8 +132,12 @@ def test_single_series_group_feature_non_existent_group_by(
 @pytest.mark.parametrize("n_jobs", [1, 3])
 def test_single_series_multiple_features_group_by(dummy_group_data, group_by, n_jobs):
     fd1 = FeatureDescriptor(function=np.sum, series_name="number_sold")
-    fd2 = FeatureDescriptor(function=np.min, series_name="number_sold")
-    fd3 = FeatureDescriptor(function=np.max, series_name="number_sold")
+    fd2 = FeatureDescriptor(
+        function=FuncWrapper(np.min, "amin"), series_name="number_sold"
+    )
+    fd3 = FeatureDescriptor(
+        function=FuncWrapper(np.max, "amax"), series_name="number_sold"
+    )
 
     fc = FeatureCollection(feature_descriptors=[fd1, fd2, fd3])
 
@@ -900,7 +904,7 @@ def test_sequence_segment_start_and_end_idxs():
 
     fc = FeatureCollection(
         [
-            FeatureDescriptor(np.min, "dummy", 100),
+            FeatureDescriptor(FuncWrapper(np.min, "amin"), "dummy", 100),
             FeatureDescriptor(len, "dummy"),
         ]
     )
@@ -924,7 +928,7 @@ def test_sequence_segment_start_and_end_idxs_empty_array():
 
     fc = FeatureCollection(
         [
-            FeatureDescriptor(np.min, "dummy", 100),
+            FeatureDescriptor(FuncWrapper(np.min, "amin"), "dummy", 100),
             FeatureDescriptor(len, "dummy"),
         ]
     )
@@ -949,7 +953,7 @@ def test_time_segment_start_and_end_idxs_empty_array():
 
     fc = FeatureCollection(
         [
-            FeatureDescriptor(np.min, "dummy", "100h"),
+            FeatureDescriptor(FuncWrapper(np.min, "amin"), "dummy", "100h"),
             FeatureDescriptor(len, "dummy"),
         ]
     )
@@ -1236,7 +1240,7 @@ def test_multiplefeaturedescriptors_feature_collection(dummy_data):
         return sum(sig)
 
     mfd = MultipleFeatureDescriptors(
-        functions=[sum_func, FuncWrapper(np.max), np.min],
+        functions=[sum_func, FuncWrapper(np.max, "amax"), FuncWrapper(np.min, "amin")],
         series_names=["EDA", "TMP"],
         windows=["5s", "7.5s"],
         strides="2.5s",
@@ -1919,7 +1923,7 @@ def test_series_funcs(dummy_data):
                     ],
                 ),
                 FuncWrapper(time_diff, input_type=pd.Series),
-                FuncWrapper(np.max, input_type=np.array),
+                FuncWrapper(np.max, "amax", input_type=np.array),
             ],
             series_names=["EDA", "TMP"],
             windows="5s",

@@ -33,10 +33,12 @@ def test_simple_features_logging_time_index(dummy_data, logging_file_path):
     fc = FeatureCollection(feature_descriptors=fd)
     fc.add(
         MultipleFeatureDescriptors(
-            np.min, series_names=["TMP", "ACC_x"], windows="5s", strides="12s"
+            np.median, series_names=["TMP", "ACC_x"], windows="5s", strides="12s"
         )
     )
-    fc.add(FeatureDescriptor(np.min, series_name=("EDA",), window="5s", stride="12s"))
+    fc.add(
+        FeatureDescriptor(np.median, series_name=("EDA",), window="5s", stride="12s")
+    )
 
     assert set(fc.get_required_series()) == set(["EDA", "TMP", "ACC_x"])
     assert len(fc.get_required_series()) == 3
@@ -73,12 +75,17 @@ def test_simple_features_logging_time_index(dummy_data, logging_file_path):
 
     assert np.isclose(logging_df["duration %"].sum(), 100, atol=0.5)
 
-    assert set(logging_df["function"].values) == set(["amin", "sum"])
+    assert set(logging_df["function"].values) == set(["median", "sum"])
     assert set(logging_df["series_names"].values) == set(
         ["(EDA,)", "(ACC_x,)", "(TMP,)"]
     )
     assert set(logging_df["output_names"].values) == set(
-        ["EDA__sum__w=5s", "EDA__amin__w=5s", "TMP__amin__w=5s", "ACC_x__amin__w=5s"]
+        [
+            "EDA__sum__w=5s",
+            "EDA__median__w=5s",
+            "TMP__median__w=5s",
+            "ACC_x__median__w=5s",
+        ]
     )
     assert all(logging_df["window"] == "5s")
     assert all(logging_df["stride"] == ("12s",))
@@ -86,7 +93,7 @@ def test_simple_features_logging_time_index(dummy_data, logging_file_path):
     function_stats_df = get_function_stats(logging_file_path)
     assert len(function_stats_df) == 2
     assert set(function_stats_df.index) == set(
-        [(s, "5s", ("12s",)) for s in ["sum", "amin"]]
+        [(s, "5s", ("12s",)) for s in ["sum", "median"]]
     )
     assert all(function_stats_df["duration"]["mean"] > 0)
     assert function_stats_df["duration"]["count"].sum() == 4
@@ -115,10 +122,10 @@ def test_simple_features_logging_sequence_index(dummy_data, logging_file_path):
     fc = FeatureCollection(feature_descriptors=fd)
     fc.add(
         MultipleFeatureDescriptors(
-            np.min, series_names=["TMP", "ACC_x"], windows=50, strides=120
+            np.median, series_names=["TMP", "ACC_x"], windows=50, strides=120
         )
     )
-    fc.add(FeatureDescriptor(np.min, series_name=("EDA",), window=50, stride=120))
+    fc.add(FeatureDescriptor(np.median, series_name=("EDA",), window=50, stride=120))
 
     assert set(fc.get_required_series()) == set(["EDA", "TMP", "ACC_x"])
     assert len(fc.get_required_series()) == 3
@@ -155,12 +162,17 @@ def test_simple_features_logging_sequence_index(dummy_data, logging_file_path):
 
     assert np.isclose(logging_df["duration %"].sum(), 100, atol=0.5)
 
-    assert set(logging_df["function"].values) == set(["amin", "sum"])
+    assert set(logging_df["function"].values) == set(["median", "sum"])
     assert set(logging_df["series_names"].values) == set(
         ["(EDA,)", "(ACC_x,)", "(TMP,)"]
     )
     assert set(logging_df["output_names"].values) == set(
-        ["EDA__sum__w=50", "EDA__amin__w=50", "TMP__amin__w=50", "ACC_x__amin__w=50"]
+        [
+            "EDA__sum__w=50",
+            "EDA__median__w=50",
+            "TMP__median__w=50",
+            "ACC_x__median__w=50",
+        ]
     )
     assert all(logging_df["window"] == 50)
     assert all(logging_df["stride"] == (120,))
@@ -168,7 +180,7 @@ def test_simple_features_logging_sequence_index(dummy_data, logging_file_path):
     function_stats_df = get_function_stats(logging_file_path)
     assert len(function_stats_df) == 2
     assert set(function_stats_df.index) == set(
-        [(s, 50, (120,)) for s in ["sum", "amin"]]
+        [(s, 50, (120,)) for s in ["sum", "median"]]
     )
     assert all(function_stats_df["duration"]["mean"] > 0)
     assert function_stats_df["duration"]["count"].sum() == 4
@@ -198,9 +210,9 @@ def test_simple_features_logging_segment_start_idxs_no_stride(
     )
     fc = FeatureCollection(feature_descriptors=fd)
     fc.add(
-        MultipleFeatureDescriptors(np.min, series_names=["TMP", "ACC_x"], windows=50)
+        MultipleFeatureDescriptors(np.median, series_names=["TMP", "ACC_x"], windows=50)
     )
-    fc.add(FeatureDescriptor(np.min, series_name=("EDA",), window=50))
+    fc.add(FeatureDescriptor(np.median, series_name=("EDA",), window=50))
     for fd in flatten(fc._feature_desc_dict.values()):
         assert fd.stride is None
 
@@ -245,12 +257,17 @@ def test_simple_features_logging_segment_start_idxs_no_stride(
 
     assert np.isclose(logging_df["duration %"].sum(), 100, atol=0.5)
 
-    assert set(logging_df["function"].values) == set(["amin", "sum"])
+    assert set(logging_df["function"].values) == set(["median", "sum"])
     assert set(logging_df["series_names"].values) == set(
         ["(EDA,)", "(ACC_x,)", "(TMP,)"]
     )
     assert set(logging_df["output_names"].values) == set(
-        ["EDA__sum__w=50", "EDA__amin__w=50", "TMP__amin__w=50", "ACC_x__amin__w=50"]
+        [
+            "EDA__sum__w=50",
+            "EDA__median__w=50",
+            "TMP__median__w=50",
+            "ACC_x__median__w=50",
+        ]
     )
     assert all(logging_df["window"] == 50)
     assert all(logging_df["stride"] == "manual")
@@ -258,7 +275,7 @@ def test_simple_features_logging_segment_start_idxs_no_stride(
     function_stats_df = get_function_stats(logging_file_path)
     assert len(function_stats_df) == 2
     assert set(function_stats_df.index) == set(
-        [(s, 50, "manual") for s in ["sum", "amin"]]
+        [(s, 50, "manual") for s in ["sum", "median"]]
     )
     assert all(function_stats_df["duration"]["mean"] > 0)
     assert function_stats_df["duration"]["count"].sum() == 4
@@ -288,9 +305,9 @@ def test_simple_features_logging_segment_end_idxs_no_stride(
     )
     fc = FeatureCollection(feature_descriptors=fd)
     fc.add(
-        MultipleFeatureDescriptors(np.min, series_names=["TMP", "ACC_x"], windows=50)
+        MultipleFeatureDescriptors(np.median, series_names=["TMP", "ACC_x"], windows=50)
     )
-    fc.add(FeatureDescriptor(np.min, series_name=("EDA",), window=50))
+    fc.add(FeatureDescriptor(np.median, series_name=("EDA",), window=50))
     for fd in flatten(fc._feature_desc_dict.values()):
         assert fd.stride is None
 
@@ -335,12 +352,17 @@ def test_simple_features_logging_segment_end_idxs_no_stride(
 
     assert np.isclose(logging_df["duration %"].sum(), 100, atol=0.5)
 
-    assert set(logging_df["function"].values) == set(["amin", "sum"])
+    assert set(logging_df["function"].values) == set(["median", "sum"])
     assert set(logging_df["series_names"].values) == set(
         ["(EDA,)", "(ACC_x,)", "(TMP,)"]
     )
     assert set(logging_df["output_names"].values) == set(
-        ["EDA__sum__w=50", "EDA__amin__w=50", "TMP__amin__w=50", "ACC_x__amin__w=50"]
+        [
+            "EDA__sum__w=50",
+            "EDA__median__w=50",
+            "TMP__median__w=50",
+            "ACC_x__median__w=50",
+        ]
     )
     assert all(logging_df["window"] == 50)
     assert all(logging_df["stride"] == "manual")
@@ -348,7 +370,7 @@ def test_simple_features_logging_segment_end_idxs_no_stride(
     function_stats_df = get_function_stats(logging_file_path)
     assert len(function_stats_df) == 2
     assert set(function_stats_df.index) == set(
-        [(s, 50, "manual") for s in ["sum", "amin"]]
+        [(s, 50, "manual") for s in ["sum", "median"]]
     )
     assert all(function_stats_df["duration"]["mean"] > 0)
     assert function_stats_df["duration"]["count"].sum() == 4
@@ -380,10 +402,10 @@ def test_simple_features_logging_segment_start_idxs_overrule_stride(
     fc = FeatureCollection(feature_descriptors=fd)
     fc.add(
         MultipleFeatureDescriptors(
-            np.min, series_names=["TMP", "ACC_x"], windows=50, strides=20
+            np.median, series_names=["TMP", "ACC_x"], windows=50, strides=20
         )
     )
-    fc.add(FeatureDescriptor(np.min, series_name=("EDA",), window=50, stride=34))
+    fc.add(FeatureDescriptor(np.median, series_name=("EDA",), window=50, stride=34))
     for fd in flatten(fc._feature_desc_dict.values()):
         assert fd.stride is not None
 
@@ -428,12 +450,17 @@ def test_simple_features_logging_segment_start_idxs_overrule_stride(
 
     assert np.isclose(logging_df["duration %"].sum(), 100, atol=0.5)
 
-    assert set(logging_df["function"].values) == set(["amin", "sum"])
+    assert set(logging_df["function"].values) == set(["median", "sum"])
     assert set(logging_df["series_names"].values) == set(
         ["(EDA,)", "(ACC_x,)", "(TMP,)"]
     )
     assert set(logging_df["output_names"].values) == set(
-        ["EDA__sum__w=50", "EDA__amin__w=50", "TMP__amin__w=50", "ACC_x__amin__w=50"]
+        [
+            "EDA__sum__w=50",
+            "EDA__median__w=50",
+            "TMP__median__w=50",
+            "ACC_x__median__w=50",
+        ]
     )
     assert all(logging_df["window"] == 50)
     assert all(logging_df["stride"] == "manual")
@@ -441,7 +468,7 @@ def test_simple_features_logging_segment_start_idxs_overrule_stride(
     function_stats_df = get_function_stats(logging_file_path)
     assert len(function_stats_df) == 2
     assert set(function_stats_df.index) == set(
-        [(s, 50, "manual") for s in ["sum", "amin"]]
+        [(s, 50, "manual") for s in ["sum", "median"]]
     )
     assert all(function_stats_df["duration"]["mean"] > 0)
     assert function_stats_df["duration"]["count"].sum() == 4
@@ -473,10 +500,10 @@ def test_simple_features_logging_segment_end_idxs_overrule_stride(
     fc = FeatureCollection(feature_descriptors=fd)
     fc.add(
         MultipleFeatureDescriptors(
-            np.min, series_names=["TMP", "ACC_x"], windows=50, strides=20
+            np.median, series_names=["TMP", "ACC_x"], windows=50, strides=20
         )
     )
-    fc.add(FeatureDescriptor(np.min, series_name=("EDA",), window=50, stride=34))
+    fc.add(FeatureDescriptor(np.median, series_name=("EDA",), window=50, stride=34))
     for fd in flatten(fc._feature_desc_dict.values()):
         assert fd.stride is not None
 
@@ -521,12 +548,17 @@ def test_simple_features_logging_segment_end_idxs_overrule_stride(
 
     assert np.isclose(logging_df["duration %"].sum(), 100, atol=0.5)
 
-    assert set(logging_df["function"].values) == set(["amin", "sum"])
+    assert set(logging_df["function"].values) == set(["median", "sum"])
     assert set(logging_df["series_names"].values) == set(
         ["(EDA,)", "(ACC_x,)", "(TMP,)"]
     )
     assert set(logging_df["output_names"].values) == set(
-        ["EDA__sum__w=50", "EDA__amin__w=50", "TMP__amin__w=50", "ACC_x__amin__w=50"]
+        [
+            "EDA__sum__w=50",
+            "EDA__median__w=50",
+            "TMP__median__w=50",
+            "ACC_x__median__w=50",
+        ]
     )
     assert all(logging_df["window"] == 50)
     assert all(logging_df["stride"] == "manual")
@@ -534,7 +566,7 @@ def test_simple_features_logging_segment_end_idxs_overrule_stride(
     function_stats_df = get_function_stats(logging_file_path)
     assert len(function_stats_df) == 2
     assert set(function_stats_df.index) == set(
-        [(s, 50, "manual") for s in ["sum", "amin"]]
+        [(s, 50, "manual") for s in ["sum", "median"]]
     )
     assert all(function_stats_df["duration"]["mean"] > 0)
     assert function_stats_df["duration"]["count"].sum() == 4
@@ -566,10 +598,10 @@ def test_simple_features_logging_segment_start_and_end_idxs_overrule_stride_and_
     fc = FeatureCollection(feature_descriptors=fd)
     fc.add(
         MultipleFeatureDescriptors(
-            np.min, series_names=["TMP", "ACC_x"], windows=50, strides=20
+            np.median, series_names=["TMP", "ACC_x"], windows=50, strides=20
         )
     )
-    fc.add(FeatureDescriptor(np.min, series_name=("EDA",), window=50, stride=34))
+    fc.add(FeatureDescriptor(np.median, series_name=("EDA",), window=50, stride=34))
     for fd in flatten(fc._feature_desc_dict.values()):
         assert fd.stride is not None
 
@@ -616,16 +648,16 @@ def test_simple_features_logging_segment_start_and_end_idxs_overrule_stride_and_
 
     assert np.isclose(logging_df["duration %"].sum(), 100, atol=0.5)
 
-    assert set(logging_df["function"].values) == set(["amin", "sum"])
+    assert set(logging_df["function"].values) == set(["median", "sum"])
     assert set(logging_df["series_names"].values) == set(
         ["(EDA,)", "(ACC_x,)", "(TMP,)"]
     )
     assert set(logging_df["output_names"].values) == set(
         [
             "EDA__sum__w=manual",
-            "EDA__amin__w=manual",
-            "TMP__amin__w=manual",
-            "ACC_x__amin__w=manual",
+            "EDA__median__w=manual",
+            "TMP__median__w=manual",
+            "ACC_x__median__w=manual",
         ]
     )
     assert all(logging_df["window"] == "manual")
@@ -634,7 +666,7 @@ def test_simple_features_logging_segment_start_and_end_idxs_overrule_stride_and_
     function_stats_df = get_function_stats(logging_file_path)
     assert len(function_stats_df) == 2
     assert set(function_stats_df.index) == set(
-        [(s, "manual", "manual") for s in ["sum", "amin"]]
+        [(s, "manual", "manual") for s in ["sum", "median"]]
     )
     assert all(function_stats_df["duration"]["mean"] > 0)
     assert function_stats_df["duration"]["count"].sum() == 4
@@ -664,7 +696,7 @@ def test_simple_features_logging_groupby(dummy_group_data, logging_file_path, gr
     fc = FeatureCollection(feature_descriptors=fd)
     fc.add(
         MultipleFeatureDescriptors(
-            np.min, series_names=["product", "number_sold"], windows=50, strides=20
+            np.median, series_names=["product", "number_sold"], windows=50, strides=20
         )
     )
     for fd in flatten(fc._feature_desc_dict.values()):
@@ -707,15 +739,15 @@ def test_simple_features_logging_groupby(dummy_group_data, logging_file_path, gr
 
     assert np.isclose(logging_df["duration %"].sum(), 100, atol=0.5)
 
-    assert set(logging_df["function"].values) == set(["amin", "sum"])
+    assert set(logging_df["function"].values) == set(["median", "sum"])
     assert set(logging_df["series_names"].values) == set(
         ["(number_sold,)", "(product,)"]
     )
     assert set(logging_df["output_names"].values) == set(
         [
             "number_sold__sum__w=manual",
-            "number_sold__amin__w=manual",
-            "product__amin__w=manual",
+            "number_sold__median__w=manual",
+            "product__median__w=manual",
         ]
     )
     assert all(logging_df["window"] == "manual")
@@ -724,7 +756,7 @@ def test_simple_features_logging_groupby(dummy_group_data, logging_file_path, gr
     function_stats_df = get_function_stats(logging_file_path)
     assert len(function_stats_df) == 2
     assert set(function_stats_df.index) == set(
-        [(s, "manual", "manual") for s in ["sum", "amin"]]
+        [(s, "manual", "manual") for s in ["sum", "median"]]
     )
     assert all(function_stats_df["duration"]["mean"] > 0)
     assert function_stats_df["duration"]["count"].sum() == 3

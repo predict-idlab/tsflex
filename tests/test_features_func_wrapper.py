@@ -89,13 +89,13 @@ def test_series_func_wrapper_with_kwargs(dummy_data):
 
 
 def test_vectorized_func_wrapper(dummy_data):
-    func_cols = FuncWrapper(np.max, vectorized=True, axis=0)  # Axis = columns
-    func_rows = FuncWrapper(np.max, vectorized=True, axis=1)  # Axis = rows
+    func_cols = FuncWrapper(np.mean, vectorized=True, axis=0)  # Axis = columns
+    func_rows = FuncWrapper(np.mean, vectorized=True, axis=1)  # Axis = rows
 
-    assert func_cols.output_names == ["amax"]
-    assert func_rows.output_names == ["amax"]
-    assert np.allclose(func_cols(dummy_data.values), dummy_data.max().values)
-    assert np.allclose(func_rows(dummy_data.values), dummy_data.max(axis=1).values)
+    assert func_cols.output_names == ["mean"]
+    assert func_rows.output_names == ["mean"]
+    assert np.allclose(func_cols(dummy_data.values), dummy_data.mean().values)
+    assert np.allclose(func_rows(dummy_data.values), dummy_data.mean(axis=1).values)
 
 
 def test_functools_support(dummy_data):
