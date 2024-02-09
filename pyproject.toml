@@ -42,6 +42,11 @@ numba = [
 seglearn = "^1.2.3"
 tsfresh = "^0.20.0"
 tsfel = "^0.1.4"
+# necessary to pin this version as tsfel for Python 3.7 does not pin gspread properly
+gspread = [
+    { version = "^5.12", python = "<3.8" },
+    { version = ">=5.13", python = ">=3.8" }
+]
 #fastparquet = "0.8.0"  # Lock to this version to resolve issue on macos with python 3.7
 pyarrow = "^12.0.0"
 pycatch22 = "0.4.2"  # Temporarily lock this version to avoid Windows install error
