@@ -37,7 +37,8 @@ scipy = [
 ]
 numba = [
     { version = "^0.56.4", python = "<3.8" },
-    { version = ">=0.57", python = ">=3.8" }
+    { version = ">=0.57", python = ">=3.8,<3.9" },
+    { version = ">=0.59", python = ">=3.9" },
 ]
 seglearn = "^1.2.3"
 tsfresh = "^0.20.0"
