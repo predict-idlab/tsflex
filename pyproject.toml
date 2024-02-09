@@ -42,6 +42,11 @@ numba = [
 ]
 seglearn = "^1.2.3"
 tsfresh = "^0.20.0"
+# necessary to support Python 3.12
+statsmodels = [
+    { version = ">=0.13", python = "<3.8" },
+    { version = ">=0.14", python = ">=3.8" },
+]
 tsfel = "^0.1.4"
 # necessary to pin this version as tsfel for Python 3.7 does not pin gspread properly
 gspread = [
