@@ -554,7 +554,8 @@ class FeatureCollection:
         """
         global group_indices, group_id_name, get_group_func
         group_indices = grouped_data.indices  # dict - group_id as key; indices as value
-        group_id_name = grouped_data.grouper.names  # name of the group col(s)
+        group_attr = "_grouper" if hasattr(grouped_data, "_grouper") else "grouper"
+        group_id_name = getattr(grouped_data, group_attr).names  # name of group col(s)
         get_group_func = self._group_feat_generator(grouped_data)
 
         return self._calculate_feature_list(
