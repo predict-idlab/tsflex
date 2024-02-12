@@ -710,7 +710,6 @@ class FeatureCollection:
             calc_result["__end"] = consecutive_grouped_by_df["end"]
 
             if return_df:
-                # concatenate rows
                 return calc_result
             else:
                 return [calc_result[col] for col in calc_result.columns]

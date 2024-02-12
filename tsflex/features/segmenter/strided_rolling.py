@@ -579,6 +579,10 @@ class TimeStridedRolling(StridedRolling):
     ) -> pd.Index:
         assert start_idxs.dtype.type == np.datetime64
         assert end_idxs.dtype.type == np.datetime64
+        if not len(start_idxs):  # to fix "datetime64 values must have a unit specified"
+            assert not len(end_idxs)
+            start_idxs = start_idxs.astype("datetime64[ns]")
+            end_idxs = end_idxs.astype("datetime64[ns]")
         start_idxs = pd.to_datetime(start_idxs, utc=True).tz_convert(self._tz_index)
         end_idxs = pd.to_datetime(end_idxs, utc=True).tz_convert(self._tz_index)
         return super()._get_output_index(start_idxs, end_idxs, name)
