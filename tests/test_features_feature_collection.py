@@ -2603,9 +2603,7 @@ def test_bound_method_uneven_index_datetime_sequence(dummy_data):
 
 # When using pandas > 2.0 the pd.concat has slightly different behavior, which causes
 # solely this test to fail..
-@pytest.mark.skipif(
-    int(pd.__version__[0]) >= 2, reason="test disabled for > Python 3.11."
-)
+@pytest.mark.skipif(int(pd.__version__[0]) >= 2, reason="test disabled for pandas>=2.")
 def test_not_sorted_fc(dummy_data):
     fc = FeatureCollection(
         feature_descriptors=[
