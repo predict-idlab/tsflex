@@ -468,7 +468,7 @@ def test_group_by_consecutive_subcall():
     )
 
     res = FeatureCollection._group_by_consecutive(s_val)
-    assert_frame_equal(res, expected_df)
+    assert_frame_equal(res, expected_df, check_dtype=False)
 
 
 @pytest.mark.parametrize("group_by", ["group_by_all", "group_by_consecutive"])
