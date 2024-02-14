@@ -133,12 +133,8 @@ def test_single_series_group_feature_non_existent_group_by(
 @pytest.mark.parametrize("n_jobs", [1, 3])
 def test_single_series_multiple_features_group_by(dummy_group_data, group_by, n_jobs):
     fd1 = FeatureDescriptor(function=np.sum, series_name="number_sold")
-    fd2 = FeatureDescriptor(
-        function=FuncWrapper(np.min, "amin"), series_name="number_sold"
-    )
-    fd3 = FeatureDescriptor(
-        function=FuncWrapper(np.max, "amax"), series_name="number_sold"
-    )
+    fd2 = FeatureDescriptor(function=np.min, series_name="number_sold")
+    fd3 = FeatureDescriptor(function=np.max, series_name="number_sold")
 
     fc = FeatureCollection(feature_descriptors=[fd1, fd2, fd3])
 
@@ -169,10 +165,14 @@ def test_single_series_multiple_features_group_by(dummy_group_data, group_by, n_
         res_df.reset_index().groupby("store")["number_sold__sum__w=manual"].sum()
     )
     grouped_res_df_min = (
-        res_df.reset_index().groupby("store")["number_sold__amin__w=manual"].min()
+        res_df.reset_index()
+        .groupby("store")[f"number_sold__{np.min.__name__}__w=manual"]
+        .min()
     )
     grouped_res_df_max = (
-        res_df.reset_index().groupby("store")["number_sold__amax__w=manual"].max()
+        res_df.reset_index()
+        .groupby("store")[f"number_sold__{np.max.__name__}__w=manual"]
+        .max()
     )
 
     def assert_results(data, res_data):
@@ -905,7 +905,7 @@ def test_sequence_segment_start_and_end_idxs():
 
     fc = FeatureCollection(
         [
-            FeatureDescriptor(FuncWrapper(np.min, "amin"), "dummy", 100),
+            FeatureDescriptor(np.min, "dummy", 100),
             FeatureDescriptor(len, "dummy"),
         ]
     )
@@ -918,7 +918,7 @@ def test_sequence_segment_start_and_end_idxs():
         n_jobs=1,
     )
     assert all(res.index == segment_start_idxs)
-    assert np.all(res["dummy__amin__w=manual"] == segment_start_idxs)
+    assert np.all(res[f"dummy__{np.min.__name__}__w=manual"] == segment_start_idxs)
     assert np.all(res["dummy__len__w=manual"] == [5] * 3 + [2])
 
 
@@ -929,7 +929,7 @@ def test_sequence_segment_start_and_end_idxs_empty_array():
 
     fc = FeatureCollection(
         [
-            FeatureDescriptor(FuncWrapper(np.min, "amin"), "dummy", 100),
+            FeatureDescriptor(np.min, "dummy", 100),
             FeatureDescriptor(len, "dummy"),
         ]
     )
@@ -942,7 +942,7 @@ def test_sequence_segment_start_and_end_idxs_empty_array():
         n_jobs=1,
     )
     assert all(res.index == segment_start_idxs)
-    assert np.all(res["dummy__amin__w=manual"] == [])
+    assert np.all(res[f"dummy__{np.min.__name__}__w=manual"] == [])
     assert np.all(res["dummy__len__w=manual"] == [])
 
 
@@ -954,7 +954,7 @@ def test_time_segment_start_and_end_idxs_empty_array():
 
     fc = FeatureCollection(
         [
-            FeatureDescriptor(FuncWrapper(np.min, "amin"), "dummy", "100h"),
+            FeatureDescriptor(np.min, "dummy", "100h"),
             FeatureDescriptor(len, "dummy"),
         ]
     )
@@ -967,7 +967,7 @@ def test_time_segment_start_and_end_idxs_empty_array():
         n_jobs=1,
     )
     assert all(res.index == segment_start_idxs)
-    assert np.all(res["dummy__amin__w=manual"] == [])
+    assert np.all(res[f"dummy__{np.min.__name__}__w=manual"] == [])
     assert np.all(res["dummy__len__w=manual"] == [])
 
 
@@ -1241,7 +1241,7 @@ def test_multiplefeaturedescriptors_feature_collection(dummy_data):
         return sum(sig)
 
     mfd = MultipleFeatureDescriptors(
-        functions=[sum_func, FuncWrapper(np.max, "amax"), FuncWrapper(np.min, "amin")],
+        functions=[sum_func, FuncWrapper(np.max), np.min],
         series_names=["EDA", "TMP"],
         windows=["5s", "7.5s"],
         strides="2.5s",
@@ -1262,10 +1262,10 @@ def test_multiplefeaturedescriptors_feature_collection(dummy_data):
         [
             f"{sig}__sum_func__w=5s",
             f"{sig}__sum_func__w=7.5s",
-            f"{sig}__amax__w=5s",
-            f"{sig}__amax__w=7.5s",
-            f"{sig}__amin__w=5s",
-            f"{sig}__amin__w=7.5s",
+            f"{sig}__{np.max.__name__}__w=5s",
+            f"{sig}__{np.max.__name__}__w=7.5s",
+            f"{sig}__{np.min.__name__}__w=5s",
+            f"{sig}__{np.min.__name__}__w=7.5s",
         ]
         for sig in ["EDA", "TMP"]
     ]
@@ -1924,7 +1924,7 @@ def test_series_funcs(dummy_data):
                     ],
                 ),
                 FuncWrapper(time_diff, input_type=pd.Series),
-                FuncWrapper(np.max, "amax", input_type=np.array),
+                FuncWrapper(np.max, input_type=np.array),
             ],
             series_names=["EDA", "TMP"],
             windows="5s",
@@ -1953,7 +1953,7 @@ def test_series_funcs(dummy_data):
     )
 
     assert "EDA__min_time_diff__w=5s" in res_df.columns
-    assert "EDA__amax__w=5s" in res_df.columns
+    assert f"EDA__{np.max.__name__}__w=5s" in res_df.columns
     assert all(res_df["EDA__min_time_diff__w=5s"] == res_df["EDA__max_time_diff__w=5s"])
     assert all(res_df["EDA__min_time_diff__w=5s"] == 0.25 * 3)
 
@@ -2628,7 +2628,6 @@ def test_not_sorted_fc(dummy_data):
     df_tmp = dummy_data["TMP"].reset_index(drop=True)
     df_eda = dummy_data["EDA"].reset_index(drop=True).sample(frac=1)
     assert not df_eda.index.is_monotonic_increasing
-    out = fc.calculate([df_tmp, df_eda], return_df=True)
     with warnings.catch_warnings(record=True) as w:
         out = fc.calculate([df_tmp, df_eda], return_df=True)
         assert len(w) == 1
