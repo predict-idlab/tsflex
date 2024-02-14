@@ -626,6 +626,10 @@ class TimeStridedRolling(StridedRolling):
     ) -&gt; pd.Index:
         assert start_idxs.dtype.type == np.datetime64
         assert end_idxs.dtype.type == np.datetime64
+        if not len(start_idxs):  # to fix &#34;datetime64 values must have a unit specified&#34;
+            assert not len(end_idxs)
+            start_idxs = start_idxs.astype(&#34;datetime64[ns]&#34;)
+            end_idxs = end_idxs.astype(&#34;datetime64[ns]&#34;)
         start_idxs = pd.to_datetime(start_idxs, utc=True).tz_convert(self._tz_index)
         end_idxs = pd.to_datetime(end_idxs, utc=True).tz_convert(self._tz_index)
         return super()._get_output_index(start_idxs, end_idxs, name)
@@ -1803,6 +1807,10 @@ If False and sparsity is observed, a warning is raised.</dd>
     ) -&gt; pd.Index:
         assert start_idxs.dtype.type == np.datetime64
         assert end_idxs.dtype.type == np.datetime64
+        if not len(start_idxs):  # to fix &#34;datetime64 values must have a unit specified&#34;
+            assert not len(end_idxs)
+            start_idxs = start_idxs.astype(&#34;datetime64[ns]&#34;)
+            end_idxs = end_idxs.astype(&#34;datetime64[ns]&#34;)
         start_idxs = pd.to_datetime(start_idxs, utc=True).tz_convert(self._tz_index)
         end_idxs = pd.to_datetime(end_idxs, utc=True).tz_convert(self._tz_index)
         return super()._get_output_index(start_idxs, end_idxs, name)
