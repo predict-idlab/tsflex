@@ -752,11 +752,11 @@ class FeatureCollection:
     def _calculate_feature_list(
         self,
         executor: Callable[[int], pd.DataFrame],
-        n_jobs: Optional[int],
-        show_progress: Optional[bool],
-        return_df: Optional[bool],
-        sort_output_index: Optional[bool],
-        f_handler: Optional[logging.FileHandler],
+        n_jobs: Union[int, None],
+        show_progress: bool,
+        return_df: bool,
+        sort_output_index: bool,
+        f_handler: logging.FileHandler,
     ) -> Union[List[pd.DataFrame], pd.DataFrame]:
         """Calculate the features for the given executor.
 
@@ -764,13 +764,16 @@ class FeatureCollection:
         ----------
         executor : Callable[[int], pd.DataFrame]
             The executor function that will be used to calculate the features.
-        n_jobs : Optional[int], optional
+        n_jobs : Union[int, None]
             The number of jobs to run in parallel.
-        show_progress : Optional[bool], optional
+        show_progress : bool
             Whether to show a progress bar.
-        return_df : Optional[bool], optional
+        return_df : bool
             Whether to return a DataFrame or a list of DataFrames.
-        f_handler : Optional[logging.FileHandler], optional
+        sort_output_index : bool
+            Whether to sort the output index. Note that this is only relevant when
+            `return_df` is set to `True`.
+        f_handler : logging.FileHandler
             The file handler that is used to log the function execution times.
 
         Returns
