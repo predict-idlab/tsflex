@@ -554,11 +554,15 @@ class FeatureCollection:
         """
         global group_indices, group_id_name, get_group_func
         group_indices = grouped_data.indices  # dict - group_id as key; indices as value
-        group_id_name = grouped_data.grouper.names  # name of the group col(s)
+        # since in future versions of pandas grouper will be deprecated
+        group_attr = "_grouper" if hasattr(grouped_data, "_grouper") else "grouper"
+        group_id_name = getattr(grouped_data, group_attr).names  # name of group col(s)
         get_group_func = self._group_feat_generator(grouped_data)
 
+        # sort_output_index can be set to False, since we want to keep the same order as
+        # the group_indices
         return self._calculate_feature_list(
-            self._executor_grouped, n_jobs, show_progress, return_df, f_handler
+            self._executor_grouped, n_jobs, show_progress, return_df, False, f_handler
         )
 
     @staticmethod
@@ -710,7 +714,6 @@ class FeatureCollection:
             calc_result["__end"] = consecutive_grouped_by_df["end"]
 
             if return_df:
-                # concatenate rows
                 return calc_result
             else:
                 return [calc_result[col] for col in calc_result.columns]
@@ -749,10 +752,11 @@ class FeatureCollection:
     def _calculate_feature_list(
         self,
         executor: Callable[[int], pd.DataFrame],
-        n_jobs: Optional[int],
-        show_progress: Optional[bool],
-        return_df: Optional[bool],
-        f_handler: Optional[logging.FileHandler],
+        n_jobs: Union[int, None],
+        show_progress: bool,
+        return_df: bool,
+        sort_output_index: bool,
+        f_handler: logging.FileHandler,
     ) -> Union[List[pd.DataFrame], pd.DataFrame]:
         """Calculate the features for the given executor.
 
@@ -760,13 +764,16 @@ class FeatureCollection:
         ----------
         executor : Callable[[int], pd.DataFrame]
             The executor function that will be used to calculate the features.
-        n_jobs : Optional[int], optional
+        n_jobs : Union[int, None]
             The number of jobs to run in parallel.
-        show_progress : Optional[bool], optional
+        show_progress : bool
             Whether to show a progress bar.
-        return_df : Optional[bool], optional
+        return_df : bool
             Whether to return a DataFrame or a list of DataFrames.
-        f_handler : Optional[logging.FileHandler], optional
+        sort_output_index : bool
+            Whether to sort the output index. Note that this is only relevant when
+            `return_df` is set to `True`.
+        f_handler : logging.FileHandler
             The file handler that is used to log the function execution times.
 
         Returns
@@ -819,7 +826,13 @@ class FeatureCollection:
 
         if return_df:
             # Concatenate & sort the columns
-            df = pd.concat(calculated_feature_list, axis=1, join="outer", copy=False)
+            df = pd.concat(
+                calculated_feature_list,
+                axis=1,
+                join="outer",
+                copy=False,
+                sort=sort_output_index,
+            )
             return df.reindex(sorted(df.columns), axis=1)
         else:
             return calculated_feature_list
@@ -1155,6 +1168,9 @@ class FeatureCollection:
                     f_handler=f_handler,
                 )
 
+        # Sort output index if segment indices are not provided
+        sort_output_index = segment_start_idxs is None and segment_end_idxs is None
+
         # Convert to numpy array (if necessary)
         if segment_start_idxs is not None:
             segment_start_idxs = FeatureCollection._process_segment_idxs(
@@ -1236,7 +1252,12 @@ class FeatureCollection:
         )
 
         return self._calculate_feature_list(
-            self._executor_stroll, n_jobs, show_progress, return_df, f_handler
+            self._executor_stroll,
+            n_jobs,
+            show_progress,
+            return_df,
+            sort_output_index,
+            f_handler,
         )
 
     def serialize(self, file_path: Union[str, Path]):

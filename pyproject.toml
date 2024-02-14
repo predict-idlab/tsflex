@@ -10,11 +10,15 @@ documentation = "https://predict-idlab.github.io/tsflex"
 keywords = ["time-series", "processing", "feature-extraction", "data-science", "machine learning"]
 
 [tool.poetry.dependencies]
-python = ">=3.7.1,<3.12"  # When deploying set this to 3.7
-pandas = ">=1"
+python = ">=3.7.1,<3.13"  # When deploying set this to 3.7
+pandas = [
+    { version = ">=1", python = "<3.12" },
+    { version = ">=2", python = ">=3.12"},
+]
 numpy = [
     { version = "^1.21.5", python = "<3.8" },
-    { version = ">=1.22", python = ">=3.8"}
+    { version = ">=1.22", python = ">=3.8,<3.11"},
+    { version = ">=1.24", python = ">=3.11"}
 ]
 tqdm = "^4.62.3"
 multiprocess = "^0.70.12"
@@ -36,13 +40,27 @@ scipy = [
 ]
 numba = [
     { version = "^0.56.4", python = "<3.8" },
-    { version = ">=0.57", python = ">=3.8" }
+    { version = ">=0.57", python = ">=3.8,<3.9" },
+    { version = ">=0.59", python = ">=3.9" },
 ]
 seglearn = "^1.2.3"
 tsfresh = "^0.20.0"
+# necessary to support Python 3.12
+statsmodels = [
+    { version = ">=0.13", python = "<3.8" },
+    { version = ">=0.14", python = ">=3.8" },
+]
 tsfel = "^0.1.4"
+# necessary to pin this version as tsfel for Python 3.7 does not pin gspread properly
+gspread = [
+    { version = "^5.12", python = "<3.8" },
+    { version = ">=5.13", python = ">=3.8" }
+]
 #fastparquet = "0.8.0"  # Lock to this version to resolve issue on macos with python 3.7
-pyarrow = "^12.0.0"
+pyarrow = [
+    { version = ">=12", python = ">=3.7,<3.8" },
+    { version = ">=15", python = ">=3.8"}
+]
 pycatch22 = "0.4.2"  # Temporarily lock this version to avoid Windows install error
 antropy = [
     { version = "^0.1.5", python = "<3.8" },

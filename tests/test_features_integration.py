@@ -6,6 +6,7 @@ __author__ = "Jeroen Van Der Donckt, Emiel Deprost, Jonas Van Der Donckt"
 import sys
 
 import numpy as np
+import pandas as pd
 import pytest
 import seglearn
 
@@ -62,6 +63,8 @@ def test_seglearn_feature_dict_wrapper(dummy_data):
 ## TSFRESH
 
 
+# TODO: tsfresh does not work yet for pandas 2.0
+@pytest.mark.skipif(int(pd.__version__[0]) >= 2, reason="test disabled for pandas>=2.")
 def test_tsfresh_simple_features(dummy_data):
     from tsfresh.feature_extraction.feature_calculators import (
         abs_energy,
@@ -89,6 +92,8 @@ def test_tsfresh_simple_features(dummy_data):
     assert not res_df.isna().any().any()
 
 
+# TODO: tsfresh does not work yet for pandas 2.0
+@pytest.mark.skipif(int(pd.__version__[0]) >= 2, reason="test disabled for pandas>=2.")
 def test_tsfresh_combiner_features(dummy_data):
     from tsfresh.feature_extraction.feature_calculators import (
         index_mass_quantile,
@@ -127,6 +132,8 @@ def test_tsfresh_combiner_features(dummy_data):
     assert not res_df.isna().any().any()
 
 
+# TODO: tsfresh does not work yet for pandas 2.0
+@pytest.mark.skipif(int(pd.__version__[0]) >= 2, reason="test disabled for pandas>=2.")
 def test_tsfresh_settings_wrapper(dummy_data):
     # Tests if we integrate with ALL tsfresh features
     from tsfresh.feature_extraction.settings import ComprehensiveFCParameters

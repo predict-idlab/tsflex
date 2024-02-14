@@ -5,6 +5,7 @@ __author__ = "Jeroen Van Der Donckt, Emiel Deprost, Jonas Van Der Donckt"
 import math
 import os
 import random
+import sys
 import warnings
 from pathlib import Path
 from typing import List, Tuple
@@ -164,10 +165,14 @@ def test_single_series_multiple_features_group_by(dummy_group_data, group_by, n_
         res_df.reset_index().groupby("store")["number_sold__sum__w=manual"].sum()
     )
     grouped_res_df_min = (
-        res_df.reset_index().groupby("store")["number_sold__amin__w=manual"].min()
+        res_df.reset_index()
+        .groupby("store")[f"number_sold__{np.min.__name__}__w=manual"]
+        .min()
     )
     grouped_res_df_max = (
-        res_df.reset_index().groupby("store")["number_sold__amax__w=manual"].max()
+        res_df.reset_index()
+        .groupby("store")[f"number_sold__{np.max.__name__}__w=manual"]
+        .max()
     )
 
     def assert_results(data, res_data):
@@ -463,7 +468,7 @@ def test_group_by_consecutive_subcall():
     )
 
     res = FeatureCollection._group_by_consecutive(s_val)
-    assert_frame_equal(res, expected_df)
+    assert_frame_equal(res, expected_df, check_dtype=False)
 
 
 @pytest.mark.parametrize("group_by", ["group_by_all", "group_by_consecutive"])
@@ -913,7 +918,7 @@ def test_sequence_segment_start_and_end_idxs():
         n_jobs=1,
     )
     assert all(res.index == segment_start_idxs)
-    assert np.all(res["dummy__amin__w=manual"] == segment_start_idxs)
+    assert np.all(res[f"dummy__{np.min.__name__}__w=manual"] == segment_start_idxs)
     assert np.all(res["dummy__len__w=manual"] == [5] * 3 + [2])
 
 
@@ -937,7 +942,7 @@ def test_sequence_segment_start_and_end_idxs_empty_array():
         n_jobs=1,
     )
     assert all(res.index == segment_start_idxs)
-    assert np.all(res["dummy__amin__w=manual"] == [])
+    assert np.all(res[f"dummy__{np.min.__name__}__w=manual"] == [])
     assert np.all(res["dummy__len__w=manual"] == [])
 
 
@@ -962,7 +967,7 @@ def test_time_segment_start_and_end_idxs_empty_array():
         n_jobs=1,
     )
     assert all(res.index == segment_start_idxs)
-    assert np.all(res["dummy__amin__w=manual"] == [])
+    assert np.all(res[f"dummy__{np.min.__name__}__w=manual"] == [])
     assert np.all(res["dummy__len__w=manual"] == [])
 
 
@@ -1257,10 +1262,10 @@ def test_multiplefeaturedescriptors_feature_collection(dummy_data):
         [
             f"{sig}__sum_func__w=5s",
             f"{sig}__sum_func__w=7.5s",
-            f"{sig}__amax__w=5s",
-            f"{sig}__amax__w=7.5s",
-            f"{sig}__amin__w=5s",
-            f"{sig}__amin__w=7.5s",
+            f"{sig}__{np.max.__name__}__w=5s",
+            f"{sig}__{np.max.__name__}__w=7.5s",
+            f"{sig}__{np.min.__name__}__w=5s",
+            f"{sig}__{np.min.__name__}__w=7.5s",
         ]
         for sig in ["EDA", "TMP"]
     ]
@@ -1948,7 +1953,7 @@ def test_series_funcs(dummy_data):
     )
 
     assert "EDA__min_time_diff__w=5s" in res_df.columns
-    assert "EDA__amax__w=5s" in res_df.columns
+    assert f"EDA__{np.max.__name__}__w=5s" in res_df.columns
     assert all(res_df["EDA__min_time_diff__w=5s"] == res_df["EDA__max_time_diff__w=5s"])
     assert all(res_df["EDA__min_time_diff__w=5s"] == 0.25 * 3)
 
@@ -2524,15 +2529,18 @@ def test_bound_method_uneven_index_numeric(dummy_data):
 
     latest_start = df_eda_.index[0]
     earliest_start = df_tmp_.index[0]
+    assert latest_start > earliest_start
 
     out_inner = fc.calculate(
         [df_tmp_, df_eda_], bound_method="inner", window_idx="begin", return_df=True
     )
+    assert out_inner.index.is_monotonic_increasing
     assert out_inner.index[0] == latest_start
 
     out_outer = fc.calculate(
         [df_tmp_, df_eda_], bound_method="outer", window_idx="begin", return_df=True
     )
+    assert out_outer.index.is_monotonic_increasing
     assert out_outer.index[0] == earliest_start
 
 
@@ -2554,15 +2562,18 @@ def test_bound_method_uneven_index_datetime(dummy_data):
 
     latest_start = df_eda.index[0]
     earliest_start = df_tmp.index[0]
+    assert latest_start > earliest_start
 
     out_inner = fc.calculate(
         [df_tmp, df_eda], bound_method="inner", window_idx="begin", return_df=True
     )
+    assert out_inner.index.is_monotonic_increasing
     assert out_inner.index[0] == latest_start
 
     out_outer = fc.calculate(
         [df_tmp, df_eda], bound_method="outer", window_idx="begin", return_df=True
     )
+    assert out_outer.index.is_monotonic_increasing
     assert out_outer.index[0] == earliest_start
 
 
@@ -2584,18 +2595,24 @@ def test_bound_method_uneven_index_datetime_sequence(dummy_data):
 
     latest_start = df_eda.index[0]
     earliest_start = df_tmp.index[0]
+    assert latest_start > earliest_start
 
     out_inner = fc.calculate(
         [df_tmp, df_eda], bound_method="inner", window_idx="begin", return_df=True
     )
+    assert out_inner.index.is_monotonic_increasing
     assert out_inner.index[0] == latest_start
 
     out_outer = fc.calculate(
         [df_tmp, df_eda], bound_method="outer", window_idx="begin", return_df=True
     )
+    assert out_outer.index.is_monotonic_increasing
     assert out_outer.index[0] == earliest_start
 
 
+# Fails on Python 3.12 due to giving multiple warnings (9 instead of 1)
+# Same issue: https://github.com/buildbot/buildbot/issues/7276
+@pytest.mark.skipif(sys.version_info > (3, 11), reason="test disabled for Python 3.12.")
 def test_not_sorted_fc(dummy_data):
     fc = FeatureCollection(
         feature_descriptors=[
