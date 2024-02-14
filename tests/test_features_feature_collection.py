@@ -2529,15 +2529,18 @@ def test_bound_method_uneven_index_numeric(dummy_data):
 
     latest_start = df_eda_.index[0]
     earliest_start = df_tmp_.index[0]
+    assert latest_start > earliest_start
 
     out_inner = fc.calculate(
         [df_tmp_, df_eda_], bound_method="inner", window_idx="begin", return_df=True
     )
+    assert out_inner.index.is_monotonic_increasing
     assert out_inner.index[0] == latest_start
 
     out_outer = fc.calculate(
         [df_tmp_, df_eda_], bound_method="outer", window_idx="begin", return_df=True
     )
+    assert out_outer.index.is_monotonic_increasing
     assert out_outer.index[0] == earliest_start
 
 
@@ -2559,15 +2562,18 @@ def test_bound_method_uneven_index_datetime(dummy_data):
 
     latest_start = df_eda.index[0]
     earliest_start = df_tmp.index[0]
+    assert latest_start > earliest_start
 
     out_inner = fc.calculate(
         [df_tmp, df_eda], bound_method="inner", window_idx="begin", return_df=True
     )
+    assert out_inner.index.is_monotonic_increasing
     assert out_inner.index[0] == latest_start
 
     out_outer = fc.calculate(
         [df_tmp, df_eda], bound_method="outer", window_idx="begin", return_df=True
     )
+    assert out_outer.index.is_monotonic_increasing
     assert out_outer.index[0] == earliest_start
 
 
@@ -2589,15 +2595,18 @@ def test_bound_method_uneven_index_datetime_sequence(dummy_data):
 
     latest_start = df_eda.index[0]
     earliest_start = df_tmp.index[0]
+    assert latest_start > earliest_start
 
     out_inner = fc.calculate(
         [df_tmp, df_eda], bound_method="inner", window_idx="begin", return_df=True
     )
+    assert out_inner.index.is_monotonic_increasing
     assert out_inner.index[0] == latest_start
 
     out_outer = fc.calculate(
         [df_tmp, df_eda], bound_method="outer", window_idx="begin", return_df=True
     )
+    assert out_outer.index.is_monotonic_increasing
     assert out_outer.index[0] == earliest_start
 
 

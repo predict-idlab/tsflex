@@ -558,8 +558,10 @@ class FeatureCollection:
         group_id_name = getattr(grouped_data, group_attr).names  # name of group col(s)
         get_group_func = self._group_feat_generator(grouped_data)
 
+        # sort_output_index can be set to False, since we want to keep the same order as
+        # the group_indices
         return self._calculate_feature_list(
-            self._executor_grouped, n_jobs, show_progress, return_df, f_handler
+            self._executor_grouped, n_jobs, show_progress, return_df, False, f_handler
         )
 
     @staticmethod
@@ -752,6 +754,7 @@ class FeatureCollection:
         n_jobs: Optional[int],
         show_progress: Optional[bool],
         return_df: Optional[bool],
+        sort_output_index: Optional[bool],
         f_handler: Optional[logging.FileHandler],
     ) -> Union[List[pd.DataFrame], pd.DataFrame]:
         """Calculate the features for the given executor.
@@ -819,7 +822,13 @@ class FeatureCollection:
 
         if return_df:
             # Concatenate & sort the columns
-            df = pd.concat(calculated_feature_list, axis=1, join="outer", copy=False)
+            df = pd.concat(
+                calculated_feature_list,
+                axis=1,
+                join="outer",
+                copy=False,
+                sort=sort_output_index,
+            )
             return df.reindex(sorted(df.columns), axis=1)
         else:
             return calculated_feature_list
@@ -1155,6 +1164,9 @@ class FeatureCollection:
                     f_handler=f_handler,
                 )
 
+        # Sort output index if segment indices are not provided
+        sort_output_index = segment_start_idxs is None and segment_end_idxs is None
+
         # Convert to numpy array (if necessary)
         if segment_start_idxs is not None:
             segment_start_idxs = FeatureCollection._process_segment_idxs(
@@ -1213,6 +1225,7 @@ class FeatureCollection:
         # Determine the bounds of the series dict items and slice on them
         # TODO: is dit wel nodig `hier? want we doen dat ook in de strided rolling
         start, end = _determine_bounds(bound_method, list(series_dict.values()))
+        print("bounds", start, end)
         series_dict = {
             n: s.loc[
                 s.index.dtype.type(start) : s.index.dtype.type(end)
@@ -1236,7 +1249,12 @@ class FeatureCollection:
         )
 
         return self._calculate_feature_list(
-            self._executor_stroll, n_jobs, show_progress, return_df, f_handler
+            self._executor_stroll,
+            n_jobs,
+            show_progress,
+            return_df,
+            sort_output_index,
+            f_handler,
         )
 
     def serialize(self, file_path: Union[str, Path]):
