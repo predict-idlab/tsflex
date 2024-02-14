@@ -2610,9 +2610,9 @@ def test_bound_method_uneven_index_datetime_sequence(dummy_data):
     assert out_outer.index[0] == earliest_start
 
 
-# When using pandas > 2.0 the pd.concat has slightly different behavior, which causes
-# solely this test to fail..
-@pytest.mark.skipif(int(pd.__version__[0]) >= 2, reason="test disabled for pandas>=2.")
+# Fails on Python 3.12 due to giving multiple warnings (9 instead of 1)
+# Same issue: https://github.com/buildbot/buildbot/issues/7276
+@pytest.mark.skipif(sys.version_info > (3, 11), reason="test disabled for Python 3.12.")
 def test_not_sorted_fc(dummy_data):
     fc = FeatureCollection(
         feature_descriptors=[
@@ -2628,6 +2628,7 @@ def test_not_sorted_fc(dummy_data):
     df_tmp = dummy_data["TMP"].reset_index(drop=True)
     df_eda = dummy_data["EDA"].reset_index(drop=True).sample(frac=1)
     assert not df_eda.index.is_monotonic_increasing
+    out = fc.calculate([df_tmp, df_eda], return_df=True)
     with warnings.catch_warnings(record=True) as w:
         out = fc.calculate([df_tmp, df_eda], return_df=True)
         assert len(w) == 1
