@@ -9,6 +9,7 @@ format:
 lint:
 	poetry run ruff tsflex tests
 	poetry run $(black) --check --diff
+	poetry run mypy tsflex # tests
 
 .PHONY: test
 test:

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Factory class for creating the proper StridedRolling instances.
 
@@ -78,3 +77,8 @@ class StridedRollingFactory:
             return TimeIndexSampleStridedRolling(data, window, strides, **kwargs)
         elif data_dtype == DataType.SEQUENCE and args_dtype == DataType.TIME:
             raise ValueError("Cannot segment a sequence-series with a time window")
+
+        # This should never happen
+        raise ValueError(
+            f"Cannot segment data of type {data_dtype} with window-stride of type {args_dtype}"
+        )

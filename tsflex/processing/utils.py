@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*- # TODO: rename file
+# TODO: rename file
 """(Advanced) utilities for the processing pipelines."""
 
 __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt"
 
-import os
 import traceback
 from typing import Any, List, Optional, Union
 
@@ -11,6 +10,7 @@ import pandas as pd
 from multiprocess import Pool
 from tqdm.auto import tqdm
 
+from ..utils.argument_parsing import parse_n_jobs
 from .series_pipeline import SeriesPipeline
 
 
@@ -20,7 +20,7 @@ def process_chunks_multithreaded(
     show_progress: Optional[bool] = True,
     n_jobs: Optional[int] = None,
     **processing_kwargs,
-) -> List[Any]:
+) -> Optional[List[Any]]:
     """Process `same_range_chunks_list` in a multithreaded manner, order is preserved.
 
     Parameters
@@ -52,8 +52,7 @@ def process_chunks_multithreaded(
       processes are not halted in case of an error.
 
     """
-    if n_jobs is None:
-        n_jobs = os.cpu_count()
+    n_jobs = parse_n_jobs(n_jobs)
 
     def _executor(same_range_chunks: List[Union[pd.Series, pd.DataFrame]]):
         try:

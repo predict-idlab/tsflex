@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Utilities for chunking time-series data before feeding it to the operators.
 """
 

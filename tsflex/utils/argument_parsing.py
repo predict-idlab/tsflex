@@ -1,10 +1,28 @@
-"""Utility functions for time-related operations."""
+"""Utility functions for argumnt parsing (and time-related operations)."""
 
-__author__ = "Jonas Van Der Donckt"
+__author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt"
 
-from typing import Union
+import os
+import warnings
+from typing import Optional, Union
 
 import pandas as pd
+
+
+def parse_n_jobs(n_jobs: Optional[int]) -> int:
+    _cpu_count = os.cpu_count()
+    if _cpu_count is not None:
+        n_jobs = _cpu_count
+    else:
+        warnings.warn(
+            (
+                "Number of logical CPUs is undetermined. Defaulting to 1. "
+                + "To use more than 1 job, please specify the `n_jobs` argument."
+            ),
+            RuntimeWarning,
+        )
+        n_jobs = 1
+    return n_jobs
 
 
 def timedelta_to_str(td: pd.Timedelta) -> str:

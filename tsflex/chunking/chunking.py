@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """(Advanced) tsflex utilities for chunking sequence data."""
 
 __author__ = "Jonas Van Der Donckt"
@@ -8,9 +7,9 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 
+from ..utils.argument_parsing import parse_time_arg
 from ..utils.attribute_parsing import AttributeParser, DataType
 from ..utils.data import to_series_list
-from ..utils.time import parse_time_arg
 
 
 def _chunk_time_data(
@@ -19,7 +18,7 @@ def _chunk_time_data(
     chunk_range_margin: Optional[Union[str, pd.Timedelta]] = None,
     min_chunk_dur: Optional[Union[str, pd.Timedelta]] = None,
     max_chunk_dur: Optional[Union[str, pd.Timedelta]] = None,
-    sub_chunk_overlap: Optional[Union[str, pd.Timedelta]] = "0s",
+    sub_chunk_overlap: Union[str, pd.Timedelta] = "0s",
     copy=True,
     verbose=False,
 ):
@@ -119,10 +118,12 @@ def _chunk_time_data(
 
         # Allowed offset (in seconds) is sample_period + 0.5*sample_period
         fs_sig = fs_dict[str(series.name)]
-        gaps = series.index.to_series().diff() > timedelta(seconds=(1 + 0.5) / fs_sig)
+        gaps_mask = series.index.to_series().diff() > timedelta(
+            seconds=(1 + 0.5) / fs_sig
+        )
         # Set the first and last timestamp to True
-        gaps.iloc[[0, -1]] = True
-        gaps: List[pd.Timestamp] = series[gaps].index.to_list()
+        gaps_mask.iloc[[0, -1]] = True
+        gaps: List[pd.Timestamp] = series[gaps_mask].index.to_list()
         if verbose:
             print("-" * 10, " detected gaps", "-" * 10)
             print(*gaps, sep="\n")
@@ -192,7 +193,7 @@ def _chunk_sequence_data(
     chunk_range_margin: Optional[float] = None,
     min_chunk_dur: Optional[float] = None,
     max_chunk_dur: Optional[float] = None,
-    sub_chunk_overlap: Optional[float] = "0s",
+    sub_chunk_overlap: float = 0,
     copy=True,
     verbose=False,
 ):
@@ -216,7 +217,7 @@ def chunk_data(
     chunk_range_margin: Optional[Union[float, str, pd.Timedelta]] = None,
     min_chunk_dur: Optional[Union[float, str, pd.Timedelta]] = None,
     max_chunk_dur: Optional[Union[float, str, pd.Timedelta]] = None,
-    sub_chunk_overlap: Optional[Union[float, str, pd.Timedelta]] = "0s",
+    sub_chunk_overlap: Union[float, str, pd.Timedelta] = "0s",  # TODO: make optional
     copy=True,
     verbose=False,
 ) -> List[List[pd.Series]]:
@@ -335,10 +336,10 @@ def chunk_data(
     return _dtype_to_chunk_method[AttributeParser.determine_type(data)](
         series_list,
         fs_dict,
-        chunk_range_margin,
-        min_chunk_dur,
-        max_chunk_dur,
-        sub_chunk_overlap,
+        chunk_range_margin,  # type: ignore[arg-type]
+        min_chunk_dur,  # type: ignore[arg-type]
+        max_chunk_dur,  # type: ignore[arg-type]
+        sub_chunk_overlap,  # type: ignore[arg-type]
         copy,
         verbose,
     )

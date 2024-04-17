@@ -3,7 +3,7 @@
 __author__ = "Jeroen Van Der Donckt, Jonas Van Der Donckt"
 
 import time
-from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -11,15 +11,13 @@ import pandas as pd
 from .function_wrapper import FuncWrapper, _get_name
 from .logger import logger
 
-# Declare a type variable
-T = TypeVar("T")
 
 # ---------------------------------- PRIVATE METHODS ----------------------------------
 def _process_func_output(
     out: np.ndarray, index: np.ndarray, output_names: List[str], func_str: str
-) -> Dict[str, np.ndarray]:
+) -> Dict[str, Optional[np.ndarray]]:
     """Process the output of a feature function into a dictionary."""
-    feat_out = {}
+    feat_out: Dict[str, Optional[np.ndarray]] = {}
     if out.ndim == 1 and not len(out):
         # When there are no features calculated (due to no feature windows)
         assert not len(index)
@@ -43,9 +41,9 @@ def _process_func_output(
 def _log_func_execution(
     t_start: float,
     func: FuncWrapper,
-    series_key: Tuple[str],
-    log_window: Optional[T],
-    log_strides: Optional[Union[str, Tuple[str]]],
+    series_key: Tuple[str, ...],
+    log_window: Optional[str],
+    log_strides: Optional[Union[str, Tuple[str, ...]]],
     output_names: List[str],
 ):
     """Log the execution time of a feature function."""
@@ -141,7 +139,7 @@ def _get_funcwrapper_func_and_kwargs(func: FuncWrapper) -> Tuple[Callable, dict]
     function = func.func
 
     # Extract the keyword arguments
-    func_wrapper_kwargs = dict()
+    func_wrapper_kwargs: Dict[str, Any] = dict()
     func_wrapper_kwargs["output_names"] = func.output_names
     func_wrapper_kwargs["input_type"] = func.input_type
     func_wrapper_kwargs["vectorized"] = func.vectorized
@@ -177,18 +175,18 @@ def _make_single_func_robust(
         The robust FuncWrapper.
 
     """
-    assert isinstance(func, FuncWrapper) or isinstance(func, Callable)
+    assert isinstance(func, (Callable, FuncWrapper))  # type: ignore[arg-type]
 
-    func_wrapper_kwargs = {}
+    func_wrapper_kwargs: Dict[str, Any] = {}
     if isinstance(func, FuncWrapper):
         # Extract the function and keyword arguments from the function wrapper
         func, func_wrapper_kwargs = _get_funcwrapper_func_and_kwargs(func)
 
     output_names = func_wrapper_kwargs.get("output_names")
 
-    def wrap_func(*series: Union[np.ndarray, pd.Series], **kwargs) -> Callable:
+    def wrap_func(*series: Union[np.ndarray, pd.Series], **kwargs) -> Any:
         if not passthrough_nans:
-            series = [s[~np.isnan(s)] for s in series]
+            series = [s[~np.isnan(s)] for s in series]  # type: ignore[assignment]
         if any([len(s) < min_nb_samples for s in series]):
             if not isinstance(output_names, list) or len(output_names) == 1:
                 return error_val
@@ -205,9 +203,9 @@ def _make_single_func_robust(
 # ---------------------------------- PUBLIC METHODS -----------------------------------
 def make_robust(
     funcs: Union[Callable, FuncWrapper, List[Union[Callable, FuncWrapper]]],
-    min_nb_samples: Optional[int] = 1,
-    error_val: Optional[Any] = np.nan,
-    passthrough_nans: Optional[bool] = True,
+    min_nb_samples: int = 1,
+    error_val: Any = np.nan,
+    passthrough_nans: bool = True,
 ) -> Union[FuncWrapper, List[FuncWrapper]]:
     """Decorate `funcs` into one or multiple robust FuncWrappers.
 
@@ -244,11 +242,13 @@ def make_robust(
         FuncWrappers when a list of functions is passed.
 
     """
-    if isinstance(funcs, Callable) or isinstance(funcs, FuncWrapper):
+    if isinstance(funcs, (Callable, FuncWrapper)):  # type: ignore[arg-type]
+        func: Union[Callable, FuncWrapper] = funcs  # type: ignore[assignment]
         return _make_single_func_robust(
-            funcs, min_nb_samples, error_val, passthrough_nans
+            func, min_nb_samples, error_val, passthrough_nans
         )
+    # funcs is now a list of Callables or FuncWrappers (or a mix of both)
     return [
         _make_single_func_robust(func, min_nb_samples, error_val, passthrough_nans)
-        for func in funcs
+        for func in funcs  # type: ignore[union-attr]
     ]

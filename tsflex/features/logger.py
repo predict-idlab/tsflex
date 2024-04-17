@@ -14,8 +14,8 @@ import re
 import numpy as np
 import pandas as pd
 
+from ..utils.argument_parsing import timedelta_to_str
 from ..utils.logging import logging_file_to_df, remove_inner_brackets
-from ..utils.time import timedelta_to_str
 
 # Package specific logger
 logger = logging.getLogger("feature_calculation_logger")

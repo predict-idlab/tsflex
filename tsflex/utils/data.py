@@ -10,7 +10,7 @@ from typing import Any, Dict, Iterable, Iterator, List, Tuple, Union
 import numpy as np
 import pandas as pd
 
-SUPPORTED_STROLL_TYPES = [np.array, pd.Series]
+SUPPORTED_STROLL_TYPES = [np.ndarray, pd.Series]
 
 
 def series_dict_to_df(series_dict: Dict[str, pd.Series]) -> pd.DataFrame:
@@ -173,20 +173,20 @@ def load_empatica_data(f_names: Union[str, List[str]]) -> List[pd.DataFrame]:
     List[pd.DataFrame]
         Returns the empatica time-indexed data files in the same order as `f_names`
     """
-    empatica_dir = (
+    empatica_dir: Path = (
         Path(__file__)
         .parent.parent.parent.joinpath("examples", "data", "empatica")
         .absolute()
     )
-    empatica_dir = (
+    empatica_dir_str: str = (
         str(empatica_dir) + "/"
     )  # allows compatible + operation (as with the url)
     url = "https://github.com/predict-idlab/tsflex/raw/main/examples/data/empatica/"
-    if not os.path.exists(empatica_dir):
-        empatica_dir = url  # fetch online if data not local
+    if not os.path.exists(empatica_dir_str):
+        empatica_dir_str = url  # fetch online if data not local
     f_names = [f_names] if isinstance(f_names, str) else f_names
     return [
-        pd.read_parquet(empatica_dir + f"{f_name.lower()}.parquet").set_index(
+        pd.read_parquet(empatica_dir_str + f"{f_name.lower()}.parquet").set_index(
             "timestamp"
         )
         for f_name in f_names

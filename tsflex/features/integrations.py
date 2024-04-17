@@ -40,11 +40,12 @@ def seglearn_wrapper(func: Callable, func_name: Optional[str] = None) -> FuncWra
         return out.flatten()
 
     wrap_func.__name__ = "[seglearn_wrapped]__" + _get_name(func)
-    output_names = _get_name(func) if func_name is None else func_name
+    output_name = _get_name(func) if func_name is None else func_name
     # A bit hacky (hard coded), bc hist is only func that returns multiple values
     if hasattr(func, "bins"):
-        output_names = [output_names + f"_bin{idx}" for idx in range(1, func.bins + 1)]
-    return FuncWrapper(wrap_func, output_names=output_names)
+        output_names = [output_name + f"_bin{idx}" for idx in range(1, func.bins + 1)]
+        return FuncWrapper(wrap_func, output_names=output_names)
+    return FuncWrapper(wrap_func, output_names=output_name)
 
 
 def seglearn_feature_dict_wrapper(features_dict: Dict) -> List[FuncWrapper]:
@@ -98,7 +99,7 @@ def seglearn_feature_dict_wrapper(features_dict: Dict) -> List[FuncWrapper]:
 
 
 # -------------------------------------- TSFEL --------------------------------------
-def tsfel_feature_dict_wrapper(features_dict: Dict) -> List[Callable]:
+def tsfel_feature_dict_wrapper(features_dict: Dict) -> List[FuncWrapper]:
     """Wrapper enabling compatibility with tsfel feature extraction configurations.
 
     tsfel represents a collection of features as a dictionary, see more [here](https://tsfel.readthedocs.io/en/latest/descriptions/get_started.html#set-up-the-feature-extraction-config-file).

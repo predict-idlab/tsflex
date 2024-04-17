@@ -4,7 +4,7 @@ from __future__ import annotations
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Set, Union
 
 import dill
 import pandas as pd
@@ -203,7 +203,7 @@ class SeriesPipeline:
                 # If all the series have to be returned
                 series_dict[str(s.name)] = s.copy() if copy else s
 
-        output_keys = set()  # Maintain set of output series
+        output_keys: Set[str] = set()  # Maintain set of output series
         for processor in self.processing_steps:
             try:
                 processed_dict = processor(series_dict)

@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 """
 __author__ = "Jonas Van Der Donckt"
@@ -10,7 +9,7 @@ import pytest
 from tsflex.features import FuncWrapper
 from tsflex.features.segmenter import StridedRollingFactory
 from tsflex.features.segmenter.strided_rolling import TimeIndexSampleStridedRolling
-from tsflex.utils.time import parse_time_arg
+from tsflex.utils.argument_parsing import parse_time_arg
 
 from .utils import dummy_data
 

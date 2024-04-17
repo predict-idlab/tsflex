@@ -19,7 +19,7 @@ import traceback
 import uuid
 from copy import deepcopy
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
 import dill
 import numpy as np
@@ -29,10 +29,10 @@ from pandas.api.types import is_datetime64_any_dtype
 from tqdm.auto import tqdm
 
 from ..features.function_wrapper import FuncWrapper
+from ..utils.argument_parsing import parse_n_jobs, parse_time_arg, timedelta_to_str
 from ..utils.attribute_parsing import AttributeParser
 from ..utils.data import flatten, to_list, to_series_list
 from ..utils.logging import add_logging_handler, delete_logging_handlers
-from ..utils.time import parse_time_arg, timedelta_to_str
 from .feature import FeatureDescriptor, MultipleFeatureDescriptors
 from .logger import logger
 from .segmenter import StridedRolling, StridedRollingFactory
@@ -77,7 +77,7 @@ class FeatureCollection:
                 FeatureDescriptor,
                 MultipleFeatureDescriptors,
                 FeatureCollection,
-                List[
+                Sequence[
                     Union[
                         FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection
                     ]
@@ -234,7 +234,7 @@ class FeatureCollection:
             FeatureDescriptor,
             MultipleFeatureDescriptors,
             FeatureCollection,
-            List[
+            Sequence[
                 Union[FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection]
             ],
         ],
@@ -483,7 +483,7 @@ class FeatureCollection:
 
     @staticmethod
     def _group_by_all(
-        series_dict: Dict[str, pd.Series], col_name: str = None
+        series_dict: Dict[str, pd.Series], col_name: str
     ) -> pd.api.typing.DataFrameGroupBy:
         """Group all `column_name` values and return the grouped data.
 
@@ -521,8 +521,8 @@ class FeatureCollection:
     def _calculate_group_by_all(
         self,
         grouped_data: pd.api.typing.DataFrameGroupBy,
-        return_df: Optional[bool],
-        show_progress: Optional[bool],
+        return_df: bool,
+        show_progress: bool,
         n_jobs: Optional[int],
         f_handler: Optional[logging.FileHandler],
     ) -> Union[List[pd.DataFrame], pd.DataFrame]:
@@ -567,7 +567,7 @@ class FeatureCollection:
 
     @staticmethod
     def _group_by_consecutive(
-        df: Union[pd.Series, pd.DataFrame], col_name: str = None
+        df: Union[pd.Series, pd.DataFrame], col_name: Optional[str] = None
     ) -> pd.DataFrame:
         """Group consecutive `col_name` values in a single DataFrame.
 
@@ -745,8 +745,8 @@ class FeatureCollection:
         """
         if os.name == "nt":  # On Windows no multiprocessing is supported
             n_jobs = 1
-        elif n_jobs is None:
-            n_jobs = os.cpu_count()
+        else:
+            n_jobs = parse_n_jobs(n_jobs)
         return min(n_jobs, nb_funcs)
 
     def _calculate_feature_list(
@@ -756,7 +756,7 @@ class FeatureCollection:
         show_progress: bool,
         return_df: bool,
         sort_output_index: bool,
-        f_handler: logging.FileHandler,
+        f_handler: Optional[logging.FileHandler],
     ) -> Union[List[pd.DataFrame], pd.DataFrame]:
         """Calculate the features for the given executor.
 
@@ -785,7 +785,7 @@ class FeatureCollection:
         nb_feat_funcs = self._get_nb_feat_funcs()
         n_jobs = FeatureCollection._process_njobs(n_jobs, nb_feat_funcs)
 
-        calculated_feature_list: List[pd.DataFrame] = None
+        calculated_feature_list: Optional[List[pd.DataFrame]] = None
 
         if n_jobs in [0, 1]:
             # No multiprocessing
@@ -850,14 +850,14 @@ class FeatureCollection:
             Union[list, np.ndarray, pd.Series, pd.Index]
         ] = None,
         segment_end_idxs: Optional[Union[list, np.ndarray, pd.Series, pd.Index]] = None,
-        return_df: Optional[bool] = False,
-        window_idx: Optional[str] = "end",
-        include_final_window: Optional[bool] = False,
+        return_df: bool = False,
+        window_idx: str = "end",
+        include_final_window: bool = False,
         group_by_all: Optional[str] = None,  # TODO: support multiple columns
         group_by_consecutive: Optional[str] = None,  # TODO: support multiple columns
-        bound_method: Optional[str] = "inner",
-        approve_sparsity: Optional[bool] = False,
-        show_progress: Optional[bool] = False,
+        bound_method: str = "inner",
+        approve_sparsity: bool = False,
+        show_progress: bool = False,
         logging_file_path: Optional[Union[str, Path]] = None,
         n_jobs: Optional[int] = None,
     ) -> Union[List[pd.DataFrame], pd.DataFrame]:
@@ -1153,6 +1153,7 @@ class FeatureCollection:
                 # Grouped feature extraction will take place
                 if not isinstance(data, pd.core.groupby.generic.DataFrameGroupBy):
                     # group_by_all should not be None (checked by asserts above)
+                    assert group_by_all is not None
                     # 0. Transform to dataframe
                     series_dict = FeatureCollection._data_to_series_dict(
                         data, self.get_required_series() + [group_by_all]
@@ -1343,16 +1344,13 @@ class FeatureCollection:
         # Reduce to unique feature descriptor objects (based on uuid) and create a new
         # FeatureCollection for their deepcopy's.
         seen_uuids = set()
-        return FeatureCollection(
-            feature_descriptors=[
-                deepcopy(unique_fd)
-                for unique_fd in {
-                    fd
-                    for (uuid_str, fd) in fd_subset
-                    if uuid_str not in seen_uuids and not seen_uuids.add(uuid_str)
-                }
-            ]
-        )
+        fds = []
+        for uuid_str, fd in fd_subset:
+            if uuid_str not in seen_uuids:
+                seen_uuids.add(uuid_str)
+                fds.append(deepcopy(fd))
+
+        return FeatureCollection(feature_descriptors=fds)
 
     @staticmethod
     def _ws_to_str(window_or_stride: Any) -> str:
