@@ -1328,9 +1328,8 @@ def test_multiplefeaturedescriptors_feature_collection_strides(dummy_data):
     res2 = fc2.calculate(dummy_data, stride=stride, return_df=True, n_jobs=0)
     res3 = fc3.calculate(dummy_data, return_df=True, n_jobs=0)
 
-    assert len(res1.columns) == len(res2.columns) == len(res3.columns)
-    assert_frame_equal(res1, res2[res1.columns])
-    assert_frame_equal(res1, res3[res1.columns])
+    assert res1.equals(res2)
+    assert res1.equals(res3)
 
 
 def test_featurecollection_feature_collection(dummy_data):
