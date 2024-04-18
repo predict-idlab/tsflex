@@ -244,7 +244,7 @@ class SeriesPipeline:
         else:
             return [s for s in series_dict.values()]
 
-    def serialize(self, file_path: Union[str, Path]):
+    def serialize(self, file_path: Union[str, Path]) -> None:
         """Serialize this ``SeriesPipeline`` instance.
 
         Notes
@@ -262,10 +262,10 @@ class SeriesPipeline:
         with open(file_path, "wb") as f:
             dill.dump(self, f, recurse=True)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return formal representation of object."""
         return "[\n" + "".join([f"\t{str(p)}\n" for p in self.processing_steps]) + "]"
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return informal representation of object."""
         return self.__repr__()

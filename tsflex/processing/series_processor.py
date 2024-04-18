@@ -16,7 +16,7 @@ from .logger import logger
 __pdoc__["SeriesProcessor.__call__"] = True
 
 
-def dataframe_func(func: Callable):
+def dataframe_func(func: Callable) -> Callable:
     """Decorate function to use a DataFrame instead of multiple series (as argument).
 
     This decorator can be used for functions that need to work on a whole
@@ -41,7 +41,9 @@ def dataframe_func(func: Callable):
 
     """
 
-    def wrapper(*series: pd.Series, **kwargs):
+    def wrapper(
+        *series: pd.Series, **kwargs  # type: ignore[no-untyped-def]
+    ) -> Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]:
         series_dict = {s.name: s for s in series}
         df = series_dict_to_df(series_dict)
         res = func(df, **kwargs)
@@ -114,7 +116,7 @@ class SeriesProcessor(FrozenClass):
         self,
         function: Callable,
         series_names: Union[str, Tuple[str, ...], List[str], List[Tuple[str, ...]]],
-        **kwargs,
+        **kwargs,  # type: ignore[no-untyped-def]
     ):
         series_names = [to_tuple(names) for names in to_list(series_names)]
         # Assert that function inputs (series) all have the same length
@@ -192,11 +194,11 @@ class SeriesProcessor(FrozenClass):
         # Variable that will contain the final output of this method
         processed_output: Dict[str, pd.Series] = {}
 
-        def get_series_list(keys: Tuple[str, ...]):
+        def get_series_list(keys: Tuple[str, ...]) -> List[pd.Series]:
             """Get an ordered series list view for the given keys."""
             return [series_dict[key] for key in keys]
 
-        def get_series_dict(keys: Tuple[str, ...]):
+        def get_series_dict(keys: Tuple[str, ...]) -> Dict[str, pd.Series]:
             """Get a series dict view for the given keys."""
             return {key: series_dict[key] for key in keys}
 
@@ -223,13 +225,13 @@ class SeriesProcessor(FrozenClass):
 
         return processed_output
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return formal representation of object."""
         repr_str = self.name + (" " + str(self.kwargs))
         repr_str += " :  " + " ".join([str(s) for s in self.series_names])
         return repr_str
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return informal representation of object."""
         return self.__repr__()
 

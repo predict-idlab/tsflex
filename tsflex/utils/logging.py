@@ -41,7 +41,7 @@ def remove_inner_brackets(message: str) -> str:
     return new_message
 
 
-def delete_logging_handlers(logger: logging.Logger):
+def delete_logging_handlers(logger: logging.Logger) -> None:
     """Delete all logging handlers that are not stream-handlers.
 
     Parameters

@@ -19,7 +19,7 @@ def process_chunks_multithreaded(
     series_pipeline: SeriesPipeline,
     show_progress: Optional[bool] = True,
     n_jobs: Optional[int] = None,
-    **processing_kwargs,
+    **processing_kwargs,  # type: ignore[no-untyped-def]
 ) -> Optional[List[Any]]:
     """Process `same_range_chunks_list` in a multithreaded manner, order is preserved.
 
@@ -54,7 +54,9 @@ def process_chunks_multithreaded(
     """
     n_jobs = parse_n_jobs(n_jobs)
 
-    def _executor(same_range_chunks: List[Union[pd.Series, pd.DataFrame]]):
+    def _executor(
+        same_range_chunks: List[Union[pd.Series, pd.DataFrame]]
+    ) -> Union[List[pd.Series], pd.DataFrame]:
         try:
             return series_pipeline.process(same_range_chunks, **processing_kwargs)
         except Exception:
