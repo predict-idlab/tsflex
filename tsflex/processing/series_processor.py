@@ -41,8 +41,9 @@ def dataframe_func(func: Callable) -> Callable:
 
     """
 
-    def wrapper(
-        *series: pd.Series, **kwargs  # type: ignore[no-untyped-def]
+    def wrapper(  # type: ignore[no-untyped-def]
+        *series: pd.Series,
+        **kwargs,
     ) -> Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]:
         series_dict = {s.name: s for s in series}
         df = series_dict_to_df(series_dict)
@@ -112,11 +113,11 @@ class SeriesProcessor(FrozenClass):
 
     """
 
-    def __init__(
+    def __init__(  # type: ignore[no-untyped-def]
         self,
         function: Callable,
         series_names: Union[str, Tuple[str, ...], List[str], List[Tuple[str, ...]]],
-        **kwargs,  # type: ignore[no-untyped-def]
+        **kwargs,
     ):
         series_names = [to_tuple(names) for names in to_list(series_names)]
         # Assert that function inputs (series) all have the same length

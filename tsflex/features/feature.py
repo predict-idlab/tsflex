@@ -259,7 +259,7 @@ class MultipleFeatureDescriptors:
     ):
         # Cast functions to FuncWrapper, this avoids creating multiple
         # FuncWrapper objects for the same function in the FeatureDescriptor
-        def to_func_wrapper(f: Callable):
+        def to_func_wrapper(f: Callable) -> FuncWrapper:
             return f if isinstance(f, FuncWrapper) else FuncWrapper(f)
 
         functions = [to_func_wrapper(f) for f in to_list(functions)]

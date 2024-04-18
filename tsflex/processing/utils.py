@@ -14,12 +14,12 @@ from ..utils.argument_parsing import parse_n_jobs
 from .series_pipeline import SeriesPipeline
 
 
-def process_chunks_multithreaded(
+def process_chunks_multithreaded(  # type: ignore[no-untyped-def]
     same_range_chunks_list: List[List[Union[pd.Series, pd.DataFrame]]],
     series_pipeline: SeriesPipeline,
     show_progress: Optional[bool] = True,
     n_jobs: Optional[int] = None,
-    **processing_kwargs,  # type: ignore[no-untyped-def]
+    **processing_kwargs,
 ) -> Optional[List[Any]]:
     """Process `same_range_chunks_list` in a multithreaded manner, order is preserved.
 

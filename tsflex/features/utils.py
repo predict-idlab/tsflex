@@ -45,7 +45,7 @@ def _log_func_execution(
     log_window: Optional[str],
     log_strides: Optional[Union[str, Tuple[str, ...]]],
     output_names: List[str],
-):
+) -> None:
     """Log the execution time of a feature function."""
     elapsed = time.perf_counter() - t_start
 
@@ -56,7 +56,9 @@ def _log_func_execution(
     )
 
 
-def _determine_bounds(bound_method, series_list: List[pd.Series]) -> Tuple[Any, Any]:
+def _determine_bounds(
+    bound_method: str, series_list: List[pd.Series]
+) -> Tuple[Any, Any]:
     """Determine the bounds of the passed series.
 
     Parameters
@@ -97,7 +99,7 @@ def _determine_bounds(bound_method, series_list: List[pd.Series]) -> Tuple[Any, 
         raise ValueError(f"invalid bound method string passed {bound_method}")
 
 
-def _check_start_end_array(start_idxs: np.ndarray, end_idxs: np.ndarray):
+def _check_start_end_array(start_idxs: np.ndarray, end_idxs: np.ndarray) -> None:
     """Check if the start and end indices are valid.
 
     These are valid if they are of the same length and if the start indices are smaller
@@ -184,7 +186,7 @@ def _make_single_func_robust(
 
     output_names = func_wrapper_kwargs.get("output_names")
 
-    def wrap_func(*series: Union[np.ndarray, pd.Series], **kwargs) -> Any:
+    def wrap_func(*series: Union[np.ndarray, pd.Series], **kwargs) -> Any:  # type: ignore[no-untyped-def]
         if not passthrough_nans:
             series = [s[~np.isnan(s)] for s in series]  # type: ignore[assignment]
         if any([len(s) < min_nb_samples for s in series]):

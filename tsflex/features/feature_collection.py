@@ -162,7 +162,7 @@ class FeatureCollection:
         self,
         skip_none: bool,
         calc_stride: Optional[Union[float, pd.Timedelta, None]] = None,
-    ):
+    ) -> None:
         """Verify whether all added FeatureDescriptors imply the same-input data type.
 
         If this condition is not met, a warning will be raised.
@@ -195,7 +195,7 @@ class FeatureCollection:
                 category=RuntimeWarning,
             )
 
-    def _add_feature(self, feature: FeatureDescriptor):
+    def _add_feature(self, feature: FeatureDescriptor) -> None:
         """Add a `FeatureDescriptor` instance to the collection.
 
         Parameters
@@ -238,7 +238,7 @@ class FeatureCollection:
                 Union[FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection]
             ],
         ],
-    ):
+    ) -> None:
         """Add feature(s) to the FeatureCollection.
 
         Parameters
@@ -324,13 +324,13 @@ class FeatureCollection:
         f = function
         if function.input_type is np.array:
 
-            def f(x: pd.DataFrame):
+            def f(x: pd.DataFrame) -> Any:
                 # pass the inputs as positional arguments of numpy array type
                 return function(*[x[c].values for c in cols_tuple])
 
         else:  # function.input_type is pd.Series
 
-            def f(x: pd.DataFrame):
+            def f(x: pd.DataFrame) -> Any:
                 # pass the inputs as positional arguments of pd.Series type
                 return function(*[x[c] for c in cols_tuple])
 
@@ -373,7 +373,7 @@ class FeatureCollection:
             [len(self._feature_desc_dict[k]) for k in keys_wins_strides]
         )
 
-        def get_stroll_function(idx) -> Tuple[StridedRolling, FuncWrapper]:
+        def get_stroll_function(idx: int) -> Tuple[StridedRolling, FuncWrapper]:
             key_idx = np.searchsorted(lengths, idx, "right")  # right bc idx starts at 0
             key, win = keys_wins_strides[key_idx]
 
@@ -416,7 +416,7 @@ class FeatureCollection:
         lengths = np.cumsum([len(self._feature_desc_dict[k]) for k in keys_wins])
 
         def get_group_function(
-            idx,
+            idx: int,
         ) -> Tuple[pd.api.typing.DataFrameGroupBy, FuncWrapper,]:
             key_idx = np.searchsorted(lengths, idx, "right")  # right bc idx starts at 0
             key, win = keys_wins[key_idx]
@@ -429,7 +429,7 @@ class FeatureCollection:
 
         return get_group_function
 
-    def _check_no_multiple_windows(self, error_case: str):
+    def _check_no_multiple_windows(self, error_case: str) -> None:
         """Check whether there are no multiple windows in the feature collection.
 
         Parameters
@@ -633,11 +633,11 @@ class FeatureCollection:
 
         return df_grouped
 
-    def _calculate_group_by_consecutive(
+    def _calculate_group_by_consecutive(  # type: ignore[no-untyped-def]
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         group_by: str,
-        return_df: Optional[bool] = False,
+        return_df: bool = False,
         **calculate_kwargs,
     ) -> Union[List[pd.DataFrame], pd.DataFrame]:
         """Calculate features on each consecutive group of the data.
@@ -1261,7 +1261,7 @@ class FeatureCollection:
             f_handler,
         )
 
-    def serialize(self, file_path: Union[str, Path]):
+    def serialize(self, file_path: Union[str, Path]) -> None:
         """Serialize this FeatureCollection instance.
 
         Parameters

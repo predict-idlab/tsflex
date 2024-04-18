@@ -3,7 +3,7 @@
 __author__ = "Jeroen Van Der Donckt, Jonas Van Der Donckt"
 
 import importlib
-from typing import Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -35,7 +35,7 @@ def seglearn_wrapper(func: Callable, func_name: Optional[str] = None) -> FuncWra
 
     """
 
-    def wrap_func(x: np.ndarray):
+    def wrap_func(x: np.ndarray) -> np.ndarray:
         out = func(x.reshape(1, len(x)))
         return out.flatten()
 
@@ -144,7 +144,7 @@ def tsfel_feature_dict_wrapper(features_dict: Dict) -> List[FuncWrapper]:
 
     """
 
-    def get_output_names(config: dict):
+    def get_output_names(config: dict) -> Union[str, List[str]]:
         """Create the output_names based on the configuration."""
         nb_outputs = config["n_features"]
         func_name = config["function"].split(".")[-1]
@@ -203,7 +203,7 @@ def tsfresh_combiner_wrapper(func: Callable, param: List[Dict]) -> FuncWrapper:
 
     """
 
-    def wrap_func(x: Union[np.ndarray, pd.Series]):
+    def wrap_func(x: Union[np.ndarray, pd.Series]) -> Tuple[Any, ...]:
         out = func(x, param)
         return tuple(t[1] for t in out)
 
@@ -330,7 +330,7 @@ def catch22_wrapper(catch22_all: Callable) -> FuncWrapper:
     """
     catch22_names = catch22_all([0])["names"]
 
-    def wrap_catch22_all(x):
+    def wrap_catch22_all(x: np.ndarray) -> List[float]:
         return catch22_all(x)["values"]
 
     wrap_catch22_all.__name__ = "[wrapped]__" + _get_name(catch22_all)

@@ -238,7 +238,7 @@ class StridedRolling(ABC):
                         RuntimeWarning,
                     )
 
-    def _calc_nb_segments_for_stride(self, stride) -> int:
+    def _calc_nb_segments_for_stride(self, stride: T) -> int:
         """Calculate the number of output items (segments) for a given single stride."""
         assert self.start is not None and self.end is not None  # for mypy
         nb_feats = max((self.end - self.start - self.window) // stride + 1, 0)
@@ -293,7 +293,10 @@ class StridedRolling(ABC):
             )
 
     def _construct_series_containers(
-        self, series_list, np_start_times, np_end_times
+        self,
+        series_list: List[pd.Series],
+        np_start_times: np.ndarray,
+        np_end_times: np.ndarray,
     ) -> List[StridedRolling._NumpySeriesContainer]:
         series_containers: List[StridedRolling._NumpySeriesContainer] = []
         for series in series_list:
@@ -487,7 +490,7 @@ class StridedRolling(ABC):
 
     # --------------------------------- STATIC METHODS ---------------------------------
     @staticmethod
-    def _get_np_value(val):
+    def _get_np_value(val: Union[np.number, pd.Timestamp, pd.Timedelta]) -> np.number:
         # Convert everything to int64
         if isinstance(val, pd.Timestamp):
             return val.to_datetime64()
@@ -505,7 +508,9 @@ class StridedRolling(ABC):
 
     # ----------------------------- OVERRIDE THESE METHODS -----------------------------
     @abstractmethod
-    def _update_start_end_indices_to_stroll_type(self, series_list: List[pd.Series]):
+    def _update_start_end_indices_to_stroll_type(
+        self, series_list: List[pd.Series]
+    ) -> None:
         # NOTE: This method will only be implemented (with code != pass) in the
         # TimeIndexSampleStridedRolling
         raise NotImplementedError
@@ -522,7 +527,7 @@ class StridedRolling(ABC):
 
 
 class SequenceStridedRolling(StridedRolling):
-    def __init__(
+    def __init__(  # type: ignore[no-untyped-def]
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         window: Union[int, float],
@@ -535,7 +540,9 @@ class SequenceStridedRolling(StridedRolling):
         super().__init__(data, window, strides, *args, **kwargs)
 
     # ------------------------------- Overridden methods -------------------------------
-    def _update_start_end_indices_to_stroll_type(self, series_list: List[pd.Series]):
+    def _update_start_end_indices_to_stroll_type(
+        self, series_list: List[pd.Series]
+    ) -> None:
         pass
 
     def _parse_segment_idxs(self, segment_idxs: np.ndarray) -> np.ndarray:
@@ -554,7 +561,7 @@ class SequenceStridedRolling(StridedRolling):
 
 
 class TimeStridedRolling(StridedRolling):
-    def __init__(
+    def __init__(  # type: ignore[no-untyped-def]
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         window: pd.Timedelta,
@@ -589,7 +596,9 @@ class TimeStridedRolling(StridedRolling):
         return super()._get_output_index(start_idxs, end_idxs, name)
 
     # ------------------------------- Overridden methods -------------------------------
-    def _update_start_end_indices_to_stroll_type(self, series_list: List[pd.Series]):
+    def _update_start_end_indices_to_stroll_type(
+        self, series_list: List[pd.Series]
+    ) -> None:
         pass
 
     def _parse_segment_idxs(self, segment_idxs: np.ndarray) -> np.ndarray:
@@ -616,7 +625,7 @@ class TimeStridedRolling(StridedRolling):
 
 
 class TimeIndexSampleStridedRolling(SequenceStridedRolling):
-    def __init__(
+    def __init__(  # type: ignore[no-untyped-def]
         self,
         # TODO -> update arguments
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
@@ -678,7 +687,9 @@ class TimeIndexSampleStridedRolling(SequenceStridedRolling):
         return df
 
     # ---------------------------- Overridden methods ------------------------------
-    def _update_start_end_indices_to_stroll_type(self, series_list: List[pd.Series]):
+    def _update_start_end_indices_to_stroll_type(
+        self, series_list: List[pd.Series]
+    ) -> None:
         # update the start and end times to the sequence datatype
         self.start, self.end = np.searchsorted(
             series_list[0].index.values,
@@ -689,7 +700,7 @@ class TimeIndexSampleStridedRolling(SequenceStridedRolling):
 
 def _sliding_strided_window_1d(
     data: np.ndarray, window: int, step: int, nb_segments: int
-):
+) -> np.ndarray:
     """View based sliding strided-window for 1-dimensional data.
 
     Parameters

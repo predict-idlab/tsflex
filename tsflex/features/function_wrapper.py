@@ -87,7 +87,7 @@ class FuncWrapper(FrozenClass):
 
     """
 
-    def __init__(
+    def __init__(  # type: ignore[no-untyped-def]
         self,
         func: Callable,
         output_names: Optional[Union[List[str], str]] = None,

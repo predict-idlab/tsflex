@@ -19,9 +19,9 @@ def _chunk_time_data(
     min_chunk_dur: Optional[Union[str, pd.Timedelta]] = None,
     max_chunk_dur: Optional[Union[str, pd.Timedelta]] = None,
     sub_chunk_overlap: Union[str, pd.Timedelta] = "0s",
-    copy=True,
-    verbose=False,
-):
+    copy: bool = True,
+    verbose: bool = False,
+) -> List[List[pd.Series]]:
     if min_chunk_dur is not None:
         min_chunk_dur = parse_time_arg(min_chunk_dur)
     if max_chunk_dur is not None:
@@ -61,7 +61,9 @@ def _chunk_time_data(
     # Each list item can be seen as (t_start_chunk, t_end_chunk, chunk_list)
     same_range_chunks: List[Tuple[pd.Timestamp, pd.Timestamp, List[pd.Series]]] = []
 
-    def print_verbose_time(sig, t_begin, t_end, msg=""):
+    def print_verbose_time(
+        sig: pd.Series, t_begin: pd.Timestamp, t_end: pd.Timestamp, msg: str = ""
+    ) -> None:
         fmt = "%Y-%m-%d %H:%M"
         if not verbose:
             return
@@ -81,7 +83,7 @@ def _chunk_time_data(
         else:
             return sig[t_begin:t_end]
 
-    def insert_chunk(chunk: pd.Series):
+    def insert_chunk(chunk: pd.Series) -> None:
         """Insert the chunk into `same_range_chunks`."""
         t_chunk_start, t_chunk_end = chunk.index[[0, -1]]
 
@@ -194,9 +196,9 @@ def _chunk_sequence_data(
     min_chunk_dur: Optional[float] = None,
     max_chunk_dur: Optional[float] = None,
     sub_chunk_overlap: float = 0,
-    copy=True,
-    verbose=False,
-):
+    copy: bool = True,
+    verbose: bool = False,
+) -> List[List[pd.Series]]:
     raise NotImplementedError("Not implemented yet")
 
 
@@ -218,8 +220,8 @@ def chunk_data(
     min_chunk_dur: Optional[Union[float, str, pd.Timedelta]] = None,
     max_chunk_dur: Optional[Union[float, str, pd.Timedelta]] = None,
     sub_chunk_overlap: Union[float, str, pd.Timedelta] = "0s",  # TODO: make optional
-    copy=True,
-    verbose=False,
+    copy: bool = True,
+    verbose: bool = False,
 ) -> List[List[pd.Series]]:
     """Divide the time-series `data` in same time/sequence-range chunks.
 
