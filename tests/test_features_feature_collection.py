@@ -320,7 +320,8 @@ def test_group_by_with_unequal_lengths(group_by):
             res_list[c]
             == res_list2.loc[res_list.index, compare_col].astype(res_list.dtypes[c])
         )
-    assert_frame_equal(res_list, correct_res_list)
+    assert len(res_list.columns) == len(correct_res_list.columns)
+    assert_frame_equal(res_list, correct_res_list[res_list.columns])
 
 
 @pytest.mark.parametrize("group_by", ["group_by_all", "group_by_consecutive"])
