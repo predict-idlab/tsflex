@@ -32,8 +32,8 @@ class StridedRollingFactory:
     @staticmethod
     def get_segmenter(  # type: ignore[no-untyped-def]
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
-        window: Union[int, float, pd.TimeDelta],
-        strides: Optional[List[Union[int, float, pd.TimeDelta]]],
+        window: Union[int, float, pd.Timedelta],
+        strides: Optional[List[Union[int, float, pd.Timedelta]]],
         **kwargs,
     ) -> StridedRolling:
         """Get the appropriate StridedRolling instance for the passed data.
@@ -44,9 +44,9 @@ class StridedRollingFactory:
         ----------
         data : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
             The data to segment.
-        window : Union[int, float, pd.TimeDelta]
+        window : Union[int, float, pd.Timedelta]
              The window size to use for the segmentation.
-        strides : Union[List[Union[int, float, pd.TimeDelta]], None]
+        strides : Union[List[Union[int, float, pd.Timedelta]], None]
             The stride(s) to use for the segmentation.
         **kwargs : dict, optional
             Additional keyword arguments, see the `StridedRolling` its documentation
