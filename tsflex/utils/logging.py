@@ -5,7 +5,7 @@ __author__ = "Jeroen Van Der Donckt"
 import logging
 import warnings
 from pathlib import Path
-from typing import Union
+from typing import Dict, List, Union
 
 import pandas as pd
 
@@ -41,7 +41,7 @@ def remove_inner_brackets(message: str) -> str:
     return new_message
 
 
-def delete_logging_handlers(logger: logging.Logger):
+def delete_logging_handlers(logger: logging.Logger) -> None:
     """Delete all logging handlers that are not stream-handlers.
 
     Parameters
@@ -110,12 +110,12 @@ def logging_file_to_df(logging_file_path: str) -> pd.DataFrame:
 
     """
     column_names = ["log_time", "name", "log_level", "message"]
-    data = {col: [] for col in column_names}
+    data: Dict[str, List[str]] = {col: [] for col in column_names}
     with open(logging_file_path, "r") as f:
         for line in f:
-            line = line.split(" - ")
+            values = line.split(" - ")
             for idx, col in enumerate(column_names):
-                data[col].append(line[idx].strip())
+                data[col].append(values[idx].strip())
     df = pd.DataFrame(data)
     df["log_time"] = pd.to_datetime(df["log_time"])
     return df

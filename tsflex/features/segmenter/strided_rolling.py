@@ -22,9 +22,9 @@ from typing import List, Optional, Tuple, TypeVar, Union
 import numpy as np
 import pandas as pd
 
+from ...utils.argument_parsing import timedelta_to_str
 from ...utils.attribute_parsing import AttributeParser, DataType
 from ...utils.data import SUPPORTED_STROLL_TYPES, to_list, to_series_list, to_tuple
-from ...utils.time import timedelta_to_str
 from ..function_wrapper import FuncWrapper
 from ..utils import (
     _check_start_end_array,
@@ -34,7 +34,7 @@ from ..utils import (
 )
 
 # Declare a type variable
-T = TypeVar("T")
+T = TypeVar("T", int, float, pd.Timedelta)
 
 
 class StridedRolling(ABC):
@@ -129,23 +129,23 @@ class StridedRolling(ABC):
     )
 
     # Create the named tuple
-    _NumpySeriesContainer = namedtuple(
+    _NumpySeriesContainer = namedtuple(  # type: ignore[name-match]
         "SeriesContainer", ["name", "values", "start_indexes", "end_indexes"]
     )
 
     def __init__(
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
-        window: T,
+        window: Optional[T],
         strides: Optional[Union[T, List[T]]] = None,
         segment_start_idxs: Optional[np.ndarray] = None,
         segment_end_idxs: Optional[np.ndarray] = None,
         start_idx: Optional[T] = None,
         end_idx: Optional[T] = None,
-        func_data_type: Optional[Union[np.array, pd.Series]] = np.array,
-        window_idx: Optional[str] = "end",
+        func_data_type: Union[np.ndarray, pd.Series] = np.ndarray,
+        window_idx: str = "end",
         include_final_window: bool = False,
-        approve_sparsity: Optional[bool] = False,
+        approve_sparsity: bool = False,
     ):
         if strides is not None:
             strides = to_list(strides)
@@ -159,8 +159,8 @@ class StridedRolling(ABC):
                 [window] + ([] if strides is None else strides), self.win_str_type
             )
 
-        self.window = window
-        self.strides = strides
+        self.window = window  # type: ignore[var-annotated]
+        self.strides = strides  # type: ignore[var-annotated]
 
         self.window_idx = window_idx
         self.include_final_window = include_final_window
@@ -175,7 +175,7 @@ class StridedRolling(ABC):
         self.series_key: Tuple[str, ...] = tuple([str(s.name) for s in series_list])
 
         # 1. Determine the start index
-        self.start, self.end = start_idx, end_idx
+        self.start, self.end = start_idx, end_idx  # type: ignore[var-annotated]
         if self.start is None or self.end is None:
             # We always pass start_idx and end_idx from the FeatureCollection.calculate
             # Hence, this code is only useful for testing purposes
@@ -207,7 +207,7 @@ class StridedRolling(ABC):
                 np_start_times = self._parse_segment_idxs(segment_start_idxs)
                 np_end_times = np_start_times + self._get_np_value(self.window)
             else:  # segment_end_idxs is not None and segment_start_idxs is None
-                np_end_times = self._parse_segment_idxs(segment_end_idxs)
+                np_end_times = self._parse_segment_idxs(segment_end_idxs)  # type: ignore[arg-type]
                 np_start_times = np_end_times - self._get_np_value(self.window)
         else:
             np_start_times = self._construct_start_idxs()
@@ -238,8 +238,9 @@ class StridedRolling(ABC):
                         RuntimeWarning,
                     )
 
-    def _calc_nb_segments_for_stride(self, stride) -> int:
+    def _calc_nb_segments_for_stride(self, stride: T) -> int:
         """Calculate the number of output items (segments) for a given single stride."""
+        assert self.start is not None and self.end is not None  # for mypy
         nb_feats = max((self.end - self.start - self.window) // stride + 1, 0)
         # Add 1 if there is still some data after (including) the last window its
         # start index - this is only added when `include_last_window` is True.
@@ -273,7 +274,7 @@ class StridedRolling(ABC):
         return np.unique(np.concatenate(start_idxs))
 
     def _get_output_index(
-        self, start_idxs: np.ndarray, end_idxs: Union[np.ndarray, None], name: str
+        self, start_idxs: np.ndarray, end_idxs: np.ndarray, name: str
     ) -> pd.Index:
         """Construct the output index."""
         if self.window_idx == "end":
@@ -292,7 +293,10 @@ class StridedRolling(ABC):
             )
 
     def _construct_series_containers(
-        self, series_list, np_start_times, np_end_times
+        self,
+        series_list: List[pd.Series],
+        np_start_times: np.ndarray,
+        np_end_times: np.ndarray,
     ) -> List[StridedRolling._NumpySeriesContainer]:
         series_containers: List[StridedRolling._NumpySeriesContainer] = []
         for series in series_list:
@@ -303,7 +307,7 @@ class StridedRolling(ABC):
                 # note: using pd.RangeIndex instead of arange gives the same performance
 
             series_name = series.name
-            if self.data_type is np.array:  # FuncWrapper.input_type is np.array
+            if self.data_type is np.ndarray:  # FuncWrapper.input_type is np.ndarray
                 # create a non-writeable view of the series
                 series = series.values  # np.array will be stored in the SeriesContainer
                 series.flags.writeable = False
@@ -371,7 +375,7 @@ class StridedRolling(ABC):
         # expression only once, whereas a list comprehension evaluates its expression
         # every time).
         # See more why: https://stackoverflow.com/a/59838723
-        out: np.array
+        out: np.ndarray
         if func.vectorized:
             # Vectorized function execution
 
@@ -403,7 +407,7 @@ class StridedRolling(ABC):
             #     )
             # )
 
-            views = []
+            views: List[np.ndarray] = []
             for sc in self.series_containers:
                 if len(sc.start_indexes) == 0:
                     # There are no feature windows  -> return empty array (see below)
@@ -479,14 +483,14 @@ class StridedRolling(ABC):
         )
         log_window = "manual" if self.window is None else self.window
         _log_func_execution(
-            t_start, func, self.series_key, log_window, log_strides, output_names
+            t_start, func, self.series_key, log_window, log_strides, output_names  # type: ignore[arg-type]
         )
 
         return pd.DataFrame(feat_out, index=self.index)
 
     # --------------------------------- STATIC METHODS ---------------------------------
     @staticmethod
-    def _get_np_value(val):
+    def _get_np_value(val: Union[np.number, pd.Timestamp, pd.Timedelta]) -> np.number:
         # Convert everything to int64
         if isinstance(val, pd.Timestamp):
             return val.to_datetime64()
@@ -504,7 +508,9 @@ class StridedRolling(ABC):
 
     # ----------------------------- OVERRIDE THESE METHODS -----------------------------
     @abstractmethod
-    def _update_start_end_indices_to_stroll_type(self, series_list: List[pd.Series]):
+    def _update_start_end_indices_to_stroll_type(
+        self, series_list: List[pd.Series]
+    ) -> None:
         # NOTE: This method will only be implemented (with code != pass) in the
         # TimeIndexSampleStridedRolling
         raise NotImplementedError
@@ -521,11 +527,11 @@ class StridedRolling(ABC):
 
 
 class SequenceStridedRolling(StridedRolling):
-    def __init__(
+    def __init__(  # type: ignore[no-untyped-def]
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
-        window: float,
-        strides: Optional[Union[float, List[float]]] = None,
+        window: Union[int, float],
+        strides: Optional[Union[int, float, List[int], List[float]]] = None,
         *args,
         **kwargs,
     ):
@@ -534,7 +540,9 @@ class SequenceStridedRolling(StridedRolling):
         super().__init__(data, window, strides, *args, **kwargs)
 
     # ------------------------------- Overridden methods -------------------------------
-    def _update_start_end_indices_to_stroll_type(self, series_list: List[pd.Series]):
+    def _update_start_end_indices_to_stroll_type(
+        self, series_list: List[pd.Series]
+    ) -> None:
         pass
 
     def _parse_segment_idxs(self, segment_idxs: np.ndarray) -> np.ndarray:
@@ -553,7 +561,7 @@ class SequenceStridedRolling(StridedRolling):
 
 
 class TimeStridedRolling(StridedRolling):
-    def __init__(
+    def __init__(  # type: ignore[no-untyped-def]
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         window: pd.Timedelta,
@@ -588,7 +596,9 @@ class TimeStridedRolling(StridedRolling):
         return super()._get_output_index(start_idxs, end_idxs, name)
 
     # ------------------------------- Overridden methods -------------------------------
-    def _update_start_end_indices_to_stroll_type(self, series_list: List[pd.Series]):
+    def _update_start_end_indices_to_stroll_type(
+        self, series_list: List[pd.Series]
+    ) -> None:
         pass
 
     def _parse_segment_idxs(self, segment_idxs: np.ndarray) -> np.ndarray:
@@ -615,7 +625,7 @@ class TimeStridedRolling(StridedRolling):
 
 
 class TimeIndexSampleStridedRolling(SequenceStridedRolling):
-    def __init__(
+    def __init__(  # type: ignore[no-untyped-def]
         self,
         # TODO -> update arguments
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
@@ -677,7 +687,9 @@ class TimeIndexSampleStridedRolling(SequenceStridedRolling):
         return df
 
     # ---------------------------- Overridden methods ------------------------------
-    def _update_start_end_indices_to_stroll_type(self, series_list: List[pd.Series]):
+    def _update_start_end_indices_to_stroll_type(
+        self, series_list: List[pd.Series]
+    ) -> None:
         # update the start and end times to the sequence datatype
         self.start, self.end = np.searchsorted(
             series_list[0].index.values,
@@ -688,7 +700,7 @@ class TimeIndexSampleStridedRolling(SequenceStridedRolling):
 
 def _sliding_strided_window_1d(
     data: np.ndarray, window: int, step: int, nb_segments: int
-):
+) -> np.ndarray:
     """View based sliding strided-window for 1-dimensional data.
 
     Parameters

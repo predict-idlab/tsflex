@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Series segmentation submodule."""
 
 __author__ = "Jonas Van Der Donckt"

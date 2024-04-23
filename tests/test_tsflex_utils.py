@@ -4,8 +4,8 @@ __author__ = "Jeroen Van Der Donckt, Emiel Deprost, Jonas Van Der Donckt"
 
 import pandas as pd
 
+from tsflex.utils.argument_parsing import timedelta_to_str
 from tsflex.utils.data import load_empatica_data
-from tsflex.utils.time import timedelta_to_str
 
 
 def test_timedelta_to_str():

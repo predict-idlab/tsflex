@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """(Advanced) tsflex utilities for chunking sequence data."""
 
 __author__ = "Jonas Van Der Donckt"
@@ -8,9 +7,9 @@ from typing import Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 
+from ..utils.argument_parsing import parse_time_arg
 from ..utils.attribute_parsing import AttributeParser, DataType
 from ..utils.data import to_series_list
-from ..utils.time import parse_time_arg
 
 
 def _chunk_time_data(
@@ -19,14 +18,16 @@ def _chunk_time_data(
     chunk_range_margin: Optional[Union[str, pd.Timedelta]] = None,
     min_chunk_dur: Optional[Union[str, pd.Timedelta]] = None,
     max_chunk_dur: Optional[Union[str, pd.Timedelta]] = None,
-    sub_chunk_overlap: Optional[Union[str, pd.Timedelta]] = "0s",
-    copy=True,
-    verbose=False,
-):
+    sub_chunk_overlap: Optional[Union[str, pd.Timedelta]] = None,
+    copy: bool = True,
+    verbose: bool = False,
+) -> List[List[pd.Series]]:
     if min_chunk_dur is not None:
         min_chunk_dur = parse_time_arg(min_chunk_dur)
     if max_chunk_dur is not None:
         max_chunk_dur = parse_time_arg(max_chunk_dur)
+    if sub_chunk_overlap is None:
+        sub_chunk_overlap = pd.Timedelta(0)
     sub_chunk_overlap = parse_time_arg(sub_chunk_overlap)
 
     # Default arg -> set the chunk range margin to 2x the min-freq its period
@@ -62,7 +63,9 @@ def _chunk_time_data(
     # Each list item can be seen as (t_start_chunk, t_end_chunk, chunk_list)
     same_range_chunks: List[Tuple[pd.Timestamp, pd.Timestamp, List[pd.Series]]] = []
 
-    def print_verbose_time(sig, t_begin, t_end, msg=""):
+    def print_verbose_time(
+        sig: pd.Series, t_begin: pd.Timestamp, t_end: pd.Timestamp, msg: str = ""
+    ) -> None:
         fmt = "%Y-%m-%d %H:%M"
         if not verbose:
             return
@@ -82,7 +85,7 @@ def _chunk_time_data(
         else:
             return sig[t_begin:t_end]
 
-    def insert_chunk(chunk: pd.Series):
+    def insert_chunk(chunk: pd.Series) -> None:
         """Insert the chunk into `same_range_chunks`."""
         t_chunk_start, t_chunk_end = chunk.index[[0, -1]]
 
@@ -119,10 +122,12 @@ def _chunk_time_data(
 
         # Allowed offset (in seconds) is sample_period + 0.5*sample_period
         fs_sig = fs_dict[str(series.name)]
-        gaps = series.index.to_series().diff() > timedelta(seconds=(1 + 0.5) / fs_sig)
+        gaps_mask = series.index.to_series().diff() > timedelta(
+            seconds=(1 + 0.5) / fs_sig
+        )
         # Set the first and last timestamp to True
-        gaps.iloc[[0, -1]] = True
-        gaps: List[pd.Timestamp] = series[gaps].index.to_list()
+        gaps_mask.iloc[[0, -1]] = True
+        gaps: List[pd.Timestamp] = series[gaps_mask].index.to_list()
         if verbose:
             print("-" * 10, " detected gaps", "-" * 10)
             print(*gaps, sep="\n")
@@ -192,10 +197,10 @@ def _chunk_sequence_data(
     chunk_range_margin: Optional[float] = None,
     min_chunk_dur: Optional[float] = None,
     max_chunk_dur: Optional[float] = None,
-    sub_chunk_overlap: Optional[float] = "0s",
-    copy=True,
-    verbose=False,
-):
+    sub_chunk_overlap: Optional[float] = None,
+    copy: bool = True,
+    verbose: bool = False,
+) -> List[List[pd.Series]]:
     raise NotImplementedError("Not implemented yet")
 
 
@@ -216,9 +221,9 @@ def chunk_data(
     chunk_range_margin: Optional[Union[float, str, pd.Timedelta]] = None,
     min_chunk_dur: Optional[Union[float, str, pd.Timedelta]] = None,
     max_chunk_dur: Optional[Union[float, str, pd.Timedelta]] = None,
-    sub_chunk_overlap: Optional[Union[float, str, pd.Timedelta]] = "0s",
-    copy=True,
-    verbose=False,
+    sub_chunk_overlap: Optional[Union[float, str, pd.Timedelta]] = None,
+    copy: bool = True,
+    verbose: bool = False,
 ) -> List[List[pd.Series]]:
     """Divide the time-series `data` in same time/sequence-range chunks.
 
@@ -335,10 +340,10 @@ def chunk_data(
     return _dtype_to_chunk_method[AttributeParser.determine_type(data)](
         series_list,
         fs_dict,
-        chunk_range_margin,
-        min_chunk_dur,
-        max_chunk_dur,
-        sub_chunk_overlap,
+        chunk_range_margin,  # type: ignore[arg-type]
+        min_chunk_dur,  # type: ignore[arg-type]
+        max_chunk_dur,  # type: ignore[arg-type]
+        sub_chunk_overlap,  # type: ignore[arg-type]
         copy,
         verbose,
     )

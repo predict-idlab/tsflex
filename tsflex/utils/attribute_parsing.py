@@ -8,7 +8,7 @@ from typing import Any
 
 import pandas as pd
 
-from tsflex.utils.time import parse_time_arg
+from tsflex.utils.argument_parsing import parse_time_arg
 
 
 class DataType(IntEnum):

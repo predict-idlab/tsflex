@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 
 FeatureDescriptor and MultipleFeatureDescriptors class for creating time-series
@@ -11,10 +10,10 @@ from typing import Callable, List, Optional, Tuple, Union
 
 import pandas as pd
 
+from ..utils.argument_parsing import parse_time_arg
 from ..utils.attribute_parsing import AttributeParser, DataType
 from ..utils.classes import FrozenClass
 from ..utils.data import to_list, to_tuple
-from ..utils.time import parse_time_arg
 from .function_wrapper import FuncWrapper
 
 
@@ -154,11 +153,11 @@ class FeatureDescriptor(FrozenClass):
         # Order of if statements is important (as FuncWrapper also is a Callable)!
         if isinstance(function, FuncWrapper):
             self.function: FuncWrapper = function
-        elif isinstance(function, Callable):
-            self.function: FuncWrapper = FuncWrapper(function)
+        elif isinstance(function, Callable):  # type: ignore[arg-type]
+            self.function: FuncWrapper = FuncWrapper(function)  # type: ignore[no-redef]
         else:
             raise TypeError(
-                "Expected feature function to be a `FuncWrapper` but is a"
+                "Expected feature function to be `Callable` or `FuncWrapper` but is a"
                 f" {type(function)}."
             )
 
@@ -260,7 +259,7 @@ class MultipleFeatureDescriptors:
     ):
         # Cast functions to FuncWrapper, this avoids creating multiple
         # FuncWrapper objects for the same function in the FeatureDescriptor
-        def to_func_wrapper(f: Callable):
+        def to_func_wrapper(f: Callable) -> FuncWrapper:
             return f if isinstance(f, FuncWrapper) else FuncWrapper(f)
 
         functions = [to_func_wrapper(f) for f in to_list(functions)]
@@ -277,7 +276,7 @@ class MultipleFeatureDescriptors:
         self.feature_descriptions: List[FeatureDescriptor] = []
         # Iterate over all combinations
         combinations = [functions, series_names, windows]
-        for function, series_name, window in itertools.product(*combinations):
+        for function, series_name, window in itertools.product(*combinations):  # type: ignore[call-overload]
             self.feature_descriptions.append(
                 FeatureDescriptor(function, series_name, window, strides)
             )

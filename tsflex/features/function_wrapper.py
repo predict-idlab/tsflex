@@ -74,7 +74,7 @@ class FuncWrapper(FrozenClass):
             * A function can only be applied in vectorized manner when the required
               series are REGULARLY sampled (and have the same index in case of multiple
               required series).
-            * The `input_type` should be `np.array` when `vectorized` is True. It does
+            * The `input_type` should be `np.ndarray` when `vectorized` is True. It does
               not make sense to use a `pd.Series`, as the index should be regularly
               sampled (see requirement above).
     **kwargs: dict, optional
@@ -87,11 +87,11 @@ class FuncWrapper(FrozenClass):
 
     """
 
-    def __init__(
+    def __init__(  # type: ignore[no-untyped-def]
         self,
         func: Callable,
         output_names: Optional[Union[List[str], str]] = None,
-        input_type: Optional[Union[np.array, pd.Series]] = np.array,
+        input_type: Union[np.ndarray, pd.Series] = np.ndarray,
         vectorized: bool = False,
         **kwargs,
     ):
@@ -108,10 +108,12 @@ class FuncWrapper(FrozenClass):
         else:
             raise TypeError(f"`output_names` is unexpected type {type(output_names)}")
 
+        # for backwards compatibility
+        input_type = np.ndarray if input_type is np.array else input_type
         assert input_type in SUPPORTED_STROLL_TYPES, "Invalid input_type!"
         assert not (
-            vectorized & (input_type is not np.array)
-        ), "The input_type must be np.array if vectorized is True!"
+            vectorized & (input_type is not np.ndarray)
+        ), "The input_type must be np.ndarray if vectorized is True!"
         self.input_type = input_type
         self.vectorized = vectorized
 

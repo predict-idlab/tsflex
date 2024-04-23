@@ -4,7 +4,7 @@ from __future__ import annotations
 __author__ = "Jonas Van Der Donckt, Emiel Deprost, Jeroen Van Der Donckt"
 
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Set, Union
 
 import dill
 import pandas as pd
@@ -203,7 +203,7 @@ class SeriesPipeline:
                 # If all the series have to be returned
                 series_dict[str(s.name)] = s.copy() if copy else s
 
-        output_keys = set()  # Maintain set of output series
+        output_keys: Set[str] = set()  # Maintain set of output series
         for processor in self.processing_steps:
             try:
                 processed_dict = processor(series_dict)
@@ -244,7 +244,7 @@ class SeriesPipeline:
         else:
             return [s for s in series_dict.values()]
 
-    def serialize(self, file_path: Union[str, Path]):
+    def serialize(self, file_path: Union[str, Path]) -> None:
         """Serialize this ``SeriesPipeline`` instance.
 
         Notes
@@ -262,10 +262,10 @@ class SeriesPipeline:
         with open(file_path, "wb") as f:
             dill.dump(self, f, recurse=True)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Return formal representation of object."""
         return "[\n" + "".join([f"\t{str(p)}\n" for p in self.processing_steps]) + "]"
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return informal representation of object."""
         return self.__repr__()

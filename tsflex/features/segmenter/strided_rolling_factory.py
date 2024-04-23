@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """
 Factory class for creating the proper StridedRolling instances.
 
@@ -8,6 +7,10 @@ Factory class for creating the proper StridedRolling instances.
 """
 
 __author__ = "Jonas Van Der Donckt"
+
+from typing import List, Optional, Union
+
+import pandas as pd
 
 from ...utils.attribute_parsing import AttributeParser, DataType
 from .strided_rolling import (
@@ -27,7 +30,12 @@ class StridedRollingFactory:
     }
 
     @staticmethod
-    def get_segmenter(data, window, strides, **kwargs) -> StridedRolling:
+    def get_segmenter(  # type: ignore[no-untyped-def]
+        data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
+        window: Union[int, float, pd.Timedelta],
+        strides: Optional[List[Union[int, float, pd.Timedelta]]],
+        **kwargs,
+    ) -> StridedRolling:
         """Get the appropriate StridedRolling instance for the passed data.
 
         The returned instance will be determined by the data its index type
@@ -36,9 +44,9 @@ class StridedRollingFactory:
         ----------
         data : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
             The data to segment.
-        window : Union[float, pd.TimeDelta]
+        window : Union[int, float, pd.Timedelta]
              The window size to use for the segmentation.
-        strides : Union[List[Union[float, pd.TimeDelta]], None]
+        strides : Union[List[Union[int, float, pd.Timedelta]], None]
             The stride(s) to use for the segmentation.
         **kwargs : dict, optional
             Additional keyword arguments, see the `StridedRolling` its documentation
@@ -75,6 +83,16 @@ class StridedRollingFactory:
             )
         elif data_dtype == DataType.TIME and args_dtype == DataType.SEQUENCE:
             # Note: this is very niche and thus requires advanced knowledge
+            assert isinstance(window, int)
+            if strides is not None:
+                assert isinstance(strides, list) and all(
+                    isinstance(s, int) for s in strides
+                )
             return TimeIndexSampleStridedRolling(data, window, strides, **kwargs)
         elif data_dtype == DataType.SEQUENCE and args_dtype == DataType.TIME:
             raise ValueError("Cannot segment a sequence-series with a time window")
+
+        # This should never happen
+        raise ValueError(
+            f"Cannot segment data of type {data_dtype} with window-stride of type {args_dtype}"
+        )

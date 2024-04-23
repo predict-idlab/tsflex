@@ -14,8 +14,8 @@ import re
 import numpy as np
 import pandas as pd
 
+from ..utils.argument_parsing import timedelta_to_str
 from ..utils.logging import logging_file_to_df, remove_inner_brackets
-from ..utils.time import timedelta_to_str
 
 # Package specific logger
 logger = logging.getLogger("feature_calculation_logger")
@@ -148,7 +148,7 @@ def get_function_stats(logging_file_path: str) -> pd.DataFrame:
         .index.to_list()
     )
 
-    def key_func(idx_level):
+    def key_func(idx_level):  # type: ignore[no-untyped-def]
         if all(idx in sorted_funcs for idx in idx_level):
             return [sorted_funcs.index(idx) for idx in idx_level]
         return idx_level

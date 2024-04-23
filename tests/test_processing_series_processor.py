@@ -189,7 +189,7 @@ def test_numpy_func(dummy_data):
     res = numpy_f(inp.values)
     assert isinstance(res, np.ndarray)
     assert res.shape == dummy_data["TMP"].shape
-    assert res.dtype == np.bool8
+    assert res.dtype == np.bool_
     assert sum(res) > 0  # Check if at least 1 value is True
 
     # Decorated series function
@@ -201,7 +201,7 @@ def test_numpy_func(dummy_data):
     assert res.keys() == series_dict.keys()
     assert isinstance(res["TMP"], pd.Series)
     assert res["TMP"].shape == dummy_data["TMP"].shape
-    assert np.issubdtype(res["TMP"], np.bool8)
+    assert np.issubdtype(res["TMP"], np.bool_)
     assert sum(res["TMP"]) > 0  # Check if at least 1 value is True
 
 
