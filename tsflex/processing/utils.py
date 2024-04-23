@@ -1,4 +1,3 @@
-# TODO: rename file
 """(Advanced) utilities for the processing pipelines."""
 
 __author__ = "Jonas Van Der Donckt, Jeroen Van Der Donckt"
