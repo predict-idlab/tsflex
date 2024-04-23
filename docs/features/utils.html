@@ -44,7 +44,7 @@ alt="" width="33" height="25"></button>
 __author__ = &#34;Jeroen Van Der Donckt, Jonas Van Der Donckt&#34;
 
 import time
-from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -52,15 +52,13 @@ import pandas as pd
 from .function_wrapper import FuncWrapper, _get_name
 from .logger import logger
 
-# Declare a type variable
-T = TypeVar(&#34;T&#34;)
 
 # ---------------------------------- PRIVATE METHODS ----------------------------------
 def _process_func_output(
     out: np.ndarray, index: np.ndarray, output_names: List[str], func_str: str
-) -&gt; Dict[str, np.ndarray]:
+) -&gt; Dict[str, Optional[np.ndarray]]:
     &#34;&#34;&#34;Process the output of a feature function into a dictionary.&#34;&#34;&#34;
-    feat_out = {}
+    feat_out: Dict[str, Optional[np.ndarray]] = {}
     if out.ndim == 1 and not len(out):
         # When there are no features calculated (due to no feature windows)
         assert not len(index)
@@ -84,11 +82,11 @@ def _process_func_output(
 def _log_func_execution(
     t_start: float,
     func: FuncWrapper,
-    series_key: Tuple[str],
-    log_window: Optional[T],
-    log_strides: Optional[Union[str, Tuple[str]]],
+    series_key: Tuple[str, ...],
+    log_window: Optional[str],
+    log_strides: Optional[Union[str, Tuple[str, ...]]],
     output_names: List[str],
-):
+) -&gt; None:
     &#34;&#34;&#34;Log the execution time of a feature function.&#34;&#34;&#34;
     elapsed = time.perf_counter() - t_start
 
@@ -99,7 +97,9 @@ def _log_func_execution(
     )
 
 
-def _determine_bounds(bound_method, series_list: List[pd.Series]) -&gt; Tuple[Any, Any]:
+def _determine_bounds(
+    bound_method: str, series_list: List[pd.Series]
+) -&gt; Tuple[Any, Any]:
     &#34;&#34;&#34;Determine the bounds of the passed series.
 
     Parameters
@@ -140,7 +140,7 @@ def _determine_bounds(bound_method, series_list: List[pd.Series]) -&gt; Tuple[An
         raise ValueError(f&#34;invalid bound method string passed {bound_method}&#34;)
 
 
-def _check_start_end_array(start_idxs: np.ndarray, end_idxs: np.ndarray):
+def _check_start_end_array(start_idxs: np.ndarray, end_idxs: np.ndarray) -&gt; None:
     &#34;&#34;&#34;Check if the start and end indices are valid.
 
     These are valid if they are of the same length and if the start indices are smaller
@@ -182,7 +182,7 @@ def _get_funcwrapper_func_and_kwargs(func: FuncWrapper) -&gt; Tuple[Callable, di
     function = func.func
 
     # Extract the keyword arguments
-    func_wrapper_kwargs = dict()
+    func_wrapper_kwargs: Dict[str, Any] = dict()
     func_wrapper_kwargs[&#34;output_names&#34;] = func.output_names
     func_wrapper_kwargs[&#34;input_type&#34;] = func.input_type
     func_wrapper_kwargs[&#34;vectorized&#34;] = func.vectorized
@@ -218,18 +218,18 @@ def _make_single_func_robust(
         The robust FuncWrapper.
 
     &#34;&#34;&#34;
-    assert isinstance(func, FuncWrapper) or isinstance(func, Callable)
+    assert isinstance(func, (Callable, FuncWrapper))  # type: ignore[arg-type]
 
-    func_wrapper_kwargs = {}
+    func_wrapper_kwargs: Dict[str, Any] = {}
     if isinstance(func, FuncWrapper):
         # Extract the function and keyword arguments from the function wrapper
         func, func_wrapper_kwargs = _get_funcwrapper_func_and_kwargs(func)
 
     output_names = func_wrapper_kwargs.get(&#34;output_names&#34;)
 
-    def wrap_func(*series: Union[np.ndarray, pd.Series], **kwargs) -&gt; Callable:
+    def wrap_func(*series: Union[np.ndarray, pd.Series], **kwargs) -&gt; Any:  # type: ignore[no-untyped-def]
         if not passthrough_nans:
-            series = [s[~np.isnan(s)] for s in series]
+            series = [s[~np.isnan(s)] for s in series]  # type: ignore[assignment]
         if any([len(s) &lt; min_nb_samples for s in series]):
             if not isinstance(output_names, list) or len(output_names) == 1:
                 return error_val
@@ -246,9 +246,9 @@ def _make_single_func_robust(
 # ---------------------------------- PUBLIC METHODS -----------------------------------
 def make_robust(
     funcs: Union[Callable, FuncWrapper, List[Union[Callable, FuncWrapper]]],
-    min_nb_samples: Optional[int] = 1,
-    error_val: Optional[Any] = np.nan,
-    passthrough_nans: Optional[bool] = True,
+    min_nb_samples: int = 1,
+    error_val: Any = np.nan,
+    passthrough_nans: bool = True,
 ) -&gt; Union[FuncWrapper, List[FuncWrapper]]:
     &#34;&#34;&#34;Decorate `funcs` into one or multiple robust FuncWrappers.
 
@@ -285,13 +285,15 @@ def make_robust(
         FuncWrappers when a list of functions is passed.
 
     &#34;&#34;&#34;
-    if isinstance(funcs, Callable) or isinstance(funcs, FuncWrapper):
+    if isinstance(funcs, (Callable, FuncWrapper)):  # type: ignore[arg-type]
+        func: Union[Callable, FuncWrapper] = funcs  # type: ignore[assignment]
         return _make_single_func_robust(
-            funcs, min_nb_samples, error_val, passthrough_nans
+            func, min_nb_samples, error_val, passthrough_nans
         )
+    # funcs is now a list of Callables or FuncWrappers (or a mix of both)
     return [
         _make_single_func_robust(func, min_nb_samples, error_val, passthrough_nans)
-        for func in funcs
+        for func in funcs  # type: ignore[union-attr]
     ]</code></pre>
 </details>
 </section>
@@ -312,9 +314,9 @@ def make_robust(
 </summary>
 <pre><code class="python">def make_robust(
     funcs: Union[Callable, FuncWrapper, List[Union[Callable, FuncWrapper]]],
-    min_nb_samples: Optional[int] = 1,
-    error_val: Optional[Any] = np.nan,
-    passthrough_nans: Optional[bool] = True,
+    min_nb_samples: int = 1,
+    error_val: Any = np.nan,
+    passthrough_nans: bool = True,
 ) -&gt; Union[FuncWrapper, List[FuncWrapper]]:
     &#34;&#34;&#34;Decorate `funcs` into one or multiple robust FuncWrappers.
 
@@ -351,13 +353,15 @@ def make_robust(
         FuncWrappers when a list of functions is passed.
 
     &#34;&#34;&#34;
-    if isinstance(funcs, Callable) or isinstance(funcs, FuncWrapper):
+    if isinstance(funcs, (Callable, FuncWrapper)):  # type: ignore[arg-type]
+        func: Union[Callable, FuncWrapper] = funcs  # type: ignore[assignment]
         return _make_single_func_robust(
-            funcs, min_nb_samples, error_val, passthrough_nans
+            func, min_nb_samples, error_val, passthrough_nans
         )
+    # funcs is now a list of Callables or FuncWrappers (or a mix of both)
     return [
         _make_single_func_robust(func, min_nb_samples, error_val, passthrough_nans)
-        for func in funcs
+        for func in funcs  # type: ignore[union-attr]
     ]</code></pre>
 </details>
 <div class="desc"><p>Decorate <code>funcs</code> into one or multiple robust FuncWrappers.</p>

@@ -57,7 +57,7 @@ from .logger import logger
 __pdoc__[&#34;SeriesProcessor.__call__&#34;] = True
 
 
-def dataframe_func(func: Callable):
+def dataframe_func(func: Callable) -&gt; Callable:
     &#34;&#34;&#34;Decorate function to use a DataFrame instead of multiple series (as argument).
 
     This decorator can be used for functions that need to work on a whole
@@ -82,7 +82,10 @@ def dataframe_func(func: Callable):
 
     &#34;&#34;&#34;
 
-    def wrapper(*series: pd.Series, **kwargs):
+    def wrapper(  # type: ignore[no-untyped-def]
+        *series: pd.Series,
+        **kwargs,
+    ) -&gt; Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]:
         series_dict = {s.name: s for s in series}
         df = series_dict_to_df(series_dict)
         res = func(df, **kwargs)
@@ -151,7 +154,7 @@ class SeriesProcessor(FrozenClass):
 
     &#34;&#34;&#34;
 
-    def __init__(
+    def __init__(  # type: ignore[no-untyped-def]
         self,
         function: Callable,
         series_names: Union[str, Tuple[str, ...], List[str], List[Tuple[str, ...]]],
@@ -233,11 +236,11 @@ class SeriesProcessor(FrozenClass):
         # Variable that will contain the final output of this method
         processed_output: Dict[str, pd.Series] = {}
 
-        def get_series_list(keys: Tuple[str, ...]):
+        def get_series_list(keys: Tuple[str, ...]) -&gt; List[pd.Series]:
             &#34;&#34;&#34;Get an ordered series list view for the given keys.&#34;&#34;&#34;
             return [series_dict[key] for key in keys]
 
-        def get_series_dict(keys: Tuple[str, ...]):
+        def get_series_dict(keys: Tuple[str, ...]) -&gt; Dict[str, pd.Series]:
             &#34;&#34;&#34;Get a series dict view for the given keys.&#34;&#34;&#34;
             return {key: series_dict[key] for key in keys}
 
@@ -264,13 +267,13 @@ class SeriesProcessor(FrozenClass):
 
         return processed_output
 
-    def __repr__(self):
+    def __repr__(self) -&gt; str:
         &#34;&#34;&#34;Return formal representation of object.&#34;&#34;&#34;
         repr_str = self.name + (&#34; &#34; + str(self.kwargs))
         repr_str += &#34; :  &#34; + &#34; &#34;.join([str(s) for s in self.series_names])
         return repr_str
 
-    def __str__(self):
+    def __str__(self) -&gt; str:
         &#34;&#34;&#34;Return informal representation of object.&#34;&#34;&#34;
         return self.__repr__()
 
@@ -423,7 +426,7 @@ def _handle_seriesprocessor_func_output(
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def dataframe_func(func: Callable):
+<pre><code class="python">def dataframe_func(func: Callable) -&gt; Callable:
     &#34;&#34;&#34;Decorate function to use a DataFrame instead of multiple series (as argument).
 
     This decorator can be used for functions that need to work on a whole
@@ -448,7 +451,10 @@ def _handle_seriesprocessor_func_output(
 
     &#34;&#34;&#34;
 
-    def wrapper(*series: pd.Series, **kwargs):
+    def wrapper(  # type: ignore[no-untyped-def]
+        *series: pd.Series,
+        **kwargs,
+    ) -&gt; Union[np.ndarray, pd.Series, pd.DataFrame, List[pd.Series]]:
         series_dict = {s.name: s for s in series}
         df = series_dict_to_df(series_dict)
         res = func(df, **kwargs)
@@ -547,7 +553,7 @@ be sufficient; as you can perform column-based operations on multiple <code>pd.S
 
     &#34;&#34;&#34;
 
-    def __init__(
+    def __init__(  # type: ignore[no-untyped-def]
         self,
         function: Callable,
         series_names: Union[str, Tuple[str, ...], List[str], List[Tuple[str, ...]]],
@@ -629,11 +635,11 @@ be sufficient; as you can perform column-based operations on multiple <code>pd.S
         # Variable that will contain the final output of this method
         processed_output: Dict[str, pd.Series] = {}
 
-        def get_series_list(keys: Tuple[str, ...]):
+        def get_series_list(keys: Tuple[str, ...]) -&gt; List[pd.Series]:
             &#34;&#34;&#34;Get an ordered series list view for the given keys.&#34;&#34;&#34;
             return [series_dict[key] for key in keys]
 
-        def get_series_dict(keys: Tuple[str, ...]):
+        def get_series_dict(keys: Tuple[str, ...]) -&gt; Dict[str, pd.Series]:
             &#34;&#34;&#34;Get a series dict view for the given keys.&#34;&#34;&#34;
             return {key: series_dict[key] for key in keys}
 
@@ -660,13 +666,13 @@ be sufficient; as you can perform column-based operations on multiple <code>pd.S
 
         return processed_output
 
-    def __repr__(self):
+    def __repr__(self) -&gt; str:
         &#34;&#34;&#34;Return formal representation of object.&#34;&#34;&#34;
         repr_str = self.name + (&#34; &#34; + str(self.kwargs))
         repr_str += &#34; :  &#34; + &#34; &#34;.join([str(s) for s in self.series_names])
         return repr_str
 
-    def __str__(self):
+    def __str__(self) -&gt; str:
         &#34;&#34;&#34;Return informal representation of object.&#34;&#34;&#34;
         return self.__repr__()</code></pre>
 </details>
@@ -825,11 +831,11 @@ processing function.</p>
     # Variable that will contain the final output of this method
     processed_output: Dict[str, pd.Series] = {}
 
-    def get_series_list(keys: Tuple[str, ...]):
+    def get_series_list(keys: Tuple[str, ...]) -&gt; List[pd.Series]:
         &#34;&#34;&#34;Get an ordered series list view for the given keys.&#34;&#34;&#34;
         return [series_dict[key] for key in keys]
 
-    def get_series_dict(keys: Tuple[str, ...]):
+    def get_series_dict(keys: Tuple[str, ...]) -&gt; Dict[str, pd.Series]:
         &#34;&#34;&#34;Get a series dict view for the given keys.&#34;&#34;&#34;
         return {key: series_dict[key] for key in keys}
 

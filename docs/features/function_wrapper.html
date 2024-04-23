@@ -115,7 +115,7 @@ class FuncWrapper(FrozenClass):
             * A function can only be applied in vectorized manner when the required
               series are REGULARLY sampled (and have the same index in case of multiple
               required series).
-            * The `input_type` should be `np.array` when `vectorized` is True. It does
+            * The `input_type` should be `np.ndarray` when `vectorized` is True. It does
               not make sense to use a `pd.Series`, as the index should be regularly
               sampled (see requirement above).
     **kwargs: dict, optional
@@ -128,11 +128,11 @@ class FuncWrapper(FrozenClass):
 
     &#34;&#34;&#34;
 
-    def __init__(
+    def __init__(  # type: ignore[no-untyped-def]
         self,
         func: Callable,
         output_names: Optional[Union[List[str], str]] = None,
-        input_type: Optional[Union[np.array, pd.Series]] = np.array,
+        input_type: Union[np.ndarray, pd.Series] = np.ndarray,
         vectorized: bool = False,
         **kwargs,
     ):
@@ -149,10 +149,12 @@ class FuncWrapper(FrozenClass):
         else:
             raise TypeError(f&#34;`output_names` is unexpected type {type(output_names)}&#34;)
 
+        # for backwards compatibility
+        input_type = np.ndarray if input_type is np.array else input_type
         assert input_type in SUPPORTED_STROLL_TYPES, &#34;Invalid input_type!&#34;
         assert not (
-            vectorized &amp; (input_type is not np.array)
-        ), &#34;The input_type must be np.array if vectorized is True!&#34;
+            vectorized &amp; (input_type is not np.ndarray)
+        ), &#34;The input_type must be np.ndarray if vectorized is True!&#34;
         self.input_type = input_type
         self.vectorized = vectorized
 
@@ -193,7 +195,7 @@ class FuncWrapper(FrozenClass):
 <dl>
 <dt id="tsflex.features.function_wrapper.FuncWrapper"><code class="flex name class">
 <span>class <span class="ident">FuncWrapper</span></span>
-<span>(</span><span>func, output_names=None, input_type=&lt;built-in function array&gt;, vectorized=False, **kwargs)</span>
+<span>(</span><span>func, output_names=None, input_type=numpy.ndarray, vectorized=False, **kwargs)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -233,7 +235,7 @@ class FuncWrapper(FrozenClass):
             * A function can only be applied in vectorized manner when the required
               series are REGULARLY sampled (and have the same index in case of multiple
               required series).
-            * The `input_type` should be `np.array` when `vectorized` is True. It does
+            * The `input_type` should be `np.ndarray` when `vectorized` is True. It does
               not make sense to use a `pd.Series`, as the index should be regularly
               sampled (see requirement above).
     **kwargs: dict, optional
@@ -246,11 +248,11 @@ class FuncWrapper(FrozenClass):
 
     &#34;&#34;&#34;
 
-    def __init__(
+    def __init__(  # type: ignore[no-untyped-def]
         self,
         func: Callable,
         output_names: Optional[Union[List[str], str]] = None,
-        input_type: Optional[Union[np.array, pd.Series]] = np.array,
+        input_type: Union[np.ndarray, pd.Series] = np.ndarray,
         vectorized: bool = False,
         **kwargs,
     ):
@@ -267,10 +269,12 @@ class FuncWrapper(FrozenClass):
         else:
             raise TypeError(f&#34;`output_names` is unexpected type {type(output_names)}&#34;)
 
+        # for backwards compatibility
+        input_type = np.ndarray if input_type is np.array else input_type
         assert input_type in SUPPORTED_STROLL_TYPES, &#34;Invalid input_type!&#34;
         assert not (
-            vectorized &amp; (input_type is not np.array)
-        ), &#34;The input_type must be np.array if vectorized is True!&#34;
+            vectorized &amp; (input_type is not np.ndarray)
+        ), &#34;The input_type must be np.ndarray if vectorized is True!&#34;
         self.input_type = input_type
         self.vectorized = vectorized
 
@@ -334,7 +338,7 @@ For example a vectorized version of <code>np.max</code> is
 <li>A function can only be applied in vectorized manner when the required
 series are REGULARLY sampled (and have the same index in case of multiple
 required series).</li>
-<li>The <code>input_type</code> should be <code>np.array</code> when <code>vectorized</code> is True. It does
+<li>The <code>input_type</code> should be <code>np.ndarray</code> when <code>vectorized</code> is True. It does
 not make sense to use a <code>pd.Series</code>, as the index should be regularly
 sampled (see requirement above).</li>
 </ul>

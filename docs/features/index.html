@@ -511,7 +511,7 @@ is passed to the <code><a title="tsflex.features.FeatureCollection" href="#tsfle
         .index.to_list()
     )
 
-    def key_func(idx_level):
+    def key_func(idx_level):  # type: ignore[no-untyped-def]
         if all(idx in sorted_funcs for idx in idx_level):
             return [sorted_funcs.index(idx) for idx in idx_level]
         return idx_level
@@ -742,11 +742,11 @@ sum (% time), mean (% time), and number of executions.</dd>
         # Order of if statements is important (as FuncWrapper also is a Callable)!
         if isinstance(function, FuncWrapper):
             self.function: FuncWrapper = function
-        elif isinstance(function, Callable):
-            self.function: FuncWrapper = FuncWrapper(function)
+        elif isinstance(function, Callable):  # type: ignore[arg-type]
+            self.function: FuncWrapper = FuncWrapper(function)  # type: ignore[no-redef]
         else:
             raise TypeError(
-                &#34;Expected feature function to be a `FuncWrapper` but is a&#34;
+                &#34;Expected feature function to be `Callable` or `FuncWrapper` but is a&#34;
                 f&#34; {type(function)}.&#34;
             )
 
@@ -1051,7 +1051,7 @@ feature function.</p>
     ):
         # Cast functions to FuncWrapper, this avoids creating multiple
         # FuncWrapper objects for the same function in the FeatureDescriptor
-        def to_func_wrapper(f: Callable):
+        def to_func_wrapper(f: Callable) -&gt; FuncWrapper:
             return f if isinstance(f, FuncWrapper) else FuncWrapper(f)
 
         functions = [to_func_wrapper(f) for f in to_list(functions)]
@@ -1068,7 +1068,7 @@ feature function.</p>
         self.feature_descriptions: List[FeatureDescriptor] = []
         # Iterate over all combinations
         combinations = [functions, series_names, windows]
-        for function, series_name, window in itertools.product(*combinations):
+        for function, series_name, window in itertools.product(*combinations):  # type: ignore[call-overload]
             self.feature_descriptions.append(
                 FeatureDescriptor(function, series_name, window, strides)
             )</code></pre>
@@ -1161,7 +1161,7 @@ have the same type, i.e, either </p>
                 FeatureDescriptor,
                 MultipleFeatureDescriptors,
                 FeatureCollection,
-                List[
+                Sequence[
                     Union[
                         FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection
                     ]
@@ -1246,7 +1246,7 @@ have the same type, i.e, either </p>
         self,
         skip_none: bool,
         calc_stride: Optional[Union[float, pd.Timedelta, None]] = None,
-    ):
+    ) -&gt; None:
         &#34;&#34;&#34;Verify whether all added FeatureDescriptors imply the same-input data type.
 
         If this condition is not met, a warning will be raised.
@@ -1279,7 +1279,7 @@ have the same type, i.e, either </p>
                 category=RuntimeWarning,
             )
 
-    def _add_feature(self, feature: FeatureDescriptor):
+    def _add_feature(self, feature: FeatureDescriptor) -&gt; None:
         &#34;&#34;&#34;Add a `FeatureDescriptor` instance to the collection.
 
         Parameters
@@ -1318,11 +1318,11 @@ have the same type, i.e, either </p>
             FeatureDescriptor,
             MultipleFeatureDescriptors,
             FeatureCollection,
-            List[
+            Sequence[
                 Union[FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection]
             ],
         ],
-    ):
+    ) -&gt; None:
         &#34;&#34;&#34;Add feature(s) to the FeatureCollection.
 
         Parameters
@@ -1408,13 +1408,13 @@ have the same type, i.e, either </p>
         f = function
         if function.input_type is np.array:
 
-            def f(x: pd.DataFrame):
+            def f(x: pd.DataFrame) -&gt; Any:
                 # pass the inputs as positional arguments of numpy array type
                 return function(*[x[c].values for c in cols_tuple])
 
         else:  # function.input_type is pd.Series
 
-            def f(x: pd.DataFrame):
+            def f(x: pd.DataFrame) -&gt; Any:
                 # pass the inputs as positional arguments of pd.Series type
                 return function(*[x[c] for c in cols_tuple])
 
@@ -1457,7 +1457,7 @@ have the same type, i.e, either </p>
             [len(self._feature_desc_dict[k]) for k in keys_wins_strides]
         )
 
-        def get_stroll_function(idx) -&gt; Tuple[StridedRolling, FuncWrapper]:
+        def get_stroll_function(idx: int) -&gt; Tuple[StridedRolling, FuncWrapper]:
             key_idx = np.searchsorted(lengths, idx, &#34;right&#34;)  # right bc idx starts at 0
             key, win = keys_wins_strides[key_idx]
 
@@ -1500,7 +1500,7 @@ have the same type, i.e, either </p>
         lengths = np.cumsum([len(self._feature_desc_dict[k]) for k in keys_wins])
 
         def get_group_function(
-            idx,
+            idx: int,
         ) -&gt; Tuple[pd.api.typing.DataFrameGroupBy, FuncWrapper,]:
             key_idx = np.searchsorted(lengths, idx, &#34;right&#34;)  # right bc idx starts at 0
             key, win = keys_wins[key_idx]
@@ -1513,7 +1513,7 @@ have the same type, i.e, either </p>
 
         return get_group_function
 
-    def _check_no_multiple_windows(self, error_case: str):
+    def _check_no_multiple_windows(self, error_case: str) -&gt; None:
         &#34;&#34;&#34;Check whether there are no multiple windows in the feature collection.
 
         Parameters
@@ -1567,7 +1567,7 @@ have the same type, i.e, either </p>
 
     @staticmethod
     def _group_by_all(
-        series_dict: Dict[str, pd.Series], col_name: str = None
+        series_dict: Dict[str, pd.Series], col_name: str
     ) -&gt; pd.api.typing.DataFrameGroupBy:
         &#34;&#34;&#34;Group all `column_name` values and return the grouped data.
 
@@ -1605,8 +1605,8 @@ have the same type, i.e, either </p>
     def _calculate_group_by_all(
         self,
         grouped_data: pd.api.typing.DataFrameGroupBy,
-        return_df: Optional[bool],
-        show_progress: Optional[bool],
+        return_df: bool,
+        show_progress: bool,
         n_jobs: Optional[int],
         f_handler: Optional[logging.FileHandler],
     ) -&gt; Union[List[pd.DataFrame], pd.DataFrame]:
@@ -1651,7 +1651,7 @@ have the same type, i.e, either </p>
 
     @staticmethod
     def _group_by_consecutive(
-        df: Union[pd.Series, pd.DataFrame], col_name: str = None
+        df: Union[pd.Series, pd.DataFrame], col_name: Optional[str] = None
     ) -&gt; pd.DataFrame:
         &#34;&#34;&#34;Group consecutive `col_name` values in a single DataFrame.
 
@@ -1717,11 +1717,11 @@ have the same type, i.e, either </p>
 
         return df_grouped
 
-    def _calculate_group_by_consecutive(
+    def _calculate_group_by_consecutive(  # type: ignore[no-untyped-def]
         self,
         data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
         group_by: str,
-        return_df: Optional[bool] = False,
+        return_df: bool = False,
         **calculate_kwargs,
     ) -&gt; Union[List[pd.DataFrame], pd.DataFrame]:
         &#34;&#34;&#34;Calculate features on each consecutive group of the data.
@@ -1829,8 +1829,8 @@ have the same type, i.e, either </p>
         &#34;&#34;&#34;
         if os.name == &#34;nt&#34;:  # On Windows no multiprocessing is supported
             n_jobs = 1
-        elif n_jobs is None:
-            n_jobs = os.cpu_count()
+        else:
+            n_jobs = parse_n_jobs(n_jobs)
         return min(n_jobs, nb_funcs)
 
     def _calculate_feature_list(
@@ -1840,7 +1840,7 @@ have the same type, i.e, either </p>
         show_progress: bool,
         return_df: bool,
         sort_output_index: bool,
-        f_handler: logging.FileHandler,
+        f_handler: Optional[logging.FileHandler],
     ) -&gt; Union[List[pd.DataFrame], pd.DataFrame]:
         &#34;&#34;&#34;Calculate the features for the given executor.
 
@@ -1869,7 +1869,7 @@ have the same type, i.e, either </p>
         nb_feat_funcs = self._get_nb_feat_funcs()
         n_jobs = FeatureCollection._process_njobs(n_jobs, nb_feat_funcs)
 
-        calculated_feature_list: List[pd.DataFrame] = None
+        calculated_feature_list: Optional[List[pd.DataFrame]] = None
 
         if n_jobs in [0, 1]:
             # No multiprocessing
@@ -1934,14 +1934,14 @@ have the same type, i.e, either </p>
             Union[list, np.ndarray, pd.Series, pd.Index]
         ] = None,
         segment_end_idxs: Optional[Union[list, np.ndarray, pd.Series, pd.Index]] = None,
-        return_df: Optional[bool] = False,
-        window_idx: Optional[str] = &#34;end&#34;,
-        include_final_window: Optional[bool] = False,
+        return_df: bool = False,
+        window_idx: str = &#34;end&#34;,
+        include_final_window: bool = False,
         group_by_all: Optional[str] = None,  # TODO: support multiple columns
         group_by_consecutive: Optional[str] = None,  # TODO: support multiple columns
-        bound_method: Optional[str] = &#34;inner&#34;,
-        approve_sparsity: Optional[bool] = False,
-        show_progress: Optional[bool] = False,
+        bound_method: str = &#34;inner&#34;,
+        approve_sparsity: bool = False,
+        show_progress: bool = False,
         logging_file_path: Optional[Union[str, Path]] = None,
         n_jobs: Optional[int] = None,
     ) -&gt; Union[List[pd.DataFrame], pd.DataFrame]:
@@ -2237,6 +2237,7 @@ have the same type, i.e, either </p>
                 # Grouped feature extraction will take place
                 if not isinstance(data, pd.core.groupby.generic.DataFrameGroupBy):
                     # group_by_all should not be None (checked by asserts above)
+                    assert group_by_all is not None
                     # 0. Transform to dataframe
                     series_dict = FeatureCollection._data_to_series_dict(
                         data, self.get_required_series() + [group_by_all]
@@ -2344,7 +2345,7 @@ have the same type, i.e, either </p>
             f_handler,
         )
 
-    def serialize(self, file_path: Union[str, Path]):
+    def serialize(self, file_path: Union[str, Path]) -&gt; None:
         &#34;&#34;&#34;Serialize this FeatureCollection instance.
 
         Parameters
@@ -2427,16 +2428,13 @@ have the same type, i.e, either </p>
         # Reduce to unique feature descriptor objects (based on uuid) and create a new
         # FeatureCollection for their deepcopy&#39;s.
         seen_uuids = set()
-        return FeatureCollection(
-            feature_descriptors=[
-                deepcopy(unique_fd)
-                for unique_fd in {
-                    fd
-                    for (uuid_str, fd) in fd_subset
-                    if uuid_str not in seen_uuids and not seen_uuids.add(uuid_str)
-                }
-            ]
-        )
+        fds = []
+        for uuid_str, fd in fd_subset:
+            if uuid_str not in seen_uuids:
+                seen_uuids.add(uuid_str)
+                fds.append(deepcopy(fd))
+
+        return FeatureCollection(feature_descriptors=fds)
 
     @staticmethod
     def _ws_to_str(window_or_stride: Any) -&gt; str:
@@ -2568,11 +2566,11 @@ collection.</p>
         FeatureDescriptor,
         MultipleFeatureDescriptors,
         FeatureCollection,
-        List[
+        Sequence[
             Union[FeatureDescriptor, MultipleFeatureDescriptors, FeatureCollection]
         ],
     ],
-):
+) -&gt; None:
     &#34;&#34;&#34;Add feature(s) to the FeatureCollection.
 
     Parameters
@@ -2638,14 +2636,14 @@ collection.</p>
         Union[list, np.ndarray, pd.Series, pd.Index]
     ] = None,
     segment_end_idxs: Optional[Union[list, np.ndarray, pd.Series, pd.Index]] = None,
-    return_df: Optional[bool] = False,
-    window_idx: Optional[str] = &#34;end&#34;,
-    include_final_window: Optional[bool] = False,
+    return_df: bool = False,
+    window_idx: str = &#34;end&#34;,
+    include_final_window: bool = False,
     group_by_all: Optional[str] = None,  # TODO: support multiple columns
     group_by_consecutive: Optional[str] = None,  # TODO: support multiple columns
-    bound_method: Optional[str] = &#34;inner&#34;,
-    approve_sparsity: Optional[bool] = False,
-    show_progress: Optional[bool] = False,
+    bound_method: str = &#34;inner&#34;,
+    approve_sparsity: bool = False,
+    show_progress: bool = False,
     logging_file_path: Optional[Union[str, Path]] = None,
     n_jobs: Optional[int] = None,
 ) -&gt; Union[List[pd.DataFrame], pd.DataFrame]:
@@ -2941,6 +2939,7 @@ collection.</p>
             # Grouped feature extraction will take place
             if not isinstance(data, pd.core.groupby.generic.DataFrameGroupBy):
                 # group_by_all should not be None (checked by asserts above)
+                assert group_by_all is not None
                 # 0. Transform to dataframe
                 series_dict = FeatureCollection._data_to_series_dict(
                     data, self.get_required_series() + [group_by_all]
@@ -3299,7 +3298,7 @@ constructed processing and feature instance with this library.</li>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def serialize(self, file_path: Union[str, Path]):
+<pre><code class="python">def serialize(self, file_path: Union[str, Path]) -&gt; None:
     &#34;&#34;&#34;Serialize this FeatureCollection instance.
 
     Parameters
@@ -3401,16 +3400,13 @@ the local scope, like lambdas.</strong></p></div>
     # Reduce to unique feature descriptor objects (based on uuid) and create a new
     # FeatureCollection for their deepcopy&#39;s.
     seen_uuids = set()
-    return FeatureCollection(
-        feature_descriptors=[
-            deepcopy(unique_fd)
-            for unique_fd in {
-                fd
-                for (uuid_str, fd) in fd_subset
-                if uuid_str not in seen_uuids and not seen_uuids.add(uuid_str)
-            }
-        ]
-    )</code></pre>
+    fds = []
+    for uuid_str, fd in fd_subset:
+        if uuid_str not in seen_uuids:
+            seen_uuids.add(uuid_str)
+            fds.append(deepcopy(fd))
+
+    return FeatureCollection(feature_descriptors=fds)</code></pre>
 </details>
 <div class="desc"><p>Create a reduced FeatureCollection instance based on <code>feat_cols_to_keep</code>.</p>
 <p>For example, this is useful to optimize feature-extraction inference
@@ -3439,7 +3435,7 @@ list and we thus not alter these FeatureDescriptor objects themselves.</p></div>
 </dd>
 <dt id="tsflex.features.FuncWrapper"><code class="flex name class">
 <span>class <span class="ident">FuncWrapper</span></span>
-<span>(</span><span>func, output_names=None, input_type=&lt;built-in function array&gt;, vectorized=False, **kwargs)</span>
+<span>(</span><span>func, output_names=None, input_type=numpy.ndarray, vectorized=False, **kwargs)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -3479,7 +3475,7 @@ list and we thus not alter these FeatureDescriptor objects themselves.</p></div>
             * A function can only be applied in vectorized manner when the required
               series are REGULARLY sampled (and have the same index in case of multiple
               required series).
-            * The `input_type` should be `np.array` when `vectorized` is True. It does
+            * The `input_type` should be `np.ndarray` when `vectorized` is True. It does
               not make sense to use a `pd.Series`, as the index should be regularly
               sampled (see requirement above).
     **kwargs: dict, optional
@@ -3492,11 +3488,11 @@ list and we thus not alter these FeatureDescriptor objects themselves.</p></div>
 
     &#34;&#34;&#34;
 
-    def __init__(
+    def __init__(  # type: ignore[no-untyped-def]
         self,
         func: Callable,
         output_names: Optional[Union[List[str], str]] = None,
-        input_type: Optional[Union[np.array, pd.Series]] = np.array,
+        input_type: Union[np.ndarray, pd.Series] = np.ndarray,
         vectorized: bool = False,
         **kwargs,
     ):
@@ -3513,10 +3509,12 @@ list and we thus not alter these FeatureDescriptor objects themselves.</p></div>
         else:
             raise TypeError(f&#34;`output_names` is unexpected type {type(output_names)}&#34;)
 
+        # for backwards compatibility
+        input_type = np.ndarray if input_type is np.array else input_type
         assert input_type in SUPPORTED_STROLL_TYPES, &#34;Invalid input_type!&#34;
         assert not (
-            vectorized &amp; (input_type is not np.array)
-        ), &#34;The input_type must be np.array if vectorized is True!&#34;
+            vectorized &amp; (input_type is not np.ndarray)
+        ), &#34;The input_type must be np.ndarray if vectorized is True!&#34;
         self.input_type = input_type
         self.vectorized = vectorized
 
@@ -3580,7 +3578,7 @@ For example a vectorized version of <code>np.max</code> is
 <li>A function can only be applied in vectorized manner when the required
 series are REGULARLY sampled (and have the same index in case of multiple
 required series).</li>
-<li>The <code>input_type</code> should be <code>np.array</code> when <code>vectorized</code> is True. It does
+<li>The <code>input_type</code> should be <code>np.ndarray</code> when <code>vectorized</code> is True. It does
 not make sense to use a <code>pd.Series</code>, as the index should be regularly
 sampled (see requirement above).</li>
 </ul>
@@ -3656,7 +3654,12 @@ sampled (see requirement above).</li>
     }
 
     @staticmethod
-    def get_segmenter(data, window, strides, **kwargs) -&gt; StridedRolling:
+    def get_segmenter(  # type: ignore[no-untyped-def]
+        data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
+        window: Union[int, float, pd.Timedelta],
+        strides: Optional[List[Union[int, float, pd.Timedelta]]],
+        **kwargs,
+    ) -&gt; StridedRolling:
         &#34;&#34;&#34;Get the appropriate StridedRolling instance for the passed data.
 
         The returned instance will be determined by the data its index type
@@ -3665,9 +3668,9 @@ sampled (see requirement above).</li>
         ----------
         data : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
             The data to segment.
-        window : Union[float, pd.TimeDelta]
+        window : Union[int, float, pd.Timedelta]
              The window size to use for the segmentation.
-        strides : Union[List[Union[float, pd.TimeDelta]], None]
+        strides : Union[List[Union[int, float, pd.Timedelta]], None]
             The stride(s) to use for the segmentation.
         **kwargs : dict, optional
             Additional keyword arguments, see the `StridedRolling` its documentation
@@ -3704,9 +3707,19 @@ sampled (see requirement above).</li>
             )
         elif data_dtype == DataType.TIME and args_dtype == DataType.SEQUENCE:
             # Note: this is very niche and thus requires advanced knowledge
+            assert isinstance(window, int)
+            if strides is not None:
+                assert isinstance(strides, list) and all(
+                    isinstance(s, int) for s in strides
+                )
             return TimeIndexSampleStridedRolling(data, window, strides, **kwargs)
         elif data_dtype == DataType.SEQUENCE and args_dtype == DataType.TIME:
-            raise ValueError(&#34;Cannot segment a sequence-series with a time window&#34;)</code></pre>
+            raise ValueError(&#34;Cannot segment a sequence-series with a time window&#34;)
+
+        # This should never happen
+        raise ValueError(
+            f&#34;Cannot segment data of type {data_dtype} with window-stride of type {args_dtype}&#34;
+        )</code></pre>
 </details>
 <div class="desc"><p>Factory class for creating the appropriate StridedRolling segmenter.</p></div>
 <h3>Static methods</h3>
@@ -3720,7 +3733,12 @@ sampled (see requirement above).</li>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">@staticmethod
-def get_segmenter(data, window, strides, **kwargs) -&gt; StridedRolling:
+def get_segmenter(  # type: ignore[no-untyped-def]
+    data: Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]],
+    window: Union[int, float, pd.Timedelta],
+    strides: Optional[List[Union[int, float, pd.Timedelta]]],
+    **kwargs,
+) -&gt; StridedRolling:
     &#34;&#34;&#34;Get the appropriate StridedRolling instance for the passed data.
 
     The returned instance will be determined by the data its index type
@@ -3729,9 +3747,9 @@ def get_segmenter(data, window, strides, **kwargs) -&gt; StridedRolling:
     ----------
     data : Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]
         The data to segment.
-    window : Union[float, pd.TimeDelta]
+    window : Union[int, float, pd.Timedelta]
          The window size to use for the segmentation.
-    strides : Union[List[Union[float, pd.TimeDelta]], None]
+    strides : Union[List[Union[int, float, pd.Timedelta]], None]
         The stride(s) to use for the segmentation.
     **kwargs : dict, optional
         Additional keyword arguments, see the `StridedRolling` its documentation
@@ -3768,9 +3786,19 @@ def get_segmenter(data, window, strides, **kwargs) -&gt; StridedRolling:
         )
     elif data_dtype == DataType.TIME and args_dtype == DataType.SEQUENCE:
         # Note: this is very niche and thus requires advanced knowledge
+        assert isinstance(window, int)
+        if strides is not None:
+            assert isinstance(strides, list) and all(
+                isinstance(s, int) for s in strides
+            )
         return TimeIndexSampleStridedRolling(data, window, strides, **kwargs)
     elif data_dtype == DataType.SEQUENCE and args_dtype == DataType.TIME:
-        raise ValueError(&#34;Cannot segment a sequence-series with a time window&#34;)</code></pre>
+        raise ValueError(&#34;Cannot segment a sequence-series with a time window&#34;)
+
+    # This should never happen
+    raise ValueError(
+        f&#34;Cannot segment data of type {data_dtype} with window-stride of type {args_dtype}&#34;
+    )</code></pre>
 </details>
 <div class="desc"><p>Get the appropriate StridedRolling instance for the passed data.</p>
 <p>The returned instance will be determined by the data its index type</p>
@@ -3778,9 +3806,9 @@ def get_segmenter(data, window, strides, **kwargs) -&gt; StridedRolling:
 <dl>
 <dt><strong><code>data</code></strong> :&ensp;<code>Union[pd.Series, pd.DataFrame, List[Union[pd.Series, pd.DataFrame]]]</code></dt>
 <dd>The data to segment.</dd>
-<dt><strong><code>window</code></strong> :&ensp;<code>Union[float, pd.TimeDelta]</code></dt>
+<dt><strong><code>window</code></strong> :&ensp;<code>Union[int, float, pd.Timedelta]</code></dt>
 <dd>The window size to use for the segmentation.</dd>
-<dt><strong><code>strides</code></strong> :&ensp;<code>Union[List[Union[float, pd.TimeDelta]], None]</code></dt>
+<dt><strong><code>strides</code></strong> :&ensp;<code>Union[List[Union[int, float, pd.Timedelta]], None]</code></dt>
 <dd>The stride(s) to use for the segmentation.</dd>
 <dt><strong><code>**kwargs</code></strong> :&ensp;<code>dict</code>, optional</dt>
 <dd>Additional keyword arguments, see the <code>StridedRolling</code> its documentation

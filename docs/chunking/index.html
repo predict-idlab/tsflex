@@ -39,8 +39,7 @@ alt="" width="33" height="25"></button>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python"># -*- coding: utf-8 -*-
-&#34;&#34;&#34;Utilities for chunking time-series data before feeding it to the operators.
+<pre><code class="python">&#34;&#34;&#34;Utilities for chunking time-series data before feeding it to the operators.
 &#34;&#34;&#34;
 
 __author__ = &#34;Jonas Van Der Donckt&#34;
@@ -65,7 +64,7 @@ __all__ = [&#34;chunk_data&#34;]</code></pre>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="tsflex.chunking.chunk_data"><code class="name flex">
-<span>def <span class="ident">chunk_data</span></span>(<span>data, fs_dict=None, chunk_range_margin=None, min_chunk_dur=None, max_chunk_dur=None, sub_chunk_overlap='0s', copy=True, verbose=False)</span>
+<span>def <span class="ident">chunk_data</span></span>(<span>data, fs_dict=None, chunk_range_margin=None, min_chunk_dur=None, max_chunk_dur=None, sub_chunk_overlap=None, copy=True, verbose=False)</span>
 </code></dt>
 <dd>
 <details class="source">
@@ -83,9 +82,9 @@ __all__ = [&#34;chunk_data&#34;]</code></pre>
     chunk_range_margin: Optional[Union[float, str, pd.Timedelta]] = None,
     min_chunk_dur: Optional[Union[float, str, pd.Timedelta]] = None,
     max_chunk_dur: Optional[Union[float, str, pd.Timedelta]] = None,
-    sub_chunk_overlap: Optional[Union[float, str, pd.Timedelta]] = &#34;0s&#34;,
-    copy=True,
-    verbose=False,
+    sub_chunk_overlap: Optional[Union[float, str, pd.Timedelta]] = None,
+    copy: bool = True,
+    verbose: bool = False,
 ) -&gt; List[List[pd.Series]]:
     &#34;&#34;&#34;Divide the time-series `data` in same time/sequence-range chunks.
 
@@ -202,10 +201,10 @@ __all__ = [&#34;chunk_data&#34;]</code></pre>
     return _dtype_to_chunk_method[AttributeParser.determine_type(data)](
         series_list,
         fs_dict,
-        chunk_range_margin,
-        min_chunk_dur,
-        max_chunk_dur,
-        sub_chunk_overlap,
+        chunk_range_margin,  # type: ignore[arg-type]
+        min_chunk_dur,  # type: ignore[arg-type]
+        max_chunk_dur,  # type: ignore[arg-type]
+        sub_chunk_overlap,  # type: ignore[arg-type]
         copy,
         verbose,
     )</code></pre>

@@ -44,7 +44,7 @@ alt="" width="33" height="25"></button>
 __author__ = &#34;Jeroen Van Der Donckt, Jonas Van Der Donckt&#34;
 
 import importlib
-from typing import Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -76,16 +76,17 @@ def seglearn_wrapper(func: Callable, func_name: Optional[str] = None) -&gt; Func
 
     &#34;&#34;&#34;
 
-    def wrap_func(x: np.ndarray):
+    def wrap_func(x: np.ndarray) -&gt; np.ndarray:
         out = func(x.reshape(1, len(x)))
         return out.flatten()
 
     wrap_func.__name__ = &#34;[seglearn_wrapped]__&#34; + _get_name(func)
-    output_names = _get_name(func) if func_name is None else func_name
+    output_name = _get_name(func) if func_name is None else func_name
     # A bit hacky (hard coded), bc hist is only func that returns multiple values
     if hasattr(func, &#34;bins&#34;):
-        output_names = [output_names + f&#34;_bin{idx}&#34; for idx in range(1, func.bins + 1)]
-    return FuncWrapper(wrap_func, output_names=output_names)
+        output_names = [output_name + f&#34;_bin{idx}&#34; for idx in range(1, func.bins + 1)]
+        return FuncWrapper(wrap_func, output_names=output_names)
+    return FuncWrapper(wrap_func, output_names=output_name)
 
 
 def seglearn_feature_dict_wrapper(features_dict: Dict) -&gt; List[FuncWrapper]:
@@ -139,7 +140,7 @@ def seglearn_feature_dict_wrapper(features_dict: Dict) -&gt; List[FuncWrapper]:
 
 
 # -------------------------------------- TSFEL --------------------------------------
-def tsfel_feature_dict_wrapper(features_dict: Dict) -&gt; List[Callable]:
+def tsfel_feature_dict_wrapper(features_dict: Dict) -&gt; List[FuncWrapper]:
     &#34;&#34;&#34;Wrapper enabling compatibility with tsfel feature extraction configurations.
 
     tsfel represents a collection of features as a dictionary, see more [here](https://tsfel.readthedocs.io/en/latest/descriptions/get_started.html#set-up-the-feature-extraction-config-file).
@@ -184,7 +185,7 @@ def tsfel_feature_dict_wrapper(features_dict: Dict) -&gt; List[Callable]:
 
     &#34;&#34;&#34;
 
-    def get_output_names(config: dict):
+    def get_output_names(config: dict) -&gt; Union[str, List[str]]:
         &#34;&#34;&#34;Create the output_names based on the configuration.&#34;&#34;&#34;
         nb_outputs = config[&#34;n_features&#34;]
         func_name = config[&#34;function&#34;].split(&#34;.&#34;)[-1]
@@ -243,7 +244,7 @@ def tsfresh_combiner_wrapper(func: Callable, param: List[Dict]) -&gt; FuncWrappe
 
     &#34;&#34;&#34;
 
-    def wrap_func(x: Union[np.ndarray, pd.Series]):
+    def wrap_func(x: Union[np.ndarray, pd.Series]) -&gt; Tuple[Any, ...]:
         out = func(x, param)
         return tuple(t[1] for t in out)
 
@@ -370,7 +371,7 @@ def catch22_wrapper(catch22_all: Callable) -&gt; FuncWrapper:
     &#34;&#34;&#34;
     catch22_names = catch22_all([0])[&#34;names&#34;]
 
-    def wrap_catch22_all(x):
+    def wrap_catch22_all(x: np.ndarray) -&gt; List[float]:
         return catch22_all(x)[&#34;values&#34;]
 
     wrap_catch22_all.__name__ = &#34;[wrapped]__&#34; + _get_name(catch22_all)
@@ -415,16 +416,17 @@ def catch22_wrapper(catch22_all: Callable) -&gt; FuncWrapper:
 
     &#34;&#34;&#34;
 
-    def wrap_func(x: np.ndarray):
+    def wrap_func(x: np.ndarray) -&gt; np.ndarray:
         out = func(x.reshape(1, len(x)))
         return out.flatten()
 
     wrap_func.__name__ = &#34;[seglearn_wrapped]__&#34; + _get_name(func)
-    output_names = _get_name(func) if func_name is None else func_name
+    output_name = _get_name(func) if func_name is None else func_name
     # A bit hacky (hard coded), bc hist is only func that returns multiple values
     if hasattr(func, &#34;bins&#34;):
-        output_names = [output_names + f&#34;_bin{idx}&#34; for idx in range(1, func.bins + 1)]
-    return FuncWrapper(wrap_func, output_names=output_names)</code></pre>
+        output_names = [output_name + f&#34;_bin{idx}&#34; for idx in range(1, func.bins + 1)]
+        return FuncWrapper(wrap_func, output_names=output_names)
+    return FuncWrapper(wrap_func, output_names=output_name)</code></pre>
 </details>
 <div class="desc"><p>Wrapper enabling compatibility with seglearn functions.</p>
 <p>As <a href="https://github.com/dmbee/seglearn/blob/master/seglearn/feature_functions.py">seglearn feature-functions</a>
@@ -551,7 +553,7 @@ with tsflex.</dd>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def tsfel_feature_dict_wrapper(features_dict: Dict) -&gt; List[Callable]:
+<pre><code class="python">def tsfel_feature_dict_wrapper(features_dict: Dict) -&gt; List[FuncWrapper]:
     &#34;&#34;&#34;Wrapper enabling compatibility with tsfel feature extraction configurations.
 
     tsfel represents a collection of features as a dictionary, see more [here](https://tsfel.readthedocs.io/en/latest/descriptions/get_started.html#set-up-the-feature-extraction-config-file).
@@ -596,7 +598,7 @@ with tsflex.</dd>
 
     &#34;&#34;&#34;
 
-    def get_output_names(config: dict):
+    def get_output_names(config: dict) -&gt; Union[str, List[str]]:
         &#34;&#34;&#34;Create the output_names based on the configuration.&#34;&#34;&#34;
         nb_outputs = config[&#34;n_features&#34;]
         func_name = config[&#34;function&#34;].split(&#34;.&#34;)[-1]
@@ -699,7 +701,7 @@ with tsflex.</dd>
 
     &#34;&#34;&#34;
 
-    def wrap_func(x: Union[np.ndarray, pd.Series]):
+    def wrap_func(x: Union[np.ndarray, pd.Series]) -&gt; Tuple[Any, ...]:
         out = func(x, param)
         return tuple(t[1] for t in out)
 
@@ -904,7 +906,7 @@ with tsflex.</dd>
     &#34;&#34;&#34;
     catch22_names = catch22_all([0])[&#34;names&#34;]
 
-    def wrap_catch22_all(x):
+    def wrap_catch22_all(x: np.ndarray) -&gt; List[float]:
         return catch22_all(x)[&#34;values&#34;]
 
     wrap_catch22_all.__name__ = &#34;[wrapped]__&#34; + _get_name(catch22_all)
