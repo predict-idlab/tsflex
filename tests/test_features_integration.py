@@ -319,6 +319,10 @@ def test_tsfel_feature_dict_wrapper(dummy_data):
 ## CATCH22
 
 
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="latest version of pycatch22 (0.4.4) fails to install on Windows",
+)
 def test_catch22_all_features(dummy_data):
     # Tests if we integrate with the catch22 features
     from pycatch22 import catch22_all

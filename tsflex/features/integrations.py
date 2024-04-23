@@ -283,7 +283,7 @@ def tsfresh_settings_wrapper(settings: Dict) -> List[Union[Callable, FuncWrapper
 
 
 # -------------------------------------CATCH22 -------------------------------------
-def catch22_wrapper(catch22_all: Callable, **kwargs) -> FuncWrapper:
+def catch22_wrapper(catch22_all: Callable, **kwargs) -> FuncWrapper:  # type: ignore[no-untyped-def]
     """Wrapper enabling compatibility with catch22.
 
     [catch22](https://github.com/chlubba/catch22) is a collection of 22 time series
