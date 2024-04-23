@@ -18,7 +18,7 @@ def _chunk_time_data(
     chunk_range_margin: Optional[Union[str, pd.Timedelta]] = None,
     min_chunk_dur: Optional[Union[str, pd.Timedelta]] = None,
     max_chunk_dur: Optional[Union[str, pd.Timedelta]] = None,
-    sub_chunk_overlap: Union[str, pd.Timedelta] = "0s",
+    sub_chunk_overlap: Optional[Union[str, pd.Timedelta]] = None,
     copy: bool = True,
     verbose: bool = False,
 ) -> List[List[pd.Series]]:
@@ -26,6 +26,8 @@ def _chunk_time_data(
         min_chunk_dur = parse_time_arg(min_chunk_dur)
     if max_chunk_dur is not None:
         max_chunk_dur = parse_time_arg(max_chunk_dur)
+    if sub_chunk_overlap is None:
+        sub_chunk_overlap = pd.Timedelta(0)
     sub_chunk_overlap = parse_time_arg(sub_chunk_overlap)
 
     # Default arg -> set the chunk range margin to 2x the min-freq its period
@@ -195,7 +197,7 @@ def _chunk_sequence_data(
     chunk_range_margin: Optional[float] = None,
     min_chunk_dur: Optional[float] = None,
     max_chunk_dur: Optional[float] = None,
-    sub_chunk_overlap: float = 0,
+    sub_chunk_overlap: Optional[float] = None,
     copy: bool = True,
     verbose: bool = False,
 ) -> List[List[pd.Series]]:
@@ -219,7 +221,7 @@ def chunk_data(
     chunk_range_margin: Optional[Union[float, str, pd.Timedelta]] = None,
     min_chunk_dur: Optional[Union[float, str, pd.Timedelta]] = None,
     max_chunk_dur: Optional[Union[float, str, pd.Timedelta]] = None,
-    sub_chunk_overlap: Union[float, str, pd.Timedelta] = "0s",  # TODO: make optional
+    sub_chunk_overlap: Optional[Union[float, str, pd.Timedelta]] = None,
     copy: bool = True,
     verbose: bool = False,
 ) -> List[List[pd.Series]]:
