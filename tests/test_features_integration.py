@@ -332,7 +332,18 @@ def test_catch22_all_features(dummy_data):
     feature_collection = FeatureCollection(catch22_feats)
 
     res_df = feature_collection.calculate(dummy_data.first("15min"), return_df=True)
-    assert (res_df.shape[0] > 0) and (res_df.shape[1]) > 0
+    assert (res_df.shape[0] > 0) and (res_df.shape[1] == 22 * 2)
+
+    catch24_feats = MultipleFeatureDescriptors(
+        functions=catch22_wrapper(catch22_all, catch24=True),
+        series_names=["EDA", "TMP"],
+        windows="2.5min",
+        strides="10min",
+    )
+    feature_collection = FeatureCollection(catch24_feats)
+
+    res_df = feature_collection.calculate(dummy_data.first("15min"), return_df=True)
+    assert (res_df.shape[0] > 0) and (res_df.shape[1] == 24 * 2)
 
 
 ## ANTROPY

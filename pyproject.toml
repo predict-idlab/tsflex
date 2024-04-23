@@ -61,7 +61,8 @@ pyarrow = [
     { version = ">=12", python = ">=3.7,<3.8" },
     { version = ">=15", python = ">=3.8"}
 ]
-pycatch22 = ">=0.4"  # Temporarily lock this version to avoid Windows install error
+# Temporarily lock this version to avoid Windows install error
+pycatch22 = { version = ">=0.4", platform = "~win32" }
 antropy = [
     { version = "^0.1.5", python = "<3.8" },
     { version = ">=0.1.6", python = ">=3.8" }
