@@ -2,12 +2,12 @@ black = black tsflex tests
 
 .PHONY: format
 format:
-	ruff --fix tsflex tests
+	ruff check --fix tsflex tests
 	$(black)
 
 .PHONY: lint
 lint:
-	poetry run ruff tsflex tests
+	poetry run ruff check tsflex tests
 	poetry run $(black) --check --diff
 	poetry run mypy tsflex # tests
 
