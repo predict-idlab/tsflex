@@ -282,8 +282,8 @@ def tsfresh_settings_wrapper(settings: Dict) -> List[Union[Callable, FuncWrapper
     return functions
 
 
-# ----------------------------------- --CATCH22 -------------------------------------
-def catch22_wrapper(catch22_all: Callable) -> FuncWrapper:
+# -------------------------------------CATCH22 -------------------------------------
+def catch22_wrapper(catch22_all: Callable, **kwargs) -> FuncWrapper:  # type: ignore[no-untyped-def]
     """Wrapper enabling compatibility with catch22.
 
     [catch22](https://github.com/chlubba/catch22) is a collection of 22 time series
@@ -320,6 +320,10 @@ def catch22_wrapper(catch22_all: Callable) -> FuncWrapper:
     ----------
     catch22_all: Callable
         The `catch22_all` function from the `pycatch22` package.
+    **kwargs:
+        Additional keyword arguments that will be passed to the `catch22_all` function.
+        Passing the `catch24=True` argument will return the 24 catch24 features instead
+        of the default 22 catch22 features.
 
     Returns
     -------
@@ -328,10 +332,10 @@ def catch22_wrapper(catch22_all: Callable) -> FuncWrapper:
         This FuncWrapper will output the 22 catch22 features.
 
     """
-    catch22_names = catch22_all([0])["names"]
+    catch22_names = catch22_all([0], **kwargs)["names"]
 
     def wrap_catch22_all(x: np.ndarray) -> List[float]:
-        return catch22_all(x)["values"]
+        return catch22_all(x, **kwargs)["values"]
 
     wrap_catch22_all.__name__ = "[wrapped]__" + _get_name(catch22_all)
     return FuncWrapper(wrap_catch22_all, output_names=catch22_names)
