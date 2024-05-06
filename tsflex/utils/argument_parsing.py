@@ -10,6 +10,26 @@ import pandas as pd
 
 
 def parse_n_jobs(n_jobs: Optional[int]) -> int:
+    """Parse the `n_jobs` argument.
+
+    Parameters
+    ----------
+    n_jobs : Optional[int]
+        The number of jobs to run in parallel.
+
+    Returns
+    -------
+    int
+        The number of jobs to run in parallel.
+        If `n_jobs` is specified, it is returned.
+        In the other case (i.e., `n_jobs` is `None`), the number of logical CPUs is
+        returned (if available), otherwise a warning is raised and 1 is returned.
+
+    """
+    if n_jobs is not None:
+        assert isinstance(n_jobs, int), "n_jobs must be an integer"
+        return n_jobs
+    # n_jobs is not specified
     _cpu_count = os.cpu_count()
     if _cpu_count is not None:
         n_jobs = _cpu_count
