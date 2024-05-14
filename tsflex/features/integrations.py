@@ -152,10 +152,6 @@ def tsfel_feature_dict_wrapper(features_dict: Dict) -> List[FuncWrapper]:
             config["parameters"][nb_outputs], int
         ):
             nb_outputs = config["parameters"][nb_outputs]
-        if (
-            func_name == "lpcc"
-        ):  # Because https://github.com/fraunhoferportugal/tsfel/issues/103
-            nb_outputs += 1
         if isinstance(nb_outputs, int):
             if nb_outputs == 1:
                 return func_name
