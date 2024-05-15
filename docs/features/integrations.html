@@ -193,10 +193,6 @@ def tsfel_feature_dict_wrapper(features_dict: Dict) -&gt; List[FuncWrapper]:
             config[&#34;parameters&#34;][nb_outputs], int
         ):
             nb_outputs = config[&#34;parameters&#34;][nb_outputs]
-        if (
-            func_name == &#34;lpcc&#34;
-        ):  # Because https://github.com/fraunhoferportugal/tsfel/issues/103
-            nb_outputs += 1
         if isinstance(nb_outputs, int):
             if nb_outputs == 1:
                 return func_name
@@ -610,10 +606,6 @@ with tsflex.</dd>
             config[&#34;parameters&#34;][nb_outputs], int
         ):
             nb_outputs = config[&#34;parameters&#34;][nb_outputs]
-        if (
-            func_name == &#34;lpcc&#34;
-        ):  # Because https://github.com/fraunhoferportugal/tsfel/issues/103
-            nb_outputs += 1
         if isinstance(nb_outputs, int):
             if nb_outputs == 1:
                 return func_name
