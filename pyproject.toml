@@ -44,9 +44,7 @@ numba = [
 seglearn = "^1.2.3"
 tsfresh = "^0.20.0"
 # necessary to support Python 3.12
-statsmodels = [
-    { version = ">=0.14", python = ">=3.8" },
-]
+statsmodels = ">=0.14"
 tsfel = ">=0.1.5"
 gspread = ">=5.13"
 pyarrow = ">=15"
