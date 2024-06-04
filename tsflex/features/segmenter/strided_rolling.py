@@ -739,5 +739,5 @@ def _sliding_strided_window_1d(
     ]
 
     return np.lib.stride_tricks.as_strided(
-        data, shape=shape, strides=strides  # , writeable=False
+        data, shape=shape, strides=strides, writeable=False
     )
