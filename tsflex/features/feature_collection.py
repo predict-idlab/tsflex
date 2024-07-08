@@ -223,7 +223,7 @@ class FeatureCollection:
             assert not any(
                 output_name in added_output_names
                 for output_name in feature.function.output_names
-            )
+            ), f"Feature with output name(s) {feature.function.output_names} duplicated"
             self._feature_desc_dict[series_win_stride_key].append(feature)
         else:
             self._feature_desc_dict[series_win_stride_key] = [feature]
