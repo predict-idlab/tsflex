@@ -20,14 +20,20 @@ numpy = [
     { version = ">=1.24", python = ">=3.11"}
 ]
 tqdm = "^4.62.3"
-multiprocess = "^0.70.12"
-dill = "^0.3.4"
+multiprocess = [
+    { version = "^0.70.12", python = "<3.8" },
+    { version = "^0.70.16", python = ">=3.8" },
+]
+dill = [
+    { version = "^0.3.4", python = "<3.8" },
+    { version = "^0.3.8", python = ">=3.8" },
+]
 
 [tool.poetry.dev-dependencies]
 pydocstyle = "^5.1.1"
 Sphinx = "^3.5.2"
 jupyterlab = "^3.2.9"
-memory-profiler = "^0.58.0"
+memory-profiler = "^0.61.0"
 pytest = "^7.4.4"
 pytest-cov = "^4.1.0"
 pytest-benchmark = "^4.0.0"
