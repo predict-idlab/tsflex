@@ -42,9 +42,17 @@ def series_dict_to_df(series_dict: Dict[str, pd.Series]) -> pd.DataFrame:
         return pd.DataFrame(series_dict)
     # 1. Check if the time-indexes of the series are equal, to create the df efficiently
     try:
+
+        def _get_index_freq(index):  # type: ignore[no-untyped-def]
+            if isinstance(index, pd.DatetimeIndex):
+                return index.freq
+            elif isinstance(index, pd.RangeIndex):
+                return index.step
+            return None
+
         index_info = set(
             [
-                (s.index[0], s.index[-1], len(s), s.index.freq)
+                (s.index[0], s.index[-1], len(s), _get_index_freq(s.index))
                 for s in series_dict.values()
             ]
         )

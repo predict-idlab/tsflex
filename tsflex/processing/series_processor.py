@@ -321,9 +321,9 @@ def _handle_seriesprocessor_func_output(
         # Nothing has to be done! A pd.DataFrame can be added to a series_dict using
         # series_dict.update(df)
         # Note: converting this to a dictionary (to_dict()) is **very** inefficient!
-        # Assert that the DataFrame has a time-index
+        # Assert that the DataFrame has a time-index or a range-index
         if len(func_output):
-            assert isinstance(func_output.index, pd.DatetimeIndex)
+            assert isinstance(func_output.index, (pd.DatetimeIndex, pd.RangeIndex))
         # Assert that the DataFrame columns are named
         assert all(
             func_output.columns.values != [i for i in range(func_output.shape[1])]
@@ -334,9 +334,9 @@ def _handle_seriesprocessor_func_output(
         # Convert series to series_dict and return
         # => if func_output.name is in the required_dict, than the original series will
         #    be replaced by this new series.
-        # Assert that the series has a time-index
+        # Assert that the series has a time-index or a range-index
         if len(func_output):
-            assert isinstance(func_output.index, pd.DatetimeIndex)
+            assert isinstance(func_output.index, (pd.DatetimeIndex, pd.RangeIndex))
         # Assert (func_output.name is not None) | (len(required_dict) == 1)
         if func_output.name is None:
             # If a series without a name is returned that is constructed from just 1
